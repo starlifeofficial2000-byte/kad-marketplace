@@ -4,7 +4,7 @@ const { Op } = require("sequelize");
 
 const sanitize = require("../services/sanitizeService");
 const Product = require("../models/Product");
-const User = require("../models/user");
+const User = require("../models/User");
 const Store = require("../models/Store");
 const Subscription = require("../models/Subscription");
 const SubscriptionPlan = require("../models/SubscriptionPlan");
