@@ -1,0 +1,200 @@
+/* ==========================================
+   RECOMMENDED PRODUCTS
+========================================== */
+
+.recommended-products{
+
+    margin:60px 0;
+
+}
+
+.recommended-products .section-header{
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+
+}
+
+.recommended-products .section-header h2{
+
+    font-size:30px;
+    color:#0d6efd;
+    font-weight:700;
+
+}
+
+.recommended-products .section-header a{
+
+    color:#0d6efd;
+    text-decoration:none;
+    font-weight:600;
+    transition:.3s;
+
+}
+
+.recommended-products .section-header a:hover{
+
+    color:#084298;
+
+}
+
+.carousel-wrapper{
+
+    position:relative;
+
+}
+
+.recommended-slider{
+
+    display:flex;
+    gap:20px;
+    overflow-x:auto;
+    scroll-behavior:smooth;
+    scrollbar-width:none;
+    padding:10px 5px 20px;
+
+}
+
+.recommended-slider::-webkit-scrollbar{
+
+    display:none;
+
+}
+
+.recommended-card{
+
+    min-width:270px;
+    max-width:270px;
+    background:white;
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 8px 25px rgba(0,0,0,.12);
+    transition:.35s;
+    flex-shrink:0;
+
+}
+
+.recommended-card:hover{
+
+    transform:translateY(-8px);
+    box-shadow:0 15px 35px rgba(0,0,0,.18);
+
+}
+
+.recommended-card img{
+
+    width:100%;
+    height:220px;
+    object-fit:cover;
+    transition:.4s;
+
+}
+
+.recommended-card:hover img{
+
+    transform:scale(1.08);
+
+}
+
+.recommended-info{
+
+    padding:18px;
+
+}
+
+.recommended-info h3{
+
+    font-size:18px;
+    color:#222;
+    margin-bottom:10px;
+
+}
+
+.recommended-info h2{
+
+    color:#0d6efd;
+    font-size:22px;
+    margin-bottom:10px;
+
+}
+
+.recommended-info p{
+
+    color:#666;
+    margin-bottom:15px;
+
+}
+
+.details-btn{
+
+    display:inline-block;
+    background:#0d6efd;
+    color:white;
+    padding:10px 18px;
+    border-radius:8px;
+    text-decoration:none;
+    transition:.3s;
+
+}
+
+.details-btn:hover{
+
+    background:#084298;
+
+}
+
+.carousel-btn{
+
+    position:absolute;
+    top:45%;
+    transform:translateY(-50%);
+    width:45px;
+    height:45px;
+    border:none;
+    border-radius:50%;
+    background:white;
+    box-shadow:0 4px 15px rgba(0,0,0,.2);
+    cursor:pointer;
+    font-size:22px;
+    z-index:10;
+    transition:.3s;
+
+}
+
+.carousel-btn.left{
+
+    left:-18px;
+
+}
+
+.carousel-btn.right{
+
+    right:-18px;
+
+}
+
+.carousel-btn:hover{
+
+    background:#0d6efd;
+    color:white;
+
+}
+
+@media(max-width:768px){
+
+    .recommended-card{
+
+        min-width:220px;
+        max-width:220px;
+
+    }
+
+    .carousel-btn{
+
+        display:none;
+
+    }
+
+}

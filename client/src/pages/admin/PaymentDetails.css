@@ -1,0 +1,305 @@
+/* ==========================================
+   PAYMENT DETAILS PAGE
+========================================== */
+
+.payment-details{
+
+    padding:40px;
+
+    background:#f8fafc;
+
+    min-height:100vh;
+
+    animation:fadeIn .4s ease;
+
+}
+
+/* ==========================================
+   PAGE TITLE
+========================================== */
+
+.payment-details h1{
+
+    font-size:34px;
+
+    color:#1e293b;
+
+    margin-bottom:30px;
+
+    font-weight:700;
+
+}
+
+/* ==========================================
+   DETAILS CARD
+========================================== */
+
+.details-card{
+
+    background:#fff;
+
+    max-width:900px;
+
+    margin:auto;
+
+    padding:35px;
+
+    border-radius:18px;
+
+    box-shadow:0 12px 35px rgba(0,0,0,.08);
+
+}
+
+/* ==========================================
+   ROWS
+========================================== */
+
+.details-card p{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:18px 0;
+
+    margin:0;
+
+    border-bottom:1px solid #edf2f7;
+
+    font-size:16px;
+
+}
+
+.details-card p:last-child{
+
+    border-bottom:none;
+
+}
+
+.details-card strong{
+
+    color:#334155;
+
+    font-size:15px;
+
+    width:220px;
+
+}
+
+/* ==========================================
+   STATUS BADGES
+========================================== */
+
+.status{
+
+    padding:8px 18px;
+
+    border-radius:30px;
+
+    font-size:13px;
+
+    font-weight:700;
+
+    color:white;
+
+}
+
+.successful{
+
+    background:#16a34a;
+
+}
+
+.pending{
+
+    background:#f59e0b;
+
+}
+
+.failed{
+
+    background:#ef4444;
+
+}
+
+.refunded{
+
+    background:#6366f1;
+
+}
+
+/* ==========================================
+   ACTION BUTTONS
+========================================== */
+
+.payment-actions{
+
+    display:flex;
+
+    gap:15px;
+
+    margin-top:35px;
+
+    flex-wrap:wrap;
+
+}
+
+.payment-actions button{
+
+    border:none;
+
+    padding:13px 24px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    font-weight:600;
+
+    transition:.3s;
+
+}
+
+/* View Invoice */
+
+.invoice-btn{
+
+    background:#2563eb;
+
+    color:white;
+
+}
+
+.invoice-btn:hover{
+
+    background:#1d4ed8;
+
+}
+
+/* Download */
+
+.download-btn{
+
+    background:#14b8a6;
+
+    color:white;
+
+}
+
+.download-btn:hover{
+
+    background:#0f766e;
+
+}
+
+/* Refund */
+
+.refund-btn{
+
+    background:#f59e0b;
+
+    color:white;
+
+}
+
+.refund-btn:hover{
+
+    background:#d97706;
+
+}
+
+/* Delete */
+
+.delete-btn{
+
+    background:#ef4444;
+
+    color:white;
+
+}
+
+.delete-btn:hover{
+
+    background:#dc2626;
+
+}
+
+/* ==========================================
+   HOVER EFFECT
+========================================== */
+
+.details-card:hover{
+
+    transform:translateY(-2px);
+
+    transition:.3s;
+
+}
+
+/* ==========================================
+   ANIMATION
+========================================== */
+
+@keyframes fadeIn{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(20px);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+
+    }
+
+}
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media(max-width:768px){
+
+.details-card{
+
+padding:20px;
+
+}
+
+.details-card p{
+
+display:block;
+
+}
+
+.details-card strong{
+
+display:block;
+
+margin-bottom:8px;
+
+width:100%;
+
+}
+
+.payment-actions{
+
+flex-direction:column;
+
+}
+
+.payment-actions button{
+
+width:100%;
+
+}
+
+}

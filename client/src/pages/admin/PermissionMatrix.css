@@ -1,0 +1,137 @@
+/* =========================================
+   PERMISSION MATRIX
+========================================= */
+
+.permission-matrix {
+    width: 100%;
+    margin-top: 25px;
+    padding: 20px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+}
+
+
+.permission-matrix h3 {
+    margin: 0 0 20px;
+    font-size: 20px;
+    color: #1f2937;
+}
+
+
+/* =========================================
+   PERMISSION GRID
+========================================= */
+
+.permission-grid {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(220px, 1fr)
+    );
+    gap: 12px;
+}
+
+
+/* =========================================
+   PERMISSION ITEM
+========================================= */
+
+.permission-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 12px 15px;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+
+    background: #ffffff;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.permission-item:hover {
+    background: #f8fafc;
+    border-color: #0a66c2;
+    transform: translateY(-1px);
+}
+
+
+/* =========================================
+   CHECKBOX
+========================================= */
+
+.permission-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+
+    accent-color: #0a66c2;
+
+    cursor: pointer;
+
+    flex-shrink: 0;
+}
+
+
+.permission-item span {
+    font-size: 14px;
+    color: #374151;
+    text-transform: capitalize;
+}
+
+
+/* =========================================
+   LOADING
+========================================= */
+
+.permission-loading {
+    padding: 30px;
+
+    text-align: center;
+
+    color: #6b7280;
+
+    font-size: 15px;
+}
+
+
+/* =========================================
+   EMPTY STATE
+========================================= */
+
+.permission-matrix > p {
+    padding: 20px;
+
+    text-align: center;
+
+    color: #6b7280;
+
+    background: #f9fafb;
+
+    border-radius: 8px;
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+
+    .permission-matrix {
+        padding: 15px;
+    }
+
+    .permission-grid {
+        grid-template-columns: 1fr;
+    }
+
+}

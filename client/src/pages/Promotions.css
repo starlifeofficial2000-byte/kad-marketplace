@@ -1,0 +1,181 @@
+.promotions-page{
+
+    padding:30px;
+
+    background:#f5f7fb;
+
+    min-height:100vh;
+
+}
+
+.promotions-page h1{
+
+    text-align:center;
+
+    margin-bottom:30px;
+
+    color:#222;
+
+}
+
+.promotion-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+
+    gap:25px;
+
+}
+
+.promotion-card{
+
+    background:#fff;
+
+    border-radius:15px;
+
+    overflow:hidden;
+
+    box-shadow:0 5px 18px rgba(0,0,0,.08);
+
+    transition:.3s;
+
+}
+
+.promotion-card:hover{
+
+    transform:translateY(-8px);
+
+    box-shadow:0 12px 30px rgba(0,0,0,.15);
+
+}
+
+.promotion-card img{
+
+    width:100%;
+
+    height:220px;
+
+    object-fit:cover;
+
+}
+
+.promotion-card h2{
+
+    padding:15px 15px 5px;
+
+    font-size:22px;
+
+    color:#222;
+
+}
+
+.promotion-card p{
+
+    padding:0 15px;
+
+    margin:5px 0;
+
+    color:#555;
+
+}
+
+.promotion-status{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:8px;
+
+    padding:15px;
+
+}
+
+.promotion-status span{
+
+    background:#f2f2f2;
+
+    padding:10px;
+
+    border-radius:8px;
+
+    font-size:15px;
+
+}
+
+.promotion-buttons{
+
+    display:grid;
+
+    grid-template-columns:repeat(3,1fr);
+
+    gap:10px;
+
+    padding:15px;
+
+}
+
+.promotion-buttons button{
+
+    border:none;
+
+    border-radius:8px;
+
+    padding:12px;
+
+    color:#fff;
+
+    font-size:15px;
+
+    cursor:pointer;
+
+    transition:.3s;
+
+}
+
+.boost{
+
+    background:#ff9800;
+
+}
+
+.feature{
+
+    background:#2196f3;
+
+}
+
+.express{
+
+    background:#4caf50;
+
+}
+
+.boost:hover{
+
+    background:#fb8c00;
+
+}
+
+.feature:hover{
+
+    background:#1976d2;
+
+}
+
+.express:hover{
+
+    background:#388e3c;
+
+}
+
+@media(max-width:768px){
+
+    .promotion-buttons{
+
+        grid-template-columns:1fr;
+
+    }
+
+}

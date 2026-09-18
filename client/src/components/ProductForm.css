@@ -1,0 +1,425 @@
+.product-card{
+
+    background:#fff;
+
+    border-radius:16px;
+
+    overflow:hidden;
+
+    box-shadow:0 8px 25px rgba(0,0,0,.08);
+
+    transition:.3s;
+
+    display:flex;
+
+    flex-direction:column;
+
+    position:relative;
+
+    border:1px solid #ececec;
+
+}
+
+.product-card:hover{
+
+    transform:translateY(-6px);
+
+    box-shadow:0 15px 35px rgba(0,0,0,.15);
+
+}
+
+.product-image{
+
+    position:relative;
+
+    display:block;
+
+    overflow:hidden;
+
+}
+
+.product-image img{
+
+    width:100%;
+
+    height:240px;
+
+    object-fit:cover;
+
+    transition:.4s;
+
+}
+
+.product-card:hover .product-image img{
+
+    transform:scale(1.08);
+
+}
+
+.featured-badge{
+
+    position:absolute;
+
+    top:12px;
+
+    left:12px;
+
+    background:#FFD700;
+
+    color:#222;
+
+    font-weight:bold;
+
+    padding:6px 12px;
+
+    border-radius:30px;
+
+    font-size:.75rem;
+
+}
+
+.express-badge{
+
+    position:absolute;
+
+    top:50px;
+
+    left:12px;
+
+    background:#ff4d00;
+
+    color:#fff;
+
+    padding:6px 12px;
+
+    border-radius:30px;
+
+    font-size:.75rem;
+
+    font-weight:bold;
+
+}
+
+.condition-badge{
+
+    position:absolute;
+
+    top:12px;
+
+    right:12px;
+
+    background:#0d6efd;
+
+    color:white;
+
+    padding:6px 12px;
+
+    border-radius:30px;
+
+    font-size:.75rem;
+
+    font-weight:bold;
+
+}
+
+.photo-count{
+
+    position:absolute;
+
+    bottom:12px;
+
+    right:12px;
+
+    background:rgba(0,0,0,.7);
+
+    color:white;
+
+    padding:5px 10px;
+
+    border-radius:20px;
+
+    font-size:.75rem;
+
+}
+
+.product-info{
+
+    padding:18px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:12px;
+
+}
+
+.seller-plan{
+
+    display:inline-flex;
+
+    width:max-content;
+
+    padding:6px 12px;
+
+    border-radius:30px;
+
+    color:#fff;
+
+    font-size:.75rem;
+
+    font-weight:bold;
+
+}
+
+.basic{
+
+    background:#28a745;
+
+}
+
+.premium{
+
+    background:#0d6efd;
+
+}
+
+.express{
+
+    background:#ff6600;
+
+}
+
+.bossman{
+
+    background:#7b1fa2;
+
+}
+
+.vip{
+
+    background:#d63384;
+
+}
+
+.enterprise{
+
+    background:#212529;
+
+}
+
+.price{
+
+    color:#198754;
+
+    font-size:1.6rem;
+
+    margin:0;
+
+    font-weight:700;
+
+}
+
+.title{
+
+    color:#222;
+
+    text-decoration:none;
+
+    font-size:1.05rem;
+
+    font-weight:600;
+
+    line-height:1.4;
+
+    transition:.3s;
+
+}
+
+.title:hover{
+
+    color:#0d6efd;
+
+}
+
+.meta{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:6px;
+
+    color:#666;
+
+    font-size:.9rem;
+
+}
+
+.seller{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    font-size:.9rem;
+
+    color:#555;
+
+}
+
+.verified{
+
+    background:#198754;
+
+    color:white;
+
+    padding:4px 10px;
+
+    border-radius:20px;
+
+    font-size:.75rem;
+
+}
+
+.stats{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    color:#666;
+
+    font-size:.9rem;
+
+    border-top:1px solid #eee;
+
+    border-bottom:1px solid #eee;
+
+    padding:10px 0;
+
+}
+
+.card-actions{
+
+    display:flex;
+
+    gap:10px;
+
+    margin-top:10px;
+
+}
+
+.card-actions button{
+
+    flex:1;
+
+    padding:10px;
+
+    border:none;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    font-weight:600;
+
+    transition:.3s;
+
+}
+
+.card-actions button:first-child{
+
+    background:#ffe5e5;
+
+    color:#d10000;
+
+}
+
+.card-actions button:first-child:hover{
+
+    background:#ffbdbd;
+
+}
+
+.card-actions button:nth-child(2){
+
+    background:#e9f2ff;
+
+    color:#0d6efd;
+
+}
+
+.card-actions button:nth-child(2):hover{
+
+    background:#cfe2ff;
+
+}
+
+.view-btn{
+
+    flex:1;
+
+    text-decoration:none;
+
+    background:#198754;
+
+    color:white;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:8px;
+
+    font-weight:bold;
+
+    transition:.3s;
+
+}
+
+.view-btn:hover{
+
+    background:#146c43;
+
+}
+
+@media(max-width:768px){
+
+.product-image img{
+
+height:190px;
+
+}
+
+.product-info{
+
+padding:15px;
+
+}
+
+.price{
+
+font-size:1.3rem;
+
+}
+
+.title{
+
+font-size:1rem;
+
+}
+
+.card-actions{
+
+flex-direction:column;
+
+}
+
+}

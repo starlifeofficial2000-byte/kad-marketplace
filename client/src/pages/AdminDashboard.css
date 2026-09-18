@@ -1,0 +1,585 @@
+/* ==========================================
+   GLOBAL
+========================================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;
+}
+
+body{
+    background:#f4f6fb;
+}
+
+/* ==========================================
+   LAYOUT
+========================================== */
+
+.admin-layout{
+    display:flex;
+    min-height:100vh;
+}
+
+/* ==========================================
+   SIDEBAR
+========================================== */
+
+.admin-sidebar{
+    width:260px;
+    background:#0f172a;
+    color:white;
+    padding:30px 20px;
+    position:fixed;
+    left:0;
+    top:0;
+    bottom:0;
+    overflow-y:auto;
+}
+
+.logo{
+    text-align:center;
+    margin-bottom:40px;
+}
+
+.logo h2{
+    font-size:28px;
+}
+
+.logo p{
+    color:#94a3b8;
+    margin-top:8px;
+}
+
+.admin-sidebar ul{
+    list-style:none;
+}
+
+.admin-sidebar li{
+    padding:16px;
+    border-radius:12px;
+    margin-bottom:10px;
+    cursor:pointer;
+    transition:.3s;
+    font-size:16px;
+}
+
+.admin-sidebar li:hover,
+.admin-sidebar .active{
+    background:#2563eb;
+}
+
+.logout-btn{
+    width:100%;
+    margin-top:40px;
+    padding:15px;
+    border:none;
+    border-radius:10px;
+    background:#ef4444;
+    color:white;
+    cursor:pointer;
+    font-size:16px;
+    transition:.3s;
+}
+
+.logout-btn:hover{
+    background:#dc2626;
+}
+
+/* ==========================================
+   MAIN
+========================================== */
+
+.admin-main{
+    flex:1;
+    margin-left:260px;
+    padding:35px;
+}
+
+/* ==========================================
+   HEADER
+========================================== */
+
+.dashboard-header{
+    background:white;
+    border-radius:18px;
+    padding:25px 30px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:30px;
+    box-shadow:0 10px 25px rgba(0,0,0,.08);
+}
+
+.dashboard-header h1{
+    color:#111827;
+    font-size:34px;
+}
+
+.dashboard-header p{
+    color:#6b7280;
+    margin-top:5px;
+}
+
+.dashboard-header input{
+    width:320px;
+    padding:14px;
+    border-radius:10px;
+    border:1px solid #ddd;
+    outline:none;
+}
+
+/* ==========================================
+   DASHBOARD CARDS
+========================================== */
+
+.stats-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:22px;
+    margin-bottom:35px;
+}
+
+.card{
+    background:white;
+    border-radius:18px;
+    padding:30px;
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+    transition:.3s;
+}
+
+.card:hover{
+    transform:translateY(-6px);
+}
+
+.card h3{
+    color:#6b7280;
+    margin-bottom:15px;
+}
+
+.card h1{
+    font-size:38px;
+}
+
+.users{
+    border-left:6px solid #2563eb;
+}
+
+.products{
+    border-left:6px solid #9333ea;
+}
+
+.pending{
+    border-left:6px solid #f59e0b;
+}
+
+.approved{
+    border-left:6px solid #22c55e;
+}
+
+.rejected{
+    border-left:6px solid #ef4444;
+}
+
+.reviews{
+    border-left:6px solid #14b8a6;
+}
+
+.messages{
+    border-left:6px solid #3b82f6;
+}
+
+/* ==========================================
+   QUICK ACTIONS
+========================================== */
+
+.quick-actions{
+    display:flex;
+    gap:20px;
+    flex-wrap:wrap;
+    margin-bottom:35px;
+}
+
+.quick-actions button{
+    flex:1;
+    min-width:180px;
+    border:none;
+    padding:18px;
+    border-radius:12px;
+    background:#2563eb;
+    color:white;
+    cursor:pointer;
+    font-size:16px;
+    transition:.3s;
+}
+
+.quick-actions button:hover{
+    background:#1d4ed8;
+}
+
+/* ==========================================
+   SECTION
+========================================== */
+
+.section{
+    background:white;
+    padding:30px;
+    border-radius:18px;
+    box-shadow:0 10px 25px rgba(0,0,0,.08);
+}
+
+.section-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:25px;
+}
+
+.section-header h2{
+    color:#111827;
+}
+
+.section-header span{
+    background:#2563eb;
+    color:white;
+    padding:8px 15px;
+    border-radius:30px;
+}
+
+/* ==========================================
+   PRODUCT CARD
+========================================== */
+
+.product-card{
+    display:grid;
+    grid-template-columns:180px 1fr 220px;
+    gap:25px;
+    align-items:center;
+    border:1px solid #eee;
+    border-radius:15px;
+    padding:20px;
+    margin-bottom:20px;
+    transition:.3s;
+}
+
+.product-card:hover{
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+}
+
+.product-card img{
+    width:180px;
+    height:180px;
+    object-fit:cover;
+    border-radius:12px;
+}
+
+.product-details h2{
+    margin-bottom:12px;
+}
+
+.product-details p{
+    margin:8px 0;
+    color:#555;
+}
+
+.status{
+    display:inline-block;
+    margin-top:12px;
+    padding:7px 15px;
+    background:#fff3cd;
+    color:#d97706;
+    border-radius:30px;
+}
+
+/* ==========================================
+   BUTTONS
+========================================== */
+
+.product-actions{
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+}
+
+.product-actions button{
+    border:none;
+    padding:14px;
+    border-radius:10px;
+    color:white;
+    cursor:pointer;
+    font-size:15px;
+    transition:.3s;
+}
+
+.view{
+    background:#2563eb;
+}
+
+.view:hover{
+    background:#1d4ed8;
+}
+
+.approve{
+    background:#22c55e;
+}
+
+.approve:hover{
+    background:#16a34a;
+}
+
+.reject{
+    background:#ef4444;
+}
+
+.reject:hover{
+    background:#dc2626;
+}
+
+/* ==========================================
+   EMPTY STATE
+========================================== */
+
+.empty{
+    text-align:center;
+    color:#888;
+    padding:60px;
+    font-size:20px;
+}
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media(max-width:1100px){
+
+.admin-sidebar{
+    display:none;
+}
+
+.admin-main{
+    margin-left:0;
+}
+
+.dashboard-header{
+    flex-direction:column;
+    gap:20px;
+}
+
+.dashboard-header input{
+    width:100%;
+}
+
+.product-card{
+    grid-template-columns:1fr;
+}
+
+.product-card img{
+    width:100%;
+    height:250px;
+}
+
+.product-actions{
+    flex-direction:row;
+    flex-wrap:wrap;
+}
+
+.product-actions button{
+    flex:1;
+}
+
+.quick-actions{
+    flex-direction:column;
+}
+
+}
+.page-container{
+
+    background:white;
+
+    padding:30px;
+
+    border-radius:20px;
+
+    box-shadow:0 8px 25px rgba(0,0,0,.08);
+
+}
+
+.page-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:30px;
+
+}
+
+.page-header input{
+
+    width:320px;
+
+    padding:14px;
+
+    border:1px solid #ddd;
+
+    border-radius:10px;
+
+}
+
+.admin-table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+}
+
+.admin-table th{
+
+    background:#2563eb;
+
+    color:white;
+
+    padding:15px;
+
+    text-align:left;
+
+}
+
+.admin-table td{
+
+    padding:15px;
+
+    border-bottom:1px solid #eee;
+
+}
+
+.admin-table tr:hover{
+
+    background:#f7f9fc;
+
+}
+
+.admin-table button{
+
+    margin-right:10px;
+
+}
+.table-image{
+
+    width:80px;
+
+    height:80px;
+
+    border-radius:10px;
+
+    object-fit:cover;
+
+}
+
+.delete{
+
+    background:#111827;
+
+    color:white;
+
+}
+
+.delete:hover{
+
+    background:black;
+
+}
+.admin-table td{
+
+    vertical-align:middle;
+
+}
+
+.admin-table tr{
+
+    transition:.3s;
+
+}
+
+.admin-table tr:hover{
+
+    background:#f7f9fc;
+
+}
+
+.page-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:25px;
+
+}
+
+.page-header h1{
+
+    color:#1e293b;
+
+}
+
+.page-header input{
+
+    width:300px;
+
+    padding:14px;
+
+    border-radius:10px;
+
+    border:1px solid #ddd;
+
+}
+.sidebar-footer{
+
+    margin-top:auto;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:15px;
+
+    padding:20px;
+
+}
+
+.theme-btn{
+
+    width:100%;
+
+    padding:12px;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:#0A66C2;
+
+    color:white;
+
+    font-size:15px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:.3s;
+
+}
+
+.theme-btn:hover{
+
+    background:#084d94;
+
+}

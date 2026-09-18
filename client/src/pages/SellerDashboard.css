@@ -1,0 +1,79 @@
+.seller-dashboard{
+
+    display:flex;
+
+    min-height:100vh;
+
+    background:#f5f5f5;
+
+}
+
+.seller-sidebar{
+
+    width:200px;
+
+    background:#0562be;
+
+    color:white;
+
+    padding:20px;
+
+    display:flex;
+
+    flex-direction:column;
+
+}
+
+.seller-sidebar h2{
+
+    margin-bottom:30px;
+
+}
+
+.seller-sidebar button{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    border:none;
+
+    background:none;
+
+    color:white;
+
+    padding:14px;
+
+    cursor:pointer;
+
+    font-size:16px;
+
+    border-radius:8px;
+
+    margin-bottom:8px;
+
+}
+
+.seller-sidebar button:hover{
+
+    background:rgba(255,255,255,.15);
+
+}
+
+.logout{
+
+    margin-top:auto;
+
+    background:#d32f2f !important;
+
+}
+
+.seller-content{
+
+    flex:1;
+
+    padding:30px;
+
+}

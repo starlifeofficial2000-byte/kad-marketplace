@@ -1,0 +1,74 @@
+.settings-page{
+
+    padding:30px;
+
+}
+
+.settings-card{
+
+    max-width:700px;
+
+    background:white;
+
+    padding:30px;
+
+    border-radius:10px;
+
+    box-shadow:0 3px 10px rgba(0,0,0,.1);
+
+}
+
+.settings-card label{
+
+    display:block;
+
+    margin-top:15px;
+
+    font-weight:bold;
+
+}
+
+.settings-card input[type=text],
+.settings-card input[type=email]{
+
+    width:100%;
+
+    padding:12px;
+
+    border:1px solid #ddd;
+
+    border-radius:8px;
+
+    margin-top:5px;
+
+}
+
+.settings-card input[type=checkbox]{
+
+    margin-right:10px;
+
+}
+
+.settings-card button{
+
+    margin-top:30px;
+
+    padding:12px 25px;
+
+    border:none;
+
+    background:#0d6efd;
+
+    color:white;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+}
+
+.settings-card button:hover{
+
+    background:#0b5ed7;
+
+}

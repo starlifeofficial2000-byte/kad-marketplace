@@ -1,0 +1,147 @@
+/* ==========================================
+   ADMIN NOTIFICATIONS
+========================================== */
+
+.admin-notifications{
+
+    padding:40px;
+
+    background:#f8fafc;
+
+    min-height:100vh;
+
+}
+
+.admin-notifications h1{
+
+    font-size:32px;
+
+    color:#1e293b;
+
+    margin-bottom:25px;
+
+    font-weight:700;
+
+}
+
+/* ==========================================
+   FORM
+========================================== */
+
+.notification-form{
+
+    background:#ffffff;
+
+    max-width:850px;
+
+    margin:auto;
+
+    padding:35px;
+
+    border-radius:18px;
+
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+
+}
+
+.notification-form input,
+
+.notification-form textarea,
+
+.notification-form select{
+
+    width:100%;
+
+    padding:14px;
+
+    margin-bottom:20px;
+
+    border:1px solid #d1d5db;
+
+    border-radius:10px;
+
+    font-size:15px;
+
+    outline:none;
+
+    transition:.3s;
+
+    box-sizing:border-box;
+
+}
+
+.notification-form textarea{
+
+    min-height:150px;
+
+    resize:vertical;
+
+}
+
+.notification-form input:focus,
+
+.notification-form textarea:focus,
+
+.notification-form select:focus{
+
+    border-color:#2563eb;
+
+    box-shadow:0 0 0 3px rgba(37,99,235,.15);
+
+}
+
+/* ==========================================
+   BUTTON
+========================================== */
+
+.notification-form button{
+
+    width:100%;
+
+    padding:15px;
+
+    background:#2563eb;
+
+    color:white;
+
+    border:none;
+
+    border-radius:10px;
+
+    font-size:16px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:.3s;
+
+}
+
+.notification-form button:hover{
+
+    background:#1d4ed8;
+
+    transform:translateY(-2px);
+
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media(max-width:768px){
+
+.admin-notifications{
+
+padding:20px;
+
+}
+
+.notification-form{
+
+padding:20px;
+
+}
+
+}

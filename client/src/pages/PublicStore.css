@@ -1,0 +1,245 @@
+.public-store{
+
+    width:100%;
+
+    max-width:1400px;
+
+    margin:auto;
+
+    padding-bottom:40px;
+
+    background:#f5f7fb;
+
+}
+
+.store-banner{
+
+    height:320px;
+
+    background-size:cover;
+
+    background-position:center;
+
+    position:relative;
+
+    border-radius:0 0 20px 20px;
+
+    overflow:hidden;
+
+}
+
+.banner-overlay{
+
+    width:100%;
+
+    height:100%;
+
+    background:rgba(0,0,0,.45);
+
+    display:flex;
+
+    align-items:center;
+
+    gap:30px;
+
+    padding:50px;
+
+    color:#fff;
+
+}
+
+.store-logo{
+
+    width:170px;
+
+    height:170px;
+
+    border-radius:50%;
+
+    object-fit:cover;
+
+    border:6px solid #fff;
+
+    background:#fff;
+
+}
+
+.banner-overlay h1{
+
+    font-size:3rem;
+
+    margin-bottom:10px;
+
+}
+
+.banner-overlay p{
+
+    max-width:700px;
+
+    line-height:1.8;
+
+}
+
+.store-badges{
+
+    display:flex;
+
+    gap:15px;
+
+    margin-top:20px;
+
+}
+
+.store-badges span{
+
+    padding:8px 16px;
+
+    border-radius:30px;
+
+    font-weight:bold;
+
+}
+
+.verified{
+
+    background:#198754;
+
+    color:#fff;
+
+}
+
+.plan{
+
+    background:#0d6efd;
+
+    color:#fff;
+
+}
+
+.store-info{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+
+    gap:20px;
+
+    margin:40px;
+
+}
+
+.store-info div{
+
+    background:#fff;
+
+    padding:25px;
+
+    border-radius:12px;
+
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
+
+}
+
+.store-info h3{
+
+    margin-bottom:12px;
+
+    color:#0d6efd;
+
+}
+
+.store-products{
+
+    margin:40px;
+
+}
+
+.store-products h2{
+
+    margin-bottom:25px;
+
+    font-size:2rem;
+
+}
+
+.products{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+
+    gap:25px;
+
+}
+
+.loading{
+
+    min-height:300px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-size:2rem;
+
+    font-weight:bold;
+
+}
+
+@media(max-width:900px){
+
+.banner-overlay{
+
+flex-direction:column;
+
+text-align:center;
+
+padding:30px;
+
+}
+
+.store-logo{
+
+width:130px;
+
+height:130px;
+
+}
+
+.banner-overlay h1{
+
+font-size:2rem;
+
+}
+
+}
+
+@media(max-width:768px){
+
+.store-banner{
+
+height:auto;
+
+}
+
+.store-info{
+
+margin:20px;
+
+}
+
+.store-products{
+
+margin:20px;
+
+}
+
+.products{
+
+grid-template-columns:1fr;
+
+}
+
+}

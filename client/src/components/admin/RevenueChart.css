@@ -1,0 +1,33 @@
+.dashboard-widget{
+
+    background:#fff;
+
+    padding:25px;
+
+    border-radius:15px;
+
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+
+}
+
+.chart-placeholder{
+
+    height:300px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-size:22px;
+
+    color:#888;
+
+    border:2px dashed #ddd;
+
+    margin-top:20px;
+
+    border-radius:10px;
+
+}

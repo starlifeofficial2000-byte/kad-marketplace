@@ -1,0 +1,406 @@
+.dashboard{
+
+    padding:30px;
+
+    background:#f5f7fb;
+
+    min-height:100vh;
+
+}
+
+.dashboard-header{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:25px;
+
+    background:#fff;
+
+    padding:25px;
+
+    border-radius:15px;
+
+    box-shadow:0 5px 20px rgba(0,0,0,.08);
+
+    margin-bottom:30px;
+
+}
+
+.dashboard-avatar{
+
+    width:100px;
+
+    height:100px;
+
+    border-radius:50%;
+
+    border:4px solid #0A66C2;
+
+}
+
+.dashboard-header h1{
+
+    margin:0;
+
+    color:#222;
+
+}
+
+.dashboard-header p{
+
+    margin:8px 0;
+
+    color:#666;
+
+}
+
+.dashboard-role{
+
+    display:inline-block;
+
+    background:#0A66C2;
+
+    color:#fff;
+
+    padding:6px 15px;
+
+    border-radius:20px;
+
+    font-size:14px;
+
+}
+
+.summary-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+
+    gap:20px;
+
+    margin-bottom:35px;
+
+}
+
+.summary-card{
+
+    background:#fff;
+
+    border-radius:15px;
+
+    padding:25px;
+
+    text-align:center;
+
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
+
+    transition:.3s;
+
+}
+
+.summary-card:hover{
+
+    transform:translateY(-5px);
+
+}
+
+.summary-card svg{
+
+    font-size:32px;
+
+    color:#0A66C2;
+
+    margin-bottom:15px;
+
+}
+
+.summary-card h2{
+
+    margin:0;
+
+    font-size:30px;
+
+    color:#222;
+
+}
+
+.summary-card p{
+
+    margin-top:10px;
+
+    color:#666;
+
+}
+
+.subscription-card{
+
+    background:linear-gradient(135deg,#0A66C2,#1E3A8A);
+
+    color:white;
+
+    border-radius:15px;
+
+    padding:25px;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:35px;
+
+}
+
+.subscription-card>div{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:20px;
+
+}
+
+.subscription-icon{
+
+    font-size:45px;
+
+}
+
+.upgrade-btn{
+
+    background:#FFD700;
+
+    color:#222;
+
+    text-decoration:none;
+
+    padding:12px 25}
+    /* ==========================================
+   PAGE
+========================================== */
+
+.my-products-page{
+
+    width:100%;
+
+    padding:30px;
+
+}
+
+.my-products-page h1{
+
+    margin-bottom:30px;
+
+    font-size:2rem;
+
+    color:#222;
+
+}
+
+/* ==========================================
+   GRID
+========================================== */
+
+.seller-products{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+
+    gap:25px;
+
+}
+
+/* ==========================================
+   CARD
+========================================== */
+
+.seller-product-card{
+
+    background:#fff;
+
+    border-radius:15px;
+
+    overflow:hidden;
+
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+
+    transition:.3s;
+
+}
+
+.seller-product-card:hover{
+
+    transform:translateY(-5px);
+
+    box-shadow:0 12px 30px rgba(0,0,0,.15);
+
+}
+
+/* ==========================================
+   IMAGE
+========================================== */
+
+.seller-product-card img{
+
+    width:100%;
+
+    height:230px;
+
+    object-fit:cover;
+
+    display:block;
+
+    background:#f5f5f5;
+
+}
+
+/* ==========================================
+   TEXT
+========================================== */
+
+.seller-product-card h2{
+
+    padding:15px 15px 5px;
+
+    font-size:20px;
+
+    color:#222;
+
+}
+
+.seller-product-card h3{
+
+    padding:0 15px;
+
+    color:#198754;
+
+    font-size:22px;
+
+}
+
+.seller-product-card p{
+
+    padding:10px 15px;
+
+    color:#666;
+
+}
+
+/* ==========================================
+   STATUS
+========================================== */
+
+.seller-product-card span{
+
+    display:inline-block;
+
+    margin:0 15px 15px;
+
+    padding:6px 14px;
+
+    border-radius:20px;
+
+    font-size:13px;
+
+    font-weight:bold;
+
+}
+
+.new{
+
+    background:#d1e7dd;
+
+    color:#146c43;
+
+}
+
+.used{
+
+    background:#fff3cd;
+
+    color:#856404;
+
+}
+
+/* ==========================================
+   BUTTONS
+========================================== */
+
+.seller-actions{
+
+    display:flex;
+
+    gap:10px;
+
+    padding:15px;
+
+}
+
+.seller-actions button{
+
+    flex:1;
+
+    border:none;
+
+    border-radius:8px;
+
+    padding:10px;
+
+    cursor:pointer;
+
+    font-weight:bold;
+
+    transition:.3s;
+
+}
+
+.seller-actions button:nth-child(1){
+
+    background:#0d6efd;
+
+    color:white;
+
+}
+
+.seller-actions button:nth-child(2){
+
+    background:#198754;
+
+    color:white;
+
+}
+
+.seller-actions button:nth-child(3){
+
+    background:#dc3545;
+
+    color:white;
+
+}
+
+.seller-actions button:hover{
+
+    opacity:.9;
+
+    transform:scale(1.03);
+
+}
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media(max-width:768px){
+
+.seller-products{
+
+grid-template-columns:1fr;
+
+}
+
+}

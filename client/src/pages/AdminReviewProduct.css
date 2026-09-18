@@ -1,0 +1,171 @@
+.review-container{
+    width:90%;
+    max-width:1400px;
+    margin:40px auto;
+    display:flex;
+    gap:40px;
+}
+
+.gallery{
+    flex:1;
+}
+
+.main-image{
+    width:100%;
+    height:500px;
+    object-fit:cover;
+    border-radius:12px;
+    border:1px solid #ddd;
+}
+
+.thumbs{
+    display:flex;
+    gap:10px;
+    margin-top:15px;
+    flex-wrap:wrap;
+}
+
+.thumbs img{
+    width:90px;
+    height:90px;
+    object-fit:cover;
+    cursor:pointer;
+    border-radius:8px;
+    border:2px solid #ddd;
+    transition:.3s;
+}
+
+.thumbs img:hover{
+    border-color:#0d6efd;
+    transform:scale(1.05);
+}
+
+.review-info{
+    flex:1;
+    background:#fff;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 4px 15px rgba(0,0,0,.1);
+}
+
+.review-info h1{
+    margin-bottom:15px;
+}
+
+.review-info h2{
+    color:#28a745;
+    margin-bottom:20px;
+}
+
+.review-info p{
+    margin:12px 0;
+    line-height:1.6;
+}
+
+.review-info h3{
+    margin-top:25px;
+}
+
+.review-info button{
+    width:100%;
+    padding:15px;
+    margin-top:15px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    color:white;
+    font-size:17px;
+    font-weight:bold;
+}
+
+.approve{
+    background:#28a745;
+}
+
+.reject{
+    background:#dc3545;
+}
+
+.approve:hover{
+    background:#218838;
+}
+
+.reject:hover{
+    background:#bb2d3b;
+}
+
+@media(max-width:900px){
+
+.review-container{
+
+    flex-direction:column;
+
+}
+
+.main-image{
+
+    height:350px;
+
+}
+
+}
+.review-buttons{
+    display:flex;
+    gap:15px;
+    margin-top:30px;
+    flex-wrap:wrap;
+}
+
+.review-buttons button{
+    padding:14px 24px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:16px;
+    font-weight:bold;
+    transition:.3s;
+}
+
+/* APPROVE */
+
+.approve{
+    background:#22c55e;
+    color:white;
+}
+
+.approve:hover{
+    background:#16a34a;
+}
+
+/* REJECT */
+
+.reject{
+    background:#f59e0b;
+    color:white;
+}
+
+.reject:hover{
+    background:#d97706;
+}
+
+/* DELETE */
+
+.delete{
+    background:#ef4444;
+    color:white;
+}
+
+.delete:hover{
+    background:#dc2626;
+}
+
+/* BACK */
+
+.back{
+    background:#2563eb;
+    color:white;
+}
+
+.back:hover{
+    background:#1d4ed8;
+}

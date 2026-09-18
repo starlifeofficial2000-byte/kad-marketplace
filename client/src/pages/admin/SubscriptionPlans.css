@@ -1,0 +1,389 @@
+/* ==========================================
+   PAGE
+========================================== */
+
+.plans-page{
+
+    padding:30px;
+
+    animation:fadeIn .4s ease;
+
+}
+
+/* ==========================================
+   HEADER
+========================================== */
+
+.plans-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:30px;
+
+    flex-wrap:wrap;
+
+    gap:20px;
+
+}
+
+.plans-header h1{
+
+    font-size:34px;
+
+    color:#1e293b;
+
+}
+
+.plans-header p{
+
+    color:#64748b;
+
+    margin-top:8px;
+
+}
+
+.plans-header input{
+
+    width:300px;
+
+    padding:13px 18px;
+
+    border-radius:10px;
+
+    border:1px solid #dbe2ea;
+
+    outline:none;
+
+    margin-right:15px;
+
+}
+
+.plans-header input:focus{
+
+    border-color:#2563eb;
+
+}
+
+/* ==========================================
+   CREATE BUTTON
+========================================== */
+
+.create-btn{
+
+    padding:13px 22px;
+
+    background:#2563eb;
+
+    color:white;
+
+    border:none;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    font-weight:600;
+
+    transition:.3s;
+
+}
+
+.create-btn:hover{
+
+    background:#1d4ed8;
+
+}
+
+/* ==========================================
+   STATS
+========================================== */
+
+.plan-stats{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+
+    gap:20px;
+
+    margin-bottom:30px;
+
+}
+
+.stat-card{
+
+    background:white;
+
+    padding:25px;
+
+    border-radius:18px;
+
+    text-align:center;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.08);
+
+}
+
+.stat-card h2{
+
+    font-size:38px;
+
+    color:#2563eb;
+
+}
+
+.stat-card p{
+
+    color:#64748b;
+
+    margin-top:8px;
+
+}
+
+.active-card h2{
+
+    color:#22c55e;
+
+}
+
+.suspended-card h2{
+
+    color:#ef4444;
+
+}
+
+/* ==========================================
+   TABLE
+========================================== */
+
+.plans-table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    background:white;
+
+    border-radius:18px;
+
+    overflow:hidden;
+
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+
+}
+
+.plans-table thead{
+
+    background:#2563eb;
+
+    color:white;
+
+}
+
+.plans-table th{
+
+    padding:18px;
+
+    text-align:left;
+
+}
+
+.plans-table td{
+
+    padding:18px;
+
+    border-bottom:1px solid #edf2f7;
+
+}
+
+.plans-table tbody tr:hover{
+
+    background:#f8fafc;
+
+}
+
+/* ==========================================
+   STATUS
+========================================== */
+
+.status{
+
+    padding:8px 18px;
+
+    border-radius:30px;
+
+    color:white;
+
+    font-size:13px;
+
+    font-weight:600;
+
+}
+
+.active-status{
+
+    background:#22c55e;
+
+}
+
+.suspended-status{
+
+    background:#ef4444;
+
+}
+
+/* ==========================================
+   BUTTONS
+========================================== */
+
+.action-buttons{
+
+    display:flex;
+
+    gap:10px;
+
+    flex-wrap:wrap;
+
+}
+
+.action-buttons button{
+
+    border:none;
+
+    padding:10px 16px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    font-weight:600;
+
+    transition:.3s;
+
+}
+
+.view-btn{
+
+    background:#2563eb;
+
+    color:white;
+
+}
+
+.view-btn:hover{
+
+    background:#1d4ed8;
+
+}
+
+.approve-btn{
+
+    background:#22c55e;
+
+    color:white;
+
+}
+
+.approve-btn:hover{
+
+    background:#16a34a;
+
+}
+
+.reject-btn{
+
+    background:#f59e0b;
+
+    color:white;
+
+}
+
+.reject-btn:hover{
+
+    background:#d97706;
+
+}
+
+.delete-btn{
+
+    background:#ef4444;
+
+    color:white;
+
+}
+
+.delete-btn:hover{
+
+    background:#dc2626;
+
+}
+
+/* ==========================================
+   ANIMATION
+========================================== */
+
+@keyframes fadeIn{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(20px);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+
+    }
+
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media(max-width:900px){
+
+.plans-header{
+
+flex-direction:column;
+
+align-items:flex-start;
+
+}
+
+.plans-header input{
+
+width:100%;
+
+margin-bottom:10px;
+
+}
+
+.action-buttons{
+
+flex-direction:column;
+
+}
+
+}
+
+@media(max-width:700px){
+
+.plans-table{
+
+display:block;
+
+overflow-x:auto;
+
+}
+
+}

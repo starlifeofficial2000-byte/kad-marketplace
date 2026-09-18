@@ -1,0 +1,57 @@
+.admin-table-container{
+
+background:white;
+
+border-radius:15px;
+
+overflow:hidden;
+
+box-shadow:0 5px 20px rgba(0,0,0,.08);
+
+}
+
+.admin-table{
+
+width:100%;
+
+border-collapse:collapse;
+
+}
+
+.admin-table th{
+
+background:#2563eb;
+
+color:white;
+
+padding:16px;
+
+text-align:left;
+
+}
+
+.admin-table td{
+
+padding:15px;
+
+border-bottom:1px solid #eee;
+
+}
+
+.admin-table tr:hover{
+
+background:#f9fafb;
+
+}
+
+.empty{
+
+text-align:center;
+
+padding:40px;
+
+color:#888;
+
+font-size:18px;
+
+}

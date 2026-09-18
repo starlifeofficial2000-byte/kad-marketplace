@@ -1,0 +1,53 @@
+.action-buttons{
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:8px;
+
+}
+
+.action-buttons button{
+
+    border:none;
+
+    padding:8px 14px;
+
+    border-radius:6px;
+
+    cursor:pointer;
+
+    color:white;
+
+}
+
+.approve-btn{
+
+    background:#16a34a;
+
+}
+
+.reject-btn{
+
+    background:#dc2626;
+
+}
+
+.pause-btn{
+
+    background:#f59e0b;
+
+}
+
+.resume-btn{
+
+    background:#2563eb;
+
+}
+
+.delete-btn{
+
+    background:#7f1d1d;
+
+}

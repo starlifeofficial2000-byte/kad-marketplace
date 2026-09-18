@@ -1,0 +1,131 @@
+.login-history-page{
+
+    padding:30px;
+
+}
+
+.login-history-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:30px;
+
+    gap:20px;
+
+    flex-wrap:wrap;
+
+}
+
+.login-history-header h1{
+
+    margin:0;
+
+    color:#1e293b;
+
+}
+
+.login-history-header p{
+
+    color:#64748b;
+
+    margin-top:8px;
+
+}
+
+.login-history-header input{
+
+    width:320px;
+
+    max-width:100%;
+
+    padding:12px 15px;
+
+    border:1px solid #d1d5db;
+
+    border-radius:10px;
+
+    outline:none;
+
+    font-size:15px;
+
+}
+
+.login-history-table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    background:#fff;
+
+    border-radius:12px;
+
+    overflow:hidden;
+
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
+
+}
+
+.login-history-table thead{
+
+    background:#2563eb;
+
+    color:#fff;
+
+}
+
+.login-history-table th{
+
+    padding:16px;
+
+    text-align:left;
+
+}
+
+.login-history-table td{
+
+    padding:16px;
+
+    border-bottom:1px solid #e5e7eb;
+
+}
+
+.login-history-table tbody tr:hover{
+
+    background:#f8fafc;
+
+}
+
+.success{
+
+    color:#16a34a;
+
+    font-weight:600;
+
+}
+
+.failed{
+
+    color:#dc2626;
+
+    font-weight:600;
+
+}
+
+@media(max-width:900px){
+
+    .login-history-table{
+
+        display:block;
+
+        overflow-x:auto;
+
+        white-space:nowrap;
+
+    }
+
+}

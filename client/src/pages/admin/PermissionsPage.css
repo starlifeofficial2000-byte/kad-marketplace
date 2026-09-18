@@ -1,0 +1,309 @@
+.permissions-page{
+
+    padding:30px;
+
+    max-width:1400px;
+
+    margin:auto;
+
+}
+
+.permissions-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:25px;
+
+    gap:20px;
+
+    flex-wrap:wrap;
+
+}
+
+.permissions-header h1{
+
+    margin:0;
+
+    font-size:32px;
+
+    color:#1f2937;
+
+}
+
+.permissions-header p{
+
+    margin-top:8px;
+
+    color:#6b7280;
+
+}
+
+.permissions-header input{
+
+    width:320px;
+
+    max-width:100%;
+
+    padding:12px 15px;
+
+    border:1px solid #d1d5db;
+
+    border-radius:10px;
+
+    outline:none;
+
+    font-size:15px;
+
+    transition:.3s;
+
+}
+
+.permissions-header input:focus{
+
+    border-color:#2563eb;
+
+    box-shadow:0 0 0 3px rgba(37,99,235,.15);
+
+}
+
+.permission-form{
+
+    background:#ffffff;
+
+    border-radius:15px;
+
+    padding:25px;
+
+    margin-bottom:30px;
+
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
+
+}
+
+.permission-form input,
+
+.permission-form textarea{
+
+    width:100%;
+
+    margin-bottom:18px;
+
+    padding:12px 15px;
+
+    border:1px solid #d1d5db;
+
+    border-radius:10px;
+
+    font-size:15px;
+
+    outline:none;
+
+    box-sizing:border-box;
+
+    transition:.3s;
+
+}
+
+.permission-form textarea{
+
+    resize:vertical;
+
+    min-height:100px;
+
+}
+
+.permission-form input:focus,
+
+.permission-form textarea:focus{
+
+    border-color:#2563eb;
+
+    box-shadow:0 0 0 3px rgba(37,99,235,.15);
+
+}
+
+.permission-form button{
+
+    background:#2563eb;
+
+    color:#fff;
+
+    border:none;
+
+    padding:12px 30px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    font-size:15px;
+
+    transition:.3s;
+
+}
+
+.permission-form button:hover{
+
+    background:#1d4ed8;
+
+}
+
+.permission-table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    background:#fff;
+
+    border-radius:15px;
+
+    overflow:hidden;
+
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
+
+}
+
+.permission-table thead{
+
+    background:#2563eb;
+
+    color:#fff;
+
+}
+
+.permission-table th{
+
+    padding:16px;
+
+    text-align:left;
+
+    font-size:15px;
+
+}
+
+.permission-table td{
+
+    padding:16px;
+
+    border-bottom:1px solid #f1f5f9;
+
+    color:#374151;
+
+}
+
+.permission-table tbody tr{
+
+    transition:.3s;
+
+}
+
+.permission-table tbody tr:hover{
+
+    background:#f8fafc;
+
+}
+
+.edit-btn{
+
+    background:#f59e0b;
+
+    color:#fff;
+
+    border:none;
+
+    padding:8px 18px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    margin-right:10px;
+
+    transition:.3s;
+
+}
+
+.edit-btn:hover{
+
+    background:#d97706;
+
+}
+
+.delete-btn{
+
+    background:#ef4444;
+
+    color:#fff;
+
+    border:none;
+
+    padding:8px 18px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    transition:.3s;
+
+}
+
+.delete-btn:hover{
+
+    background:#dc2626;
+
+}
+
+@media(max-width:900px){
+
+    .permission-table{
+
+        display:block;
+
+        overflow-x:auto;
+
+        white-space:nowrap;
+
+    }
+
+}
+
+@media(max-width:768px){
+
+    .permissions-page{
+
+        padding:15px;
+
+    }
+
+    .permissions-header{
+
+        flex-direction:column;
+
+        align-items:flex-start;
+
+    }
+
+    .permissions-header input{
+
+        width:100%;
+
+    }
+
+    .permission-form{
+
+        padding:18px;
+
+    }
+
+    .permission-form button{
+
+        width:100%;
+
+    }
+
+}

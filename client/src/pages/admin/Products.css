@@ -1,0 +1,198 @@
+.products-page{
+
+padding:25px;
+
+}
+
+.products-header{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+margin-bottom:25px;
+
+}
+
+.products-header input{
+
+width:350px;
+
+padding:12px;
+
+border-radius:8px;
+
+border:1px solid #ddd;
+
+}
+
+.products-table{
+
+width:100%;
+
+background:white;
+
+border-collapse:collapse;
+
+border-radius:15px;
+
+overflow:hidden;
+
+box-shadow:0 5px 15px rgba(0,0,0,.08);
+
+}
+
+.products-table th{
+
+background:#2563eb;
+
+color:white;
+
+padding:15px;
+
+}
+
+.products-table td{
+
+padding:15px;
+
+border-bottom:1px solid #eee;
+
+}
+
+.product-thumb{
+
+width:60px;
+
+height:60px;
+
+object-fit:cover;
+
+border-radius:8px;
+
+}
+
+/*
+
+.products-table button{
+
+margin:3px;
+
+padding:8px 12px;
+
+border:none;
+
+background:#2563eb;
+
+color:white;
+
+border-radius:6px;
+
+cursor:pointer;
+
+}
+/*
+/* ===========================
+   ACTION BUTTONS
+=========================== */
+
+.actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.actions button{
+    border:none;
+    padding:10px 18px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+    color:#fff;
+    transition:.3s;
+}
+
+/* View */
+
+.view-btn{
+    background:#2563eb;
+}
+
+.view-btn:hover{
+    background:#1d4ed8;
+}
+
+/* Approve */
+
+.approve-btn{
+    background:#22c55e;
+}
+
+.approve-btn:hover{
+    background:#16a34a;
+}
+
+/* Reject */
+
+.reject-btn{
+    background:#f59e0b;
+}
+
+.reject-btn:hover{
+    background:#d97706;
+}
+
+/* Delete */
+
+.delete-btn{
+    background:#ef4444;
+}
+
+.delete-btn:hover{
+    background:#dc2626;
+}
+/* ==========================
+STATUS BADGES
+========================== */
+
+.status{
+
+    display:inline-block;
+
+    padding:7px 16px;
+
+    border-radius:20px;
+
+    color:#fff;
+
+    font-size:13px;
+
+    font-weight:bold;
+
+}
+
+.status.pending{
+
+    background:#f59e0b;
+
+}
+
+.status.approved{
+
+    background:#22c55e;
+
+}
+
+.status.rejected{
+
+    background:#ef4444;
+
+}
+
+.status.sold{
+
+    background:#64748b;
+
+}

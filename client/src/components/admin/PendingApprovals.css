@@ -1,0 +1,17 @@
+.approval-list{
+
+    list-style:none;
+
+    padding:0;
+
+    margin-top:20px;
+
+}
+
+.approval-list li{
+
+    padding:15px;
+
+    border-bottom:1px solid #eee;
+
+}

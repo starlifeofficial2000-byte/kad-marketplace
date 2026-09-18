@@ -1,0 +1,62 @@
+.category-section{
+
+    padding:60px 8%;
+
+}
+
+.category-section h2{
+
+    text-align:center;
+
+    margin-bottom:40px;
+
+}
+
+.category-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+
+    gap:20px;
+
+}
+
+.category-card{
+
+    background:white;
+
+    border-radius:15px;
+
+    padding:30px;
+
+    text-align:center;
+
+    cursor:pointer;
+
+    transition:.3s;
+
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
+
+}
+
+.category-card:hover{
+
+    transform:translateY(-8px);
+
+}
+
+.category-card span{
+
+    font-size:45px;
+
+}
+.category-card p{
+
+    margin-top:10px;
+
+    color:#777;
+
+    font-size:14px;
+
+}

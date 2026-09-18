@@ -1,0 +1,200 @@
+/* ==========================================
+   TRENDING PRODUCTS
+========================================== */
+
+.trending-products{
+
+    margin:60px 0;
+
+}
+
+.trending-products .section-header{
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+
+}
+
+.trending-products .section-header h2{
+
+    font-size:30px;
+    color:#111110;
+    font-weight:700;
+
+}
+
+.trending-products .section-header a{
+
+    color:#0f0e0e;
+    text-decoration:none;
+    font-weight:600;
+    transition:.3s;
+
+}
+
+.trending-products .section-header a:hover{
+
+    color:#e64a19;
+
+}
+
+.carousel-wrapper{
+
+    position:relative;
+
+}
+
+.trending-slider{
+
+    display:flex;
+    gap:20px;
+    overflow-x:auto;
+    scroll-behavior:smooth;
+    scrollbar-width:none;
+    padding:10px 5px 20px;
+
+}
+
+.trending-slider::-webkit-scrollbar{
+
+    display:none;
+
+}
+
+.trending-card{
+
+    min-width:270px;
+    max-width:270px;
+    background:#fff;
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 8px 25px rgba(0,0,0,.12);
+    transition:.35s;
+    flex-shrink:0;
+
+}
+
+.trending-card:hover{
+
+    transform:translateY(-8px);
+    box-shadow:0 15px 35px rgba(0,0,0,.18);
+
+}
+
+.trending-card img{
+
+    width:100%;
+    height:220px;
+    object-fit:cover;
+    transition:.4s;
+
+}
+
+.trending-card:hover img{
+
+    transform:scale(1.08);
+
+}
+
+.trending-info{
+
+    padding:18px;
+
+}
+
+.trending-info h3{
+
+    font-size:18px;
+    margin-bottom:10px;
+    color:#222;
+
+}
+
+.trending-info h2{
+
+    color:#ff5722;
+    margin-bottom:10px;
+    font-size:22px;
+
+}
+
+.trending-info p{
+
+    color:#666;
+    margin-bottom:15px;
+
+}
+
+.details-btn{
+
+    display:inline-block;
+    background:#ff5722;
+    color:#fff;
+    padding:10px 18px;
+    border-radius:8px;
+    text-decoration:none;
+    transition:.3s;
+
+}
+
+.details-btn:hover{
+
+    background:#e64a19;
+
+}
+
+.carousel-btn{
+
+    position:absolute;
+    top:45%;
+    transform:translateY(-50%);
+    width:45px;
+    height:45px;
+    border:none;
+    border-radius:50%;
+    background:white;
+    box-shadow:0 4px 15px rgba(0,0,0,.2);
+    cursor:pointer;
+    font-size:22px;
+    z-index:10;
+    transition:.3s;
+
+}
+
+.carousel-btn.left{
+
+    left:-18px;
+
+}
+
+.carousel-btn.right{
+
+    right:-18px;
+
+}
+
+.carousel-btn:hover{
+
+    background:#ff5722;
+    color:white;
+
+}
+
+@media(max-width:768px){
+
+    .trending-card{
+
+        min-width:220px;
+        max-width:220px;
+
+    }
+
+    .carousel-btn{
+
+        display:none;
+
+    }
+
+}

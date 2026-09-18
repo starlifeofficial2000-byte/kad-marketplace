@@ -1,0 +1,126 @@
+.homepage-builder{
+
+    padding:30px;
+
+}
+
+.builder-header{
+
+    margin-bottom:30px;
+
+}
+
+.builder-header h1{
+
+    margin-bottom:8px;
+
+}
+
+.builder-tabs{
+
+    display:flex;
+
+    gap:15px;
+
+    margin-bottom:30px;
+
+    flex-wrap:wrap;
+
+}
+
+.builder-tabs button{
+
+    padding:12px 25px;
+
+    border:none;
+
+    cursor:pointer;
+
+    border-radius:8px;
+
+    background:#ececec;
+
+    font-weight:600;
+
+    transition:.3s;
+
+}
+
+.builder-tabs button:hover{
+
+    background:#0A66C2;
+
+    color:white;
+
+}
+
+.builder-tabs .active{
+
+    background:#0A66C2;
+
+    color:white;
+
+}
+
+.builder-content{
+
+    background:white;
+
+    border-radius:12px;
+
+    padding:25px;
+
+    box-shadow:0 5px 20px rgba(0,0,0,.08);
+
+}/* ==========================================
+   BANNER FORM
+========================================== */
+
+.banner-form{
+
+    background:#fff;
+    padding:25px;
+    border-radius:15px;
+    box-shadow:0 5px 20px rgba(0,0,0,.08);
+    margin-bottom:30px;
+
+}
+
+.banner-form input,
+.banner-form textarea,
+.banner-form select{
+
+    width:100%;
+    padding:12px 15px;
+    margin-bottom:15px;
+    border:1px solid #ddd;
+    border-radius:8px;
+    font-size:15px;
+
+}
+
+.banner-form textarea{
+
+    resize:none;
+    min-height:120px;
+
+}
+
+.banner-form button{
+
+    background:#ff9800;
+    color:white;
+    border:none;
+    padding:12px 25px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:16px;
+    transition:.3s;
+
+}
+
+.banner-form button:hover{
+
+    background:#f57c00;
+
+}

@@ -1,0 +1,41 @@
+.page-container{
+
+    padding:30px;
+
+}
+
+.admin-table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    background:white;
+
+    box-shadow:0 5px 20px rgba(0,0,0,.08);
+
+}
+
+.admin-table th{
+
+    background:#2563eb;
+
+    color:white;
+
+    padding:15px;
+
+}
+
+.admin-table td{
+
+    padding:15px;
+
+    border-bottom:1px solid #eee;
+
+}
+
+.admin-table tr:hover{
+
+    background:#f8fafc;
+
+}

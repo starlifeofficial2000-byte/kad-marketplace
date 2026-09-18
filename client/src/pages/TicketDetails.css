@@ -1,0 +1,237 @@
+/* ==========================================
+   TICKET DETAILS
+========================================== */
+
+.ticket-details{
+
+    background:#f5f7fb;
+
+    min-height:100vh;
+
+    padding:40px;
+
+    display:flex;
+
+    justify-content:center;
+
+}
+
+.ticket-card{
+
+    width:100%;
+
+    max-width:900px;
+
+    background:#fff;
+
+    border-radius:18px;
+
+    padding:35px;
+
+    box-shadow:0 12px 35px rgba(0,0,0,.08);
+
+}
+
+.ticket-card h1{
+
+    color:#1e293b;
+
+    margin-bottom:30px;
+
+    font-size:30px;
+
+    font-weight:700;
+
+}
+
+/* ==========================================
+   INFORMATION
+========================================== */
+
+.ticket-info{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+
+    gap:20px;
+
+    margin-bottom:35px;
+
+}
+
+.ticket-info p{
+
+    background:#f8fafc;
+
+    padding:15px;
+
+    border-radius:10px;
+
+    color:#475569;
+
+}
+
+.ticket-info strong{
+
+    display:block;
+
+    margin-bottom:8px;
+
+    color:#1e293b;
+
+}
+
+/* ==========================================
+   STATUS
+========================================== */
+
+.status{
+
+    display:inline-block;
+
+    padding:6px 14px;
+
+    border-radius:30px;
+
+    color:#fff;
+
+    font-size:13px;
+
+    font-weight:600;
+
+}
+
+.status.open{
+
+    background:#f59e0b;
+
+}
+
+.status.pending{
+
+    background:#3b82f6;
+
+}
+
+.status.answered{
+
+    background:#10b981;
+
+}
+
+.status.closed{
+
+    background:#64748b;
+
+}
+
+/* ==========================================
+   MESSAGE BOX
+========================================== */
+
+.message-box,
+
+.reply-box{
+
+    margin-top:25px;
+
+    background:#f8fafc;
+
+    padding:25px;
+
+    border-radius:12px;
+
+}
+
+.message-box h2,
+
+.reply-box h2{
+
+    color:#2563eb;
+
+    margin-bottom:15px;
+
+    font-size:20px;
+
+}
+
+.message-box p,
+
+.reply-box p{
+
+    color:#475569;
+
+    line-height:1.8;
+
+}
+
+/* ==========================================
+   WAITING
+========================================== */
+
+.waiting{
+
+    color:#ef4444;
+
+    font-style:italic;
+
+    font-weight:600;
+
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media(max-width:768px){
+
+.ticket-details{
+
+padding:20px;
+
+}
+
+.ticket-card{
+
+padding:25px;
+
+}
+
+.ticket-card h1{
+
+font-size:24px;
+
+}
+
+.ticket-info{
+
+grid-template-columns:1fr;
+
+}
+
+}
+
+@media(max-width:500px){
+
+.ticket-card{
+
+padding:18px;
+
+}
+
+.ticket-card h1{
+
+font-size:22px;
+
+}
+
+.message-box,
+
+.reply-box{
+
+padding:18px;
+
+}
+
+}

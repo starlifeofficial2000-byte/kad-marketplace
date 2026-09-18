@@ -1,0 +1,484 @@
+/* ======================================
+   HOME PAGE
+====================================== */
+
+body{
+
+    background:#ffffff;
+
+}
+
+/* ======================================
+   SEARCH SECTION
+====================================== */
+
+.home-search{
+
+    width:90%;
+
+    max-width:900px;
+
+    margin:40px auto;
+
+    text-align:center;
+background: #fcfafa;
+}
+
+.home-search h1{
+
+    font-size:42px;
+
+    color:#222;
+
+    margin-bottom:10px;
+
+}
+
+.home-search p{
+
+    color:#666;
+
+    font-size:18px;
+
+    margin-bottom:30px;
+
+}
+
+.home-search input{
+
+    width:100%;
+
+    padding:18px 25px;
+
+    border:none;
+
+    border-radius:50px;
+
+    font-size:18px;
+
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+
+    outline:none;
+
+    transition:.3s;
+
+}
+
+.home-search input:focus{
+
+    box-shadow:0 8px 25px rgba(10,102,194,.25);
+
+}
+
+/* ======================================
+   CATEGORY SECTION
+====================================== */
+
+.category-section{
+
+    padding:20px 40px;
+
+}
+
+.category-section h2{
+
+    text-align:center;
+
+    font-size:32px;
+
+    margin-bottom:25px;
+
+}
+
+.categories{
+
+    display:flex;
+
+    justify-content:center;
+
+    flex-wrap:wrap;
+
+    gap:18px;
+
+}
+
+
+
+.categories button:hover{
+
+    background:#0A66C2;
+
+    color:white;
+
+    transform:translateY(-6px);
+
+}
+
+/* ======================================
+   PRODUCT SECTION
+====================================== */
+
+.products-section{
+
+    padding:50px 40px;
+
+}
+
+.section-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:30px;
+
+}
+
+.section-header h2{
+
+    font-size:34px;
+
+    color:#222;
+
+}
+
+.section-header span{
+
+    background:#0A66C2;
+
+    color:white;
+
+    padding:8px 18px;
+
+    border-radius:20px;
+
+    font-weight:600;
+
+}
+
+.products{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+
+    gap:20px;
+
+}
+
+/* ======================================
+   EMPTY PRODUCTS
+====================================== */
+
+.empty-products{
+
+    background:linear-gradient(to left, rgb(154, 160, 189),rgb(240, 235, 235),rgb(138, 223, 238));
+
+    padding:60px;
+
+    text-align:center;
+
+    border-radius:20px;
+
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+
+}
+
+.empty-products h2{
+
+    color:#333;
+
+    margin-bottom:10px;
+
+}
+
+.empty-products p{
+
+    color:#777;
+
+}
+
+/* ======================================
+   PRODUCT CARDS ANIMATION
+====================================== */
+
+.products>*{
+
+    transition:.35s;
+
+}
+
+.products>*:hover{
+
+    transform:translateY(-10px);
+
+}
+
+/* ======================================
+   RESPONSIVE
+====================================== */
+
+@media(max-width:992px){
+
+.section-header{
+
+flex-direction:column;
+
+gap:15px;
+
+}
+
+.home-search h1{
+
+font-size:32px;
+
+}
+
+.home-search p{
+
+font-size:16px;
+
+}
+
+.products-section{
+
+padding:30px 20px;
+
+}
+
+.category-section{
+
+padding:20px;
+
+}
+
+}
+
+@media(max-width:600px){
+
+.home-search input{
+
+font-size:16px;
+
+padding:15px;
+
+}
+
+.categories button{
+
+width:100%;
+
+}
+
+.products{
+
+grid-template-columns:1fr;
+
+}
+
+}
+/* ======================================
+   MARKET FILTERS
+====================================== */
+
+.market-filters{
+
+    width:90%;
+
+    max-width:1300px;
+
+    margin:30px auto 50px;
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+
+    gap:18px;
+
+}
+
+.market-filters input,
+
+.market-filters select{
+
+    width:100%;
+
+    padding:15px 18px;
+
+    border:1px solid #ddd;
+
+    border-radius:12px;
+
+    background:#fff;
+
+    font-size:16px;
+
+    outline:none;
+
+    transition:.3s;
+
+    box-shadow:0 5px 15px rgba(0,0,0,.06);
+
+}
+
+.market-filters input:focus,
+
+.market-filters select:focus{
+
+    border-color:#0A66C2;
+
+    box-shadow:0 0 0 4px rgba(10,102,194,.15);
+
+}
+
+.market-filters input:hover,
+
+.market-filters select:hover{
+
+    border-color:#0A66C2;
+
+}
+.home-page{
+
+    background:linear-gradient(to left, rgb(154, 160, 189),rgb(240, 235, 235),rgb(138, 223, 238));
+
+}
+.category-section {
+    width: 100%;
+    max-width: 1400px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.category-header h2 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.category-header p {
+    margin-top: 6px;
+    color: #777;
+}
+
+.show-all-btn {
+    border: none;
+    background: #0A66C2;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.show-all-btn:hover {
+    background: #084e94;
+}
+
+.categories-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+}
+
+.category-card {
+    border: 1px solid #e5e7eb;
+    background: white;
+    border-radius: 12px;
+    padding: 20px 12px;
+    cursor: pointer;
+    transition: 0.25s ease;
+    text-align: center;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    border-color: #0A66C2;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+.category-card.active {
+    background: #eff6ff;
+    border-color: #0A66C2;
+    box-shadow: 0 0 0 2px rgba(10, 102, 194, 0.15);
+}
+
+.category-icon {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.category-card h3 {
+    font-size: 14px;
+    margin: 0 0 8px;
+    color: #222;
+}
+
+.category-card span {
+    font-size: 12px;
+    color: #777;
+}
+
+
+/* TABLET */
+
+@media (max-width: 1024px) {
+
+    .categories-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+}
+
+
+/* MOBILE */
+
+@media (max-width: 700px) {
+
+    .category-section {
+        margin: 25px auto;
+        padding: 0 12px;
+    }
+
+    .category-header h2 {
+        font-size: 22px;
+    }
+
+    .categories-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+
+    .category-card {
+        padding: 14px 6px;
+    }
+
+    .category-icon {
+        font-size: 26px;
+    }
+
+    .category-card h3 {
+        font-size: 11px;
+    }
+
+}
+
+
+/* SMALL MOBILE */
+
+@media (max-width: 400px) {
+
+    .categories-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+}

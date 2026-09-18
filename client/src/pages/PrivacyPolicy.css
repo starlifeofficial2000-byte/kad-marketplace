@@ -1,0 +1,130 @@
+.privacy-hero{
+
+    height:350px;
+
+    background:linear-gradient(rgba(0,0,0,.65),rgba(0,0,0,.65)),
+    url("https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1600") center/cover;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    text-align:center;
+
+    color:white;
+
+}
+
+.privacy-overlay{
+
+    width:90%;
+
+    max-width:900px;
+
+}
+
+.privacy-overlay h1{
+
+    font-size:52px;
+
+    margin-bottom:20px;
+
+}
+
+.privacy-overlay p{
+
+    font-size:20px;
+
+    line-height:1.8;
+
+}
+
+.privacy-container{
+
+    width:90%;
+
+    max-width:1200px;
+
+    margin:70px auto;
+
+}
+
+.privacy-card{
+
+    background:white;
+
+    padding:35px;
+
+    margin-bottom:30px;
+
+    border-radius:15px;
+
+    box-shadow:0 8px 25px rgba(0,0,0,.08);
+
+    transition:.3s;
+
+}
+
+.privacy-card:hover{
+
+    transform:translateY(-5px);
+
+}
+
+.privacy-card h2{
+
+    color:#ff9800;
+
+    margin-bottom:20px;
+
+}
+
+.privacy-card p{
+
+    color:#555;
+
+    line-height:1.9;
+
+    font-size:17px;
+
+}
+
+.privacy-card ul{
+
+    padding-left:20px;
+
+}
+
+.privacy-card li{
+
+    margin-bottom:12px;
+
+    color:#555;
+
+    line-height:1.8;
+
+}
+
+@media(max-width:768px){
+
+.privacy-overlay h1{
+
+font-size:38px;
+
+}
+
+.privacy-overlay p{
+
+font-size:17px;
+
+}
+
+.privacy-card{
+
+padding:25px;
+
+}
+
+}

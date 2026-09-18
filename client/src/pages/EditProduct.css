@@ -1,0 +1,89 @@
+.edit-page{
+
+    max-width:1000px;
+
+    margin:40px auto;
+
+    padding:20px;
+
+}
+
+.edit-form{
+
+    background:white;
+
+    padding:40px;
+
+    border-radius:20px;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.08);
+
+}
+
+.edit-form h1{
+
+    margin-bottom:25px;
+
+    color:#0A66C2;
+
+}
+
+.edit-form input,
+.edit-form select,
+.edit-form textarea{
+
+    width:100%;
+
+    padding:15px;
+
+    margin-bottom:20px;
+
+    border:1px solid #ddd;
+
+    border-radius:10px;
+
+}
+
+.old-images{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+
+    gap:20px;
+
+    margin:20px 0;
+
+}
+
+.old-images img{
+
+    width:100%;
+
+    height:150px;
+
+    object-fit:cover;
+
+    border-radius:12px;
+
+}
+
+.edit-form button{
+
+    width:100%;
+
+    padding:18px;
+
+    background:#0A66C2;
+
+    color:white;
+
+    border:none;
+
+    border-radius:10px;
+
+    font-size:18px;
+
+    cursor:pointer;
+
+}

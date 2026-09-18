@@ -1,0 +1,1436 @@
+require("dotenv").config();
+
+const express = require("express");
+const http = require("http");
+const path = require("path");
+const cors = require("cors");
+const helmet = require("helmet");
+const { Server } = require("socket.io");
+
+const sequelize = require("./config/database");
+
+
+/* =====================================================
+   LOAD MODELS AND ASSOCIATIONS
+===================================================== */
+
+require("./models");
+
+
+/* =====================================================
+   ROUTES
+===================================================== */
+
+const authRoutes = require("./routes/authRoutes");
+const productRoutes = require("./routes/productRoutes");
+const messageRoutes = require("./routes/messageRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const userRoutes = require("./routes/userRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
+
+const notificationRoutes =
+    require("./routes/notificationRoutes");
+
+const reportRoutes =
+    require("./routes/reportRoutes");
+
+const sellerRoutes =
+    require("./routes/sellerRoutes");
+
+const storeRoutes =
+    require("./routes/storeRoutes");
+
+const storeFollowRoutes =
+    require("./routes/storeFollowRoutes");
+
+const subscriptionRoutes =
+    require("./routes/subscriptionRoutes");
+
+const subscriptionPlanRoutes =
+    require("./routes/subscriptionPlanRoutes");
+
+const paymentRoutes =
+    require("./routes/paymentRoutes");
+
+const promotionRoutes =
+    require("./routes/promotionRoutes");
+
+const analyticsRoutes =
+    require("./routes/analyticsRoutes");
+
+const featuredProductRoutes =
+    require("./routes/featuredProductRoutes");
+
+const categoryRoutes =
+    require("./routes/categoryRoutes");
+
+const supportRoutes =
+    require("./routes/supportRoutes");
+
+const searchRoutes =
+    require("./routes/searchRoutes");
+
+const settingsRoutes =
+    require("./routes/settingsRoutes");
+
+const marketplaceSettingsRoutes =
+    require("./routes/marketplaceSettingsRoutes");
+
+const adminProductRoutes =
+    require("./routes/adminProductRoutes");
+
+const adminStoreRoutes =
+    require("./routes/adminStoreRoutes");
+
+const adminAdvertisementRoutes =
+    require("./routes/adminAdvertisementRoutes");
+
+const adminPaymentRoutes =
+    require("./routes/adminPaymentRoutes");
+
+const adminRevenueRoutes =
+    require("./routes/adminRevenueRoutes");
+
+const advertisementRoutes =
+    require("./routes/advertisementRoutes");
+
+const adminSubscriptionPlanRoutes =
+    require("./routes/adminSubscriptionPlanRoutes");
+
+const adminNotificationRoutes =
+    require("./routes/adminNotificationRoutes");
+
+const adminSettingsRoutes =
+    require("./routes/adminSettingsRoutes");
+
+const adminSupportRoutes =
+    require("./routes/adminSupportRoutes");
+
+const wishlistRoutes =
+    require("./routes/wishlistRoutes");
+
+const leadRoutes =
+    require("./routes/leadRoutes");
+
+const homeBuilderRoutes =
+    require("./routes/homeBuilderRoutes");
+
+const contactRoutes =
+    require("./routes/contactRoutes");
+
+const securityRoutes =
+    require("./routes/securityRoutes");
+
+const roleRoutes =
+    require("./routes/roleRoutes");
+
+const permissionRoutes =
+    require("./routes/permissionRoutes");
+
+const backupRoutes =
+    require("./routes/backupRoutes");
+
+const auditLogRoutes =
+    require("./routes/auditLogRoutes");
+
+const userSettingsRoutes =
+    require("./routes/userSettingsRoutes");
+
+const adminSecurityRoutes = require(
+    "./routes/adminSecurityRoutes"
+);
+
+/* =====================================================
+   MIDDLEWARE
+===================================================== */
+
+const maintenanceMode =
+    require("./middleware/maintenanceMode");
+
+
+/* =====================================================
+   SERVICES
+===================================================== */
+
+const PromotionService =
+    require("./services/promotionService");
+
+
+/* =====================================================
+   BACKGROUND JOBS
+===================================================== */
+
+require("./jobs/subscriptionCron");
+
+
+/* =====================================================
+   EXPRESS APPLICATION
+===================================================== */
+
+const app = express();
+
+const server = http.createServer(app);
+
+
+/* =====================================================
+   ENVIRONMENT
+===================================================== */
+
+const NODE_ENV =
+    process.env.NODE_ENV || "development";
+
+const PORT =
+    process.env.PORT || 5000;
+
+
+/* =====================================================
+   SECURITY
+===================================================== */
+
+app.use(
+    helmet({
+        crossOriginResourcePolicy: {
+            policy: "cross-origin"
+        }
+    })
+);
+
+
+/* =====================================================
+   CORS CONFIGURATION
+===================================================== */
+
+const allowedOrigins = [
+
+    /* Local Development */
+
+    "http://localhost:5173",
+
+    "http://127.0.0.1:5173",
+
+    /* Production Frontend */
+
+    process.env.FRONTEND_URL
+
+].filter(Boolean);
+
+
+/* Allow multiple production domains if needed */
+
+if (process.env.FRONTEND_URLS) {
+
+    process.env.FRONTEND_URLS
+        .split(",")
+        .map((url) => url.trim())
+        .filter(Boolean)
+        .forEach((url) => {
+
+            if (!allowedOrigins.includes(url)) {
+
+                allowedOrigins.push(url);
+
+            }
+
+        });
+
+}
+
+
+console.log(
+    "🌐 Allowed CORS Origins:",
+    allowedOrigins
+);
+
+
+const corsOptions = {
+
+    origin: (origin, callback) => {
+
+        /*
+           Allow requests without Origin.
+
+           Examples:
+           - Postman
+           - Mobile applications
+           - Server-to-server requests
+        */
+
+        if (!origin) {
+
+            return callback(
+                null,
+                true
+            );
+
+        }
+
+
+        if (
+
+            allowedOrigins.includes(origin)
+
+        ) {
+
+            return callback(
+                null,
+                true
+            );
+
+        }
+
+
+        console.warn(
+            "❌ CORS BLOCKED:",
+            origin
+        );
+
+
+        return callback(
+            new Error(
+                `Not allowed by CORS: ${origin}`
+            )
+        );
+
+    },
+
+    credentials: true,
+
+    methods: [
+
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "OPTIONS"
+
+    ],
+
+    allowedHeaders: [
+
+        "Content-Type",
+        "Authorization"
+
+    ]
+
+};
+
+
+app.use(
+    cors(corsOptions)
+);
+
+
+/* =====================================================
+   BODY PARSERS
+===================================================== */
+
+app.use(
+    express.json({
+        limit: "10mb"
+    })
+);
+
+
+app.use(
+    express.urlencoded({
+
+        extended: true,
+
+        limit: "10mb"
+
+    })
+);
+
+
+/* =====================================================
+   STATIC FILES
+===================================================== */
+
+app.use(
+
+    "/uploads",
+
+    express.static(
+
+        path.join(
+            __dirname,
+            "uploads"
+        )
+
+    )
+
+);
+
+
+/* =====================================================
+   SOCKET.IO
+===================================================== */
+
+const io = new Server(
+
+    server,
+
+    {
+
+        cors: {
+
+            origin: (
+
+                origin,
+
+                callback
+
+            ) => {
+
+                if (!origin) {
+
+                    return callback(
+                        null,
+                        true
+                    );
+
+                }
+
+
+                if (
+
+                    allowedOrigins.includes(origin)
+
+                ) {
+
+                    return callback(
+                        null,
+                        true
+                    );
+
+                }
+
+
+                return callback(
+                    new Error(
+                        "Socket.IO CORS blocked."
+                    )
+                );
+
+            },
+
+            methods: [
+
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
+                "DELETE"
+
+            ],
+
+            credentials: true
+
+        }
+
+    }
+
+);
+
+
+app.set(
+    "io",
+    io
+);
+
+
+/* =====================================================
+   HEALTH CHECK
+===================================================== */
+
+app.get(
+
+    "/api/health",
+
+    async (req, res) => {
+
+        try {
+
+            await sequelize.authenticate();
+
+
+            return res.status(200).json({
+
+                success: true,
+
+                status: "healthy",
+
+                environment: NODE_ENV,
+
+                database: "connected",
+
+                timestamp:
+                    new Date().toISOString()
+
+            });
+
+        }
+
+        catch (error) {
+
+            return res.status(503).json({
+
+                success: false,
+
+                status: "unhealthy",
+
+                database: "disconnected",
+
+                message:
+                    error.message
+
+            });
+
+        }
+
+    }
+
+);
+
+
+/* =====================================================
+   HOME ROUTE
+===================================================== */
+
+app.get(
+
+    "/",
+
+    (req, res) => {
+
+        res.status(200).json({
+
+            success: true,
+
+            message:
+                "🚀 KAD Marketplace API Running",
+
+            environment:
+                NODE_ENV
+
+        });
+
+    }
+
+);
+
+
+/* =====================================================
+   PUBLIC ROUTES
+===================================================== */
+
+
+/* ---------------- AUTH ---------------- */
+
+app.use(
+
+    "/api/auth",
+
+    authRoutes
+
+);
+
+app.use("/api/settings", settingsRoutes);
+
+app.use(
+    "/api/user/settings",
+    userSettingsRoutes
+);
+
+app.use(
+    "/api/admin",
+    adminSecurityRoutes
+);
+
+
+
+
+/* =====================================================
+   MAINTENANCE MODE
+===================================================== */
+
+app.use(
+    maintenanceMode
+);
+
+
+/* =====================================================
+   MARKETPLACE ROUTES
+===================================================== */
+
+
+/* ---------------- PRODUCTS ---------------- */
+
+app.use(
+    "/api/products",
+    productRoutes
+);
+
+
+/* ---------------- STORE FOLLOW ---------------- */
+
+app.use(
+    "/api/store",
+    storeFollowRoutes
+);
+
+
+/* ---------------- STORE ---------------- */
+
+app.use(
+    "/api/store",
+    storeRoutes
+);
+
+
+/* ---------------- SELLER ---------------- */
+
+app.use(
+    "/api/seller",
+    sellerRoutes
+);
+
+
+/* ---------------- SUBSCRIPTIONS ---------------- */
+
+app.use(
+    "/api/subscription",
+    subscriptionRoutes
+);
+
+
+app.use(
+    "/api/subscription-plans",
+    subscriptionPlanRoutes
+);
+
+
+/* ---------------- PAYMENTS ---------------- */
+
+app.use(
+    "/api/payments",
+    paymentRoutes
+);
+
+
+/* ---------------- PROMOTIONS ---------------- */
+
+app.use(
+    "/api/promotions",
+    promotionRoutes
+);
+
+
+/* ---------------- MESSAGES ---------------- */
+
+app.use(
+    "/api/messages",
+    messageRoutes
+);
+
+
+/* ---------------- USERS ---------------- */
+
+app.use(
+    "/api/users",
+    userRoutes
+);
+
+
+/* ---------------- WISHLIST ---------------- */
+
+app.use(
+    "/api/wishlist",
+    wishlistRoutes
+);
+
+
+/* ---------------- REVIEWS ---------------- */
+
+app.use(
+    "/api/reviews",
+    reviewRoutes
+);
+
+
+/* ---------------- NOTIFICATIONS ---------------- */
+
+app.use(
+    "/api/notifications",
+    notificationRoutes
+);
+
+
+/* ---------------- REPORTS ---------------- */
+
+app.use(
+    "/api/reports",
+    reportRoutes
+);
+
+
+/* ---------------- ANALYTICS ---------------- */
+
+app.use(
+    "/api/analytics",
+    analyticsRoutes
+);
+
+
+/* ---------------- SEARCH ---------------- */
+
+app.use(
+    "/api/search",
+    searchRoutes
+);
+
+
+/* ---------------- SUPPORT ---------------- */
+
+app.use(
+    "/api/support",
+    supportRoutes
+);
+
+
+/* ---------------- SETTINGS ---------------- */
+
+/*
+   This includes:
+
+   GET /api/settings/public
+
+   because settingsRoutes already defines
+   router.get("/public", ...)
+*/
+
+app.use(
+    "/api/settings",
+    settingsRoutes
+);
+
+
+/* ---------------- CONTACT ---------------- */
+
+app.use(
+    "/api/contact",
+    contactRoutes
+);
+
+
+/* ---------------- LEADS ---------------- */
+
+app.use(
+    "/api/leads",
+    leadRoutes
+);
+
+
+/* ---------------- ADVERTISEMENTS ---------------- */
+
+app.use(
+    "/api/advertisements",
+    advertisementRoutes
+);
+
+
+/* ---------------- SECURITY ---------------- */
+
+app.use(
+    "/api/security",
+    securityRoutes
+);
+
+
+/* ---------------- ROLES ---------------- */
+
+app.use(
+    "/api/roles",
+    roleRoutes
+);
+
+
+/* ---------------- PERMISSIONS ---------------- */
+
+app.use(
+    "/api/permissions",
+    permissionRoutes
+);
+
+
+/* ---------------- BACKUPS ---------------- */
+
+app.use(
+    "/api/backups",
+    backupRoutes
+);
+
+
+/* =====================================================
+   ADMIN ROUTES
+===================================================== */
+
+
+/* ---------------- MAIN ADMIN ---------------- */
+
+app.use(
+    "/api/admin",
+    adminRoutes
+);
+
+
+/* ---------------- ADMIN PRODUCTS ---------------- */
+
+app.use(
+    "/api/admin",
+    adminProductRoutes
+);
+
+
+/* ---------------- ADMIN STORES ---------------- */
+
+app.use(
+    "/api/admin",
+    adminStoreRoutes
+);
+
+
+/* ---------------- ADMIN ADVERTISEMENTS ---------------- */
+
+app.use(
+    "/api/admin",
+    adminAdvertisementRoutes
+);
+
+
+/* ---------------- ADMIN PAYMENTS ---------------- */
+
+app.use(
+    "/api/admin",
+    adminPaymentRoutes
+);
+
+
+/* ---------------- ADMIN REVENUE ---------------- */
+
+app.use(
+    "/api/admin",
+    adminRevenueRoutes
+);
+
+
+/* ---------------- ADMIN SUBSCRIPTIONS ---------------- */
+
+app.use(
+    "/api/admin",
+    adminSubscriptionPlanRoutes
+);
+
+
+/* ---------------- ADMIN NOTIFICATIONS ---------------- */
+
+app.use(
+    "/api/admin/notifications",
+    adminNotificationRoutes
+);
+
+
+/* ---------------- ADMIN SETTINGS ---------------- */
+
+app.use(
+    "/api/admin/settings",
+    adminSettingsRoutes
+);
+
+
+app.use(
+    "/api/admin/settings",
+    marketplaceSettingsRoutes
+);
+
+
+/* ---------------- ADMIN SUPPORT ---------------- */
+
+app.use(
+    "/api/admin/support",
+    adminSupportRoutes
+);
+
+
+/* ---------------- ADMIN CATEGORIES ---------------- */
+
+app.use(
+    "/api/admin/categories",
+    categoryRoutes
+);
+
+
+/* ---------------- ADMIN FEATURED PRODUCTS ---------------- */
+
+app.use(
+    "/api/admin/featured-products",
+    featuredProductRoutes
+);
+
+/* ---------------- PUBLIC HOME BUILDER ---------------- */
+
+app.use(
+    "/api/home-builder",
+    homeBuilderRoutes
+);
+
+/* ---------------- ADMIN HOME BUILDER ---------------- */
+
+app.use(
+    "/api/admin/home-builder",
+    homeBuilderRoutes
+);
+
+
+/* ---------------- ADMIN AUDIT LOGS ---------------- */
+
+app.use(
+    "/api/admin/audit-logs",
+    auditLogRoutes
+);
+
+
+/* =====================================================
+   SOCKET EVENTS
+===================================================== */
+
+io.on(
+
+    "connection",
+
+    (socket) => {
+
+        console.log(
+            `🟢 Socket Connected: ${socket.id}`
+        );
+
+
+        /* JOIN CONVERSATION */
+
+        socket.on(
+
+            "join_conversation",
+
+            (conversationId) => {
+
+                if (!conversationId) return;
+
+
+                socket.join(
+                    String(conversationId)
+                );
+
+
+                console.log(
+
+                    `User joined conversation: ${conversationId}`
+
+                );
+
+            }
+
+        );
+
+
+        /* LEAVE CONVERSATION */
+
+        socket.on(
+
+            "leave_conversation",
+
+            (conversationId) => {
+
+                if (!conversationId) return;
+
+
+                socket.leave(
+                    String(conversationId)
+                );
+
+            }
+
+        );
+
+
+        /* USER TYPING */
+
+        socket.on(
+
+            "typing",
+
+            (data) => {
+
+                if (!data?.conversationId) {
+
+                    return;
+
+                }
+
+
+                socket.to(
+
+                    String(
+                        data.conversationId
+                    )
+
+                ).emit(
+
+                    "typing",
+
+                    data
+
+                );
+
+            }
+
+        );
+
+
+        /* USER STOPPED TYPING */
+
+        socket.on(
+
+            "stop_typing",
+
+            (data) => {
+
+                if (!data?.conversationId) {
+
+                    return;
+
+                }
+
+
+                socket.to(
+
+                    String(
+                        data.conversationId
+                    )
+
+                ).emit(
+
+                    "stop_typing",
+
+                    data
+
+                );
+
+            }
+
+        );
+
+
+        /* DISCONNECT */
+
+        socket.on(
+
+            "disconnect",
+
+            () => {
+
+                console.log(
+                    `🔴 Socket Disconnected: ${socket.id}`
+                );
+
+            }
+
+        );
+
+    }
+
+);
+
+
+/* =====================================================
+   PRODUCTION FRONTEND
+
+   When deployed as a single service, Express serves the
+   compiled React application from client/dist. API routes
+   continue to be handled by the routes registered above.
+===================================================== */
+
+const clientDistPath = path.join(
+    __dirname,
+    "../client/dist"
+);
+
+if (NODE_ENV === "production") {
+
+    app.use(
+        express.static(clientDistPath)
+    );
+
+    app.use((req, res, next) => {
+
+        if (
+            req.method === "GET" &&
+            !req.path.startsWith("/api") &&
+            !req.path.startsWith("/uploads")
+        ) {
+
+            return res.sendFile(
+                path.join(
+                    clientDistPath,
+                    "index.html"
+                )
+            );
+        }
+
+        return next();
+
+    });
+
+}
+
+
+/* =====================================================
+   404 HANDLER
+===================================================== */
+
+app.use(
+
+    (req, res) => {
+
+        res.status(404).json({
+
+            success: false,
+
+            message:
+                `API route not found: ${req.method} ${req.originalUrl}`
+
+        });
+
+    }
+
+);
+
+
+/* =====================================================
+   GLOBAL ERROR HANDLER
+===================================================== */
+
+app.use(
+
+    (error, req, res, next) => {
+
+        console.error(
+            "SERVER ERROR:",
+            error
+        );
+
+
+        /* CORS ERROR */
+
+        if (
+
+            error.message &&
+            error.message.includes("CORS")
+
+        ) {
+
+            return res.status(403).json({
+
+                success: false,
+
+                message:
+                    error.message
+
+            });
+
+        }
+
+
+        return res.status(
+
+            error.status || 500
+
+        ).json({
+
+            success: false,
+
+            message:
+
+                NODE_ENV === "production"
+
+                    ? "Internal server error."
+
+                    : (
+
+                        error.message ||
+
+                        "Internal server error."
+
+                    )
+
+        });
+
+    }
+
+);
+
+
+/* =====================================================
+   PROMOTION EXPIRY CHECKER
+===================================================== */
+
+const startPromotionExpiryChecker = () => {
+
+    console.log(
+        "🚀 Promotion expiry checker started."
+    );
+
+
+    const checkExpiredPromotions =
+        async () => {
+
+            try {
+
+                await PromotionService
+                    .removeExpiredPromotions();
+
+
+                console.log(
+                    "Promotion expiry check completed."
+                );
+
+            }
+
+            catch (error) {
+
+                console.error(
+
+                    "Promotion expiry check failed:",
+
+                    error.message
+
+                );
+
+            }
+
+        };
+
+
+    /* Run immediately */
+
+    checkExpiredPromotions();
+
+
+    /* Run every minute */
+
+    setInterval(
+
+        checkExpiredPromotions,
+
+        60 * 1000
+
+    );
+
+};
+
+
+/* =====================================================
+   DATABASE AND SERVER STARTUP
+===================================================== */
+
+const startServer = async () => {
+
+    try {
+
+        /* DATABASE CONNECTION */
+
+        await sequelize.authenticate();
+
+        console.log(
+            "✅ MySQL Connected Successfully"
+        );
+
+
+        /*
+           Keep sync for now while developing.
+
+           Later, after the database structure
+           becomes stable, replace this with
+           Sequelize migrations.
+        */
+
+        await sequelize.sync();
+
+        console.log(
+            "✅ Database Synced Successfully"
+        );
+
+
+        /* =============================================
+           SEED ROLES AND PERMISSIONS
+        ============================================= */
+
+        const seedRolesAndPermissions =
+
+            require(
+                "./seeders/rolePermissionSeeder"
+            );
+
+
+        await seedRolesAndPermissions();
+
+
+        console.log(
+            "✅ Roles and permissions checked."
+        );
+
+
+        /* =============================================
+           START BACKGROUND SERVICES
+        ============================================= */
+
+        startPromotionExpiryChecker();
+
+
+        /* =============================================
+           START SERVER
+        ============================================= */
+
+        server.listen(
+
+            PORT,
+
+            () => {
+
+                console.log("");
+
+                console.log(
+                    "===================================="
+                );
+
+                console.log(
+                    "🚀 KAD MARKETPLACE SERVER STARTED"
+                );
+
+                console.log(
+                    "===================================="
+                );
+
+                console.log(
+                    `🌍 Port: ${PORT}`
+                );
+
+                console.log(
+                    `📦 Environment: ${NODE_ENV}`
+                );
+
+                console.log(
+                    `🌐 Allowed Origins: ${allowedOrigins.join(", ")}`
+                );
+
+                console.log(
+                    "===================================="
+                );
+
+                console.log("");
+
+            }
+
+        );
+
+    }
+
+    catch (error) {
+
+        console.error("");
+
+        console.error(
+            "❌ SERVER STARTUP FAILED"
+        );
+
+        console.error(error);
+
+        process.exit(1);
+
+    }
+
+};
+
+
+/* =====================================================
+   GRACEFUL SHUTDOWN
+===================================================== */
+
+const shutdown = async (signal) => {
+
+    console.log(
+        `\n${signal} received. Shutting down...`
+    );
+
+
+    try {
+
+        server.close(() => {
+
+            console.log(
+                "HTTP server closed."
+            );
+
+        });
+
+
+        await sequelize.close();
+
+
+        console.log(
+            "Database connection closed."
+        );
+
+
+        process.exit(0);
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Shutdown error:",
+            error
+        );
+
+
+        process.exit(1);
+
+    }
+
+};
+
+
+process.on(
+
+    "SIGTERM",
+
+    () => shutdown("SIGTERM")
+
+);
+
+
+process.on(
+
+    "SIGINT",
+
+    () => shutdown("SIGINT")
+
+);
+
+
+/* =====================================================
+   START APPLICATION
+===================================================== */
+
+startServer();

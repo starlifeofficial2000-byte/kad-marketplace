@@ -1,0 +1,115 @@
+.roles-page{
+
+    padding:30px;
+
+}
+
+.roles-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:30px;
+
+}
+
+.roles-header button{
+
+    background:#2563eb;
+
+    color:white;
+
+    border:none;
+
+    padding:12px 20px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+}
+
+.roles-page table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    background:white;
+
+    border-radius:12px;
+
+    overflow:hidden;
+
+    box-shadow:0 5px 20px rgba(0,0,0,.08);
+
+}
+
+.roles-page th{
+
+    background:#1e293b;
+
+    color:white;
+
+    padding:16px;
+
+}
+
+.roles-page td{
+
+    padding:16px;
+
+    border-bottom:1px solid #eee;
+
+}
+
+.roles-page tr:hover{
+
+    background:#f8fafc;
+
+}
+
+.roles-page button{
+
+    margin-right:10px;
+
+    padding:8px 15px;
+
+    border:none;
+
+    border-radius:6px;
+
+    cursor:pointer;
+
+}
+
+.delete{
+
+    background:#dc2626;
+
+    color:white;
+
+}.create-role{
+
+display:flex;
+
+gap:15px;
+
+margin-bottom:25px;
+
+}
+
+.create-role input{
+
+padding:12px;
+
+border:1px solid #ddd;
+
+border-radius:8px;
+
+width:250px;
+
+}

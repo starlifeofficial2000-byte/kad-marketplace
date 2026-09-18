@@ -1,0 +1,229 @@
+/* ==========================================
+   PROFILE PAGE
+========================================== */
+
+.profile-page{
+
+    min-height:100vh;
+
+    background:#f4f6f9;
+
+    padding:50px 20px;
+
+}
+
+/* ==========================================
+   CARD
+========================================== */
+
+.profile-card{
+
+    max-width:950px;
+
+    margin:auto;
+
+    background:#fff;
+
+    padding:40px;
+
+    border-radius:20px;
+
+    box-shadow:0 10px 35px rgba(0,0,0,.08);
+
+}
+
+.profile-card h1{
+
+    text-align:center;
+
+    color:#0A66C2;
+
+    margin-bottom:35px;
+
+}
+
+/* ==========================================
+   PROFILE IMAGE
+========================================== */
+
+.profile-picture{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    margin-bottom:35px;
+
+}
+
+.profile-picture img{
+
+    width:170px;
+
+    height:170px;
+
+    border-radius:50%;
+
+    object-fit:cover;
+
+    border:6px solid #0A66C2;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.15);
+
+}
+
+.profile-picture input{
+
+    margin-top:20px;
+
+    cursor:pointer;
+
+}
+
+/* ==========================================
+   GRID
+========================================== */
+
+.profile-grid{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:25px;
+
+    margin-bottom:25px;
+
+}
+
+/* ==========================================
+   LABELS
+========================================== */
+
+.profile-card label{
+
+    display:block;
+
+    font-weight:600;
+
+    margin-bottom:8px;
+
+    color:#444;
+
+}
+
+/* ==========================================
+   INPUTS
+========================================== */
+
+.profile-card input,
+
+.profile-card textarea,
+
+.profile-card select{
+
+    width:100%;
+
+    padding:14px 16px;
+
+    border:1px solid #ddd;
+
+    border-radius:10px;
+
+    font-size:16px;
+
+    outline:none;
+
+    transition:.3s;
+
+    background:#fafafa;
+
+}
+
+.profile-card textarea{
+
+    resize:vertical;
+
+}
+
+.profile-card input:focus,
+
+.profile-card textarea:focus,
+
+.profile-card select:focus{
+
+    border-color:#0A66C2;
+
+    background:#fff;
+
+    box-shadow:0 0 10px rgba(10,102,194,.15);
+
+}
+
+/* ==========================================
+   BUTTON
+========================================== */
+
+.profile-card button{
+
+    width:100%;
+
+    margin-top:35px;
+
+    padding:18px;
+
+    background:#0A66C2;
+
+    color:white;
+
+    border:none;
+
+    border-radius:10px;
+
+    font-size:18px;
+
+    font-weight:bold;
+
+    cursor:pointer;
+
+    transition:.3s;
+
+}
+
+.profile-card button:hover{
+
+    background:#084b91;
+
+    transform:translateY(-2px);
+
+}
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media(max-width:768px){
+
+.profile-grid{
+
+grid-template-columns:1fr;
+
+}
+
+.profile-card{
+
+padding:25px;
+
+}
+
+.profile-picture img{
+
+width:130px;
+
+height:130px;
+
+}
+
+}

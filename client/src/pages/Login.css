@@ -1,0 +1,146 @@
+.login-page{
+
+    min-height:100vh;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    background:#f5f7fb;
+
+    padding:20px;
+
+}
+
+.login-card{
+
+    width:100%;
+
+    max-width:420px;
+
+    background:white;
+
+    padding:40px;
+
+    border-radius:15px;
+
+    box-shadow:0 10px 30px rgba(0,0,0,.1);
+
+}
+
+.login-card h1{
+
+    text-align:center;
+
+    margin-bottom:10px;
+
+}
+
+.login-card p{
+
+    text-align:center;
+
+    color:#777;
+
+    margin-bottom:25px;
+
+}
+
+.login-card form{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:15px;
+
+}
+
+.login-card input{
+
+    padding:15px;
+
+    border:1px solid #ccc;
+
+    border-radius:8px;
+
+    font-size:16px;
+
+}
+
+.login-card input:focus{
+
+    border-color:#0a66c2;
+
+    outline:none;
+
+}
+
+.login-card button{
+
+    padding:15px;
+
+    background:#0a66c2;
+
+    color:white;
+
+    border:none;
+
+    border-radius:8px;
+
+    font-size:16px;
+
+    cursor:pointer;
+
+    transition:.3s;
+
+}
+
+.login-card button:hover{
+
+    background:#084d91;
+
+}
+
+.register-link{
+
+    margin-top:20px;
+
+}
+
+.register-link a{
+
+    color:#0a66c2;
+
+    font-weight:bold;
+
+    margin-left:5px;
+
+    text-decoration:none;
+
+}
+.forgot-password{
+
+    text-align:right;
+
+    margin:12px 0 20px;
+
+}
+
+.forgot-password a{
+
+    text-decoration:none;
+
+    color:#0A66C2;
+
+    font-weight:600;
+
+}
+
+.forgot-password a:hover{
+
+    text-decoration:underline;
+
+}

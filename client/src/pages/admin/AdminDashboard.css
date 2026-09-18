@@ -1,0 +1,73 @@
+.admin-dashboard{
+
+    padding:30px;
+
+}
+
+.admin-dashboard h1{
+
+    margin-bottom:30px;
+
+}
+
+.dashboard-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+
+    gap:20px;
+
+}
+
+.card{
+
+    background:white;
+
+    border-radius:15px;
+
+    padding:25px;
+
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
+
+    text-align:center;
+
+    transition:.3s;
+
+}
+
+.card:hover{
+
+    transform:translateY(-5px);
+
+}
+
+.card svg{
+
+    font-size:35px;
+
+    color:#0A66C2;
+
+    margin-bottom:15px;
+
+}
+
+.card h2{
+
+    font-size:32px;
+
+    margin:10px 0;
+
+}
+
+.card p{
+
+    color:#666;
+
+}
+
+.warning{
+
+    border-left:6px solid orange;
+
+}

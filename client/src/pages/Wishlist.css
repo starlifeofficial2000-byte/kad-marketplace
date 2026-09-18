@@ -1,0 +1,163 @@
+/* ==========================================
+   WISHLIST PAGE
+========================================== */
+
+.wishlist-page{
+
+    padding:40px;
+
+    min-height:100vh;
+
+    background:#f4f6f9;
+
+}
+
+.wishlist-page h1{
+
+    color:#1e293b;
+
+    margin-bottom:30px;
+
+    font-size:34px;
+
+}
+
+/* ==========================================
+   GRID
+========================================== */
+
+.wishlist-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+
+    gap:25px;
+
+}
+
+/* ==========================================
+   ITEM
+========================================== */
+
+.wishlist-item{
+
+    background:#fff;
+
+    border-radius:18px;
+
+    overflow:hidden;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.08);
+
+    transition:.3s;
+
+}
+
+.wishlist-item:hover{
+
+    transform:translateY(-5px);
+
+}
+
+/* ==========================================
+   REMOVE BUTTON
+========================================== */
+
+.remove-btn{
+
+    width:100%;
+
+    border:none;
+
+    padding:15px;
+
+    background:#ef4444;
+
+    color:#fff;
+
+    cursor:pointer;
+
+    font-size:15px;
+
+    font-weight:600;
+
+    transition:.3s;
+
+}
+
+.remove-btn:hover{
+
+    background:#dc2626;
+
+}
+
+/* ==========================================
+   EMPTY
+========================================== */
+
+.empty-wishlist{
+
+    background:#fff;
+
+    border-radius:20px;
+
+    padding:80px 30px;
+
+    text-align:center;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.08);
+
+}
+
+.empty-wishlist h2{
+
+    color:#1e293b;
+
+    margin-bottom:15px;
+
+}
+
+.empty-wishlist p{
+
+    color:#64748b;
+
+    font-size:16px;
+
+}
+
+/* ==========================================
+   LOADING
+========================================== */
+
+.wishlist-loading{
+
+    text-align:center;
+
+    padding:100px;
+
+    font-size:22px;
+
+    color:#2563eb;
+
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media(max-width:768px){
+
+.wishlist-page{
+
+padding:20px;
+
+}
+
+.wishlist-grid{
+
+grid-template-columns:1fr;
+
+}
+
+}

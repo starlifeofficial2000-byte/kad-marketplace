@@ -1,0 +1,191 @@
+.contact-messages{
+
+    padding:30px;
+
+}
+
+.contact-messages h2{
+
+    margin-bottom:25px;
+
+    color:#222;
+
+}
+
+.contact-messages table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    background:#fff;
+
+    border-radius:10px;
+
+    overflow:hidden;
+
+    box-shadow:0 5px 20px rgba(0,0,0,.08);
+
+}
+
+.contact-messages thead{
+
+    background:#0d6efd;
+
+    color:white;
+
+}
+
+.contact-messages th,
+
+.contact-messages td{
+
+    padding:15px;
+
+    border-bottom:1px solid #eee;
+
+    text-align:left;
+
+}
+
+.contact-messages tbody tr:hover{
+
+    background:#f8f9fa;
+
+}
+
+.read-btn{
+
+    background:#198754;
+
+    color:white;
+
+    border:none;
+
+    padding:8px 14px;
+
+    border-radius:6px;
+
+    cursor:pointer;
+
+    margin-right:8px;
+
+}
+
+.read-btn:hover{
+
+    background:#157347;
+
+}
+
+.delete-btn{
+
+    background:#dc3545;
+
+    color:white;
+
+    border:none;
+
+    padding:8px 14px;
+
+    border-radius:6px;
+
+    cursor:pointer;
+
+}
+
+.delete-btn:hover{
+
+    background:#bb2d3b;
+
+}
+
+.status-unread{
+
+    color:#dc3545;
+
+    font-weight:bold;
+
+}
+
+.status-read{
+
+    color:#198754;
+
+    font-weight:bold;
+
+}
+
+@media(max-width:900px){
+
+.contact-messages{
+
+overflow-x:auto;
+
+}
+
+table{
+
+min-width:900px;
+
+}
+
+}.message-modal{
+
+    position:fixed;
+
+    inset:0;
+
+    background:rgba(0,0,0,.6);
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    z-index:999;
+
+}
+
+.message-content{
+
+    background:white;
+
+    width:700px;
+
+    max-width:90%;
+
+    padding:30px;
+
+    border-radius:12px;
+
+    max-height:80vh;
+
+    overflow-y:auto;
+
+}
+
+.message-content h2{
+
+    margin-bottom:20px;
+
+}
+
+.message-content button{
+
+    margin-top:20px;
+
+    background:#0d6efd;
+
+    color:white;
+
+    border:none;
+
+    padding:10px 20px;
+
+    border-radius:6px;
+
+    cursor:pointer;
+
+}
