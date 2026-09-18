@@ -3,7 +3,7 @@
 ===================================================== */
 
 /* CORE */
-const User = require("./User");
+const User = require("./user");
 const Product = require("./Product");
 const Store = require("./Store");
 
