@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from "react";
-
 import api from "../../config/axios";
 
 import RevenueDashboard from "../../components/admin/RevenueDashboard";
@@ -9,724 +8,514 @@ import RevenueChart from "../../components/admin/RevenueChart";
 
 import "./DashboardHome.css";
 
+function getStoredUser() {
+    try {
+        const storedUser = localStorage.getItem("user");
+
+        if (!storedUser) {
+            return {};
+        }
+
+        return JSON.parse(storedUser) || {};
+    } catch (error) {
+        console.error("Invalid user data:", error);
+        return {};
+    }
+}
 
 function DashboardHome() {
-
-    /* =========================================
-       USER DATA
-    ========================================= */
-
-    const user = JSON.parse(
-        localStorage.getItem("user")
-    ) || {};
-
+    const user = getStoredUser();
 
     const permissions = Array.isArray(user.permissions)
         ? user.permissions
         : [];
 
-
     const roles = Array.isArray(user.roles)
         ? user.roles
         : [];
 
-
-    /* =========================================
-       STATES
-    ========================================= */
-
     const [chart, setChart] = useState([]);
 
     const [stats, setStats] = useState({
-
         users: 0,
-
         products: 0,
-
         stores: 0,
-
         pending: 0,
-
         reports: 0,
-
-        salesToday: 0
-
+        salesToday: 0,
     });
 
-
     const [loading, setLoading] = useState(true);
-
     const [chartLoading, setChartLoading] = useState(true);
 
     const [error, setError] = useState("");
-
     const [chartError, setChartError] = useState("");
-
-
-    /*
-        Prevent duplicate API calls in
-        React StrictMode development mode
-    */
 
     const hasLoaded = useRef(false);
 
-
-    /* =========================================
-       PERMISSION CHECK
-    ========================================= */
+    /*
+    |--------------------------------------------------------------------------
+    | Permissions
+    |--------------------------------------------------------------------------
+    */
 
     const hasPermission = (...requiredPermissions) => {
-
         const isSuperAdmin =
-
             user.role === "admin" ||
-
             roles.includes("Super Admin") ||
-
             roles.includes("Administrator");
 
-
         if (isSuperAdmin) {
-
             return true;
-
         }
 
-
-        return requiredPermissions.every(
-
-            (permission) =>
-
-                permissions.includes(permission)
-
+        return requiredPermissions.every((permission) =>
+            permissions.includes(permission)
         );
-
     };
 
-
-    /* =========================================
-       LOAD DATA
-    ========================================= */
-
-    useEffect(() => {
-
-        if (hasLoaded.current) {
-
-            return;
-
-        }
-
-
-        hasLoaded.current = true;
-
-
-        loadDashboard();
-
-        loadChart();
-
-    }, []);
-
-
-    /* =========================================
-       LOAD DASHBOARD STATISTICS
-    ========================================= */
+    /*
+    |--------------------------------------------------------------------------
+    | Load Dashboard
+    |--------------------------------------------------------------------------
+    */
 
     const loadDashboard = async () => {
-
         try {
-
             setLoading(true);
-
             setError("");
 
-
-            const response = await api.get(
-                "/admin/stats"
-            );
-
-
-            console.log(
-                "ADMIN STATS RESPONSE:",
-                response.data
-            );
-
+            const response = await api.get("/admin/stats");
 
             const dashboardData =
-
                 response.data?.data ||
-
                 response.data?.stats ||
-
                 response.data ||
-
                 {};
 
-
             setStats({
-
                 users:
-
                     Number(
                         dashboardData.users ??
                         dashboardData.totalUsers
                     ) || 0,
 
-
                 products:
-
                     Number(
                         dashboardData.products ??
                         dashboardData.totalProducts
                     ) || 0,
 
-
                 stores:
-
                     Number(
                         dashboardData.stores ??
                         dashboardData.totalStores
                     ) || 0,
 
-
                 pending:
-
                     Number(
                         dashboardData.pending ??
                         dashboardData.pendingProducts
                     ) || 0,
 
-
                 reports:
-
                     Number(
                         dashboardData.reports ??
                         dashboardData.totalReports
                     ) || 0,
 
-
                 salesToday:
-
                     Number(
                         dashboardData.salesToday ??
                         dashboardData.todaySales ??
                         dashboardData.revenueToday
-                    ) || 0
-
+                    ) || 0,
             });
+        } catch (error) {
+            console.error("Dashboard stats error:", error);
 
-        }
-
-        catch (error) {
-
-            console.error(
-                "LOAD DASHBOARD ERROR:",
-                error.response?.data || error.message
+            setError(
+                error?.response?.data?.message ||
+                "Unable to load dashboard statistics."
             );
-
-
-            if (error.response?.status === 404) {
-
-                setError(
-                    "Dashboard statistics endpoint was not found. Please check the backend admin routes."
-                );
-
-            }
-
-            else if (error.response?.status === 401) {
-
-                setError(
-                    "Your session has expired. Please log in again."
-                );
-
-            }
-
-            else if (error.response?.status === 403) {
-
-                setError(
-                    "You do not have permission to access dashboard statistics."
-                );
-
-            }
-
-            else {
-
-                setError(
-                    error.response?.data?.message ||
-                    "Unable to load dashboard statistics."
-                );
-
-            }
-
 
             setStats({
-
                 users: 0,
-
                 products: 0,
-
                 stores: 0,
-
                 pending: 0,
-
                 reports: 0,
-
-                salesToday: 0
-
+                salesToday: 0,
             });
-
-        }
-
-        finally {
-
+        } finally {
             setLoading(false);
-
         }
-
     };
 
-
-    /* =========================================
-       LOAD REVENUE CHART
-    ========================================= */
+    /*
+    |--------------------------------------------------------------------------
+    | Load Revenue Chart
+    |--------------------------------------------------------------------------
+    */
 
     const loadChart = async () => {
-
         try {
-
             setChartLoading(true);
-
             setChartError("");
 
-
-            const response = await api.get(
-                "/admin/revenue/chart"
-            );
-
-
-            console.log(
-                "ADMIN REVENUE CHART RESPONSE:",
-                response.data
-            );
-
+            const response = await api.get("/admin/revenue/chart");
 
             const chartData =
-
                 response.data?.data ||
-
                 response.data?.chart ||
-
                 response.data?.revenue ||
-
                 [];
 
-
             setChart(
-
                 Array.isArray(chartData)
-
                     ? chartData
-
                     : []
-
             );
+        } catch (error) {
+            console.error("Revenue chart error:", error);
 
-        }
-
-        catch (error) {
-
-            console.error(
-                "LOAD REVENUE CHART ERROR:",
-                error.response?.data || error.message
+            setChartError(
+                error?.response?.data?.message ||
+                "Unable to load revenue chart."
             );
-
-
-            if (error.response?.status === 404) {
-
-                setChartError(
-                    "Revenue chart endpoint is not available."
-                );
-
-            }
-
-            else {
-
-                setChartError(
-                    error.response?.data?.message ||
-                    "Unable to load revenue chart."
-                );
-
-            }
-
 
             setChart([]);
-
-        }
-
-        finally {
-
+        } finally {
             setChartLoading(false);
-
         }
-
     };
 
+    /*
+    |--------------------------------------------------------------------------
+    | Initial Load
+    |--------------------------------------------------------------------------
+    */
 
-    /* =========================================
-       PAGE
-    ========================================= */
+    useEffect(() => {
+        if (hasLoaded.current) {
+            return;
+        }
+
+        hasLoaded.current = true;
+
+        loadDashboard();
+        loadChart();
+    }, []);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Refresh
+    |--------------------------------------------------------------------------
+    */
+
+    const handleRefresh = () => {
+        loadDashboard();
+        loadChart();
+    };
+
+    /*
+    |--------------------------------------------------------------------------
+    | Render
+    |--------------------------------------------------------------------------
+    */
 
     return (
-
         <div className="dashboard-home">
 
+            {/* =========================================================
+                HEADER
+            ========================================================== */}
 
-            <div className="dashboard-header">
+            <header className="dashboard-header">
 
-                <div>
+                <div className="dashboard-title">
+
+                    <span className="dashboard-eyebrow">
+                        ADMINISTRATION
+                    </span>
 
                     <h1>
                         Marketplace Dashboard
                     </h1>
 
                     <p>
-                        Welcome back {user.name || "Administrator"}
+                        Welcome back,{" "}
+                        <strong>
+                            {user.name || "Administrator"}
+                        </strong>
                     </p>
 
                 </div>
 
-
                 <button
-
+                    type="button"
                     className="dashboard-refresh-btn"
-
-                    onClick={() => {
-
-                        loadDashboard();
-
-                        loadChart();
-
-                    }}
-
+                    onClick={handleRefresh}
+                    disabled={loading || chartLoading}
                 >
-
-                    Refresh
-
+                    {loading || chartLoading
+                        ? "Refreshing..."
+                        : "Refresh Dashboard"}
                 </button>
 
-            </div>
+            </header>
 
+            {/* =========================================================
+                ERROR
+            ========================================================== */}
 
-            {/* =====================================
-               ERROR MESSAGE
-            ===================================== */}
+            {error && (
+                <div className="dashboard-error">
+                    <strong>Dashboard Error</strong>
+                    <span>{error}</span>
+                </div>
+            )}
 
-            {
+            {/* =========================================================
+                REVENUE
+            ========================================================== */}
 
-                error && (
+            {hasPermission("manage_payments") && (
+                <section className="dashboard-revenue">
+                    <RevenueDashboard />
+                </section>
+            )}
 
-                    <div className="dashboard-error">
+            {/* =========================================================
+                STATISTICS
+            ========================================================== */}
 
-                        {error}
+            <section className="dashboard-grid">
+
+                {hasPermission("manage_users") && (
+                    <div className="dashboard-card">
+
+                        <div className="dashboard-card-content">
+                            <span className="dashboard-card-label">
+                                Total Users
+                            </span>
+
+                            <h2>
+                                {loading
+                                    ? "..."
+                                    : stats.users.toLocaleString()}
+                            </h2>
+
+                            <span className="dashboard-card-description">
+                                Registered marketplace users
+                            </span>
+                        </div>
+
+                        <div className="dashboard-card-icon">
+                            👥
+                        </div>
 
                     </div>
+                )}
 
-                )
+                {hasPermission("manage_products") && (
+                    <div className="dashboard-card">
 
-            }
-
-
-            {/* =====================================
-               REVENUE DASHBOARD
-            ===================================== */}
-
-            {
-
-                hasPermission("manage_payments") &&
-
-                <RevenueDashboard />
-
-            }
-
-
-            {/* =====================================
-               STATISTICS
-            ===================================== */}
-
-            <div className="dashboard-grid">
-
-
-                {
-
-                    hasPermission("manage_users") && (
-
-                        <div className="dashboard-card">
-
-                            <h3>
-                                Users
-                            </h3>
-
-                            <h1>
-
-                                {
-
-                                    loading
-
-                                        ? "..."
-
-                                        : stats.users
-
-                                }
-
-                            </h1>
-
-                        </div>
-
-                    )
-
-                }
-
-
-                {
-
-                    hasPermission("manage_products") && (
-
-                        <div className="dashboard-card">
-
-                            <h3>
+                        <div className="dashboard-card-content">
+                            <span className="dashboard-card-label">
                                 Products
-                            </h3>
+                            </span>
 
-                            <h1>
+                            <h2>
+                                {loading
+                                    ? "..."
+                                    : stats.products.toLocaleString()}
+                            </h2>
 
-                                {
-
-                                    loading
-
-                                        ? "..."
-
-                                        : stats.products
-
-                                }
-
-                            </h1>
-
+                            <span className="dashboard-card-description">
+                                Products on the marketplace
+                            </span>
                         </div>
 
-                    )
+                        <div className="dashboard-card-icon">
+                            📦
+                        </div>
 
-                }
+                    </div>
+                )}
 
+                {hasPermission("manage_stores") && (
+                    <div className="dashboard-card">
 
-                {
-
-                    hasPermission("manage_stores") && (
-
-                        <div className="dashboard-card">
-
-                            <h3>
+                        <div className="dashboard-card-content">
+                            <span className="dashboard-card-label">
                                 Stores
-                            </h3>
+                            </span>
 
-                            <h1>
+                            <h2>
+                                {loading
+                                    ? "..."
+                                    : stats.stores.toLocaleString()}
+                            </h2>
 
-                                {
-
-                                    loading
-
-                                        ? "..."
-
-                                        : stats.stores
-
-                                }
-
-                            </h1>
-
+                            <span className="dashboard-card-description">
+                                Marketplace stores
+                            </span>
                         </div>
 
-                    )
+                        <div className="dashboard-card-icon">
+                            🏪
+                        </div>
 
-                }
+                    </div>
+                )}
 
+                {hasPermission("manage_products") && (
+                    <div className="dashboard-card">
 
-                {
-
-                    hasPermission("manage_products") && (
-
-                        <div className="dashboard-card">
-
-                            <h3>
+                        <div className="dashboard-card-content">
+                            <span className="dashboard-card-label">
                                 Pending Products
-                            </h3>
+                            </span>
 
-                            <h1>
+                            <h2>
+                                {loading
+                                    ? "..."
+                                    : stats.pending.toLocaleString()}
+                            </h2>
 
-                                {
-
-                                    loading
-
-                                        ? "..."
-
-                                        : stats.pending
-
-                                }
-
-                            </h1>
-
+                            <span className="dashboard-card-description">
+                                Awaiting administrator review
+                            </span>
                         </div>
 
-                    )
+                        <div className="dashboard-card-icon">
+                            ⏳
+                        </div>
 
-                }
+                    </div>
+                )}
 
+                {hasPermission("manage_reports") && (
+                    <div className="dashboard-card">
 
-                {
-
-                    hasPermission("manage_reports") && (
-
-                        <div className="dashboard-card">
-
-                            <h3>
+                        <div className="dashboard-card-content">
+                            <span className="dashboard-card-label">
                                 Reports
-                            </h3>
+                            </span>
 
-                            <h1>
+                            <h2>
+                                {loading
+                                    ? "..."
+                                    : stats.reports.toLocaleString()}
+                            </h2>
 
-                                {
-
-                                    loading
-
-                                        ? "..."
-
-                                        : stats.reports
-
-                                }
-
-                            </h1>
-
+                            <span className="dashboard-card-description">
+                                Marketplace reports
+                            </span>
                         </div>
 
-                    )
+                        <div className="dashboard-card-icon">
+                            ⚠️
+                        </div>
 
-                }
+                    </div>
+                )}
 
+                {hasPermission("manage_payments") && (
+                    <div className="dashboard-card">
 
-                {
-
-                    hasPermission("manage_payments") && (
-
-                        <div className="dashboard-card">
-
-                            <h3>
+                        <div className="dashboard-card-content">
+                            <span className="dashboard-card-label">
                                 Today's Sales
-                            </h3>
+                            </span>
 
-                            <h1>
+                            <h2>
+                                {loading
+                                    ? "..."
+                                    : `GH₵ ${stats.salesToday.toLocaleString(
+                                          undefined,
+                                          {
+                                              minimumFractionDigits: 2,
+                                              maximumFractionDigits: 2,
+                                          }
+                                      )}`}
+                            </h2>
 
-                                GH₵ {
-
-                                    loading
-
-                                        ? "..."
-
-                                        : stats.salesToday.toLocaleString()
-
-                                }
-
-                            </h1>
-
+                            <span className="dashboard-card-description">
+                                Sales recorded today
+                            </span>
                         </div>
 
-                    )
+                        <div className="dashboard-card-icon">
+                            💰
+                        </div>
 
-                }
+                    </div>
+                )}
 
+            </section>
 
-            </div>
+            {/* =========================================================
+                DASHBOARD CONTENT
+            ========================================================== */}
 
-
-            {/* =====================================
-               DASHBOARD SECTIONS
-            ===================================== */}
-
-            <div className="dashboard-sections">
-
+            <section className="dashboard-sections">
 
                 <div className="dashboard-left">
 
-                    <QuickActions />
+                    <div className="dashboard-section-card">
+                        <QuickActions />
+                    </div>
 
-                    <RecentActivity />
+                    <div className="dashboard-section-card">
+                        <RecentActivity />
+                    </div>
 
                 </div>
-
 
                 <div className="dashboard-right">
 
+                    {hasPermission("manage_payments") && (
+                        <div className="dashboard-section-card dashboard-chart-card">
 
-                    {
+                            <div className="dashboard-section-header">
 
-                        hasPermission("manage_payments") && (
+                                <div>
+                                    <span className="dashboard-eyebrow">
+                                        FINANCIAL OVERVIEW
+                                    </span>
 
-                            <div className="placeholder-card">
-
-
-                                {
-
-                                    chartError
-
-                                        ? (
-
-                                            <p className="dashboard-error">
-
-                                                {chartError}
-
-                                            </p>
-
-                                        )
-
-                                        : chartLoading
-
-                                            ? (
-
-                                                <p>
-
-                                                    Loading revenue chart...
-
-                                                </p>
-
-                                            )
-
-                                            : (
-
-                                                <RevenueChart
-
-                                                    data={chart}
-
-                                                />
-
-                                            )
-
-                                }
-
+                                    <h2>
+                                        Revenue Overview
+                                    </h2>
+                                </div>
 
                             </div>
 
-                        )
+                            {chartError ? (
+                                <div className="dashboard-chart-error">
+                                    {chartError}
+                                </div>
+                            ) : chartLoading ? (
+                                <div className="dashboard-chart-loading">
+                                    Loading revenue chart...
+                                </div>
+                            ) : (
+                                <div className="dashboard-chart-wrapper">
+                                    <RevenueChart data={chart} />
+                                </div>
+                            )}
 
-                    }
-
+                        </div>
+                    )}
 
                 </div>
 
-
-            </div>
-
+            </section>
 
         </div>
-
     );
-
 }
-
 
 export default DashboardHome;

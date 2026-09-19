@@ -1,10 +1,18 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import api from "../../config/axios";
+```jsx
+import {
+    useEffect,
+    useMemo
+} from "react";
+
+import {
+    useLocation,
+    useNavigate
+} from "react-router-dom";
 
 import "./AdminDashboard.css";
 
 import Sidebar from "../components/admin/Sidebar";
+
 import DashboardHome from "../components/admin/DashboardHome";
 import ProductsPage from "../components/admin/ProductsPage";
 import UsersPage from "../components/admin/UsersPage";
@@ -21,321 +29,296 @@ import AdvertisementsPage from "../components/admin/AdvertisementsPage";
 import SecurityCenter from "../components/admin/SecurityCenter";
 import RolesPage from "../components/admin/RolesPage";
 
+
+function getStoredUser() {
+
+    try {
+
+        const storedUser =
+            localStorage.getItem("user");
+
+        if (!storedUser) {
+            return null;
+        }
+
+        return JSON.parse(storedUser);
+
+    } catch (error) {
+
+        console.error(
+            "Invalid admin user data:",
+            error
+        );
+
+        localStorage.removeItem("user");
+
+        return null;
+    }
+}
+
+
 function AdminDashboard() {
 
     const navigate = useNavigate();
 
-    const token = localStorage.getItem("token");
+    const location = useLocation();
 
-    const user = JSON.parse(localStorage.getItem("user"));
+    const token =
+        localStorage.getItem("token");
 
-    const [page, setPage] = useState("dashboard");
+    const user =
+        getStoredUser();
 
-    const [products, setProducts] = useState([]);
 
-    const [search, setSearch] = useState("");
-
-    const [stats, setStats] = useState({
-
-        totalProducts: 0,
-
-        pending: 0,
-
-        approved: 0,
-
-        rejected: 0,
-
-        totalUsers: 0,
-
-        totalReviews: 0,
-
-        totalMessages: 0
-
-    });
+    /* =====================================================
+       AUTHENTICATION
+    ===================================================== */
 
     useEffect(() => {
 
         if (!token || !user) {
 
-            navigate("/login");
+            navigate(
+                "/login",
+                {
+                    replace: true
+                }
+            );
 
             return;
-
         }
 
-        if (user.role !== "admin") {
+
+        const isAdmin =
+            user.role === "admin" ||
+            user.roles?.includes("Admin") ||
+            user.roles?.includes("Super Admin") ||
+            user.roles?.includes("Administrator");
+
+
+        if (!isAdmin) {
 
             alert("Access Denied");
 
-            navigate("/");
-
-            return;
-
-        }
-
-        fetchDashboard();
-
-    }, []);
-
-    const fetchDashboard = async () => {
-
-        fetchStats();
-
-        fetchPendingProducts();
-
-    };
-
-    const fetchStats = async () => {
-
-        try {
-
-         const response = await api.get(
-    "/settings"
-);
-            setStats(response.data);
-
-        }
-
-        catch (error) {
-
-            console.log(error);
-
-        }
-
-    };
-
-    const fetchPendingProducts = async () => {
-
-        try {
-
-            const response = await axios.get(
-
-                "/api/admin/pending",
-
+            navigate(
+                "/",
                 {
-
-                    headers: {
-
-                        Authorization: `Bearer ${token}`
-
-                    }
-
+                    replace: true
                 }
-
             );
 
-            setProducts(response.data);
+        }
+
+    }, [
+        token,
+        user,
+        navigate
+    ]);
+
+
+    /* =====================================================
+       DETERMINE CURRENT ADMIN PAGE
+    ===================================================== */
+
+    const page = useMemo(() => {
+
+        const path =
+            location.pathname
+                .replace(/\/+$/, "");
+
+
+        switch (path) {
+
+            case "/admin":
+            case "/admin/dashboard":
+
+                return "dashboard";
+
+
+            case "/admin/products":
+
+                return "products";
+
+
+            case "/admin/users":
+
+                return "users";
+
+
+            case "/admin/reviews":
+
+                return "reviews";
+
+
+            case "/admin/messages":
+            case "/admin/contact-messages":
+
+                return "messages";
+
+
+            case "/admin/reports":
+
+                return "reports";
+
+
+            case "/admin/stores":
+
+                return "stores";
+
+
+            case "/admin/roles":
+
+                return "roles";
+
+
+            case "/admin/subscriptions":
+
+                return "subscriptions";
+
+
+            case "/admin/payments":
+
+                return "payments";
+
+
+            case "/admin/analytics":
+
+                return "analytics";
+
+
+            case "/admin/advertisements":
+
+                return "advertisements";
+
+
+            case "/admin/security":
+
+                return "security";
+
+
+            case "/admin/settings":
+
+                return "settings";
+
+
+            default:
+
+                return "dashboard";
 
         }
 
-        catch (error) {
+    }, [
+        location.pathname
+    ]);
 
-            console.log(error);
+
+    /* =====================================================
+       PAGE RENDER
+    ===================================================== */
+
+    const renderPage = () => {
+
+        switch (page) {
+
+            case "products":
+
+                return <ProductsPage />;
+
+
+            case "users":
+
+                return <UsersPage />;
+
+
+            case "reviews":
+
+                return <ReviewsPage />;
+
+
+            case "messages":
+
+                return <MessagesPage />;
+
+
+            case "reports":
+
+                return <ReportsPage />;
+
+
+            case "stores":
+
+                return <StoresPage />;
+
+
+            case "roles":
+
+                return <RolesPage />;
+
+
+            case "subscriptions":
+
+                return (
+                    <SubscriptionsPage />
+                );
+
+
+            case "payments":
+
+                return <PaymentsPage />;
+
+
+            case "analytics":
+
+                return <AnalyticsPage />;
+
+
+            case "advertisements":
+
+                return (
+                    <AdvertisementsPage />
+                );
+
+
+            case "security":
+
+                return <SecurityCenter />;
+
+
+            case "settings":
+
+                return <SettingsPage />;
+
+
+            case "dashboard":
+
+            default:
+
+                return (
+                    <DashboardHome />
+                );
 
         }
 
     };
 
-    const approveProduct = async (id) => {
 
-        try {
+    /* =====================================================
+       RENDER
+    ===================================================== */
 
-            await axios.put(
-
-                `/api/admin/approve/${id}`,
-
-                {},
-
-                {
-
-                    headers: {
-
-                        Authorization: `Bearer ${token}`
-
-                    }
-
-                }
-
-            );
-
-            fetchDashboard();
-
-        }
-
-        catch (error) {
-
-            console.log(error);
-
-        }
-
-    };
-
-    const rejectProduct = async (id) => {
-
-        const reason = prompt("Reason for rejection");
-
-        if (!reason) return;
-
-        try {
-
-            await axios.put(
-
-                `/api/admin/reject/${id}`,
-
-                {
-
-                    reason
-
-                },
-
-                {
-
-                    headers: {
-
-                        Authorization: `Bearer ${token}`
-
-                    }
-
-                }
-
-            );
-
-            fetchDashboard();
-
-        }
-
-        catch (error) {
-
-            console.log(error);
-
-        }
-
-    };
-
-    const filteredProducts = products.filter(product =>
-
-        product.title.toLowerCase().includes(search.toLowerCase())
-
-    );
-        return (
+    return (
 
         <div className="admin-layout">
 
-            <Sidebar
-
-                page={page}
-
-                setPage={setPage}
-
-                navigate={navigate}
-
-            />
+            <Sidebar />
 
             <main className="admin-main">
 
-                {
+                <div className="admin-page-content">
 
-                    page === "dashboard" &&
+                    {renderPage()}
 
-                    <DashboardHome
-
-                        stats={stats}
-
-                        search={search}
-
-                        setSearch={setSearch}
-
-                        filteredProducts={filteredProducts}
-
-                        approveProduct={approveProduct}
-
-                        rejectProduct={rejectProduct}
-
-                    />
-
-                }
-
-                {
-
-                    page === "products" &&
-
-                    <ProductsPage />
-
-                }
-
-                {
-
-                    page === "users" &&
-
-                    <UsersPage />
-
-                }
-
-                {
-
-                    page === "reviews" &&
-
-                    <ReviewsPage />
-
-                }
-
-                {
-
-                    page === "messages" &&
-
-                    <MessagesPage />
-
-                }
-
-                {
-
-                    page === "reports" &&
-
-                    <ReportsPage />
-
-                }
-               {
-                    page === "stores" &&
-                     <StoresPage />
-                  }
-{
-    page === "roles" &&
-
-    <RolesPage />
-}
-{
-    page === "subscriptions" &&
-    <SubscriptionsPage />
-}
-
-{
-    page === "payments" &&
-    <PaymentsPage />
-}
-
-{
-    page === "analytics" &&
-    <AnalyticsPage />
-}
-
-{
-    page === "advertisements" &&
-    <AdvertisementsPage />
-}
-
-{
-    page === "security" &&
-
-    <SecurityCenter />
-
-}
-                {
-
-                    page === "settings" &&
-
-                    <SettingsPage />
-
-                }
+                </div>
 
             </main>
 
@@ -345,4 +328,6 @@ function AdminDashboard() {
 
 }
 
+
 export default AdminDashboard;
+```

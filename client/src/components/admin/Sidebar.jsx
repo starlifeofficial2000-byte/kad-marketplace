@@ -32,7 +32,9 @@ function Sidebar() {
 
     const sidebarRef = useRef(null);
 
-    const [hidden, setHidden] = useState(false);
+    const [hidden, setHidden] = useState(
+    window.innerWidth <= 768
+);
 
     const user = JSON.parse(
 
@@ -317,16 +319,12 @@ function Sidebar() {
                 location.pathname.startsWith("/admin") &&
 
                 <button
-
-                    className="menu-btn"
-
-                    onClick={() => setHidden(false)}
-
-                >
-
-                    <FaBars />
-
-                </button>
+    className="menu-btn"
+    onClick={() => setHidden(false)}
+    aria-label="Open admin menu"
+>
+    <FaBars />
+</button>
 
             }
 
@@ -367,38 +365,25 @@ function Sidebar() {
                         .map(menu => (
 
                             <NavLink
+    key={menu.link}
+    to={menu.link}
+    onClick={() => {
+        if (window.innerWidth <= 768) {
+            setHidden(true);
+        }
+    }}
+    className={({ isActive }) =>
+        isActive
+            ? "sidebar-link active"
+            : "sidebar-link"
+    }
+>
+    {menu.icon}
 
-                                key={menu.link}
-
-                                to={menu.link}
-
-                                className={({ isActive }) =>
-
-                                    isActive
-
-                                    ?
-
-                                    "sidebar-link active"
-
-                                    :
-
-                                    "sidebar-link"
-
-                                }
-
-                            >
-
-                                {menu.icon}
-
-                                <span>
-
-                                    {menu.title}
-
-                                </span>
-
-                            </NavLink>
-
-                        ))
+    <span>
+        {menu.title}
+    </span>
+</NavLink>                        ))
 
                     }
 
