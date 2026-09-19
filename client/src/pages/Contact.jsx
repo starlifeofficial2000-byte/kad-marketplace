@@ -39,7 +39,7 @@ function Contact() {
 
         try {
 
-            const response = await api.get("/settings");
+            const response = await api.get("/settings/public");
 
             if (response.data.success) {
 
