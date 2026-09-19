@@ -19,7 +19,7 @@ function Featured() {
 
         try {
 const response = await api.get(
-    "/settings"
+    "/settings/public"
 );
 
             setProducts(res.data.products || []);

@@ -51,7 +51,7 @@ function Login() {
 
             setLoading(true);
 const response = await api.get(
-    "/settings"
+    "/settings/public"
 );
 
             /* ==================================

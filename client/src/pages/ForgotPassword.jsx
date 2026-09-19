@@ -27,8 +27,8 @@ function ForgotPassword() {
 
             setLoading(true);
 
-           const response = await api.get(
-    "/settings"
+const response = await api.get(
+    "/settings/public"
 );
 
             alert(res.data.message);

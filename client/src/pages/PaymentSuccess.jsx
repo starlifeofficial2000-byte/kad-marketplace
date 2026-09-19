@@ -6,8 +6,6 @@ function PaymentSuccess() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
-    const token = localStorage.getItem("token");
-
     const [status, setStatus] = useState("processing");
     const [message, setMessage] = useState(
         "Processing your payment. Please wait..."
@@ -24,6 +22,10 @@ function PaymentSuccess() {
 
         console.log("PAYMENT REFERENCE:", reference);
 
+        // ==========================================
+        // CHECK PAYMENT REFERENCE
+        // ==========================================
+
         if (!reference) {
             setStatus("error");
             setMessage("Invalid payment reference.");
@@ -36,34 +38,39 @@ function PaymentSuccess() {
         }
 
         try {
+            // ==========================================
+            // VERIFY PAYMENT
+            // ==========================================
+
             console.log("VERIFYING PAYMENT...");
 
-            /* ==========================================
-               VERIFY PAYMENT / SUBSCRIPTION
-            ========================================== */
+            const paymentResponse = await api.get(
+                `/payments/verify/${reference}`
+            );
 
-          const response = await api.get(
-    "/settings"
-);
+            console.log(
+                "PAYMENT VERIFICATION RESPONSE:",
+                paymentResponse.data
+            );
 
-            console.log("PAYMENT VERIFICATION RESPONSE:", response.data);
-
-            if (!response.data.success) {
+            if (!paymentResponse.data.success) {
                 throw new Error(
-                    response.data.message || "Payment verification failed."
+                    paymentResponse.data.message ||
+                    "Payment verification failed."
                 );
             }
 
-            /* ==========================================
-               REFRESH CURRENT USER
-            ========================================== */
+            // ==========================================
+            // REFRESH CURRENT USER
+            // ==========================================
 
             try {
-                const response = await api.get(
-    "/settings"
-);
+                const userResponse = await api.get("/auth/me");
 
-                console.log("REFRESHED USER:", userResponse.data);
+                console.log(
+                    "REFRESHED USER:",
+                    userResponse.data
+                );
 
                 if (userResponse.data.user) {
                     localStorage.setItem(
@@ -74,18 +81,22 @@ function PaymentSuccess() {
             } catch (refreshError) {
                 console.log(
                     "USER REFRESH ERROR:",
-                    refreshError.response?.data || refreshError.message
+                    refreshError.response?.data ||
+                    refreshError.message
                 );
+
+                // Payment was already verified,
+                // so don't mark the payment as failed
             }
 
-            /* ==========================================
-               SUCCESS
-            ========================================== */
+            // ==========================================
+            // PAYMENT SUCCESS
+            // ==========================================
 
             setStatus("success");
 
             setMessage(
-                response.data.message ||
+                paymentResponse.data.message ||
                 "Payment successful! Your subscription has been activated."
             );
 
@@ -96,7 +107,8 @@ function PaymentSuccess() {
         } catch (error) {
             console.log(
                 "PAYMENT VERIFICATION ERROR:",
-                error.response?.data || error.message
+                error.response?.data ||
+                error.message
             );
 
             setStatus("error");
@@ -109,17 +121,29 @@ function PaymentSuccess() {
         }
     };
 
+    // ==========================================
+    // ICON
+    // ==========================================
+
     const getIcon = () => {
         if (status === "success") return "✓";
         if (status === "error") return "✕";
         return "⏳";
     };
 
+    // ==========================================
+    // ICON COLOR
+    // ==========================================
+
     const getIconColor = () => {
         if (status === "success") return "#22c55e";
         if (status === "error") return "#ef4444";
         return "#1976d2";
     };
+
+    // ==========================================
+    // PAGE
+    // ==========================================
 
     return (
         <div
@@ -143,6 +167,10 @@ function PaymentSuccess() {
                     maxWidth: "450px",
                 }}
             >
+                {/* ==========================================
+                    STATUS ICON
+                ========================================== */}
+
                 <div
                     style={{
                         width: "85px",
@@ -160,6 +188,10 @@ function PaymentSuccess() {
                 >
                     {getIcon()}
                 </div>
+
+                {/* ==========================================
+                    TITLE
+                ========================================== */}
 
                 <h2
                     style={{
@@ -179,6 +211,10 @@ function PaymentSuccess() {
                         : "Processing Payment"}
                 </h2>
 
+                {/* ==========================================
+                    MESSAGE
+                ========================================== */}
+
                 <p
                     style={{
                         color: "#6b7280",
@@ -188,6 +224,10 @@ function PaymentSuccess() {
                 >
                     {message}
                 </p>
+
+                {/* ==========================================
+                    PROCESSING MESSAGE
+                ========================================== */}
 
                 {status === "processing" && (
                     <p
@@ -201,6 +241,10 @@ function PaymentSuccess() {
                     </p>
                 )}
 
+                {/* ==========================================
+                    SUCCESS MESSAGE
+                ========================================== */}
+
                 {status === "success" && (
                     <p
                         style={{
@@ -212,6 +256,10 @@ function PaymentSuccess() {
                         Redirecting to your dashboard...
                     </p>
                 )}
+
+                {/* ==========================================
+                    ERROR BUTTON
+                ========================================== */}
 
                 {status === "error" && (
                     <button
