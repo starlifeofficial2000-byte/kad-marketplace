@@ -1,28 +1,31 @@
-const nodemailer = require("nodemailer");
-
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    },
-
-    family: 4
-});
-
 const sendEmail = async (to, subject, html) => {
     try {
-        await transporter.sendMail({
-            from: `"KAD Marketplace" <${process.env.EMAIL_USER}>`,
-            to,
-            subject,
-            html
+        const response = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${process.env.RESEND_API_KEY}`
+            },
+            body: JSON.stringify({
+                from: "KAD Marketplace <onboarding@resend.dev>",
+                to: [to],
+                subject,
+                html
+            })
         });
 
-        console.log("✅ Email sent successfully.");
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error("❌ Resend Email Error:", data);
+            throw new Error(
+                data?.message || "Failed to send email through Resend"
+            );
+        }
+
+        console.log("✅ Email sent successfully through Resend:", data.id);
+
+        return data;
     } catch (error) {
         console.error("❌ Email Error:", error);
         throw error;
