@@ -55,9 +55,9 @@ function Products() {
             */
 
 
-            const response = await api.get(
-                "/products"
-            );
+           const response = await api.get(
+    "/admin/products"
+);
 
 
             console.log(
