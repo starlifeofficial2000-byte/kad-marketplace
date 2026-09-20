@@ -11,6 +11,30 @@ const homeBuilderController =
 
 
 /* =====================================================
+   PUBLIC HOMEPAGE ROUTES
+   No authentication required
+===================================================== */
+
+// Public featured products
+router.get(
+    "/featured",
+    homeBuilderController.getPublicFeaturedProducts
+);
+
+// Public trending products
+router.get(
+    "/trending",
+    homeBuilderController.getPublicTrendingProducts
+);
+
+// Public recommended / boosted products
+router.get(
+    "/recommended",
+    homeBuilderController.getPublicRecommendedProducts
+);
+
+
+/* =====================================================
    ADMIN HOME BUILDER ROUTES
 ===================================================== */
 
@@ -21,89 +45,57 @@ const homeBuilderController =
 
 // Admin get all banners
 router.get(
-
     "/banners",
-
     auth,
-
     admin,
-
     homeBuilderController.getAdminHeroBanners
-
 );
 
 
 // Create banner
 router.post(
-
     "/banners",
-
     auth,
-
     admin,
-
     upload.single("image"),
-
     homeBuilderController.createHeroBanner
-
 );
 
 
 // Update banner
 router.put(
-
     "/banners/:id",
-
     auth,
-
     admin,
-
     upload.single("image"),
-
     homeBuilderController.updateHeroBanner
-
 );
 
 
 // Delete banner
 router.delete(
-
     "/banners/:id",
-
     auth,
-
     admin,
-
     homeBuilderController.deleteHeroBanner
-
 );
 
 
 // Pause / Resume banner
 router.patch(
-
     "/banners/:id/status",
-
     auth,
-
     admin,
-
     homeBuilderController.toggleHeroBanner
-
 );
 
 
 // Reject banner
 router.patch(
-
     "/banners/:id/reject",
-
     auth,
-
     admin,
-
     homeBuilderController.rejectHeroBanner
-
 );
 
 
@@ -111,16 +103,12 @@ router.patch(
    ADMIN FEATURED PRODUCTS
 ===================================================== */
 
+// Admin management/read access
 router.get(
-
-    "/featured",
-
+    "/admin/featured",
     auth,
-
     admin,
-
     homeBuilderController.getFeaturedProducts
-
 );
 
 
@@ -129,15 +117,10 @@ router.get(
 ===================================================== */
 
 router.get(
-
-    "/trending",
-
+    "/admin/trending",
     auth,
-
     admin,
-
     homeBuilderController.getTrendingProducts
-
 );
 
 
@@ -146,15 +129,10 @@ router.get(
 ===================================================== */
 
 router.get(
-
-    "/recommended",
-
+    "/admin/recommended",
     auth,
-
     admin,
-
     homeBuilderController.getRecommendedProducts
-
 );
 
 
@@ -164,29 +142,19 @@ router.get(
 
 // Show / Hide product
 router.patch(
-
     "/promotion/:id/visibility",
-
     auth,
-
     admin,
-
     homeBuilderController.toggleHomepageVisibility
-
 );
 
 
 // Change homepage order
 router.patch(
-
     "/promotion/:id/order",
-
     auth,
-
     admin,
-
     homeBuilderController.updateHomepageOrder
-
 );
 
 
