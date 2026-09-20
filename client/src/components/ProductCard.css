@@ -1,445 +1,424 @@
+/* =========================================================
+   PRODUCT CARD
+========================================================= */
+
 .product-card {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
 
     background: #ffffff;
 
-    border-radius: 14px;
-
-    overflow: hidden;
-
     border: 1px solid #e5e7eb;
+    border-radius: 12px;
 
-    transition: 0.3s;
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.06);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 
     display: flex;
-
     flex-direction: column;
-
-    position: relative;
-
-    height: 100%;
-
 }
 
 
 .product-card:hover {
-
-    transform: translateY(-5px);
+    transform: translateY(-3px);
 
     box-shadow:
-        0 12px 30px rgba(0, 0, 0, 0.12);
-
+        0 7px 18px rgba(0, 0, 0, 0.10);
 }
 
 
-/* ==========================================
-   IMAGE
-========================================== */
+/* =========================================================
+   PRODUCT IMAGE
+========================================================= */
 
 .product-image-container {
-
     position: relative;
+
+    display: block;
 
     width: 100%;
 
-    height: 220px;
+    aspect-ratio: 1 / 0.82;
 
     overflow: hidden;
 
     background: #f3f4f6;
 
+    text-decoration: none;
 }
 
 
 .product-image {
-
     width: 100%;
-
     height: 100%;
+
+    display: block;
 
     object-fit: cover;
 
-    transition: 0.4s;
-
+    transition:
+        transform 0.25s ease;
 }
 
 
 .product-card:hover .product-image {
-
-    transform: scale(1.05);
-
+    transform: scale(1.03);
 }
 
 
-/* ==========================================
+/* =========================================================
    PROMOTION BADGES
-========================================== */
+========================================================= */
 
 .promotion-badges {
-
     position: absolute;
 
-    top: 10px;
-
-    left: 10px;
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 6px;
-
-}
-
-
-.featured-badge,
-.express-badge,
-.boosted-badge {
-
-    padding: 5px 10px;
-
-    border-radius: 20px;
-
-    font-size: 12px;
-
-    font-weight: 600;
-
-    color: white;
-
-}
-
-
-.featured-badge {
-
-    background: #f59e0b;
-
-}
-
-
-.express-badge {
-
-    background: #7c3aed;
-
-}
-
-
-.boosted-badge {
-
-    background: #2563eb;
-
-}
-
-
-/* ==========================================
-   PRODUCT INFORMATION
-========================================== */
-
-.product-info {
-
-    padding: 16px;
+    top: 7px;
+    left: 7px;
+    right: 7px;
 
     display: flex;
+    flex-wrap: wrap;
 
-    flex-direction: column;
+    gap: 4px;
 
-    flex-grow: 1;
-
+    pointer-events: none;
 }
 
 
-/* ==========================================
-   SELLER PLAN
-========================================== */
-
-.seller-plan {
-
+.promotion-badges span {
     display: inline-flex;
 
-    align-self: flex-start;
+    align-items: center;
+    justify-content: center;
 
-    padding: 5px 10px;
+    padding: 3px 6px;
 
-    border-radius: 20px;
+    border-radius: 5px;
 
-    font-size: 11px;
+    font-size: 10px;
+    font-weight: 700;
 
-    font-weight: 600;
+    line-height: 1.2;
 
-    margin-bottom: 10px;
-
+    white-space: nowrap;
 }
 
 
-.seller-plan.new-user {
+/* =========================================================
+   PRODUCT INFORMATION
+========================================================= */
 
-    background: #e5e7eb;
+.product-info {
+    display: flex;
+    flex-direction: column;
 
-    color: #374151;
+    padding: 9px;
 
+    min-width: 0;
 }
 
 
-.seller-plan.pro {
+/* =========================================================
+   SELLER PLAN
+========================================================= */
 
-    background: #dbeafe;
+.seller-plan {
+    width: fit-content;
+    max-width: 100%;
 
-    color: #1d4ed8;
+    margin-bottom: 5px;
 
+    padding: 3px 6px;
+
+    border-radius: 5px;
+
+    font-size: 9px;
+    font-weight: 700;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 
-.seller-plan.business {
-
-    background: #dcfce7;
-
-    color: #15803d;
-
-}
-
-
-.seller-plan.premium {
-
-    background: #fef3c7;
-
-    color: #b45309;
-
-}
-
-
-/* ==========================================
+/* =========================================================
    PRICE
-========================================== */
+========================================================= */
 
 .product-price {
+    margin-bottom: 4px;
 
-    font-size: 22px;
-
+    font-size: 17px;
     font-weight: 800;
+
+    line-height: 1.2;
+}
+
+
+/* =========================================================
+   TITLE
+========================================================= */
+
+.product-title {
+    display: -webkit-box;
+
+    overflow: hidden;
+
+    margin-bottom: 5px;
 
     color: #111827;
 
-    margin-bottom: 8px;
-
-}
-
-
-/* ==========================================
-   PRODUCT TITLE
-========================================== */
-
-.product-title {
-
-    font-size: 17px;
-
+    font-size: 13px;
     font-weight: 600;
 
-    color: #1f2937;
+    line-height: 1.3;
 
     text-decoration: none;
 
-    margin-bottom: 10px;
-
-    line-height: 1.4;
-
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
 
 
 .product-title:hover {
-
-    color: #2563eb;
-
+    text-decoration: underline;
 }
 
 
-/* ==========================================
+/* =========================================================
    CONDITION
-========================================== */
+========================================================= */
 
 .product-condition {
+    margin-bottom: 4px;
 
-    font-size: 13px;
+    color: #4b5563;
 
-    color: #6b7280;
+    font-size: 10px;
 
-    margin-bottom: 8px;
-
+    line-height: 1.3;
 }
 
 
-/* ==========================================
+/* =========================================================
    LOCATION
-========================================== */
+========================================================= */
 
 .product-location {
-
-    font-size: 13px;
+    margin-bottom: 4px;
 
     color: #6b7280;
 
-    margin-bottom: 10px;
+    font-size: 10px;
 
+    line-height: 1.3;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
 }
 
 
-/* ==========================================
-   STATS
-========================================== */
+/* =========================================================
+   VIEWS
+========================================================= */
 
 .product-stats {
+    margin-bottom: 7px;
 
-    font-size: 12px;
+    color: #6b7280;
 
-    color: #9ca3af;
-
-    margin-bottom: 15px;
-
+    font-size: 9px;
 }
 
 
-/* ==========================================
-   BUTTONS
-========================================== */
+/* =========================================================
+   ACTIONS
+========================================================= */
 
 .product-actions {
-
     display: flex;
 
-    gap: 10px;
+    gap: 5px;
 
-    margin-top: auto;
-
+    width: 100%;
 }
 
 
 .details-btn,
 .store-btn {
-
     flex: 1;
+
+    min-width: 0;
+
+    padding: 6px 5px;
+
+    border-radius: 5px;
+
+    font-size: 9px;
+    font-weight: 700;
 
     text-align: center;
 
-    padding: 10px 8px;
-
-    border-radius: 8px;
-
     text-decoration: none;
 
-    font-size: 13px;
+    white-space: nowrap;
 
-    font-weight: 600;
-
-    transition: 0.25s;
-
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 
-.details-btn {
+/* =========================================================
+   TABLETS
+========================================================= */
 
-    background: #2563eb;
+@media (max-width: 1024px) {
 
-    color: white;
+    .product-card {
+        border-radius: 10px;
+    }
 
-}
-
-
-.details-btn:hover {
-
-    background: #1d4ed8;
-
-}
-
-
-.store-btn {
-
-    background: #f3f4f6;
-
-    color: #374151;
-
-}
-
-
-.store-btn:hover {
-
-    background: #e5e7eb;
-
-}
-
-
-/* ==========================================
-   MOBILE
-========================================== */
-
-@media (max-width: 600px) {
 
     .product-image-container {
+        aspect-ratio: 1 / 0.78;
+    }
 
-        height: 180px;
 
+    .product-info {
+        padding: 8px;
     }
 
 
     .product-price {
-
-        font-size: 19px;
-
+        font-size: 16px;
     }
 
 
-    .product-actions {
-
-        flex-direction: column;
-
+    .product-title {
+        font-size: 12px;
     }
 
 }
-.card-buttons {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-    width: 100%;
-}
-
-.card-buttons a {
-    flex: 1;
-    text-align: center;
-    text-decoration: none;
-    padding: 10px 8px;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 600;
-    transition: 0.3s;
-}
-
-.details-btn {
-    background: #0d6efd;
-    color: white;
-}
-
-.details-btn:hover {
-    opacity: 0.9;
-}
-
-.store-btn {
-    background: #198754;
-    color: white;
-}
-
-.store-btn:hover {
-    opacity: 0.9;
-}
 
 
-/* Responsive upgrade */
-@media (max-width: 768px) {
-  .product-image-container { height: 190px; }
-  .product-info { padding: 14px; }
-  .product-price { font-size: 19px; }
-  .product-title { font-size: 15px; }
-  .promotion-badges { top: 8px; left: 8px; gap: 4px; }
-  .featured-badge, .express-badge, .boosted-badge { font-size: 10px; padding: 4px 8px; }
+/* =========================================================
+   SMARTPHONES
+========================================================= */
+
+@media (max-width: 767px) {
+
+    .product-card {
+        border-radius: 9px;
+
+        box-shadow:
+            0 1px 5px rgba(0, 0, 0, 0.06);
+    }
+
+
+    .product-image-container {
+        aspect-ratio: 1 / 0.75;
+    }
+
+
+    .product-info {
+        padding: 7px;
+    }
+
+
+    .seller-plan {
+        font-size: 8px;
+
+        padding: 3px 5px;
+
+        margin-bottom: 4px;
+    }
+
+
+    .product-price {
+        font-size: 15px;
+
+        margin-bottom: 3px;
+    }
+
+
+    .product-title {
+        font-size: 11px;
+
+        line-height: 1.25;
+    }
+
+
+    .product-condition,
+    .product-location {
+        font-size: 9px;
+    }
+
+
+    .product-stats {
+        font-size: 8px;
+
+        margin-bottom: 5px;
+    }
+
+
+    .details-btn,
+    .store-btn {
+        padding: 5px 3px;
+
+        font-size: 8px;
+    }
+
+
+    .promotion-badges span {
+        font-size: 8px;
+
+        padding: 3px 4px;
+    }
+
 }
-@media (max-width: 480px) {
-  .product-image-container { height: 175px; }
-  .product-info { padding: 12px; gap: 6px; }
-  .product-price { font-size: 18px; }
-  .product-title { font-size: 14px; line-height: 1.3; }
+
+
+/* =========================================================
+   VERY SMALL PHONES
+========================================================= */
+
+@media (max-width: 380px) {
+
+    .product-info {
+        padding: 6px;
+    }
+
+
+    .product-price {
+        font-size: 14px;
+    }
+
+
+    .product-title {
+        font-size: 10px;
+    }
+
+
+    .product-condition,
+    .product-location {
+        font-size: 8px;
+    }
+
+
+    .details-btn,
+    .store-btn {
+        font-size: 7px;
+
+        padding: 5px 2px;
+    }
+
 }

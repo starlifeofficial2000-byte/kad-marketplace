@@ -110,14 +110,10 @@ function CreateSubscriptionPlan() {
 
             setSaving(true);
 
-            await api.post(
-
-                "/admin/subscriptions",
-
-                form
-
-            );
-
+ await api.post(
+    "/admin/subscription-plans",
+    form
+);
 
             alert(
                 "Subscription Plan Created Successfully."

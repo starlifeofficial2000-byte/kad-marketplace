@@ -1,16 +1,14 @@
 import { Link } from "react-router-dom";
 import "./ProductCard.css";
+import getImageUrl from "../utils/imageUrl";
 
 function ProductCard({ product }) {
-
     /* ==========================================
        SAFETY CHECK
     ========================================== */
 
     if (!product) {
-
         return null;
-
     }
 
 
@@ -29,100 +27,34 @@ function ProductCard({ product }) {
 
     let images = [];
 
-
     if (Array.isArray(product.images)) {
-
         images = product.images;
-
     }
 
     else if (typeof product.images === "string") {
-
         try {
-
             const parsedImages =
                 JSON.parse(product.images);
 
             images = Array.isArray(parsedImages)
                 ? parsedImages
                 : [product.images];
-
         }
 
-        catch (error) {
-
-            // Single image filename
+        catch {
             images = [product.images];
-
         }
-
     }
 
 
     /* ==========================================
-       IMAGE URL
+       FIRST PRODUCT IMAGE
     ========================================== */
 
-    const getImageUrl = (image) => {
-
-        if (!image) {
-
-            return "https://via.placeholder.com/500x400?text=No+Image";
-
-        }
-
-
-        // Already a full URL
-
-        if (
-
-            image.startsWith("http://") ||
-
-            image.startsWith("https://")
-
-        ) {
-
-            return image;
-
-        }
-
-
-        // Already contains /uploads/
-
-        if (image.startsWith("/uploads/")) {
-
-            return `${image}`;
-
-        }
-
-
-        // Starts with /
-
-        if (image.startsWith("/")) {
-
-            return `${image}`;
-
-        }
-
-
-        // Normal filename
-
-        return `/uploads/${image}`;
-
-    };
-
-
     const imageUrl =
-
         images.length > 0
-
-            ?
-
-            getImageUrl(images[0])
-
-            :
-
-            "https://via.placeholder.com/500x400?text=No+Image";
+            ? getImageUrl(images[0])
+            : getImageUrl(null);
 
 
     /* ==========================================
@@ -130,16 +62,11 @@ function ProductCard({ product }) {
     ========================================== */
 
     const activeSubscription =
-
         product.seller?.subscriptions?.[0];
 
-
     const planName =
-
         activeSubscription?.subscriptionPlan?.name ||
-
         product.seller?.subscriptionPlan?.name ||
-
         "New User";
 
 
@@ -148,76 +75,46 @@ function ProductCard({ product }) {
     ========================================== */
 
     const getPlanBadge = () => {
-
         const plan =
-
             String(planName).toLowerCase();
 
-
         if (plan.includes("premium")) {
-
             return {
-
                 text: `👑 ${planName}`,
-
                 className: "premium"
-
             };
-
         }
-
 
         if (plan.includes("business")) {
-
             return {
-
                 text: `🏢 ${planName}`,
-
                 className: "business"
-
             };
-
         }
-
 
         if (plan.includes("pro")) {
-
             return {
-
                 text: `⭐ ${planName}`,
-
                 className: "pro"
-
             };
-
         }
-
 
         if (plan.includes("basic")) {
-
             return {
-
                 text: `🔹 ${planName}`,
-
                 className: "basic"
-
             };
-
         }
 
-
         return {
-
             text: `🆕 ${planName}`,
-
             className: "new-user"
-
         };
-
     };
 
 
-    const planBadge = getPlanBadge();
+    const planBadge =
+        getPlanBadge();
 
 
     /* ==========================================
@@ -225,24 +122,41 @@ function ProductCard({ product }) {
     ========================================== */
 
     const isFeatured =
-
         product.featured === true ||
-
         product.isFeatured === true;
 
-
     const isExpress =
-
         product.express === true ||
-
         product.isExpress === true;
 
-
     const isBoosted =
-
         product.boosted === true ||
-
         product.isBoosted === true;
+
+
+    /* ==========================================
+       IMAGE ERROR HANDLER
+    ========================================== */
+
+    const handleImageError = (event) => {
+        const image =
+            event.currentTarget;
+
+        /*
+         * Prevent infinite fallback loops.
+         */
+
+        if (
+            image.dataset.fallbackApplied === "true"
+        ) {
+            return;
+        }
+
+        image.dataset.fallbackApplied = "true";
+
+        image.src =
+            "/images/product-placeholder.png";
+    };
 
 
     /* ==========================================
@@ -250,234 +164,173 @@ function ProductCard({ product }) {
     ========================================== */
 
     return (
-
         <div className="product-card">
 
-
-            {/* PRODUCT IMAGE */}
+            {/* =====================================
+                PRODUCT IMAGE
+            ===================================== */}
 
             <Link
-
                 to={`/product/${productId}`}
-
                 className="product-image-container"
-
             >
 
                 <img
-
                     src={imageUrl}
-
-                    alt={product.title || "Product"}
-
+                    alt={
+                        product.title ||
+                        "Product"
+                    }
                     className="product-image"
-
-                    onError={(e) => {
-
-                        e.target.src =
-                            "https://via.placeholder.com/500x400?text=No+Image";
-
-                    }}
-
+                    loading="lazy"
+                    decoding="async"
+                    onError={handleImageError}
                 />
 
 
+                {/* =================================
+                    PROMOTION BADGES
+                ================================= */}
+
                 <div className="promotion-badges">
 
-
                     {isFeatured && (
-
                         <span className="featured-badge">
-
                             ⭐ Featured
-
                         </span>
-
                     )}
-
 
                     {isExpress && (
-
                         <span className="express-badge">
-
                             ⚡ Express
-
                         </span>
-
                     )}
-
 
                     {isBoosted && (
-
                         <span className="boosted-badge">
-
                             🚀 Boosted
-
                         </span>
-
                     )}
-
 
                 </div>
 
             </Link>
 
 
-            {/* PRODUCT INFORMATION */}
+            {/* =====================================
+                PRODUCT INFORMATION
+            ===================================== */}
 
             <div className="product-info">
 
 
-                {/* SUBSCRIPTION PLAN */}
+                {/* ================================
+                    SUBSCRIPTION PLAN
+                ================================= */}
 
                 <div
-
                     className={`seller-plan ${planBadge.className}`}
-
                 >
-
                     {planBadge.text}
-
                 </div>
 
 
-                {/* PRICE */}
+                {/* ================================
+                    PRICE
+                ================================= */}
 
                 <div className="product-price">
-
                     GH₵{" "}
-
                     {Number(
-
                         product.price || 0
-
                     ).toLocaleString()}
-
                 </div>
 
 
-                {/* PRODUCT TITLE */}
+                {/* ================================
+                    PRODUCT TITLE
+                ================================= */}
 
                 <Link
-
                     to={`/product/${productId}`}
-
                     className="product-title"
-
                 >
-
-                    {product.title || "Untitled Product"}
-
+                    {product.title ||
+                        "Untitled Product"}
                 </Link>
 
 
-                {/* CONDITION */}
+                {/* ================================
+                    CONDITION
+                ================================= */}
 
                 <div className="product-condition">
 
-                    {
-
-                        product.condition === "New"
-
-                            ?
-
-                            "✨ Brand New"
-
-                            :
-
-                            product.condition
-
-                                ?
-
-                                `♻️ ${product.condition}`
-
-                                :
-
-                                "Condition not specified"
-
-                    }
+                    {product.condition === "New"
+                        ? "✨ Brand New"
+                        : product.condition
+                        ? `♻️ ${product.condition}`
+                        : "Condition not specified"}
 
                 </div>
 
 
-                {/* LOCATION */}
+                {/* ================================
+                    LOCATION
+                ================================= */}
 
                 <div className="product-location">
 
-                    📍 {product.city || "Unknown"}
+                    📍{" "}
+
+                    {product.city ||
+                        "Unknown"}
 
                     {product.region
-
-                        ?
-
-                        `, ${product.region}`
-
-                        :
-
-                        ", Ghana"
-
-                    }
+                        ? `, ${product.region}`
+                        : ", Ghana"}
 
                 </div>
 
 
-                {/* VIEWS */}
+                {/* ================================
+                    VIEWS
+                ================================= */}
 
                 <div className="product-stats">
-
                     👁 {product.views || 0} views
-
                 </div>
 
 
-                {/* ACTION BUTTONS */}
+                {/* ================================
+                    ACTION BUTTONS
+                ================================= */}
 
                 <div className="product-actions">
 
-
                     <Link
-
                         to={`/product/${productId}`}
-
                         className="details-btn"
-
                     >
-
                         View Details
-
                     </Link>
 
 
-                    {
-
-                        product.seller?.store?.storeSlug && (
-
-                            <Link
-
-                                to={`/store/${product.seller.store.storeSlug}`}
-
-                                className="store-btn"
-
-                            >
-
-                                🏪 View Store
-
-                            </Link>
-
-                        )
-
-                    }
-
+                    {product.seller?.store?.storeSlug && (
+                        <Link
+                            to={`/store/${product.seller.store.storeSlug}`}
+                            className="store-btn"
+                        >
+                            🏪 View Store
+                        </Link>
+                    )}
 
                 </div>
-
 
             </div>
 
         </div>
-
     );
-
 }
 
 export default ProductCard;

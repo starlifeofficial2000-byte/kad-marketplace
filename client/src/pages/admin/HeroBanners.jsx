@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import api from "../../config/axios";
 import "./HeroBanners.css";
 
-const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL ||
-    "";
+const SERVER_URL =
+    import.meta.env.VITE_SERVER_URL ||
+    "https://kad-marketplace-production.up.railway.app";
 
 const initialFormData = {
     title: "",
@@ -18,7 +18,6 @@ const initialFormData = {
 };
 
 function HeroBanners() {
-
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
@@ -32,6 +31,47 @@ function HeroBanners() {
 
     const [formData, setFormData] = useState(initialFormData);
 
+    /* ==========================================
+       IMAGE URL HELPER
+    ========================================== */
+
+    const getImageUrl = (imagePath) => {
+        if (!imagePath || typeof imagePath !== "string") {
+            return "";
+        }
+
+        const cleanPath = imagePath.trim();
+
+        if (!cleanPath) {
+            return "";
+        }
+
+        // Already a full URL
+        if (
+            cleanPath.startsWith("http://") ||
+            cleanPath.startsWith("https://")
+        ) {
+            return cleanPath;
+        }
+
+        // /uploads/image.jpg
+        if (cleanPath.startsWith("/uploads/")) {
+            return `${SERVER_URL}${cleanPath}`;
+        }
+
+        // uploads/image.jpg
+        if (cleanPath.startsWith("uploads/")) {
+            return `${SERVER_URL}/${cleanPath}`;
+        }
+
+        // /image.jpg
+        if (cleanPath.startsWith("/")) {
+            return `${SERVER_URL}${cleanPath}`;
+        }
+
+        // Plain filename
+        return `${SERVER_URL}/uploads/${cleanPath}`;
+    };
 
     /* ==========================================
        LOAD BANNERS
@@ -41,11 +81,8 @@ function HeroBanners() {
         loadBanners();
     }, []);
 
-
     const loadBanners = async () => {
-
         try {
-
             setLoading(true);
 
             const response = await api.get(
@@ -63,14 +100,28 @@ function HeroBanners() {
                 response.data ||
                 [];
 
-            setBanners(
-                Array.isArray(bannerData)
-                    ? bannerData
-                    : []
+            const bannersArray = Array.isArray(bannerData)
+                ? bannerData
+                : [];
+
+            console.log(
+                "HERO BANNERS ARRAY:",
+                bannersArray
             );
 
-        } catch (error) {
+            bannersArray.forEach((banner) => {
+                console.log(
+                    "HERO BANNER:",
+                    banner.title,
+                    "IMAGE:",
+                    banner.image,
+                    "IMAGE URL:",
+                    getImageUrl(banner.image)
+                );
+            });
 
+            setBanners(bannersArray);
+        } catch (error) {
             console.error(
                 "LOAD BANNERS ERROR:",
                 error
@@ -82,88 +133,38 @@ function HeroBanners() {
             );
 
             setBanners([]);
-
         } finally {
-
             setLoading(false);
-
         }
-
     };
-
-
-    /* ==========================================
-       IMAGE URL HELPER
-    ========================================== */
-
-    const getImageUrl = (imagePath) => {
-
-        if (!imagePath) {
-            return "";
-        }
-
-        // Already a complete URL
-        if (
-            imagePath.startsWith("http://") ||
-            imagePath.startsWith("https://")
-        ) {
-            return imagePath;
-        }
-
-        // Already starts with /uploads
-        if (imagePath.startsWith("/uploads/")) {
-            return `${API_BASE_URL}${imagePath}`;
-        }
-
-        // Starts with uploads/
-        if (imagePath.startsWith("uploads/")) {
-            return `${API_BASE_URL}/${imagePath}`;
-        }
-
-        // Plain filename
-        return `${API_BASE_URL}/uploads/${imagePath}`;
-
-    };
-
 
     /* ==========================================
        RESET FORM
     ========================================== */
 
     const resetForm = () => {
-
         setEditingBanner(null);
-
         setImage(null);
-
         setPreview("");
-
         setFormData({
             ...initialFormData
         });
-
     };
-
 
     /* ==========================================
        OPEN CREATE MODAL
     ========================================== */
 
     const openCreateModal = () => {
-
         resetForm();
-
         setShowModal(true);
-
     };
-
 
     /* ==========================================
        OPEN EDIT MODAL
     ========================================== */
 
     const openEditModal = (banner) => {
-
         setEditingBanner(banner);
 
         setImage(null);
@@ -173,83 +174,57 @@ function HeroBanners() {
         );
 
         setFormData({
-
-            title:
-                banner.title || "",
-
-            subtitle:
-                banner.subtitle || "",
-
-            description:
-                banner.description || "",
-
-            buttonText:
-                banner.buttonText || "Shop Now",
-
-            link:
-                banner.link || "",
-
-            priority:
-                banner.priority || 1,
-
-            startDate:
-                banner.startDate
-                    ? String(banner.startDate).substring(0, 10)
-                    : "",
-
-            endDate:
-                banner.endDate
-                    ? String(banner.endDate).substring(0, 10)
-                    : ""
-
+            title: banner.title || "",
+            subtitle: banner.subtitle || "",
+            description: banner.description || "",
+            buttonText: banner.buttonText || "Shop Now",
+            link: banner.link || "",
+            priority: banner.priority || 1,
+            startDate: banner.startDate
+                ? String(banner.startDate).substring(0, 10)
+                : "",
+            endDate: banner.endDate
+                ? String(banner.endDate).substring(0, 10)
+                : ""
         });
 
         setShowModal(true);
-
     };
-
 
     /* ==========================================
        CLOSE MODAL
     ========================================== */
 
     const closeModal = () => {
+        if (preview && preview.startsWith("blob:")) {
+            URL.revokeObjectURL(preview);
+        }
 
         setShowModal(false);
-
         resetForm();
-
     };
 
-
     /* ==========================================
-       HANDLE INPUT CHANGE
+       HANDLE INPUT
     ========================================== */
 
     const handleChange = (event) => {
-
         const {
             name,
             value
         } = event.target;
 
         setFormData((previous) => ({
-
             ...previous,
-
             [name]: value
-
         }));
-
     };
-
 
     /* ==========================================
        HANDLE IMAGE
     ========================================== */
 
     const handleImage = (event) => {
-
         const file = event.target.files?.[0];
 
         if (!file) {
@@ -257,13 +232,16 @@ function HeroBanners() {
         }
 
         if (!file.type.startsWith("image/")) {
-
             alert(
                 "Please select a valid image file."
             );
 
+            event.target.value = "";
             return;
+        }
 
+        if (preview && preview.startsWith("blob:")) {
+            URL.revokeObjectURL(preview);
         }
 
         setImage(file);
@@ -273,19 +251,30 @@ function HeroBanners() {
 
         setPreview(imagePreview);
 
+        console.log(
+            "SELECTED BANNER IMAGE:",
+            file.name,
+            file.type,
+            file.size
+        );
     };
 
-
     /* ==========================================
-       CREATE / UPDATE BANNER
+       CREATE / UPDATE
     ========================================== */
 
     const handleSubmit = async (event) => {
-
         event.preventDefault();
 
-        try {
+        if (!editingBanner && !image) {
+            alert(
+                "Please select a banner image."
+            );
 
+            return;
+        }
+
+        try {
             setSaving(true);
 
             const data = new FormData();
@@ -317,7 +306,7 @@ function HeroBanners() {
 
             data.append(
                 "priority",
-                formData.priority
+                String(formData.priority)
             );
 
             data.append(
@@ -330,82 +319,82 @@ function HeroBanners() {
                 formData.endDate
             );
 
-
             if (image) {
-
                 data.append(
                     "image",
                     image
                 );
-
             }
 
+            console.log(
+                "SAVING HERO BANNER",
+                {
+                    editing: Boolean(editingBanner),
+                    id: editingBanner?.id,
+                    image: image?.name
+                }
+            );
+
+            let response;
 
             if (editingBanner) {
-
-                await api.put(
-
+                response = await api.put(
                     `/admin/home-builder/banners/${editingBanner.id}`,
-
                     data
+                );
 
+                console.log(
+                    "UPDATE BANNER RESPONSE:",
+                    response.data
                 );
 
                 alert(
                     "Banner updated successfully."
                 );
-
             } else {
-
-                await api.post(
-
+                response = await api.post(
                     "/admin/home-builder/banners",
-
                     data
+                );
 
+                console.log(
+                    "CREATE BANNER RESPONSE:",
+                    response.data
                 );
 
                 alert(
                     "Banner created successfully."
                 );
-
             }
-
 
             closeModal();
 
             await loadBanners();
-
         } catch (error) {
-
             console.error(
                 "SAVE BANNER ERROR:",
                 error
             );
 
-            alert(
-
-                error.response?.data?.message ||
-
-                "Unable to save banner."
-
+            console.error(
+                "SERVER RESPONSE:",
+                error.response?.data
             );
 
+            alert(
+                error.response?.data?.message ||
+                "Unable to save banner."
+            );
         } finally {
-
             setSaving(false);
-
         }
-
     };
 
-
     /* ==========================================
-       DELETE BANNER
+       DELETE
     ========================================== */
 
     const deleteBanner = async (id) => {
-
         const confirmed = window.confirm(
             "Are you sure you want to delete this banner?"
         );
@@ -415,11 +404,8 @@ function HeroBanners() {
         }
 
         try {
-
             await api.delete(
-
                 `/admin/home-builder/banners/${id}`
-
             );
 
             alert(
@@ -427,41 +413,28 @@ function HeroBanners() {
             );
 
             await loadBanners();
-
         } catch (error) {
-
             console.error(
                 "DELETE BANNER ERROR:",
                 error
             );
 
             alert(
-
                 error.response?.data?.message ||
-
                 "Unable to delete banner."
-
             );
-
         }
-
     };
 
-
     /* ==========================================
-       TOGGLE BANNER STATUS
+       TOGGLE STATUS
     ========================================== */
 
     const toggleBanner = async (id) => {
-
         try {
-
             const response = await api.patch(
-
                 `/admin/home-builder/banners/${id}/status`,
-
                 {}
-
             );
 
             console.log(
@@ -470,33 +443,24 @@ function HeroBanners() {
             );
 
             await loadBanners();
-
         } catch (error) {
-
             console.error(
                 "TOGGLE STATUS ERROR:",
                 error
             );
 
             alert(
-
                 error.response?.data?.message ||
-
                 "Unable to update banner status."
-
             );
-
         }
-
     };
 
-
     /* ==========================================
-       REJECT BANNER
+       REJECT
     ========================================== */
 
     const rejectBanner = async (id) => {
-
         const confirmed = window.confirm(
             "Are you sure you want to reject this banner?"
         );
@@ -506,13 +470,9 @@ function HeroBanners() {
         }
 
         try {
-
             await api.patch(
-
                 `/admin/home-builder/banners/${id}/reject`,
-
                 {}
-
             );
 
             alert(
@@ -520,74 +480,53 @@ function HeroBanners() {
             );
 
             await loadBanners();
-
         } catch (error) {
-
             console.error(
                 "REJECT BANNER ERROR:",
                 error
             );
 
             alert(
-
                 error.response?.data?.message ||
-
                 "Unable to reject banner."
-
             );
-
         }
-
     };
 
-
     /* ==========================================
-       GET STATUS CLASS
+       STATUS CLASS
     ========================================== */
 
     const getStatusClass = (status) => {
-
         return String(
             status || "Unknown"
         )
             .toLowerCase()
             .replace(/\s+/g, "-");
-
     };
-
 
     /* ==========================================
        LOADING
     ========================================== */
 
     if (loading) {
-
         return (
-
             <div className="hero-banners">
-
                 <h3>
                     Loading banners...
                 </h3>
-
             </div>
-
         );
-
     }
 
-
     return (
-
         <div className="hero-banners">
-
 
             {/* HEADER */}
 
             <div className="hero-header">
 
                 <div>
-
                     <h2>
                         Hero Banner Manager
                     </h2>
@@ -595,43 +534,35 @@ function HeroBanners() {
                     <p>
                         Manage the banners displayed on your homepage.
                     </p>
-
                 </div>
-
 
                 <button
                     className="add-banner-btn"
                     onClick={openCreateModal}
+                    type="button"
                 >
                     + Add Banner
                 </button>
 
             </div>
 
-
-            {/* CREATE / EDIT MODAL */}
+            {/* MODAL */}
 
             {showModal && (
-
                 <div className="modal-overlay">
 
                     <div className="banner-modal">
 
                         <h2>
-
                             {editingBanner
                                 ? "Edit Hero Banner"
-                                : "Create Hero Banner"
-                            }
-
+                                : "Create Hero Banner"}
                         </h2>
-
 
                         <form
                             className="hero-form"
                             onSubmit={handleSubmit}
                         >
-
 
                             <input
                                 type="text"
@@ -642,7 +573,6 @@ function HeroBanners() {
                                 required
                             />
 
-
                             <input
                                 type="text"
                                 name="subtitle"
@@ -651,14 +581,12 @@ function HeroBanners() {
                                 onChange={handleChange}
                             />
 
-
                             <textarea
                                 name="description"
                                 placeholder="Description"
                                 value={formData.description}
                                 onChange={handleChange}
                             />
-
 
                             <input
                                 type="text"
@@ -668,7 +596,6 @@ function HeroBanners() {
                                 onChange={handleChange}
                             />
 
-
                             <input
                                 type="text"
                                 name="link"
@@ -676,7 +603,6 @@ function HeroBanners() {
                                 value={formData.link}
                                 onChange={handleChange}
                             />
-
 
                             <input
                                 type="number"
@@ -686,7 +612,6 @@ function HeroBanners() {
                                 value={formData.priority}
                                 onChange={handleChange}
                             />
-
 
                             <label>
                                 Start Date
@@ -699,7 +624,6 @@ function HeroBanners() {
                                 onChange={handleChange}
                             />
 
-
                             <label>
                                 End Date
                             </label>
@@ -711,24 +635,26 @@ function HeroBanners() {
                                 onChange={handleChange}
                             />
 
-
                             <input
                                 type="file"
-                                accept="image/*"
+                                name="image"
+                                accept="image/jpeg,image/png,image/webp,image/gif"
                                 onChange={handleImage}
                             />
 
-
                             {preview && (
-
                                 <img
                                     src={preview}
-                                    alt="Preview"
+                                    alt="Banner preview"
                                     className="banner-preview"
+                                    onError={(event) => {
+                                        console.error(
+                                            "BANNER PREVIEW FAILED:",
+                                            event.currentTarget.src
+                                        );
+                                    }}
                                 />
-
                             )}
-
 
                             <div className="modal-buttons">
 
@@ -737,16 +663,12 @@ function HeroBanners() {
                                     className="save-btn"
                                     disabled={saving}
                                 >
-
                                     {saving
                                         ? "Saving..."
                                         : editingBanner
                                             ? "Update Banner"
-                                            : "Create Banner"
-                                    }
-
+                                            : "Create Banner"}
                                 </button>
-
 
                                 <button
                                     type="button"
@@ -759,15 +681,12 @@ function HeroBanners() {
 
                             </div>
 
-
                         </form>
 
                     </div>
 
                 </div>
-
             )}
-
 
             {/* BANNER LIST */}
 
@@ -789,143 +708,154 @@ function HeroBanners() {
 
                 ) : (
 
-                    banners.map((banner) => (
+                    banners.map((banner) => {
 
-                        <div
-                            className="banner-card"
-                            key={banner.id}
-                        >
+                        const imageUrl =
+                            getImageUrl(
+                                banner.image
+                            );
 
+                        return (
+                            <div
+                                className="banner-card"
+                                key={banner.id}
+                            >
 
-                            {/* IMAGE */}
+                                {/* IMAGE */}
 
-                            <div className="banner-image-container">
+                                <div className="banner-image-container">
 
-                                {banner.image ? (
+                                    {imageUrl ? (
 
-                                    <img
-                                        src={getImageUrl(banner.image)}
-                                        alt={banner.title || "Hero Banner"}
-                                        onError={(event) => {
+                                        <img
+                                            src={imageUrl}
+                                            alt={
+                                                banner.title ||
+                                                "Hero Banner"
+                                            }
+                                            className="hero-banner-image"
+                                            loading="lazy"
+                                            onLoad={() => {
+                                                console.log(
+                                                    "HERO BANNER IMAGE LOADED:",
+                                                    imageUrl
+                                                );
+                                            }}
+                                            onError={(event) => {
+                                                console.error(
+                                                    "HERO BANNER IMAGE FAILED:",
+                                                    imageUrl
+                                                );
 
-                                            event.currentTarget.style.display =
-                                                "none";
+                                                event.currentTarget.style.display =
+                                                    "none";
+                                            }}
+                                        />
 
-                                        }}
-                                    />
+                                    ) : (
 
-                                ) : (
+                                        <div className="no-banner-image">
+                                            No Image
+                                        </div>
 
-                                    <div className="no-banner-image">
+                                    )}
 
-                                        No Image
+                                </div>
+
+                                {/* INFO */}
+
+                                <div className="banner-info">
+
+                                    <h3>
+                                        {banner.title ||
+                                            "Untitled Banner"}
+                                    </h3>
+
+                                    {banner.subtitle && (
+                                        <p>
+                                            {banner.subtitle}
+                                        </p>
+                                    )}
+
+                                    <span
+                                        className={`status ${getStatusClass(
+                                            banner.status
+                                        )}`}
+                                    >
+                                        {banner.status ||
+                                            "Unknown"}
+                                    </span>
+
+                                    <div className="banner-actions">
+
+                                        <button
+                                            type="button"
+                                            className="edit-btn"
+                                            onClick={() =>
+                                                openEditModal(
+                                                    banner
+                                                )
+                                            }
+                                        >
+                                            ✏ Edit
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            className="status-btn"
+                                            onClick={() =>
+                                                toggleBanner(
+                                                    banner.id
+                                                )
+                                            }
+                                        >
+                                            {String(
+                                                banner.status ||
+                                                ""
+                                            ).toLowerCase() ===
+                                                "running"
+                                                ? "Pause"
+                                                : "Run"}
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            className="reject-btn"
+                                            onClick={() =>
+                                                rejectBanner(
+                                                    banner.id
+                                                )
+                                            }
+                                        >
+                                            Reject
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            className="delete-btn"
+                                            onClick={() =>
+                                                deleteBanner(
+                                                    banner.id
+                                                )
+                                            }
+                                        >
+                                            Delete
+                                        </button>
 
                                     </div>
-
-                                )}
-
-                            </div>
-
-
-                            {/* INFO */}
-
-                            <div className="banner-info">
-
-                                <h3>
-
-                                    {banner.title || "Untitled Banner"}
-
-                                </h3>
-
-
-                                {banner.subtitle && (
-
-                                    <p>
-
-                                        {banner.subtitle}
-
-                                    </p>
-
-                                )}
-
-
-                                <span
-                                    className={`status ${getStatusClass(
-                                        banner.status
-                                    )}`}
-                                >
-
-                                    {banner.status || "Unknown"}
-
-                                </span>
-
-
-                                <div className="banner-actions">
-
-
-                                    <button
-                                        className="edit-btn"
-                                        onClick={() =>
-                                            openEditModal(banner)
-                                        }
-                                    >
-                                        ✏ Edit
-                                    </button>
-
-
-                                    <button
-                                        className="status-btn"
-                                        onClick={() =>
-                                            toggleBanner(banner.id)
-                                        }
-                                    >
-
-                                        {String(
-                                            banner.status || ""
-                                        ).toLowerCase() === "running"
-                                            ? "Pause"
-                                            : "Run"
-                                        }
-
-                                    </button>
-
-
-                                    <button
-                                        className="reject-btn"
-                                        onClick={() =>
-                                            rejectBanner(banner.id)
-                                        }
-                                    >
-                                        Reject
-                                    </button>
-
-
-                                    <button
-                                        className="delete-btn"
-                                        onClick={() =>
-                                            deleteBanner(banner.id)
-                                        }
-                                    >
-                                        Delete
-                                    </button>
-
 
                                 </div>
 
                             </div>
-
-                        </div>
-
-                    ))
+                        );
+                    })
 
                 )}
 
             </div>
 
         </div>
-
     );
-
 }
 
 export default HeroBanners;

@@ -411,13 +411,19 @@ exports.getHeroBanners = async (req, res) => {
 /* =====================================================
    CREATE HERO BANNER
 ===================================================== */
-
 exports.createHeroBanner = async (req, res) => {
-
     try {
+        console.log("CREATE HERO BANNER FILE:", req.file);
+        console.log("CREATE HERO BANNER BODY:", req.body);
+
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "Hero banner image is required."
+            });
+        }
 
         const {
-
             title,
             subtitle,
             description,
@@ -427,121 +433,83 @@ exports.createHeroBanner = async (req, res) => {
             placement,
             startDate,
             endDate
-
         } = req.body;
 
+        const banner = await Advertisement.create({
+            userId: req.user.id,
 
-        const banner =
-            await Advertisement.create({
+            title: title?.trim() || "",
 
-                userId: req.user.id,
+            subtitle: subtitle?.trim() || "",
 
-                title:
-                    title?.trim() || "",
+            description: description?.trim() || "",
 
-                subtitle:
-                    subtitle?.trim() || "",
+            buttonText: buttonText?.trim() || "Shop Now",
 
-                description:
-                    description?.trim() || "",
+            link: link?.trim() || "#",
 
-                buttonText:
-                    buttonText?.trim() || "",
+            placement: placement || "Homepage",
 
-                link:
-                    link?.trim() || "",
+            position: "Hero",
 
-                placement:
-                    placement || "Homepage",
+            priority: Number(priority) || 1,
 
-                position:
-                    "Hero",
+            status: "Running",
 
-                priority:
-                    Number(priority) || 1,
+            image: req.file.filename,
 
-                status:
-                    "Running",
+            startDate: startDate || null,
 
-                image:
-                    req.file
-                        ? req.file.filename
-                        : "",
-
-                startDate:
-                    startDate || null,
-
-                endDate:
-                    endDate || null
-
-            });
-
-
-        return res.status(201).json({
-
-            success: true,
-
-            message:
-                "Hero banner created successfully.",
-
-            banner
-
+            endDate: endDate || null
         });
 
-    }
+        console.log(
+            "HERO BANNER CREATED:",
+            banner.toJSON()
+        );
 
-    catch (error) {
+        return res.status(201).json({
+            success: true,
+            message: "Hero banner created successfully.",
+            banner
+        });
 
+    } catch (error) {
         console.error(
             "CREATE HERO BANNER ERROR:",
             error
         );
 
         return res.status(500).json({
-
             success: false,
-
             message:
                 error.message ||
                 "Failed to create hero banner."
-
         });
-
     }
-
 };
 
 
 /* =====================================================
    UPDATE HERO BANNER
 ===================================================== */
-
 exports.updateHeroBanner = async (req, res) => {
-
     try {
+        console.log("UPDATE HERO BANNER FILE:", req.file);
+        console.log("UPDATE HERO BANNER BODY:", req.body);
 
-        const banner =
-            await Advertisement.findByPk(
-                req.params.id
-            );
-
+        const banner = await Advertisement.findByPk(
+            req.params.id
+        );
 
         if (!banner) {
-
             return res.status(404).json({
-
                 success: false,
-
-                message:
-                    "Banner not found."
-
+                message: "Banner not found."
             });
-
         }
 
-
         const {
-
             title,
             subtitle,
             description,
@@ -551,12 +519,9 @@ exports.updateHeroBanner = async (req, res) => {
             placement,
             startDate,
             endDate
-
         } = req.body;
 
-
-        await banner.update({
-
+        const updateData = {
             title:
                 title !== undefined
                     ? title.trim()
@@ -600,50 +565,41 @@ exports.updateHeroBanner = async (req, res) => {
             endDate:
                 endDate !== undefined
                     ? endDate || null
-                    : banner.endDate,
+                    : banner.endDate
+        };
 
-            image:
-                req.file
-                    ? req.file.filename
-                    : banner.image
+        // Only replace image when a new image was uploaded
+        if (req.file) {
+            updateData.image = req.file.filename;
+        }
 
-        });
+        await banner.update(updateData);
 
+        console.log(
+            "HERO BANNER UPDATED:",
+            banner.toJSON()
+        );
 
         return res.status(200).json({
-
             success: true,
-
-            message:
-                "Banner updated successfully.",
-
+            message: "Banner updated successfully.",
             banner
-
         });
 
-    }
-
-    catch (error) {
-
+    } catch (error) {
         console.error(
             "UPDATE HERO BANNER ERROR:",
             error
         );
 
         return res.status(500).json({
-
             success: false,
-
             message:
                 error.message ||
                 "Failed to update banner."
-
         });
-
     }
-
 };
-
 
 /* =====================================================
    DELETE HERO BANNER
