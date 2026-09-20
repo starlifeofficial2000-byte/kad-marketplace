@@ -2,116 +2,185 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-/* ==========================================
-   CREATE FOLDERS
-========================================== */
+/* =========================================================
+   CHAT UPLOAD DIRECTORIES
+========================================================= */
 
-const imageFolder = "uploads/chat/images";
-const audioFolder = "uploads/chat/audio";
+const chatRoot = path.join(
+    __dirname,
+    "..",
+    "uploads",
+    "chat"
+);
 
-if (!fs.existsSync(imageFolder)) {
-    fs.mkdirSync(imageFolder, { recursive: true });
-}
+const imageDir = path.join(
+    chatRoot,
+    "images"
+);
 
-if (!fs.existsSync(audioFolder)) {
-    fs.mkdirSync(audioFolder, { recursive: true });
-}
+const audioDir = path.join(
+    chatRoot,
+    "audio"
+);
 
-/* ==========================================
-   STORAGE
-========================================== */
+fs.mkdirSync(imageDir, {
+    recursive: true
+});
+
+fs.mkdirSync(audioDir, {
+    recursive: true
+});
+
+
+/* =========================================================
+   MULTER STORAGE
+========================================================= */
 
 const storage = multer.diskStorage({
 
-    destination(req, file, cb) {
+    destination: (req, file, cb) => {
 
-        if (file.mimetype.startsWith("image")) {
-
-            cb(null, imageFolder);
-
-        } else if (file.mimetype.startsWith("audio")) {
-
-            cb(null, audioFolder);
-
-        } else {
-
-            cb(new Error("Unsupported file type"));
-
-        }
-
-    },
-
-    filename(req, file, cb) {
-
-        cb(
-
-            null,
-
-            Date.now() +
-            "-" +
-            Math.round(Math.random() * 1000000) +
-            path.extname(file.originalname)
-
+        console.log(
+            "CHAT UPLOAD FIELD:",
+            file.fieldname
         );
 
+        if (file.fieldname === "image") {
+            return cb(null, imageDir);
+        }
+
+        if (file.fieldname === "audio") {
+            return cb(null, audioDir);
+        }
+
+        return cb(
+            new Error(
+                `Unsupported upload field: ${file.fieldname}`
+            )
+        );
+    },
+
+    filename: (req, file, cb) => {
+
+        const extension = path
+            .extname(file.originalname)
+            .toLowerCase();
+
+        const filename =
+            `${Date.now()}-${Math.round(
+                Math.random() * 1e9
+            )}${extension}`;
+
+        cb(null, filename);
     }
 
 });
 
-/* ==========================================
-   FILTER
-========================================== */
+
+/* =========================================================
+   FILE FILTER
+========================================================= */
 
 const fileFilter = (req, file, cb) => {
 
-    const allowedImages = [
+    console.log(
+        "CHAT UPLOAD FIELD:",
+        file.fieldname
+    );
 
-        "image/jpeg",
-        "image/png",
-        "image/webp",
-        "image/jpg"
+    console.log(
+        "CHAT UPLOAD MIME:",
+        file.mimetype
+    );
 
-    ];
 
-    const allowedAudio = [
+    /* =====================================================
+       IMAGE
+    ===================================================== */
 
-        "audio/webm",
-        "audio/mp3",
-        "audio/mpeg",
-        "audio/wav",
-        "audio/ogg",
-        "audio/x-m4a"
+    if (file.fieldname === "image") {
 
-    ];
+        const allowedImages = [
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/gif"
+        ];
 
-    if (
+        if (
+            allowedImages.includes(
+                file.mimetype
+            )
+        ) {
+            return cb(null, true);
+        }
 
-        allowedImages.includes(file.mimetype) ||
-
-        allowedAudio.includes(file.mimetype)
-
-    ) {
-
-        cb(null, true);
-
-    } else {
-
-        cb(new Error("Invalid file type"));
-
+        return cb(
+            new Error(
+                "Only JPG, JPEG, PNG, WEBP and GIF images are allowed."
+            )
+        );
     }
 
+
+    /* =====================================================
+       AUDIO
+    ===================================================== */
+
+    if (file.fieldname === "audio") {
+
+        const allowedAudio = [
+            "audio/webm",
+            "audio/ogg",
+            "audio/mp4",
+            "audio/mpeg",
+            "audio/wav",
+            "audio/x-wav"
+        ];
+
+        if (
+            allowedAudio.includes(
+                file.mimetype
+            )
+        ) {
+            return cb(null, true);
+        }
+
+        return cb(
+            new Error(
+                `Unsupported audio format: ${file.mimetype}`
+            )
+        );
+    }
+
+
+    /* =====================================================
+       UNKNOWN FIELD
+    ===================================================== */
+
+    return cb(
+        new Error(
+            `Unsupported upload field: ${file.fieldname}`
+        )
+    );
 };
 
-module.exports = multer({
+
+/* =========================================================
+   MULTER CONFIGURATION
+========================================================= */
+
+const chatUpload = multer({
 
     storage,
 
     fileFilter,
 
     limits: {
-
-        fileSize: 20 * 1024 * 1024
-
+        fileSize: 10 * 1024 * 1024
     }
 
 });
+
+
+module.exports = chatUpload;
