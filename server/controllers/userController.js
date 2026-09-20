@@ -1,4 +1,19 @@
 const createAuditLog = require("../utils/auditLogger");
+
+/* ==========================================
+   SAFE INPUT SANITIZER
+========================================== */
+
+const sanitize = (value) => {
+    if (
+        value === undefined ||
+        value === null
+    ) {
+        return "";
+    }
+
+    return String(value).trim();
+};
 const {
 
     User,
@@ -70,7 +85,6 @@ exports.getProfile = async (req, res) => {
     }
 
 };
-
 /* ==========================================
    UPDATE PROFILE
 ========================================== */
@@ -79,7 +93,9 @@ exports.updateProfile = async (req, res) => {
 
     try {
 
-        const user = await User.findByPk(req.user.id);
+        const user = await User.findByPk(
+            req.user.id
+        );
 
         if (!user) {
 
@@ -93,55 +109,132 @@ exports.updateProfile = async (req, res) => {
 
         }
 
-        let profileImage = user.profileImage;
+        /* ==========================================
+           PROFILE IMAGE
+        ========================================== */
+
+        let profileImage =
+            user.profileImage;
 
         if (req.file) {
 
-            profileImage = req.file.filename;
+            profileImage =
+                req.file.filename;
 
         }
 
+        /* ==========================================
+           SANITIZED INPUT
+        ========================================== */
+
+        const name =
+            sanitize(req.body.name);
+
+        const email =
+            sanitize(req.body.email);
+
+        const phone =
+            sanitize(req.body.phone);
+
+        const ghanaCard =
+            sanitize(req.body.ghanaCard);
+
+        const region =
+            sanitize(req.body.region);
+
+        const city =
+            sanitize(req.body.city);
+
+        const address =
+            sanitize(req.body.address);
+
+        /* ==========================================
+           BASIC VALIDATION
+        ========================================== */
+
+        if (!name) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Full name is required."
+
+            });
+
+        }
+
+        if (!email) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Email address is required."
+
+            });
+
+        }
+
+        /* ==========================================
+           UPDATE USER
+        ========================================== */
+
         await user.update({
 
-            name: sanitize(req.body.name),
+            name,
 
-            email: req.body.email,
+            email,
 
-            phone: req.body.phone,
+            phone,
 
-            ghanaCard: req.body.ghanaCard,
+            ghanaCard,
 
-            region: req.body.region,
+            region,
 
-            city: req.body.city,
+            city,
 
-            address: req.body.address,
+            address,
 
             profileImage
 
         });
 
-        const updatedUser = await User.findByPk(
+        /* ==========================================
+           GET UPDATED USER
+        ========================================== */
 
-            req.user.id,
+        const updatedUser =
+            await User.findByPk(
 
-            {
+                req.user.id,
 
-                attributes: {
+                {
 
-                    exclude: ["password"]
+                    attributes: {
+
+                        exclude: [
+                            "password"
+                        ]
+
+                    }
 
                 }
 
-            }
+            );
 
-        );
+        /* ==========================================
+           RESPONSE
+        ========================================== */
 
-        res.json({
+        return res.json({
 
             success: true,
 
-            message: "Profile updated successfully.",
+            message:
+                "Profile updated successfully.",
 
             user: updatedUser
 
@@ -151,18 +244,24 @@ exports.updateProfile = async (req, res) => {
 
     catch (error) {
 
-        res.status(500).json({
+        console.error(
+            "UPDATE PROFILE ERROR:",
+            error
+        );
+
+        return res.status(500).json({
 
             success: false,
 
-            message: error.message
+            message:
+                error.message ||
+                "Unable to update profile."
 
         });
 
     }
 
 };
-
 /* ==========================================
    GET SELLER PROFILE
 ========================================== */
