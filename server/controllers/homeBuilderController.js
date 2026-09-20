@@ -234,7 +234,44 @@ const getPublicPromotedProducts = async (promotionType) => {
     return parseProductImages(promotions);
 
 };
+console.log("========== PUBLIC HOMEPAGE PROMOTION DEBUG ==========");
+console.log("PROMOTION TYPE:", promotionType);
+console.log("CURRENT TIME:", new Date().toISOString());
 
+const allPromotions = await ProductPromotion.findAll({
+    where: {
+        promotionType
+    },
+    include: [
+        {
+            model: Product,
+            as: "product",
+            required: false
+        }
+    ],
+    order: [["createdAt", "DESC"]]
+});
+
+console.log(
+    "ALL PROMOTIONS:",
+    allPromotions.map((p) => {
+        const data = p.get({ plain: true });
+
+        return {
+            id: data.id,
+            promotionType: data.promotionType,
+            paymentStatus: data.paymentStatus,
+            status: data.status,
+            showOnHomepage: data.showOnHomepage,
+            endDate: data.endDate,
+            productId: data.productId,
+            productStatus: data.product?.status,
+            productDeleted: data.product?.deleted
+        };
+    })
+);
+
+console.log("====================================================");
 
 /* =====================================================
    HERO BANNERS

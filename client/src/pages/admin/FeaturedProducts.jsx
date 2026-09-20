@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import api from "../../config/axios";
 import "./FeaturedProducts.css";
 
@@ -7,72 +7,297 @@ function FeaturedProducts() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(null);
-
-    useEffect(() => {
-        loadProducts();
-    }, []);
+    const [error, setError] = useState("");
 
 
-    const loadProducts = async () => {
+    /*
+     * =====================================================
+     * API / IMAGE URL
+     * =====================================================
+     */
+
+    const API_URL =
+        import.meta.env.VITE_API_URL || "/api";
+
+
+    const getApiOrigin = () => {
 
         try {
 
-            setLoading(true);
+            if (
+                API_URL.startsWith("http://") ||
+                API_URL.startsWith("https://")
+            ) {
 
-            const response = await api.get(
-                "/admin/home-builder/featured"
-            );
+                return new URL(API_URL).origin;
 
-            console.log(
-                "FEATURED PRODUCTS RESPONSE:",
-                response.data
-            );
+            }
 
-            setProducts(
-                response.data.products || []
+        } catch (error) {
+
+            console.warn(
+                "INVALID API URL:",
+                API_URL
             );
 
         }
 
-        catch (error) {
-
-            console.error(
-                "LOAD FEATURED PRODUCTS ERROR:",
-                error
-            );
-
-            setProducts([]);
-
-        }
-
-        finally {
-
-            setLoading(false);
-
-        }
+        return window.location.origin;
 
     };
 
 
-    const toggleHomepage = async (id) => {
+    const API_ORIGIN =
+        getApiOrigin();
+
+
+    const getImageUrl = (image) => {
+
+        if (!image) {
+
+            return "/no-image.png";
+
+        }
+
+
+        /*
+         * Already a complete URL.
+         */
+
+        if (
+            image.startsWith("http://") ||
+            image.startsWith("https://") ||
+            image.startsWith("blob:")
+        ) {
+
+            return image;
+
+        }
+
+
+        const cleanImage =
+            String(image)
+                .replace(/^\/+/, "")
+                .replace(/^uploads\//i, "");
+
+
+        return `${API_ORIGIN}/uploads/${cleanImage}`;
+
+    };
+
+
+    /*
+     * =====================================================
+     * LOAD FEATURED PRODUCTS
+     * =====================================================
+     */
+
+    const loadProducts = useCallback(
+        async () => {
+
+            try {
+
+                setLoading(true);
+                setError("");
+
+
+                const response =
+                    await api.get(
+                        "/admin/home-builder/featured"
+                    );
+
+
+                console.log(
+                    "ADMIN FEATURED PRODUCTS RESPONSE:",
+                    response.data
+                );
+
+
+                if (
+                    !response.data ||
+                    response.data.success !== true
+                ) {
+
+                    throw new Error(
+                        response.data?.message ||
+                        "Failed to load featured products."
+                    );
+
+                }
+
+
+                const promotions =
+                    Array.isArray(
+                        response.data.products
+                    )
+                        ? response.data.products
+                        : [];
+
+
+                setProducts(
+                    promotions
+                );
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    "LOAD FEATURED PRODUCTS ERROR:",
+                    error.response?.data ||
+                    error.message ||
+                    error
+                );
+
+
+                setProducts([]);
+
+
+                setError(
+                    error.response?.data?.message ||
+                    "Failed to load featured products."
+                );
+
+            }
+
+            finally {
+
+                setLoading(false);
+
+            }
+
+        },
+        []
+    );
+
+
+    /*
+     * =====================================================
+     * INITIAL LOAD
+     * =====================================================
+     */
+
+    useEffect(() => {
+
+        loadProducts();
+
+    }, [loadProducts]);
+
+
+    /*
+     * =====================================================
+     * SHOW / HIDE ON HOMEPAGE
+     * =====================================================
+     *
+     * IMPORTANT:
+     *
+     * This checkbox does NOT approve the promotion.
+     *
+     * The promotion is already:
+     *
+     * paymentStatus = PAID
+     * status        = APPROVED
+     * promotionType = FEATURED
+     *
+     * The checkbox ONLY controls:
+     *
+     * showOnHomepage
+     */
+
+    const toggleHomepage = async (promotion) => {
+
+        if (!promotion?.id) {
+
+            return;
+
+        }
+
 
         try {
 
-            setUpdating(id);
-
-            await api.patch(
-                `/admin/home-builder/promotion/${id}/visibility`
+            setUpdating(
+                promotion.id
             );
 
-            await loadProducts();
+
+            const response =
+                await api.patch(
+                    `/admin/home-builder/promotion/${promotion.id}/visibility`
+                );
+
+
+            console.log(
+                "HOMEPAGE VISIBILITY RESPONSE:",
+                response.data
+            );
+
+
+            if (
+                !response.data?.success
+            ) {
+
+                throw new Error(
+                    response.data?.message ||
+                    "Failed to update homepage visibility."
+                );
+
+            }
+
+
+            /*
+             * Update the specific row immediately rather than
+             * reloading the entire page.
+             */
+
+            const updatedPromotion =
+                response.data.promotion;
+
+
+            setProducts(
+                (currentProducts) =>
+                    currentProducts.map(
+                        (item) => {
+
+                            if (
+                                item.id !==
+                                promotion.id
+                            ) {
+
+                                return item;
+
+                            }
+
+
+                            return {
+
+                                ...item,
+
+                                showOnHomepage:
+                                    updatedPromotion
+                                        ?.showOnHomepage ??
+                                    !item.showOnHomepage
+
+                            };
+
+                        }
+                    )
+            );
 
         }
 
         catch (error) {
 
             console.error(
-                "TOGGLE ERROR:",
+                "TOGGLE HOMEPAGE ERROR:",
+                error.response?.data ||
+                error.message ||
                 error
+            );
+
+
+            setError(
+                error.response?.data?.message ||
+                "Failed to update homepage visibility."
             );
 
         }
@@ -86,20 +311,88 @@ function FeaturedProducts() {
     };
 
 
-    const updateOrder = async (id, homepageOrder) => {
+    /*
+     * =====================================================
+     * UPDATE HOMEPAGE ORDER
+     * =====================================================
+     */
+
+    const updateOrder = async (
+        id,
+        homepageOrder
+    ) => {
+
+        const order =
+            Number(homepageOrder);
+
+
+        if (
+            !Number.isInteger(order) ||
+            order < 0
+        ) {
+
+            return;
+
+        }
+
 
         try {
 
             setUpdating(id);
 
-            await api.patch(
 
-                `/admin/home-builder/promotion/${id}/order`,
+            const response =
+                await api.patch(
+                    `/admin/home-builder/promotion/${id}/order`,
+                    {
+                        homepageOrder: order
+                    }
+                );
 
-                {
-                    homepageOrder: Number(homepageOrder)
-                }
 
+            console.log(
+                "UPDATE HOMEPAGE ORDER RESPONSE:",
+                response.data
+            );
+
+
+            if (
+                !response.data?.success
+            ) {
+
+                throw new Error(
+                    response.data?.message ||
+                    "Failed to update homepage order."
+                );
+
+            }
+
+
+            setProducts(
+                (currentProducts) =>
+                    currentProducts.map(
+                        (promotion) => {
+
+                            if (
+                                promotion.id !== id
+                            ) {
+
+                                return promotion;
+
+                            }
+
+
+                            return {
+
+                                ...promotion,
+
+                                homepageOrder:
+                                    order
+
+                            };
+
+                        }
+                    )
             );
 
         }
@@ -108,7 +401,15 @@ function FeaturedProducts() {
 
             console.error(
                 "UPDATE ORDER ERROR:",
+                error.response?.data ||
+                error.message ||
                 error
+            );
+
+
+            setError(
+                error.response?.data?.message ||
+                "Failed to update homepage order."
             );
 
         }
@@ -122,162 +423,421 @@ function FeaturedProducts() {
     };
 
 
+    /*
+     * =====================================================
+     * LOADING
+     * =====================================================
+     */
+
     if (loading) {
 
-        return <h2>Loading Featured Products...</h2>;
+        return (
+
+            <div className="featured-products">
+
+                <div className="section-header">
+
+                    <h2>
+                        ⭐ Featured Products
+                    </h2>
+
+                    <p>
+                        Loading approved featured products...
+                    </p>
+
+                </div>
+
+            </div>
+
+        );
 
     }
 
+
+    /*
+     * =====================================================
+     * ERROR
+     * =====================================================
+     */
+
+    if (error && products.length === 0) {
+
+        return (
+
+            <div className="featured-products">
+
+                <div className="section-header">
+
+                    <h2>
+                        ⭐ Featured Products
+                    </h2>
+
+                </div>
+
+
+                <div className="no-products">
+
+                    <h3>
+                        {error}
+                    </h3>
+
+
+                    <button
+                        type="button"
+                        onClick={loadProducts}
+                    >
+                        Try Again
+                    </button>
+
+                </div>
+
+            </div>
+
+        );
+
+    }
+
+
+    /*
+     * =====================================================
+     * RENDER
+     * =====================================================
+     */
 
     return (
 
         <div className="featured-products">
 
-            <h2>
-                ⭐ Featured Products
-            </h2>
+            <div className="section-header">
+
+                <div>
+
+                    <h2>
+                        ⭐ Featured Products
+                    </h2>
+
+                    <p>
+                        Manage approved paid Featured
+                        promotions and choose which ones
+                        appear on the homepage.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            {error && (
+
+                <div
+                    className="admin-inline-error"
+                    role="alert"
+                >
+
+                    {error}
+
+                </div>
+
+            )}
 
 
             {products.length === 0 ? (
 
-                <p>No featured products found.</p>
+                <div className="no-products">
+
+                    <h3>
+                        No approved featured products found.
+                    </h3>
+
+                    <p>
+                        Paid and approved Featured
+                        promotions will appear here.
+                    </p>
+
+                </div>
 
             ) : (
 
-                <table>
+                <div className="featured-table-wrapper">
 
-                    <thead>
+                    <table>
 
-                        <tr>
+                        <thead>
 
-                            <th>Image</th>
-                            <th>Product</th>
-                            <th>Seller</th>
-                            <th>Price</th>
-                            <th>Homepage</th>
-                            <th>Order</th>
+                            <tr>
 
-                        </tr>
+                                <th>
+                                    Image
+                                </th>
 
-                    </thead>
+                                <th>
+                                    Product
+                                </th>
 
+                                <th>
+                                    Seller
+                                </th>
 
-                    <tbody>
+                                <th>
+                                    Price
+                                </th>
 
-                        {products.map((promotion) => (
+                                <th>
+                                    Payment
+                                </th>
 
-                            <tr key={promotion.id}>
+                                <th>
+                                    Status
+                                </th>
 
-                                <td>
+                                <th>
+                                    Show on Homepage
+                                </th>
 
-                                    <img
-
-                                        className="product-image"
-
-                                        src={
-                                            promotion.product?.images?.length > 0
-
-                                                ? `/uploads/${promotion.product.images[0]}`
-
-                                                : "/no-image.png"
-                                        }
-
-                                        alt={
-                                            promotion.product?.title ||
-                                            "Product"
-                                        }
-
-                                    />
-
-                                </td>
-
-
-                                <td>
-
-                                    {promotion.product?.title}
-
-                                </td>
-
-
-                                <td>
-
-                                    {promotion.seller?.name ||
-                                        "Unknown Seller"}
-
-                                </td>
-
-
-                                <td>
-
-                                    GH₵ {promotion.product?.price}
-
-                                </td>
-
-
-                                <td>
-
-                                    <input
-
-                                        type="checkbox"
-
-                                        checked={
-                                            Boolean(
-                                                promotion.showOnHomepage
-                                            )
-                                        }
-
-                                        disabled={
-                                            updating === promotion.id
-                                        }
-
-                                        onChange={() =>
-                                            toggleHomepage(
-                                                promotion.id
-                                            )
-                                        }
-
-                                    />
-
-                                </td>
-
-
-                                <td>
-
-                                    <input
-
-                                        className="order-input"
-
-                                        type="number"
-
-                                        value={
-                                            promotion.homepageOrder || 0
-                                        }
-
-                                        disabled={
-                                            updating === promotion.id
-                                        }
-
-                                        onChange={(e) =>
-                                            updateOrder(
-
-                                                promotion.id,
-
-                                                e.target.value
-
-                                            )
-                                        }
-
-                                    />
-
-                                </td>
+                                <th>
+                                    Order
+                                </th>
 
                             </tr>
 
-                        ))}
+                        </thead>
 
-                    </tbody>
 
-                </table>
+                        <tbody>
+
+                            {products.map(
+                                (promotion) => {
+
+                                    const product =
+                                        promotion.product;
+
+
+                                    const firstImage =
+                                        Array.isArray(
+                                            product?.images
+                                        )
+                                            ? product.images[0]
+                                            : typeof product?.images ===
+                                                "string"
+                                                ? (() => {
+
+                                                    try {
+
+                                                        const parsed =
+                                                            JSON.parse(
+                                                                product.images
+                                                            );
+
+                                                        return Array.isArray(
+                                                            parsed
+                                                        )
+                                                            ? parsed[0]
+                                                            : product.images;
+
+                                                    }
+
+                                                    catch {
+
+                                                        return product.images;
+
+                                                    }
+
+                                                })()
+                                                : null;
+
+
+                                    return (
+
+                                        <tr
+                                            key={
+                                                promotion.id
+                                            }
+                                        >
+
+                                            {/* IMAGE */}
+
+                                            <td>
+
+                                                <img
+                                                    className="product-image"
+                                                    src={
+                                                        getImageUrl(
+                                                            firstImage
+                                                        )
+                                                    }
+                                                    alt={
+                                                        product?.title ||
+                                                        "Product"
+                                                    }
+                                                    onError={(
+                                                        event
+                                                    ) => {
+
+                                                        event.currentTarget.src =
+                                                            "/no-image.png";
+
+                                                    }}
+                                                />
+
+                                            </td>
+
+
+                                            {/* PRODUCT */}
+
+                                            <td>
+
+                                                <strong>
+                                                    {
+                                                        product?.title ||
+                                                        "Unknown Product"
+                                                    }
+                                                </strong>
+
+                                            </td>
+
+
+                                            {/* SELLER */}
+
+                                            <td>
+
+                                                {
+                                                    promotion.seller?.name ||
+                                                    "Unknown Seller"
+                                                }
+
+                                            </td>
+
+
+                                            {/* PRICE */}
+
+                                            <td>
+
+                                                GH₵{" "}
+
+                                                {
+                                                    Number(
+                                                        product?.price || 0
+                                                    ).toLocaleString(
+                                                        "en-GH",
+                                                        {
+                                                            minimumFractionDigits: 2,
+                                                            maximumFractionDigits: 2
+                                                        }
+                                                    )
+                                                }
+
+                                            </td>
+
+
+                                            {/* PAYMENT */}
+
+                                            <td>
+
+                                                <span className="status-paid">
+
+                                                    {
+                                                        promotion.paymentStatus ||
+                                                        "PAID"
+                                                    }
+
+                                                </span>
+
+                                            </td>
+
+
+                                            {/* APPROVAL */}
+
+                                            <td>
+
+                                                <span className="status-approved">
+
+                                                    {
+                                                        promotion.status ||
+                                                        "APPROVED"
+                                                    }
+
+                                                </span>
+
+                                            </td>
+
+
+                                            {/* HOMEPAGE CHECKBOX */}
+
+                                            <td>
+
+                                                <label
+                                                    className="homepage-toggle"
+                                                >
+
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={
+                                                            Boolean(
+                                                                promotion.showOnHomepage
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            updating ===
+                                                            promotion.id
+                                                        }
+                                                        onChange={() =>
+                                                            toggleHomepage(
+                                                                promotion
+                                                            )
+                                                        }
+                                                    />
+
+                                                    <span>
+                                                        {
+                                                            promotion.showOnHomepage
+                                                                ? "Visible"
+                                                                : "Hidden"
+                                                        }
+                                                    </span>
+
+                                                </label>
+
+                                            </td>
+
+
+                                            {/* HOMEPAGE ORDER */}
+
+                                            <td>
+
+                                                <input
+                                                    className="order-input"
+                                                    type="number"
+                                                    min="0"
+                                                    value={
+                                                        promotion.homepageOrder ??
+                                                        0
+                                                    }
+                                                    disabled={
+                                                        updating ===
+                                                        promotion.id
+                                                    }
+                                                    onChange={(event) =>
+                                                        updateOrder(
+                                                            promotion.id,
+                                                            event.target.value
+                                                        )
+                                                    }
+                                                />
+
+                                            </td>
+
+                                        </tr>
+
+                                    );
+
+                                }
+                            )}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
 
             )}
 

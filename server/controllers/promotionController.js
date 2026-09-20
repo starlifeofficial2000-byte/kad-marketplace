@@ -622,7 +622,6 @@ async function applyPromotionToProduct(
 
 }
 
-
 /* ===========================================================
    CREATE OR UPDATE PRODUCT PROMOTION
 =========================================================== */
@@ -681,6 +680,15 @@ async function createProductPromotion({
         });
 
 
+    /* =====================================================
+       UPDATE EXISTING APPROVED PROMOTION
+       
+       IMPORTANT:
+       Approval does NOT automatically mean homepage visibility.
+
+       showOnHomepage is controlled separately by ADMIN.
+    ===================================================== */
+
     if (existingPromotion) {
 
         await existingPromotion.update({
@@ -701,13 +709,19 @@ async function createProductPromotion({
             endDate:
                 expiresAt,
 
+            /*
+             * DO NOT automatically enable homepage visibility.
+             *
+             * The admin controls this using the
+             * Show on Homepage checkbox.
+             *
+             * Keep the existing value when updating.
+             */
             showOnHomepage:
-                promotionType === "Feature",
+                existingPromotion.showOnHomepage,
 
             homepageOrder:
-                promotionType === "Feature"
-                    ? 1
-                    : 0
+                existingPromotion.homepageOrder || 0
 
         });
 
@@ -716,6 +730,13 @@ async function createProductPromotion({
 
     }
 
+
+    /* =====================================================
+       CREATE NEW APPROVED PROMOTION
+       
+       It is PAID + APPROVED, but hidden from homepage
+       until an administrator checks Show on Homepage.
+    ===================================================== */
 
     const promotion =
         await ProductPromotion.create({
@@ -742,13 +763,15 @@ async function createProductPromotion({
             endDate:
                 expiresAt,
 
+            /*
+             * ADMIN MUST ENABLE THIS FROM THE
+             * FEATURED / TRENDING / RECOMMENDED PAGE.
+             */
             showOnHomepage:
-                promotionType === "Feature",
+                false,
 
             homepageOrder:
-                promotionType === "Feature"
-                    ? 1
-                    : 0
+                0
 
         });
 
@@ -756,7 +779,6 @@ async function createProductPromotion({
     return promotion;
 
 }
-
 
 /* ===========================================================
    INITIALIZE PROMOTION
