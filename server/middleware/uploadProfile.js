@@ -2,12 +2,32 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// Create uploads folder if it doesn't exist
-const uploadPath = "uploads";
+/*
+==========================================================
+PROFILE UPLOAD DIRECTORY
+==========================================================
+*/
 
+const uploadPath = path.join(
+    __dirname,
+    "..",
+    "uploads"
+);
+
+/*
+ * Make sure uploads directory exists.
+ */
 if (!fs.existsSync(uploadPath)) {
-    fs.mkdirSync(uploadPath);
+    fs.mkdirSync(uploadPath, {
+        recursive: true,
+    });
 }
+
+/*
+==========================================================
+MULTER STORAGE
+==========================================================
+*/
 
 const storage = multer.diskStorage({
 
@@ -19,39 +39,96 @@ const storage = multer.diskStorage({
 
     filename: (req, file, cb) => {
 
+        const extension =
+            path.extname(
+                file.originalname
+            ).toLowerCase();
+
         const uniqueName =
-            Date.now() + "-" + Math.round(Math.random() * 1E9);
+            `${Date.now()}-${Math.round(
+                Math.random() * 1e9
+            )}${extension}`;
 
         cb(
             null,
-            uniqueName + path.extname(file.originalname)
+            uniqueName
         );
 
-    }
+    },
 
 });
 
-const fileFilter = (req, file, cb) => {
+/*
+==========================================================
+FILE FILTER
+==========================================================
+*/
 
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+const fileFilter = (
+    req,
+    file,
+    cb
+) => {
 
-    const ext = allowedTypes.test(
-        path.extname(file.originalname).toLowerCase()
-    );
+    const allowedMimeTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+    ];
 
-    const mime = allowedTypes.test(file.mimetype);
+    const allowedExtensions = [
+        ".jpeg",
+        ".jpg",
+        ".png",
+        ".gif",
+        ".webp",
+    ];
 
-    if (ext && mime) {
+    const extension =
+        path.extname(
+            file.originalname
+        ).toLowerCase();
+
+    /*
+     * Check both MIME type and extension.
+     */
+    const validMimeType =
+        allowedMimeTypes.includes(
+            file.mimetype
+        );
+
+    const validExtension =
+        allowedExtensions.includes(
+            extension
+        );
+
+    if (
+        validMimeType &&
+        validExtension
+    ) {
 
         cb(null, true);
 
     } else {
 
-        cb(new Error("Only image files are allowed."));
+        cb(
+            new Error(
+                "Only JPG, JPEG, PNG, GIF, and WEBP images are allowed."
+            ),
+            false
+        );
 
     }
 
 };
+
+/*
+==========================================================
+MULTER
+==========================================================
+*/
 
 const upload = multer({
 
@@ -60,10 +137,11 @@ const upload = multer({
     fileFilter,
 
     limits: {
+        fileSize:
+            5 * 1024 * 1024,
 
-        fileSize: 5 * 1024 * 1024 // 5MB
-
-    }
+        files: 1,
+    },
 
 });
 

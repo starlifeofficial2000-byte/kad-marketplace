@@ -5,8 +5,7 @@ import axios from "axios";
 ========================================= */
 
 const API_URL =
-    import.meta.env.VITE_API_URL ||
-    "/api";
+    import.meta.env.VITE_API_URL || "/api";
 
 
 /* =========================================
@@ -17,9 +16,11 @@ const api = axios.create({
 
     baseURL: API_URL,
 
+    timeout: 30000,
+
     headers: {
 
-        "Content-Type": "application/json"
+        Accept: "application/json"
 
     }
 
@@ -30,6 +31,10 @@ const api = axios.create({
    REQUEST INTERCEPTOR
 
    Automatically attaches JWT token.
+
+   IMPORTANT:
+   FormData requests must NOT use
+   application/json.
 ========================================= */
 
 api.interceptors.request.use(
@@ -40,10 +45,61 @@ api.interceptors.request.use(
             localStorage.getItem("token");
 
 
+        /* =====================================
+           JWT AUTHENTICATION
+        ===================================== */
+
         if (token) {
 
             config.headers.Authorization =
                 `Bearer ${token}`;
+
+        }
+
+
+        /* =====================================
+           HANDLE FORM DATA
+        ===================================== */
+
+        if (
+            config.data instanceof FormData
+        ) {
+
+            /*
+             * VERY IMPORTANT:
+             *
+             * Do NOT manually set:
+             *
+             * Content-Type:
+             * multipart/form-data
+             *
+             * and do NOT use:
+             *
+             * application/json
+             *
+             * Axios/browser will automatically
+             * generate the correct boundary.
+             */
+
+            delete config.headers[
+                "Content-Type"
+            ];
+
+            delete config.headers[
+                "content-type"
+            ];
+
+        }
+
+        else {
+
+            /*
+             * Normal JSON requests
+             */
+
+            config.headers[
+                "Content-Type"
+            ] = "application/json";
 
         }
 
@@ -84,7 +140,6 @@ api.interceptors.response.use(
             );
 
         }
-
 
         return Promise.reject(error);
 

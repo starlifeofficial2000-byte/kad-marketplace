@@ -10,6 +10,7 @@ function Profile() {
     const [profileImage, setProfileImage] = useState(null);
 
     const objectUrlRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -22,64 +23,153 @@ function Profile() {
     });
 
     /*
-     * ==========================================================
-     * API ORIGIN
-     * ==========================================================
-     */
+    ==========================================================
+    API / SERVER CONFIGURATION
+    ==========================================================
+    */
 
-    const API_URL =
-        import.meta.env.VITE_API_URL || "/api";
+    const getApiOrigin = () => {
+        try {
+            /*
+             * IMPORTANT:
+             *
+             * Use the actual Axios baseURL.
+             *
+             * This works with:
+             *
+             * https://kad-marketplace-production.up.railway.app/api
+             *
+             * /api
+             *
+             * http://localhost:5000/api
+             */
+            const baseURL =
+                api?.defaults?.baseURL ||
+                import.meta.env.VITE_API_URL ||
+                "/api";
 
-    const API_ORIGIN = API_URL.startsWith("http")
-        ? API_URL.replace(/\/api\/?$/, "")
-        : "";
+            const url = new URL(
+                baseURL,
+                window.location.origin
+            );
 
-    /*
-     * ==========================================================
-     * BUILD PROFILE IMAGE URL
-     * ==========================================================
-     */
+            /*
+             * If baseURL is:
+             *
+             * https://server.com/api
+             *
+             * return:
+             *
+             * https://server.com
+             */
+            return url.origin;
+        } catch (error) {
+            console.error(
+                "API ORIGIN ERROR:",
+                error
+            );
 
-    const getImageUrl = (image) => {
-        if (!image || typeof image !== "string") {
-            return "";
+            return window.location.origin;
         }
-
-        const trimmedImage = image.trim();
-
-        if (!trimmedImage) {
-            return "";
-        }
-
-        // Already an absolute URL
-        if (
-            trimmedImage.startsWith("http://") ||
-            trimmedImage.startsWith("https://")
-        ) {
-            return trimmedImage;
-        }
-
-        // Local absolute path
-        if (trimmedImage.startsWith("/")) {
-            return `${API_ORIGIN}${trimmedImage}`;
-        }
-
-        // Stored as "uploads/..."
-        if (
-            trimmedImage.startsWith("uploads/")
-        ) {
-            return `${API_ORIGIN}/${trimmedImage}`;
-        }
-
-        // Stored as just a filename
-        return `${API_ORIGIN}/uploads/${trimmedImage}`;
     };
 
     /*
-     * ==========================================================
-     * FALLBACK AVATAR
-     * ==========================================================
-     */
+    ==========================================================
+    PROFILE IMAGE URL
+    ==========================================================
+    */
+
+    const getImageUrl = (image, cacheBust = false) => {
+        if (!image) {
+            return "";
+        }
+
+        if (typeof image !== "string") {
+            return "";
+        }
+
+        let value = image.trim();
+
+        if (!value) {
+            return "";
+        }
+
+        /*
+         * Already a complete URL
+         */
+        if (
+            value.startsWith("http://") ||
+            value.startsWith("https://")
+        ) {
+            if (cacheBust) {
+                const separator = value.includes("?")
+                    ? "&"
+                    : "?";
+
+                return `${value}${separator}v=${Date.now()}`;
+            }
+
+            return value;
+        }
+
+        const API_ORIGIN = getApiOrigin();
+
+        /*
+         * If backend stored:
+         *
+         * /uploads/profile.jpg
+         */
+        if (value.startsWith("/")) {
+            value = value.replace(/^\/+/, "");
+
+            const url =
+                `${API_ORIGIN}/${value}`;
+
+            return cacheBust
+                ? `${url}?v=${Date.now()}`
+                : url;
+        }
+
+        /*
+         * If backend stored:
+         *
+         * uploads/profile.jpg
+         */
+        if (
+            value.startsWith("uploads/")
+        ) {
+            const url =
+                `${API_ORIGIN}/${value}`;
+
+            return cacheBust
+                ? `${url}?v=${Date.now()}`
+                : url;
+        }
+
+        /*
+         * Normal case:
+         *
+         * Database contains only:
+         *
+         * 1758394820192-profile.jpg
+         *
+         * Backend serves:
+         *
+         * /uploads/1758394820192-profile.jpg
+         */
+        const url =
+            `${API_ORIGIN}/uploads/${encodeURIComponent(value)}`;
+
+        return cacheBust
+            ? `${url}?v=${Date.now()}`
+            : url;
+    };
+
+    /*
+    ==========================================================
+    GET INITIALS
+    ==========================================================
+    */
 
     const getInitials = () => {
         const name = formData.name?.trim();
@@ -103,10 +193,10 @@ function Profile() {
     };
 
     /*
-     * ==========================================================
-     * FETCH PROFILE
-     * ==========================================================
-     */
+    ==========================================================
+    FETCH PROFILE
+    ==========================================================
+    */
 
     useEffect(() => {
         fetchProfile();
@@ -116,6 +206,8 @@ function Profile() {
                 URL.revokeObjectURL(
                     objectUrlRef.current
                 );
+
+                objectUrlRef.current = null;
             }
         };
     }, []);
@@ -128,25 +220,52 @@ function Profile() {
                 "/users/profile"
             );
 
-            const user = response.data?.user ||
+            console.log(
+                "PROFILE RESPONSE:",
+                response.data
+            );
+
+            const user =
+                response.data?.user ||
                 response.data;
 
+            /*
+             * Update profile information
+             */
             setFormData({
                 name: user?.name || "",
                 email: user?.email || "",
                 phone: user?.phone || "",
-                ghanaCard: user?.ghanaCard || "",
-                region: user?.region || "",
-                city: user?.city || "",
-                address: user?.address || "",
+                ghanaCard:
+                    user?.ghanaCard || "",
+                region:
+                    user?.region || "",
+                city:
+                    user?.city || "",
+                address:
+                    user?.address || "",
             });
 
+            /*
+             * Update profile image
+             */
             if (user?.profileImage) {
-                setPreview(
+                const imageUrl =
                     getImageUrl(
                         user.profileImage
-                    )
+                    );
+
+                console.log(
+                    "PROFILE IMAGE FROM SERVER:",
+                    user.profileImage
                 );
+
+                console.log(
+                    "PROFILE IMAGE URL:",
+                    imageUrl
+                );
+
+                setPreview(imageUrl);
             } else {
                 setPreview("");
             }
@@ -162,13 +281,16 @@ function Profile() {
     };
 
     /*
-     * ==========================================================
-     * HANDLE INPUT
-     * ==========================================================
-     */
+    ==========================================================
+    HANDLE INPUT
+    ==========================================================
+    */
 
     const handleChange = (event) => {
-        const { name, value } = event.target;
+        const {
+            name,
+            value,
+        } = event.target;
 
         setFormData((previous) => ({
             ...previous,
@@ -177,10 +299,10 @@ function Profile() {
     };
 
     /*
-     * ==========================================================
-     * HANDLE PROFILE IMAGE
-     * ==========================================================
-     */
+    ==========================================================
+    SELECT PROFILE IMAGE
+    ==========================================================
+    */
 
     const handleImage = (event) => {
         const file =
@@ -190,7 +312,9 @@ function Profile() {
             return;
         }
 
-        // Allowed image types
+        /*
+         * Allowed formats
+         */
         const allowedTypes = [
             "image/jpeg",
             "image/jpg",
@@ -199,16 +323,23 @@ function Profile() {
             "image/gif",
         ];
 
-        if (!allowedTypes.includes(file.type)) {
+        if (
+            !allowedTypes.includes(
+                file.type
+            )
+        ) {
             alert(
                 "Please select a JPG, JPEG, PNG, WEBP, or GIF image."
             );
 
             event.target.value = "";
+
             return;
         }
 
-        // 5MB limit
+        /*
+         * Maximum 5MB
+         */
         const maxSize =
             5 * 1024 * 1024;
 
@@ -218,32 +349,44 @@ function Profile() {
             );
 
             event.target.value = "";
+
             return;
         }
 
-        // Remove previous object URL
+        /*
+         * Remove old preview URL
+         */
         if (objectUrlRef.current) {
             URL.revokeObjectURL(
                 objectUrlRef.current
             );
         }
 
+        /*
+         * Create temporary preview
+         */
         const objectUrl =
             URL.createObjectURL(file);
 
-        objectUrlRef.current = objectUrl;
+        objectUrlRef.current =
+            objectUrl;
 
         setProfileImage(file);
         setPreview(objectUrl);
     };
 
     /*
-     * ==========================================================
-     * PROFILE IMAGE ERROR
-     * ==========================================================
-     */
+    ==========================================================
+    PROFILE IMAGE ERROR
+    ==========================================================
+    */
 
     const handleImageError = (event) => {
+        console.error(
+            "PROFILE IMAGE FAILED:",
+            event.currentTarget.src
+        );
+
         event.currentTarget.style.display =
             "none";
 
@@ -258,10 +401,10 @@ function Profile() {
     };
 
     /*
-     * ==========================================================
-     * UPDATE PROFILE
-     * ==========================================================
-     */
+    ==========================================================
+    UPDATE PROFILE
+    ==========================================================
+    */
 
     const updateProfile = async (event) => {
         event.preventDefault();
@@ -275,6 +418,9 @@ function Profile() {
 
             const data = new FormData();
 
+            /*
+             * Profile information
+             */
             data.append(
                 "name",
                 formData.name.trim()
@@ -310,42 +456,71 @@ function Profile() {
                 formData.address.trim()
             );
 
+            /*
+             * Profile image
+             *
+             * Backend expects:
+             *
+             * req.file
+             *
+             * and the field name:
+             *
+             * profileImage
+             */
             if (profileImage) {
                 data.append(
                     "profileImage",
-                    profileImage
+                    profileImage,
+                    profileImage.name
                 );
             }
 
             /*
-             * IMPORTANT:
+             * DO NOT manually set:
              *
-             * Do NOT manually set
-             * Content-Type to multipart/form-data.
+             * Content-Type: multipart/form-data
              *
-             * Axios will generate the correct
-             * multipart boundary automatically.
+             * Axios automatically creates
+             * the correct multipart boundary.
              */
-
-            const response = await api.put(
-                "/users/profile",
-                data
-            );
+            const response =
+                await api.put(
+                    "/users/profile",
+                    data
+                );
 
             console.log(
                 "PROFILE UPDATE RESPONSE:",
                 response.data
             );
 
+            if (
+                !response.data?.success &&
+                !response.data?.user
+            ) {
+                throw new Error(
+                    response.data?.message ||
+                        "Profile update failed."
+                );
+            }
+
             const updatedUser =
                 response.data?.user;
 
+            /*
+             * Save updated user locally
+             */
             if (updatedUser) {
                 localStorage.setItem(
                     "user",
-                    JSON.stringify(updatedUser)
+                    JSON.stringify(
+                        updatedUser
+                    )
                 );
 
+                /*
+                 * Update form fields
+                 */
                 setFormData({
                     name:
                         updatedUser.name ||
@@ -370,21 +545,35 @@ function Profile() {
                         "",
                 });
 
+                /*
+                 * IMPORTANT:
+                 *
+                 * If a new image was uploaded,
+                 * immediately use the server image.
+                 */
                 if (
-                    updatedUser.profileImage &&
-                    !objectUrlRef.current
+                    updatedUser.profileImage
                 ) {
-                    setPreview(
+                    const serverImage =
                         getImageUrl(
-                            updatedUser.profileImage
-                        )
+                            updatedUser.profileImage,
+                            true
+                        );
+
+                    console.log(
+                        "NEW SERVER PROFILE IMAGE:",
+                        serverImage
+                    );
+
+                    setPreview(
+                        serverImage
                     );
                 }
             }
 
-            // Clear selected file after successful upload
-            setProfileImage(null);
-
+            /*
+             * Remove temporary object URL
+             */
             if (objectUrlRef.current) {
                 URL.revokeObjectURL(
                     objectUrlRef.current
@@ -393,7 +582,26 @@ function Profile() {
                 objectUrlRef.current = null;
             }
 
-            // Reload profile image from server
+            /*
+             * Clear selected file
+             */
+            setProfileImage(null);
+
+            /*
+             * Clear file input
+             */
+            if (
+                fileInputRef.current
+            ) {
+                fileInputRef.current.value =
+                    "";
+            }
+
+            /*
+             * Fetch the profile again from
+             * the backend to make sure we have
+             * the actual saved image.
+             */
             await fetchProfile();
 
             alert(
@@ -408,7 +616,9 @@ function Profile() {
             );
 
             alert(
-                error.response?.data?.message ||
+                error.response?.data
+                    ?.message ||
+                    error.message ||
                     "Unable to update profile."
             );
         } finally {
@@ -417,10 +627,10 @@ function Profile() {
     };
 
     /*
-     * ==========================================================
-     * LOADING SCREEN
-     * ==========================================================
-     */
+    ==========================================================
+    LOADING SCREEN
+    ==========================================================
+    */
 
     if (profileLoading) {
         return (
@@ -428,9 +638,12 @@ function Profile() {
                 <div className="profile-card">
                     <div
                         style={{
-                            textAlign: "center",
-                            padding: "40px 20px",
-                            color: "#64748b",
+                            textAlign:
+                                "center",
+                            padding:
+                                "40px 20px",
+                            color:
+                                "#64748b",
                         }}
                     >
                         Loading profile...
@@ -441,10 +654,10 @@ function Profile() {
     }
 
     /*
-     * ==========================================================
-     * PAGE
-     * ==========================================================
-     */
+    ==========================================================
+    PAGE
+    ==========================================================
+    */
 
     return (
         <div className="profile-page">
@@ -461,6 +674,7 @@ function Profile() {
                 <div className="profile-picture">
                     {preview && (
                         <img
+                            key={preview}
                             src={preview}
                             alt="Profile"
                             onError={
@@ -472,9 +686,10 @@ function Profile() {
                     <div
                         className="profile-avatar-fallback"
                         style={{
-                            display: preview
-                                ? "none"
-                                : "flex",
+                            display:
+                                preview
+                                    ? "none"
+                                    : "flex",
                         }}
                     >
                         {getInitials()}
@@ -488,10 +703,15 @@ function Profile() {
                     </label>
 
                     <input
+                        ref={
+                            fileInputRef
+                        }
                         id="profileImage"
                         type="file"
                         accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
-                        onChange={handleImage}
+                        onChange={
+                            handleImage
+                        }
                         style={{
                             display: "none",
                         }}
