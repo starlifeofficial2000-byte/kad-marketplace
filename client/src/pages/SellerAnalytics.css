@@ -45,3 +45,34 @@ margin-bottom:10px;
 font-size:18px;
 
 }
+.analytics-page {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    box-sizing: border-box;
+    min-width: 0;
+}
+
+.analytics-page * {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+    .analytics-page {
+        padding: 16px;
+    }
+
+    .cards {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .card {
+        padding: 18px;
+    }
+
+    .card h2 {
+        font-size: 30px;
+    }
+}

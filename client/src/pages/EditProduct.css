@@ -87,3 +87,21 @@
     cursor:pointer;
 
 }
+
+
+/* Responsive upgrade */
+.edit-page { width: 100%; box-sizing: border-box; }
+.edit-form { box-sizing: border-box; }
+@media (max-width: 768px) {
+  .edit-page { margin: 20px auto; padding: 12px; }
+  .edit-form { padding: 22px 16px; border-radius: 14px; }
+  .edit-form h1 { font-size: 25px; }
+  .edit-form input, .edit-form select, .edit-form textarea { box-sizing: border-box; padding: 13px; font-size: 16px; }
+  .old-images { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .old-images img { height: 130px; }
+  .edit-form button { min-height: 50px; }
+}
+@media (max-width: 420px) {
+  .old-images { grid-template-columns: 1fr 1fr; }
+  .old-images img { height: 115px; }
+}

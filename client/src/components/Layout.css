@@ -1,11 +1,15 @@
-.main-content{
+.main-content {
+    width: 100%;
+    min-height: calc(100vh - 80px);
+    margin-top: 0;
+    padding-bottom: 50px;
+    background: #f5f7fb;
+    overflow-x: clip;
+}
 
-    min-height:100vh;
-
-    margin-top:90px;
-
-    padding-bottom:50px;
-
-    background:#f5f7fb;
-
+@media (max-width: 768px) {
+    .main-content {
+        min-height: calc(100vh - 70px);
+        padding-bottom: 30px;
+    }
 }

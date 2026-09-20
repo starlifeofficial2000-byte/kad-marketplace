@@ -55,3 +55,30 @@ color:#888;
 font-size:18px;
 
 }
+/* =========================================================
+   RESPONSIVE ADMIN TABLES
+========================================================= */
+
+.admin-table-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.admin-table {
+    min-width: 680px;
+}
+
+@media (max-width: 600px) {
+    .admin-table-container {
+        border-radius: 10px;
+    }
+
+    .admin-table th,
+    .admin-table td {
+        padding: 11px 10px;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+}

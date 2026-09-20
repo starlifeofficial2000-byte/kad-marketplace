@@ -149,3 +149,57 @@
     flex:1;
 
 }
+/* =========================================================
+   RESPONSIVE ADMIN SHELL
+========================================================= */
+
+.admin-layout {
+    min-width: 0;
+    width: 100%;
+    overflow: hidden;
+}
+
+.admin-layout > .admin-main {
+    min-width: 0;
+    width: calc(100% - 280px);
+    margin-left: 280px;
+}
+
+.admin-layout > .admin-main > .admin-content {
+    min-width: 0;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .admin-layout {
+        display: block;
+        overflow-x: hidden;
+    }
+
+    .admin-layout > .admin-main {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .admin-header {
+        min-height: 70px;
+        height: auto;
+        padding: 12px 14px 12px 72px;
+        gap: 10px;
+    }
+
+    .admin-content {
+        padding: 16px;
+        overflow-x: hidden;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-header {
+        padding-left: 68px;
+    }
+
+    .admin-content {
+        padding: 12px;
+    }
+}

@@ -359,3 +359,23 @@
     }
 
 }
+.subscription-page,
+.subscription-page * {
+    box-sizing: border-box;
+    min-width: 0;
+}
+
+@media (max-width: 480px) {
+    .subscription-page {
+        padding: 14px;
+    }
+
+    .subscription-header h1 {
+        font-size: 23px;
+    }
+
+    .payment-security-note {
+        margin-top: 25px;
+        font-size: 12px;
+    }
+}

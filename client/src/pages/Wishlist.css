@@ -161,3 +161,17 @@ grid-template-columns:1fr;
 }
 
 }
+
+
+/* Responsive upgrade */
+.wishlist-page { box-sizing: border-box; overflow-x: hidden; }
+@media (max-width: 768px) {
+  .wishlist-page { padding: 24px 12px; }
+  .wishlist-page h1 { font-size: 27px; margin-bottom: 20px; }
+  .wishlist-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .empty-wishlist { padding: 55px 18px; }
+}
+@media (max-width: 480px) {
+  .wishlist-grid { grid-template-columns: 1fr; }
+  .wishlist-loading { padding: 60px 15px; font-size: 18px; }
+}

@@ -403,3 +403,22 @@
     }
 
 }
+@media (max-width: 768px) {
+    .stores-page,
+    .stores-container {
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .stores-header,
+    .stores-toolbar {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .stores-header input,
+    .stores-toolbar input {
+        width: 100%;
+        max-width: none;
+    }
+}

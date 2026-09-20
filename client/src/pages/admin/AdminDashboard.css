@@ -71,3 +71,51 @@
     border-left:6px solid orange;
 
 }
+/* =========================================================
+   RESPONSIVE ADMIN DASHBOARD
+========================================================= */
+
+.admin-dashboard {
+    width: 100%;
+    max-width: 100%;
+}
+
+.dashboard-grid {
+    min-width: 0;
+}
+
+@media (max-width: 768px) {
+    .admin-dashboard {
+        padding: 4px;
+    }
+
+    .admin-dashboard h1 {
+        font-size: 26px;
+        margin-bottom: 20px;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .card {
+        min-width: 0;
+        padding: 18px 12px;
+        border-radius: 12px;
+    }
+
+    .card h2 {
+        font-size: 25px;
+    }
+
+    .card svg {
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 390px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}

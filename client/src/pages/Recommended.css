@@ -75,3 +75,16 @@ font-size:17px;
 }
 
 }
+
+
+/* Responsive upgrade */
+@media (max-width: 768px) {
+  .recommended-page-hero { height: 240px; padding: 20px; }
+  .recommended-overlay h1 { font-size: 34px; }
+  .recommended-overlay p { font-size: 15px; }
+  .recommended-page { width: auto; margin: 30px 12px; }
+  .recommended-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+}
+@media (max-width: 480px) {
+  .recommended-grid { grid-template-columns: 1fr; }
+}

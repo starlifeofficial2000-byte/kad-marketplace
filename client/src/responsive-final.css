@@ -1,0 +1,23 @@
+/* KAD Marketplace — Final Responsive Safety Layer */
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { max-width: 100%; }
+body { overflow-x: hidden; }
+img, video, canvas, svg { max-width: 100%; }
+button, input, select, textarea { max-width: 100%; }
+
+/* Prevent desktop-sized content from forcing the viewport wider than a phone. */
+@media (max-width: 768px) {
+  .table-wrapper, .table-responsive, .table-container, .data-table-wrapper,
+  .audit-card, .contact-messages { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { max-width: 100%; }
+  .modal-content, .dialog, .drawer-content { width: min(94vw, 700px); max-width: 94vw; }
+  .page-container, .content-container, .container { max-width: 100%; }
+}
+
+@media (max-width: 430px) {
+  body { min-width: 320px; }
+  .table-wrapper table, .table-responsive table, .table-container table,
+  .data-table-wrapper table, .audit-card .audit-table, .contact-messages table {
+    min-width: 680px;
+  }
+}

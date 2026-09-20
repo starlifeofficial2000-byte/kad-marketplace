@@ -369,3 +369,23 @@ transform:translateY(0);
     color:#7c3aed;
 
 }
+@media (max-width: 768px) {
+    .users-page,
+    .users-container,
+    .users-table-container {
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .users-header,
+    .users-toolbar,
+    .filter-bar {
+        flex-wrap: wrap;
+    }
+
+    .users-header input,
+    .users-toolbar input {
+        width: 100%;
+        max-width: none;
+    }
+}

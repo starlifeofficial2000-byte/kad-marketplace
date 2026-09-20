@@ -298,3 +298,14 @@
     color:#555;
 
 }
+@media (max-width: 768px) {
+    .reports-page,
+    .reports-container {
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .reports-grid {
+        grid-template-columns: 1fr;
+    }
+}

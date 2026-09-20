@@ -404,3 +404,66 @@ grid-template-columns:1fr;
 }
 
 }
+/* Responsive seller product management */
+.my-products,
+.my-products * {
+    box-sizing: border-box;
+    min-width: 0;
+}
+
+@media (max-width: 700px) {
+    .my-products {
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    .my-products table,
+    .my-products .products-table {
+        min-width: 720px;
+    }
+
+    .my-products .table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Mobile fixes for the actual My Products layout */
+.my-products-page {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.my-products-page img {
+    max-width: 100%;
+}
+
+@media (max-width: 700px) {
+    .my-products-page {
+        padding: 12px;
+    }
+
+    .my-products-page .seller-products {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .my-products-page .seller-product-card {
+        min-width: 0;
+    }
+
+    .my-products-page .seller-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 7px;
+    }
+}
+
+@media (max-width: 380px) {
+    .my-products-page .seller-products {
+        grid-template-columns: 1fr;
+    }
+}

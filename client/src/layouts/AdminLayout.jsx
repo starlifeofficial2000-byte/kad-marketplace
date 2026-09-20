@@ -4,6 +4,7 @@ import Sidebar from "../components/admin/Sidebar";
 import Header from "../components/admin/Header";
 
 import "./AdminLayout.css";
+import "./AdminResponsive.css";
 
 function AdminLayout() {
 

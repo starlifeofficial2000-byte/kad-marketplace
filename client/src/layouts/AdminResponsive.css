@@ -1,0 +1,373 @@
+/* KAD Marketplace - Admin secondary pages responsive layer */
+
+.admin-content,
+.admin-content * {
+  box-sizing: border-box;
+}
+
+.admin-content {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+/* Flexible page shells */
+.admin-content .page-container,
+.admin-content .dashboard-home,
+.admin-content .products-page,
+.admin-content .reports-page,
+.admin-content .payments-page,
+.admin-content .subscriptions-page,
+.admin-content .plans-page,
+.admin-content .roles-page,
+.admin-content .permissions-page,
+.admin-content .security-center,
+.admin-content .support-page,
+.admin-content .support-tickets,
+.admin-content .ticket-support,
+.admin-content .contact-messages,
+.admin-content .audit-page,
+.admin-content .login-history-page,
+.admin-content .advertisements,
+.admin-content .homepage-builder,
+.admin-content .hero-banners,
+.admin-content .featured-products,
+.admin-content .marketplace-settings,
+.admin-content .admin-notifications,
+.admin-content .admin-users,
+.admin-content .admin-store-details,
+.admin-content .settings-page {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Headers */
+.admin-content .page-header,
+.admin-content .dashboard-header,
+.admin-content .products-header,
+.admin-content .reports-header,
+.admin-content .payments-header,
+.admin-content .plans-header,
+.admin-content .roles-header,
+.admin-content .permissions-header,
+.admin-content .login-history-header,
+.admin-content .audit-header,
+.admin-content .hero-header,
+.admin-content .featured-header,
+.admin-content .builder-header,
+.admin-content .admin-users-header,
+.admin-content .payments-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.admin-content .header-actions,
+.admin-content .plans-header-actions,
+.admin-content .admin-actions,
+.admin-content .report-actions,
+.admin-content .audit-actions,
+.admin-content .form-actions,
+.admin-content .branding-actions,
+.admin-content .banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Flexible grids */
+.admin-content .dashboard-grid,
+.admin-content .reports-grid,
+.admin-content .payment-cards,
+.admin-content .products-grid,
+.admin-content .banner-grid,
+.admin-content .info-grid,
+.admin-content .permission-groups,
+.admin-content .checkbox-grid {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Tables: preserve data without breaking the viewport */
+.admin-content .admin-table,
+.admin-content .products-table,
+.admin-content .roles-table,
+.admin-content .permissions-table,
+.admin-content .plans-table,
+.admin-content .login-history-table,
+.admin-content .payments-table {
+  min-width: 700px;
+}
+
+.admin-content .admin-table-wrapper,
+.admin-content .products-table-wrapper,
+.admin-content .roles-table-wrapper,
+.admin-content .permissions-table-wrapper,
+.admin-content .plans-table-container,
+.admin-content .payments-table-container,
+.admin-content .login-history-table,
+.admin-content .audit-table-wrapper,
+.admin-content .featured-table-container {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Images/media */
+.admin-content img,
+.admin-content video,
+.admin-content iframe {
+  max-width: 100%;
+}
+
+.admin-content .banner-image-container,
+.admin-content .banner-preview,
+.admin-content .report-image,
+.admin-content .profile-image,
+.admin-content .product-image {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Forms */
+.admin-content input,
+.admin-content select,
+.admin-content textarea {
+  max-width: 100%;
+}
+
+.admin-content .form-grid {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Modals */
+.admin-content .modal-overlay,
+.admin-content .permission-modal-overlay {
+  padding: 16px;
+}
+
+.admin-content .modal,
+.admin-content .banner-modal,
+.admin-content .message-modal,
+.admin-content .permission-modal {
+  width: min(100%, 760px);
+  max-width: 100%;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+/* 768px and below */
+@media (max-width: 768px) {
+  .admin-content {
+    padding: 14px;
+  }
+
+  .admin-content .page-header,
+  .admin-content .dashboard-header,
+  .admin-content .products-header,
+  .admin-content .reports-header,
+  .admin-content .payments-header,
+  .admin-content .plans-header,
+  .admin-content .roles-header,
+  .admin-content .permissions-header,
+  .admin-content .login-history-header,
+  .admin-content .audit-header,
+  .admin-content .hero-header,
+  .admin-content .featured-header,
+  .admin-content .builder-header,
+  .admin-content .admin-users-header {
+    align-items: stretch;
+  }
+
+  .admin-content .header-actions,
+  .admin-content .plans-header-actions,
+  .admin-content .admin-actions,
+  .admin-content .report-actions,
+  .admin-content .audit-actions,
+  .admin-content .form-actions,
+  .admin-content .branding-actions,
+  .admin-content .banner-actions {
+    width: 100%;
+  }
+
+  .admin-content .header-actions > *,
+  .admin-content .plans-header-actions > *,
+  .admin-content .admin-actions > *,
+  .admin-content .report-actions > *,
+  .admin-content .audit-actions > *,
+  .admin-content .form-actions > *,
+  .admin-content .branding-actions > *,
+  .admin-content .banner-actions > * {
+    flex: 1 1 150px;
+  }
+
+  .admin-content .dashboard-left,
+  .admin-content .dashboard-right,
+  .admin-content .profile-left,
+  .admin-content .dashboard-sections {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-content .dashboard-card,
+  .admin-content .info-card,
+  .admin-content .payment-card,
+  .admin-content .report-card,
+  .admin-content .details-card,
+  .admin-content .history-card,
+  .admin-content .branding-card,
+  .admin-content .active-card,
+  .admin-content .pending-card,
+  .admin-content .approved-card,
+  .admin-content .rejected-card,
+  .admin-content .failed-card,
+  .admin-content .danger-card {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .admin-content .builder-tabs {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+
+  .admin-content .builder-tabs > * {
+    flex: 0 0 auto;
+  }
+
+  .admin-content .permission-item,
+  .admin-content .permission-category,
+  .admin-content .info-row {
+    min-width: 0;
+  }
+}
+
+/* 480px and below */
+@media (max-width: 480px) {
+  .admin-content {
+    padding: 10px;
+  }
+
+  .admin-content h1 {
+    font-size: clamp(1.35rem, 6vw, 1.75rem);
+    line-height: 1.2;
+  }
+
+  .admin-content h2 {
+    font-size: 1.25rem;
+  }
+
+  .admin-content h3 {
+    font-size: 1.05rem;
+  }
+
+  .admin-content .header-actions > *,
+  .admin-content .plans-header-actions > *,
+  .admin-content .admin-actions > *,
+  .admin-content .report-actions > *,
+  .admin-content .audit-actions > *,
+  .admin-content .form-actions > *,
+  .admin-content .branding-actions > *,
+  .admin-content .banner-actions > * {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .admin-content button,
+  .admin-content .primary-btn,
+  .admin-content .save-btn,
+  .admin-content .save-settings-btn,
+  .admin-content .save-settings-top-btn,
+  .admin-content .create-btn,
+  .admin-content .refresh-btn,
+  .admin-content .export-btn {
+    min-height: 42px;
+  }
+
+  .admin-content .filter-bar,
+  .admin-content .permission-search,
+  .admin-content .permissions-toolbar,
+  .admin-content .role-input-group,
+  .admin-content .notification-form,
+  .admin-content .hero-form,
+  .admin-content .form-grid,
+  .admin-content .info-grid {
+    width: 100%;
+    grid-template-columns: 1fr;
+  }
+
+  .admin-content input,
+  .admin-content select,
+  .admin-content textarea {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-content .modal-overlay,
+  .admin-content .permission-modal-overlay {
+    padding: 8px;
+  }
+
+  .admin-content .modal,
+  .admin-content .banner-modal,
+  .admin-content .message-modal,
+  .admin-content .permission-modal {
+    width: 100%;
+    max-height: calc(100vh - 16px);
+  }
+
+  .admin-content .bottom-buttons,
+  .admin-content .product-actions,
+  .admin-content .actions,
+  .admin-content .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .admin-content .bottom-buttons > *,
+  .admin-content .product-actions > *,
+  .admin-content .actions > *,
+  .admin-content .action-buttons > * {
+    flex: 1 1 120px;
+  }
+
+  .admin-content .message-box,
+  .admin-content .message-content,
+  .admin-content .reply-box {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-content .checkbox-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 360px and below */
+@media (max-width: 360px) {
+  .admin-content {
+    padding: 8px;
+  }
+
+  .admin-content .dashboard-card,
+  .admin-content .info-card,
+  .admin-content .payment-card,
+  .admin-content .report-card,
+  .admin-content .details-card,
+  .admin-content .history-card,
+  .admin-content .branding-card {
+    padding: 12px;
+  }
+
+  .admin-content .actions > *,
+  .admin-content .action-buttons > *,
+  .admin-content .product-actions > * {
+    flex-basis: 100%;
+  }
+}

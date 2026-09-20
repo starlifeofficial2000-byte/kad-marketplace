@@ -221,3 +221,89 @@ display:none;
 }
 
 }
+/* =========================================================
+   RESPONSIVE HEADER
+========================================================= */
+
+.admin-header {
+    min-width: 0;
+}
+
+.header-left,
+.header-right,
+.search-box,
+.profile {
+    min-width: 0;
+}
+
+@media (max-width: 768px) {
+    .admin-header {
+        flex-wrap: nowrap;
+    }
+
+    .header-left {
+        flex: 1 1 auto;
+    }
+
+    .search-box {
+        width: 100%;
+        max-width: none;
+        padding: 10px 13px;
+    }
+
+    .header-right {
+        gap: 7px;
+        flex-shrink: 0;
+    }
+
+    .icon-btn {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+    }
+
+    .profile img {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+@media (max-width: 560px) {
+    .admin-header {
+        align-items: center;
+    }
+
+    .search-box {
+        max-width: 180px;
+    }
+
+    .header-right .icon-btn:nth-child(1) {
+        display: none;
+    }
+
+    .profile-menu {
+        right: -5px;
+        width: min(220px, calc(100vw - 24px));
+    }
+}
+
+@media (max-width: 390px) {
+    .search-box {
+        max-width: 145px;
+    }
+
+    .header-right {
+        gap: 4px;
+    }
+
+    .icon-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 15px;
+    }
+
+    .profile img {
+        width: 36px;
+        height: 36px;
+    }
+}

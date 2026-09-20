@@ -1141,3 +1141,29 @@ input[readonly]{
     }
 
 }
+.store-page,
+.store-card,
+.store-grid,
+.input-group {
+    min-width: 0;
+}
+
+@media (max-width: 480px) {
+    .store-page {
+        padding: 10px;
+    }
+
+    .store-card {
+        padding: 15px;
+        border-radius: 14px;
+    }
+
+    .store-save-section {
+        justify-content: stretch;
+    }
+
+    .save-store-btn {
+        width: 100%;
+        min-width: 0;
+    }
+}

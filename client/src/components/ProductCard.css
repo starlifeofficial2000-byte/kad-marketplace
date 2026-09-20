@@ -426,3 +426,20 @@
 .store-btn:hover {
     opacity: 0.9;
 }
+
+
+/* Responsive upgrade */
+@media (max-width: 768px) {
+  .product-image-container { height: 190px; }
+  .product-info { padding: 14px; }
+  .product-price { font-size: 19px; }
+  .product-title { font-size: 15px; }
+  .promotion-badges { top: 8px; left: 8px; gap: 4px; }
+  .featured-badge, .express-badge, .boosted-badge { font-size: 10px; padding: 4px 8px; }
+}
+@media (max-width: 480px) {
+  .product-image-container { height: 175px; }
+  .product-info { padding: 12px; gap: 6px; }
+  .product-price { font-size: 18px; }
+  .product-title { font-size: 14px; line-height: 1.3; }
+}
