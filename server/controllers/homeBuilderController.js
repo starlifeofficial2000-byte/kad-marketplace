@@ -5,453 +5,305 @@ const User = require("../models/User");
 
 const { Op } = require("sequelize");
 
-
 /* =====================================================
    HELPER: PARSE PRODUCT IMAGES
 ===================================================== */
 
 const parseProductImages = (promotions) => {
-
     return promotions.map((promotion) => {
-
         const plainPromotion =
-            promotion.get
+            promotion && typeof promotion.get === "function"
                 ? promotion.get({ plain: true })
                 : promotion;
 
-
         if (plainPromotion.product?.images) {
-
             if (typeof plainPromotion.product.images === "string") {
-
                 try {
-
-                    plainPromotion.product.images =
-                        JSON.parse(
-                            plainPromotion.product.images
-                        );
-
+                    plainPromotion.product.images = JSON.parse(
+                        plainPromotion.product.images
+                    );
                 } catch (error) {
-
                     plainPromotion.product.images = [];
-
                 }
-
             }
 
+            if (!Array.isArray(plainPromotion.product.images)) {
+                plainPromotion.product.images = [];
+            }
+        } else if (plainPromotion.product) {
+            plainPromotion.product.images = [];
         }
 
-
         return plainPromotion;
-
     });
-
 };
-
 
 /* =====================================================
    HELPER: GET ADMIN PROMOTED PRODUCTS
+=====================================================
 
-   Admin sees all valid approved promotions.
+   Admin sees:
 
-   showOnHomepage is NOT filtered here because
-   the admin needs to manage hidden products too.
+   - PAID promotions
+   - APPROVED promotions
+   - Active promotions
+   - Approved products
+   - Deleted products excluded
+
+   IMPORTANT:
+   showOnHomepage is intentionally NOT filtered.
+
+   The admin must be able to see both:
+
+   showOnHomepage = true
+   showOnHomepage = false
+
+   so the checkbox can control homepage visibility.
 ===================================================== */
 
 const getAdminPromotedProducts = async (promotionType) => {
+    const promotions = await ProductPromotion.findAll({
+        where: {
+            promotionType,
 
-    const promotions =
-        await ProductPromotion.findAll({
+            paymentStatus: "PAID",
 
-            where: {
+            status: "APPROVED",
 
-                promotionType,
-
-                paymentStatus: "PAID",
-
-                status: "APPROVED",
-
-                [Op.or]: [
-
-                    {
-                        endDate: {
-                            [Op.gt]: new Date()
-                        }
-                    },
-
-                    {
-                        endDate: null
+            [Op.or]: [
+                {
+                    endDate: {
+                        [Op.gt]: new Date()
                     }
+                },
+                {
+                    endDate: null
+                }
+            ]
+        },
 
-                ]
+        include: [
+            {
+                model: Product,
+                as: "product",
+                required: true,
 
+                where: {
+                    status: "Approved",
+                    deleted: false
+                }
             },
 
-            include: [
+            {
+                model: User,
+                as: "seller",
 
-                {
+                attributes: [
+                    "id",
+                    "name",
+                    "email"
+                ]
+            }
+        ],
 
-                    model: Product,
-
-                    as: "product",
-
-                    required: true,
-
-                    where: {
-
-                        status: "Approved",
-
-                        deleted: false
-
-                    }
-
-                },
-
-                {
-
-                    model: User,
-
-                    as: "seller",
-
-                    attributes: [
-
-                        "id",
-                        "name",
-                        "email"
-
-                    ]
-
-                }
-
-            ],
-
-            order: [
-
-                ["homepageOrder", "ASC"],
-
-                ["approvedAt", "DESC"],
-
-                ["createdAt", "DESC"]
-
-            ]
-
-        });
-
+        order: [
+            ["homepageOrder", "ASC"],
+            ["approvedAt", "DESC"],
+            ["createdAt", "DESC"]
+        ]
+    });
 
     return parseProductImages(promotions);
-
 };
-
 
 /* =====================================================
    HELPER: GET PUBLIC PROMOTED PRODUCTS
+=====================================================
 
-   Homepage only sees visible products.
+   Public homepage only displays promotions that are:
+
+   - Correct promotion type
+   - PAID
+   - APPROVED
+   - showOnHomepage = true
+   - Not expired
+   - Product is approved
+   - Product is not deleted
 ===================================================== */
 
 const getPublicPromotedProducts = async (promotionType) => {
+    const promotions = await ProductPromotion.findAll({
+        where: {
+            promotionType,
 
-    const promotions =
-        await ProductPromotion.findAll({
+            paymentStatus: "PAID",
 
-            where: {
+            status: "APPROVED",
 
-                promotionType,
+            showOnHomepage: true,
 
-                paymentStatus: "PAID",
-
-                status: "APPROVED",
-
-                showOnHomepage: true,
-
-                [Op.or]: [
-
-                    {
-                        endDate: {
-                            [Op.gt]: new Date()
-                        }
-                    },
-
-                    {
-                        endDate: null
+            [Op.or]: [
+                {
+                    endDate: {
+                        [Op.gt]: new Date()
                     }
+                },
+                {
+                    endDate: null
+                }
+            ]
+        },
 
-                ]
+        include: [
+            {
+                model: Product,
+                as: "product",
+                required: true,
 
+                where: {
+                    status: "Approved",
+                    deleted: false
+                }
             },
 
-            include: [
+            {
+                model: User,
+                as: "seller",
 
-                {
+                attributes: [
+                    "id",
+                    "name",
+                    "email"
+                ]
+            }
+        ],
 
-                    model: Product,
-
-                    as: "product",
-
-                    required: true,
-
-                    where: {
-
-                        status: "Approved",
-
-                        deleted: false
-
-                    }
-
-                },
-
-                {
-
-                    model: User,
-
-                    as: "seller",
-
-                    attributes: [
-
-                        "id",
-                        "name",
-                        "email"
-
-                    ]
-
-                }
-
-            ],
-
-            order: [
-
-                ["homepageOrder", "ASC"],
-
-                ["approvedAt", "DESC"],
-
-                ["createdAt", "DESC"]
-
-            ]
-
-        });
-
+        order: [
+            ["homepageOrder", "ASC"],
+            ["approvedAt", "DESC"],
+            ["createdAt", "DESC"]
+        ]
+    });
 
     return parseProductImages(promotions);
-
 };
-console.log("========== PUBLIC HOMEPAGE PROMOTION DEBUG ==========");
-console.log("PROMOTION TYPE:", promotionType);
-console.log("CURRENT TIME:", new Date().toISOString());
-
-const allPromotions = await ProductPromotion.findAll({
-    where: {
-        promotionType
-    },
-    include: [
-        {
-            model: Product,
-            as: "product",
-            required: false
-        }
-    ],
-    order: [["createdAt", "DESC"]]
-});
-
-console.log(
-    "ALL PROMOTIONS:",
-    allPromotions.map((p) => {
-        const data = p.get({ plain: true });
-
-        return {
-            id: data.id,
-            promotionType: data.promotionType,
-            paymentStatus: data.paymentStatus,
-            status: data.status,
-            showOnHomepage: data.showOnHomepage,
-            endDate: data.endDate,
-            productId: data.productId,
-            productStatus: data.product?.status,
-            productDeleted: data.product?.deleted
-        };
-    })
-);
-
-console.log("====================================================");
 
 /* =====================================================
    HERO BANNERS
 ===================================================== */
 
-
 /* =====================================================
    ADMIN: GET ALL HERO BANNERS
+=====================================================
 
-   Important:
    Admin sees Running, Paused and Rejected banners.
 ===================================================== */
 
 exports.getAdminHeroBanners = async (req, res) => {
-
     try {
-
-        const banners =
-            await Advertisement.findAll({
-
-                order: [
-
-                    ["priority", "ASC"],
-
-                    ["createdAt", "DESC"]
-
-                ]
-
-            });
-
-
-        return res.status(200).json({
-
-            success: true,
-
-            banners
-
+        const banners = await Advertisement.findAll({
+            order: [
+                ["priority", "ASC"],
+                ["createdAt", "DESC"]
+            ]
         });
 
-    }
-
-    catch (error) {
-
+        return res.status(200).json({
+            success: true,
+            banners
+        });
+    } catch (error) {
         console.error(
             "GET ADMIN HERO BANNERS ERROR:",
             error
         );
 
         return res.status(500).json({
-
             success: false,
-
-            message:
-                "Failed to load hero banners."
-
+            message: "Failed to load hero banners."
         });
-
     }
-
 };
-
 
 /* =====================================================
    PUBLIC: GET ACTIVE HERO BANNERS
 ===================================================== */
 
 exports.getHeroBanners = async (req, res) => {
-
     try {
+        const now = new Date();
 
-        const banners =
-            await Advertisement.findAll({
+        const banners = await Advertisement.findAll({
+            where: {
+                status: "Running",
 
-                where: {
-
-                    status: "Running",
-
-                    [Op.and]: [
-
-                        {
-
-                            [Op.or]: [
-
-                                {
-
-                                    startDate: {
-
-                                        [Op.lte]: new Date()
-
-                                    }
-
-                                },
-
-                                {
-
-                                    startDate: null
-
+                [Op.and]: [
+                    {
+                        [Op.or]: [
+                            {
+                                startDate: {
+                                    [Op.lte]: now
                                 }
+                            },
+                            {
+                                startDate: null
+                            }
+                        ]
+                    },
 
-                            ]
-
-                        },
-
-                        {
-
-                            [Op.or]: [
-
-                                {
-
-                                    endDate: {
-
-                                        [Op.gte]: new Date()
-
-                                    }
-
-                                },
-
-                                {
-
-                                    endDate: null
-
+                    {
+                        [Op.or]: [
+                            {
+                                endDate: {
+                                    [Op.gte]: now
                                 }
-
-                            ]
-
-                        }
-
-                    ]
-
-                },
-
-                order: [
-
-                    ["priority", "ASC"],
-
-                    ["createdAt", "DESC"]
-
+                            },
+                            {
+                                endDate: null
+                            }
+                        ]
+                    }
                 ]
+            },
 
-            });
-
-
-        return res.status(200).json({
-
-            success: true,
-
-            banners
-
+            order: [
+                ["priority", "ASC"],
+                ["createdAt", "DESC"]
+            ]
         });
 
-    }
-
-    catch (error) {
-
+        return res.status(200).json({
+            success: true,
+            banners
+        });
+    } catch (error) {
         console.error(
             "GET PUBLIC HERO BANNERS ERROR:",
             error
         );
 
         return res.status(500).json({
-
             success: false,
-
-            message:
-                "Failed to load hero banners."
-
+            message: "Failed to load hero banners."
         });
-
     }
-
 };
-
 
 /* =====================================================
    CREATE HERO BANNER
 ===================================================== */
+
 exports.createHeroBanner = async (req, res) => {
     try {
-        console.log("CREATE HERO BANNER FILE:", req.file);
-        console.log("CREATE HERO BANNER BODY:", req.body);
+        console.log(
+            "CREATE HERO BANNER FILE:",
+            req.file
+        );
+
+        console.log(
+            "CREATE HERO BANNER BODY:",
+            req.body
+        );
 
         if (!req.file) {
             return res.status(400).json({
@@ -475,21 +327,42 @@ exports.createHeroBanner = async (req, res) => {
         const banner = await Advertisement.create({
             userId: req.user.id,
 
-            title: title?.trim() || "",
+            title:
+                typeof title === "string"
+                    ? title.trim()
+                    : "",
 
-            subtitle: subtitle?.trim() || "",
+            subtitle:
+                typeof subtitle === "string"
+                    ? subtitle.trim()
+                    : "",
 
-            description: description?.trim() || "",
+            description:
+                typeof description === "string"
+                    ? description.trim()
+                    : "",
 
-            buttonText: buttonText?.trim() || "Shop Now",
+            buttonText:
+                typeof buttonText === "string" &&
+                buttonText.trim()
+                    ? buttonText.trim()
+                    : "Shop Now",
 
-            link: link?.trim() || "#",
+            link:
+                typeof link === "string" &&
+                link.trim()
+                    ? link.trim()
+                    : "#",
 
-            placement: placement || "Homepage",
+            placement:
+                placement || "Homepage",
 
             position: "Hero",
 
-            priority: Number(priority) || 1,
+            priority:
+                Number.isFinite(Number(priority))
+                    ? Number(priority)
+                    : 1,
 
             status: "Running",
 
@@ -510,7 +383,6 @@ exports.createHeroBanner = async (req, res) => {
             message: "Hero banner created successfully.",
             banner
         });
-
     } catch (error) {
         console.error(
             "CREATE HERO BANNER ERROR:",
@@ -526,14 +398,21 @@ exports.createHeroBanner = async (req, res) => {
     }
 };
 
-
 /* =====================================================
    UPDATE HERO BANNER
 ===================================================== */
+
 exports.updateHeroBanner = async (req, res) => {
     try {
-        console.log("UPDATE HERO BANNER FILE:", req.file);
-        console.log("UPDATE HERO BANNER BODY:", req.body);
+        console.log(
+            "UPDATE HERO BANNER FILE:",
+            req.file
+        );
+
+        console.log(
+            "UPDATE HERO BANNER BODY:",
+            req.body
+        );
 
         const banner = await Advertisement.findByPk(
             req.params.id
@@ -561,27 +440,27 @@ exports.updateHeroBanner = async (req, res) => {
         const updateData = {
             title:
                 title !== undefined
-                    ? title.trim()
+                    ? String(title).trim()
                     : banner.title,
 
             subtitle:
                 subtitle !== undefined
-                    ? subtitle.trim()
+                    ? String(subtitle).trim()
                     : banner.subtitle,
 
             description:
                 description !== undefined
-                    ? description.trim()
+                    ? String(description).trim()
                     : banner.description,
 
             buttonText:
                 buttonText !== undefined
-                    ? buttonText.trim()
+                    ? String(buttonText).trim()
                     : banner.buttonText,
 
             link:
                 link !== undefined
-                    ? link.trim()
+                    ? String(link).trim()
                     : banner.link,
 
             priority:
@@ -605,7 +484,7 @@ exports.updateHeroBanner = async (req, res) => {
                     : banner.endDate
         };
 
-        // Only replace image when a new image was uploaded
+        // Only replace image when a new image was uploaded.
         if (req.file) {
             updateData.image = req.file.filename;
         }
@@ -622,7 +501,6 @@ exports.updateHeroBanner = async (req, res) => {
             message: "Banner updated successfully.",
             banner
         });
-
     } catch (error) {
         console.error(
             "UPDATE HERO BANNER ERROR:",
@@ -633,7 +511,7 @@ exports.updateHeroBanner = async (req, res) => {
             success: false,
             message:
                 error.message ||
-                "Failed to update banner."
+                "Failed to update hero banner."
         });
     }
 };
@@ -643,687 +521,427 @@ exports.updateHeroBanner = async (req, res) => {
 ===================================================== */
 
 exports.deleteHeroBanner = async (req, res) => {
-
     try {
-
         const banner =
             await Advertisement.findByPk(
                 req.params.id
             );
 
-
         if (!banner) {
-
             return res.status(404).json({
-
                 success: false,
-
-                message:
-                    "Banner not found."
-
+                message: "Banner not found."
             });
-
         }
-
 
         await banner.destroy();
 
-
         return res.status(200).json({
-
             success: true,
-
-            message:
-                "Banner deleted successfully."
-
+            message: "Banner deleted successfully."
         });
-
-    }
-
-    catch (error) {
-
+    } catch (error) {
         console.error(
             "DELETE HERO BANNER ERROR:",
             error
         );
 
         return res.status(500).json({
-
             success: false,
-
             message:
                 "Failed to delete banner."
-
         });
-
     }
-
 };
-
 
 /* =====================================================
    PAUSE / RESUME HERO BANNER
 ===================================================== */
 
 exports.toggleHeroBanner = async (req, res) => {
-
     try {
-
         const banner =
             await Advertisement.findByPk(
                 req.params.id
             );
 
-
         if (!banner) {
-
             return res.status(404).json({
-
                 success: false,
-
-                message:
-                    "Banner not found."
-
+                message: "Banner not found."
             });
-
         }
-
 
         banner.status =
             banner.status === "Running"
                 ? "Paused"
                 : "Running";
 
-
         await banner.save();
 
-
         return res.status(200).json({
-
             success: true,
 
             message:
                 `Banner ${banner.status.toLowerCase()} successfully.`,
 
             banner
-
         });
-
-    }
-
-    catch (error) {
-
+    } catch (error) {
         console.error(
             "TOGGLE HERO BANNER ERROR:",
             error
         );
 
         return res.status(500).json({
-
             success: false,
-
             message:
                 "Failed to update banner status."
-
         });
-
     }
-
 };
-
 
 /* =====================================================
    REJECT HERO BANNER
 ===================================================== */
 
 exports.rejectHeroBanner = async (req, res) => {
-
     try {
-
         const banner =
             await Advertisement.findByPk(
                 req.params.id
             );
 
-
         if (!banner) {
-
             return res.status(404).json({
-
                 success: false,
-
-                message:
-                    "Banner not found."
-
+                message: "Banner not found."
             });
-
         }
-
 
         banner.status = "Rejected";
 
         await banner.save();
 
-
         return res.status(200).json({
-
             success: true,
-
-            message:
-                "Banner rejected successfully.",
-
+            message: "Banner rejected successfully.",
             banner
-
         });
-
-    }
-
-    catch (error) {
-
+    } catch (error) {
         console.error(
             "REJECT HERO BANNER ERROR:",
             error
         );
 
         return res.status(500).json({
-
             success: false,
-
             message:
-                "Failed to reject banner."
-
+                "Failed to reject hero banner."
         });
-
     }
-
 };
-
 
 /* =====================================================
    ADMIN: FEATURED PRODUCTS
 ===================================================== */
 
 exports.getFeaturedProducts = async (req, res) => {
-
     try {
-
         const products =
             await getAdminPromotedProducts(
                 "FEATURED"
             );
 
-
         return res.status(200).json({
-
             success: true,
-
             products
-
         });
-
-    }
-
-    catch (error) {
-
+    } catch (error) {
         console.error(
             "GET ADMIN FEATURED PRODUCTS ERROR:",
             error
         );
 
         return res.status(500).json({
-
             success: false,
-
             message:
                 error.message ||
                 "Failed to load featured products."
-
         });
-
     }
-
 };
-
 
 /* =====================================================
    ADMIN: TRENDING PRODUCTS
 ===================================================== */
 
 exports.getTrendingProducts = async (req, res) => {
-
     try {
-
         const products =
             await getAdminPromotedProducts(
                 "EXPRESS"
             );
 
-
         return res.status(200).json({
-
             success: true,
-
             products
-
         });
-
-    }
-
-    catch (error) {
-
+    } catch (error) {
         console.error(
             "GET ADMIN TRENDING PRODUCTS ERROR:",
             error
         );
 
         return res.status(500).json({
-
             success: false,
-
             message:
                 error.message ||
                 "Failed to load trending products."
-
         });
-
     }
-
 };
-
 
 /* =====================================================
    ADMIN: RECOMMENDED / BOOSTED PRODUCTS
 ===================================================== */
 
 exports.getRecommendedProducts = async (req, res) => {
-
     try {
-
         const products =
             await getAdminPromotedProducts(
                 "BOOST"
             );
 
-
         return res.status(200).json({
-
             success: true,
-
             products
-
         });
-
-    }
-
-    catch (error) {
-
+    } catch (error) {
         console.error(
             "GET ADMIN RECOMMENDED PRODUCTS ERROR:",
             error
         );
 
         return res.status(500).json({
-
             success: false,
-
             message:
                 error.message ||
                 "Failed to load recommended products."
-
         });
-
     }
-
 };
-
 
 /* =====================================================
    PUBLIC: FEATURED PRODUCTS
 ===================================================== */
 
 exports.getPublicFeaturedProducts = async (req, res) => {
-
     try {
-
         const products =
             await getPublicPromotedProducts(
                 "FEATURED"
             );
 
-
         return res.status(200).json({
-
             success: true,
-
             products
-
         });
-
-    }
-
-    catch (error) {
-
+    } catch (error) {
         console.error(
             "GET PUBLIC FEATURED PRODUCTS ERROR:",
             error
         );
 
         return res.status(500).json({
-
             success: false,
-
             message:
                 "Failed to load featured products."
-
         });
-
     }
-
 };
-
 
 /* =====================================================
    PUBLIC: TRENDING PRODUCTS
 ===================================================== */
 
 exports.getPublicTrendingProducts = async (req, res) => {
-
     try {
-
         const products =
             await getPublicPromotedProducts(
                 "EXPRESS"
             );
 
-
         return res.status(200).json({
-
             success: true,
-
             products
-
         });
-
-    }
-
-    catch (error) {
-
+    } catch (error) {
         console.error(
             "GET PUBLIC TRENDING PRODUCTS ERROR:",
             error
         );
 
         return res.status(500).json({
-
             success: false,
-
             message:
                 "Failed to load trending products."
-
         });
-
     }
-
 };
-
 
 /* =====================================================
    PUBLIC: RECOMMENDED / BOOSTED PRODUCTS
 ===================================================== */
 
 exports.getPublicRecommendedProducts = async (req, res) => {
-
     try {
-
         const products =
             await getPublicPromotedProducts(
                 "BOOST"
             );
 
-
         return res.status(200).json({
-
             success: true,
-
             products
-
         });
-
-    }
-
-    catch (error) {
-
+    } catch (error) {
         console.error(
             "GET PUBLIC RECOMMENDED PRODUCTS ERROR:",
             error
         );
 
         return res.status(500).json({
-
             success: false,
-
             message:
                 "Failed to load recommended products."
-
         });
-
     }
-
 };
-
 
 /* =====================================================
    ADMIN: TOGGLE HOMEPAGE VISIBILITY
+=====================================================
+
+   IMPORTANT:
+   This does NOT approve or reject a promotion.
+
+   It only controls whether an already
+   PAID + APPROVED promotion appears
+   on the public homepage.
 ===================================================== */
 
 exports.toggleHomepageVisibility = async (req, res) => {
-
     try {
-
         const promotion =
             await ProductPromotion.findByPk(
                 req.params.id
             );
 
-
         if (!promotion) {
-
             return res.status(404).json({
-
                 success: false,
-
-                message:
-                    "Promotion not found."
-
+                message: "Promotion not found."
             });
-
         }
 
+        if (
+            promotion.paymentStatus !== "PAID" ||
+            promotion.status !== "APPROVED"
+        ) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Only paid and approved promotions can be shown on the homepage."
+            });
+        }
 
         promotion.showOnHomepage =
-            !promotion.showOnHomepage;
-
+            !Boolean(promotion.showOnHomepage);
 
         await promotion.save();
 
-
         return res.status(200).json({
-
             success: true,
 
             message:
-
                 promotion.showOnHomepage
                     ? "Product is now visible on homepage."
                     : "Product is now hidden from homepage.",
 
             promotion
-
         });
-
-    }
-
-    catch (error) {
-
+    } catch (error) {
         console.error(
             "TOGGLE HOMEPAGE VISIBILITY ERROR:",
             error
         );
 
         return res.status(500).json({
-
             success: false,
-
             message:
                 "Failed to update homepage visibility."
-
         });
-
     }
-
 };
-
 
 /* =====================================================
    ADMIN: UPDATE HOMEPAGE ORDER
 ===================================================== */
 
 exports.updateHomepageOrder = async (req, res) => {
-
     try {
-
         const {
             homepageOrder
         } = req.body;
 
-
         const order =
             Number(homepageOrder);
 
-
         if (
-
             Number.isNaN(order) ||
-
             !Number.isInteger(order) ||
-
             order < 0
-
         ) {
-
             return res.status(400).json({
-
                 success: false,
-
                 message:
-                    "Homepage order must be a valid positive number."
-
+                    "Homepage order must be a valid non-negative number."
             });
-
         }
-
 
         const promotion =
             await ProductPromotion.findByPk(
                 req.params.id
             );
 
-
         if (!promotion) {
-
             return res.status(404).json({
-
                 success: false,
-
-                message:
-                    "Promotion not found."
-
+                message: "Promotion not found."
             });
-
         }
-
 
         promotion.homepageOrder = order;
 
         await promotion.save();
 
-
         return res.status(200).json({
-
             success: true,
-
             message:
                 "Homepage order updated successfully.",
-
             promotion
-
         });
-
-    }
-
-    catch (error) {
-
+    } catch (error) {
         console.error(
             "UPDATE HOMEPAGE ORDER ERROR:",
             error
         );
 
         return res.status(500).json({
-
             success: false,
-
             message:
                 "Failed to update homepage order."
-
         });
-
     }
-
-};
-const getPublicHeroBanners = async (req, res) => {
-
-    try {
-
-        const banners =
-            await HeroBanner.findAll({
-
-                where: {
-                    status: "active"
-                },
-
-                order: [
-                    ["displayOrder", "ASC"]
-                ]
-
-            });
-
-
-        return res.status(200).json({
-
-            success: true,
-
-            banners
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "GET PUBLIC BANNERS ERROR:",
-            error
-        );
-
-        return res.status(500).json({
-
-            success: false,
-
-            message:
-                "Failed to load banners."
-
-        });
-
-    }
-
 };
