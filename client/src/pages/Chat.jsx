@@ -1,114 +1,206 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState
+} from "react";
+
 import { useNavigate, useParams } from "react-router-dom";
-import api from "../config/axios";
 import { io } from "socket.io-client";
+
+import api from "../config/axios";
 
 import {
     FaPaperPlane,
     FaImage,
-    FaPhone,
-    FaVideo,
-    FaEllipsisV,
     FaMicrophone,
-    FaStop
+    FaStop,
+    FaTimes
 } from "react-icons/fa";
 
 import "./Chat.css";
 
 /* =========================================================
-   API / SOCKET CONFIG
+   CONFIG
 ========================================================= */
 
-const API_BASE_URL =
-    import.meta.env.VITE_API_URL ||
-    "https://kad-marketplace-production.up.railway.app/api";
-
-const SERVER_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
+const API_SERVER =
+    import.meta.env.VITE_API_SERVER ||
+    import.meta.env.VITE_SERVER_URL ||
+    "https://kad-marketplace-production.up.railway.app";
 
 const SOCKET_URL =
     import.meta.env.VITE_SOCKET_URL ||
-    SERVER_BASE_URL;
+    API_SERVER;
+
+const FALLBACK_IMAGE =
+    "/images/product-placeholder.png";
+
+/* =========================================================
+   SOCKET
+========================================================= */
+
+const socket = io(SOCKET_URL, {
+    transports: ["websocket", "polling"],
+    autoConnect: true
+});
 
 /* =========================================================
    HELPERS
 ========================================================= */
 
-const getUserFromStorage = () => {
-    try {
-        return JSON.parse(
-            localStorage.getItem("user") || "null"
-        );
-    } catch {
-        return null;
-    }
-};
-
-const getImageUrl = (image, fallback = "/images/product-placeholder.png") => {
+function getImageUrl(image) {
     if (!image || typeof image !== "string") {
-        return fallback;
+        return FALLBACK_IMAGE;
     }
 
     const value = image.trim();
 
     if (!value) {
-        return fallback;
+        return FALLBACK_IMAGE;
     }
 
     if (
         value.startsWith("http://") ||
-        value.startsWith("https://")
+        value.startsWith("https://") ||
+        value.startsWith("data:") ||
+        value.startsWith("blob:")
     ) {
-        return value;
-    }
-
-    if (value.startsWith("blob:")) {
         return value;
     }
 
     if (value.startsWith("/uploads/")) {
-        return `${SERVER_BASE_URL}${value}`;
+        return `${API_SERVER}${value}`;
     }
 
     if (value.startsWith("uploads/")) {
-        return `${SERVER_BASE_URL}/${value}`;
+        return `${API_SERVER}/${value}`;
     }
 
-    if (value.startsWith("/")) {
-        return `${SERVER_BASE_URL}${value}`;
+    return `${API_SERVER}/uploads/${value}`;
+}
+
+function getChatImageUrl(image) {
+    if (!image || typeof image !== "string") {
+        return FALLBACK_IMAGE;
     }
 
-    return `${SERVER_BASE_URL}/uploads/${value}`;
-};
+    const value = image.trim();
 
-const getChatImageUrl = (filename) => {
-    if (!filename) {
-        return "/images/product-placeholder.png";
+    if (!value) {
+        return FALLBACK_IMAGE;
     }
 
     if (
-        filename.startsWith("http://") ||
-        filename.startsWith("https://")
+        value.startsWith("http://") ||
+        value.startsWith("https://") ||
+        value.startsWith("data:") ||
+        value.startsWith("blob:")
     ) {
-        return filename;
+        return value;
     }
 
-    return `${SERVER_BASE_URL}/uploads/chat/images/${filename}`;
-};
+    if (value.startsWith("/uploads/")) {
+        return `${API_SERVER}${value}`;
+    }
 
-const getChatAudioUrl = (filename) => {
-    if (!filename) {
+    if (value.startsWith("uploads/")) {
+        return `${API_SERVER}/${value}`;
+    }
+
+    return `${API_SERVER}/uploads/chat/images/${value}`;
+}
+
+function getChatAudioUrl(audio) {
+    if (!audio || typeof audio !== "string") {
+        return "";
+    }
+
+    const value = audio.trim();
+
+    if (!value) {
         return "";
     }
 
     if (
-        filename.startsWith("http://") ||
-        filename.startsWith("https://")
+        value.startsWith("http://") ||
+        value.startsWith("https://") ||
+        value.startsWith("blob:")
     ) {
-        return filename;
+        return value;
     }
 
-    return `${SERVER_BASE_URL}/uploads/chat/audio/${filename}`;
-};
+    if (value.startsWith("/uploads/")) {
+        return `${API_SERVER}${value}`;
+    }
+
+    if (value.startsWith("uploads/")) {
+        return `${API_SERVER}/${value}`;
+    }
+
+    return `${API_SERVER}/uploads/chat/audio/${value}`;
+}
+
+function parseImages(images) {
+    if (!images) {
+        return [];
+    }
+
+    if (Array.isArray(images)) {
+        return images;
+    }
+
+    if (typeof images === "string") {
+        try {
+            const parsed = JSON.parse(images);
+
+            if (Array.isArray(parsed)) {
+                return parsed;
+            }
+
+            return parsed ? [parsed] : [];
+        } catch {
+            return [images];
+        }
+    }
+
+    return [];
+}
+
+function getStoredUser() {
+    const storedUser = localStorage.getItem("user");
+
+    if (!storedUser) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(storedUser);
+    } catch {
+        return null;
+    }
+}
+
+/* =========================================================
+   SAFE API RESPONSE HELPER
+========================================================= */
+
+async function parseFetchResponse(response) {
+    const contentType =
+        response.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+        return await response.json();
+    }
+
+    const text = await response.text();
+
+    return {
+        success: response.ok,
+        message: text
+    };
+}
 
 /* =========================================================
    COMPONENT
@@ -118,245 +210,379 @@ function Chat() {
     const { conversationId } = useParams();
     const navigate = useNavigate();
 
+    /* =====================================================
+       AUTH
+    ===================================================== */
+
     const token = localStorage.getItem("token");
-    const user = getUserFromStorage();
+
+    const storedUser = useMemo(
+        () => getStoredUser(),
+        []
+    );
+
+    const userId = storedUser?.id
+        ? String(storedUser.id)
+        : null;
+
+    /* =====================================================
+       STATE
+    ===================================================== */
 
     const [messages, setMessages] = useState([]);
+
     const [message, setMessage] = useState("");
 
     const [product, setProduct] = useState(null);
+
     const [seller, setSeller] = useState(null);
 
-    const [recording, setRecording] = useState(false);
-    const [mediaRecorder, setMediaRecorder] = useState(null);
-    const [audioBlob, setAudioBlob] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-    const [uploadingImage, setUploadingImage] = useState(false);
-    const [sendingMessage, setSendingMessage] = useState(false);
-    const [sendingAudio, setSendingAudio] = useState(false);
+    const [sending, setSending] = useState(false);
 
-    const messagesEndRef = useRef(null);
-    const socketRef = useRef(null);
+    const [uploadingImage, setUploadingImage] =
+        useState(false);
+
+    const [recording, setRecording] =
+        useState(false);
+
+    const [audioBlob, setAudioBlob] =
+        useState(null);
+
+    const [audioPreviewUrl, setAudioPreviewUrl] =
+        useState("");
+
+    const [error, setError] = useState("");
+
+    const [mediaRecorder, setMediaRecorder] =
+        useState(null);
 
     /* =====================================================
-       AUTH CHECK
+       REFS
+    ===================================================== */
+
+    const messagesEndRef = useRef(null);
+
+    const imageInputRef = useRef(null);
+
+    const streamRef = useRef(null);
+
+    const chunksRef = useRef([]);
+
+    const loadedConversationRef =
+        useRef(null);
+
+    const socketConversationRef =
+        useRef(null);
+
+    /* =====================================================
+       AUTH GUARD
     ===================================================== */
 
     useEffect(() => {
-        if (!user || !token) {
-            navigate("/login");
+        if (!token) {
+            navigate("/login", {
+                replace: true
+            });
         }
-    }, [user, token, navigate]);
+    }, [token, navigate]);
 
     /* =====================================================
-       LOAD CONVERSATION
+       LOAD CONVERSATION DETAILS
     ===================================================== */
 
-    const loadConversation = useCallback(async () => {
-        if (!conversationId || !token) return;
-
-        try {
-            const response = await api.get(
-                `/messages/conversation/${conversationId}`
-            );
-
-            if (response.data?.success === false) {
-                console.error(
-                    "Conversation error:",
-                    response.data?.message
-                );
+    const loadConversation = useCallback(
+        async () => {
+            if (!conversationId || !token) {
                 return;
             }
 
-            setProduct(
-                response.data?.product || null
-            );
+            try {
+                const response =
+                    await api.get(
+                        `/messages/conversation/${conversationId}`
+                    );
 
-            setSeller(
-                response.data?.seller || null
-            );
+                const data =
+                    response.data || {};
 
-        } catch (error) {
-            console.error(
-                "LOAD CONVERSATION ERROR:",
-                error
-            );
+                if (!data.success) {
+                    throw new Error(
+                        data.message ||
+                        "Unable to load conversation."
+                    );
+                }
 
-            if (error.response?.status === 401) {
-                localStorage.removeItem("token");
-                navigate("/login");
+                setProduct(
+                    data.product || null
+                );
+
+                setSeller(
+                    data.seller || null
+                );
+
+            } catch (error) {
+                console.error(
+                    "LOAD CONVERSATION ERROR:",
+                    error.response?.data ||
+                    error.message
+                );
+
+                /*
+                 * IMPORTANT:
+                 * Do NOT redirect to login here.
+                 *
+                 * A messaging endpoint returning 401
+                 * should not cause this page to forcibly
+                 * destroy the user's session.
+                 */
+
+                if (
+                    error.response?.status === 401
+                ) {
+                    setError(
+                        "Your session may have expired. Please refresh and try again."
+                    );
+
+                    return;
+                }
+
+                setError(
+                    error.response?.data?.message ||
+                    error.message ||
+                    "Unable to load conversation."
+                );
             }
-        }
-    }, [conversationId, token, navigate]);
+        },
+        [
+            conversationId,
+            token
+        ]
+    );
 
     /* =====================================================
        LOAD MESSAGES
     ===================================================== */
 
-    const loadMessages = useCallback(async () => {
-        if (!conversationId || !token) return;
-
-        try {
-            const response = await api.get(
-                `/messages/${conversationId}`
-            );
-
-            const loadedMessages =
-                response.data?.messages || [];
-
-            setMessages(
-                Array.isArray(loadedMessages)
-                    ? loadedMessages
-                    : []
-            );
-
-            /* ---------------------------------------------
-               MARK DELIVERED
-            --------------------------------------------- */
+    const loadMessages = useCallback(
+        async () => {
+            if (!conversationId || !token) {
+                return;
+            }
 
             try {
-                await api.put(
-                    `/messages/${conversationId}/delivered`
+                const response =
+                    await api.get(
+                        `/messages/${conversationId}`
+                    );
+
+                const data =
+                    response.data || {};
+
+                const loadedMessages =
+                    Array.isArray(data.messages)
+                        ? data.messages
+                        : Array.isArray(data.data)
+                            ? data.data
+                            : [];
+
+                setMessages(
+                    loadedMessages
                 );
+
+                /* =========================================
+                   MARK DELIVERED
+                ========================================= */
+
+                try {
+                    await api.put(
+                        `/messages/${conversationId}/delivered`
+                    );
+                } catch (error) {
+                    console.warn(
+                        "MARK DELIVERED ERROR:",
+                        error.response?.data ||
+                        error.message
+                    );
+                }
+
+                /* =========================================
+                   MARK READ
+                ========================================= */
+
+                try {
+                    await api.put(
+                        `/messages/${conversationId}/read`
+                    );
+                } catch (error) {
+                    console.warn(
+                        "MARK READ ERROR:",
+                        error.response?.data ||
+                        error.message
+                    );
+                }
+
             } catch (error) {
-                console.warn(
-                    "Unable to mark messages delivered:",
-                    error
+                console.error(
+                    "LOAD MESSAGES ERROR:",
+                    error.response?.data ||
+                    error.message
                 );
-            }
 
-            /* ---------------------------------------------
-               MARK READ
-            --------------------------------------------- */
+                if (
+                    error.response?.status === 401
+                ) {
+                    setError(
+                        "Your session may have expired. Please refresh and try again."
+                    );
 
-            try {
-                await api.put(
-                    `/messages/${conversationId}/read`
+                    return;
+                }
+
+                setError(
+                    error.response?.data?.message ||
+                    error.message ||
+                    "Unable to load messages."
                 );
-            } catch (error) {
-                console.warn(
-                    "Unable to mark messages read:",
-                    error
-                );
-            }
 
-        } catch (error) {
-            console.error(
-                "LOAD MESSAGES ERROR:",
-                error
-            );
-
-            if (error.response?.status === 401) {
-                localStorage.removeItem("token");
-                navigate("/login");
+            } finally {
+                setLoading(false);
             }
-        }
-    }, [conversationId, token, navigate]);
+        },
+        [
+            conversationId,
+            token
+        ]
+    );
 
     /* =====================================================
-       SOCKET MESSAGE HANDLER
-    ===================================================== */
-
-    const receiveMessage = useCallback((incomingMessage) => {
-        if (!incomingMessage) return;
-
-        setMessages((previousMessages) => {
-
-            const alreadyExists = previousMessages.some(
-                (existingMessage) =>
-                    existingMessage.id === incomingMessage.id
-            );
-
-            if (alreadyExists) {
-                return previousMessages;
-            }
-
-            return [
-                ...previousMessages,
-                incomingMessage
-            ];
-        });
-    }, []);
-
-    /* =====================================================
-       INITIAL LOAD + SOCKET
+       LOAD CHAT
     ===================================================== */
 
     useEffect(() => {
-        if (!user || !token || !conversationId) {
+        if (!conversationId || !token) {
             return;
         }
 
-        loadConversation();
-        loadMessages();
+        const id = String(conversationId);
 
-        /* ---------------------------------------------
-           CREATE SOCKET CONNECTION
-        --------------------------------------------- */
+        if (
+            loadedConversationRef.current === id
+        ) {
+            return;
+        }
 
-        const socket = io(SOCKET_URL, {
-            transports: ["websocket", "polling"],
-            auth: {
-                token
-            }
-        });
+        loadedConversationRef.current = id;
 
-        socketRef.current = socket;
+        setLoading(true);
+        setError("");
+        setMessages([]);
 
-        socket.on("connect", () => {
-            console.log(
-                "CHAT SOCKET CONNECTED:",
-                socket.id
-            );
-
-            socket.emit(
-                "join_conversation",
-                conversationId
-            );
-        });
-
-        socket.on(
-            "receive_message",
-            receiveMessage
-        );
-
-        socket.on(
-            "connect_error",
-            (error) => {
-                console.warn(
-                    "CHAT SOCKET ERROR:",
-                    error.message
-                );
-            }
-        );
-
-        return () => {
-            socket.emit(
-                "leave_conversation",
-                conversationId
-            );
-
-            socket.off(
-                "receive_message",
-                receiveMessage
-            );
-
-            socket.disconnect();
-
-            socketRef.current = null;
+        const loadChat = async () => {
+            await loadConversation();
+            await loadMessages();
         };
+
+        loadChat();
 
     }, [
         conversationId,
         token,
-        user,
         loadConversation,
-        loadMessages,
-        receiveMessage
+        loadMessages
     ]);
 
     /* =====================================================
-       AUTO SCROLL
+       SOCKET
+    ===================================================== */
+
+    useEffect(() => {
+        if (!conversationId || !token) {
+            return;
+        }
+
+        const id = String(conversationId);
+
+        if (
+            socketConversationRef.current !== id
+        ) {
+            socketConversationRef.current = id;
+
+            console.log(
+                "Joining conversation:",
+                id
+            );
+
+            socket.emit(
+                "join_conversation",
+                id
+            );
+        }
+
+        const handleReceiveMessage =
+            (incomingMessage) => {
+
+                if (!incomingMessage) {
+                    return;
+                }
+
+                const incomingConversationId =
+                    incomingMessage.conversationId ??
+                    incomingMessage.conversation_id;
+
+                if (
+                    incomingConversationId &&
+                    String(
+                        incomingConversationId
+                    ) !== id
+                ) {
+                    return;
+                }
+
+                setMessages(
+                    previousMessages => {
+
+                        if (
+                            incomingMessage.id &&
+                            previousMessages.some(
+                                item =>
+                                    String(item.id) ===
+                                    String(
+                                        incomingMessage.id
+                                    )
+                            )
+                        ) {
+                            return previousMessages;
+                        }
+
+                        return [
+                            ...previousMessages,
+                            incomingMessage
+                        ];
+                    }
+                );
+            };
+
+        socket.on(
+            "receive_message",
+            handleReceiveMessage
+        );
+
+        return () => {
+            socket.off(
+                "receive_message",
+                handleReceiveMessage
+            );
+        };
+
+    }, [
+        conversationId,
+        token
+    ]);
+
+    /* =====================================================
+       SCROLL
     ===================================================== */
 
     useEffect(() => {
@@ -370,64 +596,53 @@ function Chat() {
     ===================================================== */
 
     const sendMessage = async () => {
-        const trimmedMessage = message.trim();
+        const text = message.trim();
 
-        if (!trimmedMessage) {
-            return;
-        }
-
-        if (!conversationId) {
-            console.error(
-                "Conversation ID is missing."
-            );
-            return;
-        }
-
-        if (sendingMessage) {
+        if (
+            !text ||
+            sending ||
+            !conversationId
+        ) {
             return;
         }
 
         try {
-            setSendingMessage(true);
+            setSending(true);
+            setError("");
 
-            const response = await api.post(
-                `/messages/${conversationId}`,
-                {
-                    message: trimmedMessage
-                }
-            );
-
-            if (
-                response.data?.success === false
-            ) {
-                throw new Error(
-                    response.data?.message ||
-                    "Unable to send message."
+            const response =
+                await api.post(
+                    `/messages/${conversationId}`,
+                    {
+                        message: text
+                    }
                 );
-            }
 
             const newMessage =
-                response.data?.newMessage;
+                response.data?.newMessage ||
+                response.data?.message;
 
             if (newMessage) {
-                setMessages((previousMessages) => {
+                setMessages(
+                    previousMessages => {
 
-                    const alreadyExists =
-                        previousMessages.some(
-                            (existingMessage) =>
-                                existingMessage.id ===
-                                newMessage.id
-                        );
+                        if (
+                            newMessage.id &&
+                            previousMessages.some(
+                                item =>
+                                    String(item.id) ===
+                                    String(newMessage.id)
+                            )
+                        ) {
+                            return previousMessages;
+                        }
 
-                    if (alreadyExists) {
-                        return previousMessages;
+                        return [
+                            ...previousMessages,
+                            newMessage
+                        ];
                     }
-
-                    return [
-                        ...previousMessages,
-                        newMessage
-                    ];
-                });
+                );
             }
 
             setMessage("");
@@ -435,51 +650,98 @@ function Chat() {
         } catch (error) {
             console.error(
                 "SEND MESSAGE ERROR:",
-                error
+                error.response?.data ||
+                error.message
             );
 
-            alert(
+            if (
+                error.response?.status === 401
+            ) {
+                setError(
+                    "Your session may have expired. Please refresh and try again."
+                );
+
+                return;
+            }
+
+            setError(
                 error.response?.data?.message ||
                 error.message ||
-                "Unable to send message."
+                "Failed to send message."
             );
 
         } finally {
-            setSendingMessage(false);
+            setSending(false);
         }
     };
 
     /* =====================================================
-       IMAGE UPLOAD
+       SEND IMAGE
+       
+       IMPORTANT:
+       This uses FETCH instead of the Axios instance.
+
+       Why?
+       Axios instance may have a global
+       Content-Type: application/json header.
+
+       With FormData, the browser must generate:
+
+       multipart/form-data;
+       boundary=------------------------
+
+       We deliberately DO NOT set Content-Type.
     ===================================================== */
 
-    const uploadImage = async (event) => {
+    const uploadImage = async event => {
         const file =
             event.target.files?.[0];
+
+        event.target.value = "";
 
         if (!file) {
             return;
         }
 
-        if (!file.type.startsWith("image/")) {
-            alert(
+        if (
+            !file.type.startsWith("image/")
+        ) {
+            setError(
                 "Please select a valid image."
             );
 
-            event.target.value = "";
             return;
         }
 
-        if (file.size > 5 * 1024 * 1024) {
-            alert(
-                "Image must be smaller than 5MB."
+        if (
+            file.size > 10 * 1024 * 1024
+        ) {
+            setError(
+                "Image must be smaller than 10MB."
             );
 
-            event.target.value = "";
             return;
         }
 
-        const formData = new FormData();
+        if (!conversationId) {
+            setError(
+                "Conversation not found."
+            );
+
+            return;
+        }
+
+        console.log(
+            "Uploading image:",
+            {
+                name: file.name,
+                type: file.type,
+                size: file.size
+            }
+        );
+
+        const formData =
+            new FormData();
 
         formData.append(
             "image",
@@ -487,45 +749,107 @@ function Chat() {
             file.name
         );
 
+        /*
+         * Debug FormData.
+         *
+         * This MUST print:
+         *
+         * image File {...}
+         */
+
+        for (
+            const [key, value]
+            of formData.entries()
+        ) {
+            console.log(
+                "FORM DATA:",
+                key,
+                value
+            );
+        }
+
         try {
             setUploadingImage(true);
+            setError("");
 
-            const response = await api.post(
-                `/messages/${conversationId}/image`,
-                formData
+            const response =
+                await fetch(
+                    `${API_SERVER}/api/messages/${conversationId}/image`,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${token}`
+                        },
+
+                        /*
+                         * DO NOT SET:
+                         *
+                         * Content-Type:
+                         * multipart/form-data
+                         *
+                         * Browser adds the correct
+                         * boundary automatically.
+                         */
+
+                        body: formData
+                    }
+                );
+
+            const data =
+                await parseFetchResponse(
+                    response
+                );
+
+            console.log(
+                "IMAGE UPLOAD RESPONSE:",
+                data
             );
 
-            if (
-                response.data?.success === false
-            ) {
+            if (!response.ok) {
+
+                if (
+                    response.status === 401
+                ) {
+                    setError(
+                        "Your session may have expired. Please refresh and try again."
+                    );
+
+                    return;
+                }
+
                 throw new Error(
-                    response.data?.message ||
-                    "Unable to upload image."
+                    data?.message ||
+                    `Image upload failed (${response.status}).`
                 );
             }
 
             const newMessage =
-                response.data?.newMessage;
+                data?.newMessage ||
+                data?.message;
 
             if (newMessage) {
-                setMessages((previousMessages) => {
+                setMessages(
+                    previousMessages => {
 
-                    const exists =
-                        previousMessages.some(
-                            (existingMessage) =>
-                                existingMessage.id ===
-                                newMessage.id
-                        );
+                        if (
+                            newMessage.id &&
+                            previousMessages.some(
+                                item =>
+                                    String(item.id) ===
+                                    String(newMessage.id)
+                            )
+                        ) {
+                            return previousMessages;
+                        }
 
-                    if (exists) {
-                        return previousMessages;
+                        return [
+                            ...previousMessages,
+                            newMessage
+                        ];
                     }
-
-                    return [
-                        ...previousMessages,
-                        newMessage
-                    ];
-                });
+                );
             }
 
         } catch (error) {
@@ -534,17 +858,49 @@ function Chat() {
                 error
             );
 
-            alert(
-                error.response?.data?.message ||
+            setError(
                 error.message ||
-                "Unable to send image."
+                "Failed to send image."
             );
 
         } finally {
             setUploadingImage(false);
-
-            event.target.value = "";
         }
+    };
+
+    /* =====================================================
+       AUDIO MIME TYPE
+    ===================================================== */
+
+    const getAudioMimeType = () => {
+        if (
+            typeof MediaRecorder ===
+            "undefined"
+        ) {
+            return "";
+        }
+
+        const types = [
+            "audio/webm;codecs=opus",
+            "audio/webm",
+            "audio/ogg;codecs=opus",
+            "audio/ogg",
+            "audio/mp4"
+        ];
+
+        for (
+            const type of types
+        ) {
+            if (
+                MediaRecorder.isTypeSupported(
+                    type
+                )
+            ) {
+                return type;
+            }
+        }
+
+        return "";
     };
 
     /* =====================================================
@@ -552,55 +908,129 @@ function Chat() {
     ===================================================== */
 
     const startRecording = async () => {
+        if (recording) {
+            return;
+        }
+
         try {
+            setError("");
+
             if (
                 !navigator.mediaDevices ||
                 !navigator.mediaDevices.getUserMedia
             ) {
-                alert(
-                    "Audio recording is not supported by this browser."
+                throw new Error(
+                    "Your browser does not support microphone recording."
                 );
-                return;
+            }
+
+            if (
+                typeof MediaRecorder ===
+                "undefined"
+            ) {
+                throw new Error(
+                    "Your browser does not support voice recording."
+                );
             }
 
             const stream =
-                await navigator.mediaDevices.getUserMedia({
-                    audio: true
-                });
+                await navigator
+                    .mediaDevices
+                    .getUserMedia({
+                        audio: true
+                    });
+
+            streamRef.current = stream;
+
+            chunksRef.current = [];
+
+            const mimeType =
+                getAudioMimeType();
 
             const recorder =
-                new MediaRecorder(stream);
+                mimeType
+                    ? new MediaRecorder(
+                        stream,
+                        {
+                            mimeType
+                        }
+                    )
+                    : new MediaRecorder(
+                        stream
+                    );
 
-            const chunks = [];
+            recorder.ondataavailable =
+                event => {
 
-            recorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    chunks.push(event.data);
+                    if (
+                        event.data &&
+                        event.data.size > 0
+                    ) {
+                        chunksRef.current.push(
+                            event.data
+                        );
+                    }
+                };
+
+            recorder.onstop = () => {
+
+                const actualType =
+                    recorder.mimeType ||
+                    mimeType ||
+                    "audio/webm";
+
+                const blob =
+                    new Blob(
+                        chunksRef.current,
+                        {
+                            type: actualType
+                        }
+                    );
+
+                if (blob.size > 0) {
+                    setAudioBlob(blob);
+
+                    const url =
+                        URL.createObjectURL(
+                            blob
+                        );
+
+                    setAudioPreviewUrl(
+                        url
+                    );
+                }
+
+                if (
+                    streamRef.current
+                ) {
+                    streamRef.current
+                        .getTracks()
+                        .forEach(
+                            track =>
+                                track.stop()
+                        );
+
+                    streamRef.current = null;
                 }
             };
 
-            recorder.onstop = () => {
-                const blob = new Blob(
-                    chunks,
-                    {
-                        type:
-                            recorder.mimeType ||
-                            "audio/webm"
-                    }
+            recorder.onerror = event => {
+                console.error(
+                    "RECORDER ERROR:",
+                    event
                 );
 
-                setAudioBlob(blob);
-
-                stream
-                    .getTracks()
-                    .forEach((track) => {
-                        track.stop();
-                    });
+                setError(
+                    "Voice recording failed."
+                );
             };
 
-            recorder.start();
+            recorder.start(250);
 
-            setMediaRecorder(recorder);
+            setMediaRecorder(
+                recorder
+            );
+
             setRecording(true);
 
         } catch (error) {
@@ -609,7 +1039,11 @@ function Chat() {
                 error
             );
 
-            alert(
+            setRecording(false);
+            setMediaRecorder(null);
+
+            setError(
+                error.message ||
                 "Unable to access microphone."
             );
         }
@@ -625,8 +1059,8 @@ function Chat() {
         }
 
         if (
-            mediaRecorder.state !==
-            "inactive"
+            mediaRecorder.state ===
+            "recording"
         ) {
             mediaRecorder.stop();
         }
@@ -636,129 +1070,306 @@ function Chat() {
     };
 
     /* =====================================================
+       CANCEL AUDIO
+    ===================================================== */
+
+    const cancelAudio = () => {
+
+        if (
+            mediaRecorder &&
+            mediaRecorder.state ===
+            "recording"
+        ) {
+            mediaRecorder.stop();
+        }
+
+        if (streamRef.current) {
+            streamRef.current
+                .getTracks()
+                .forEach(
+                    track =>
+                        track.stop()
+                );
+
+            streamRef.current = null;
+        }
+
+        if (audioPreviewUrl) {
+            URL.revokeObjectURL(
+                audioPreviewUrl
+            );
+        }
+
+        setRecording(false);
+        setMediaRecorder(null);
+        setAudioBlob(null);
+        setAudioPreviewUrl("");
+    };
+
+    /* =====================================================
        SEND AUDIO
+       
+       Uses fetch for the same multipart reason
+       as image upload.
     ===================================================== */
 
     const sendAudio = async () => {
-        if (!audioBlob) {
+        if (
+            !audioBlob ||
+            !conversationId
+        ) {
             return;
         }
 
-        if (sendingAudio) {
-            return;
-        }
+        const formData =
+            new FormData();
 
-        const formData = new FormData();
+        let extension = "webm";
+
+        if (
+            audioBlob.type.includes(
+                "ogg"
+            )
+        ) {
+            extension = "ogg";
+        } else if (
+            audioBlob.type.includes(
+                "mp4"
+            )
+        ) {
+            extension = "mp4";
+        } else if (
+            audioBlob.type.includes(
+                "mpeg"
+            )
+        ) {
+            extension = "mp3";
+        }
 
         formData.append(
             "audio",
             audioBlob,
-            "voice.webm"
+            `voice-${Date.now()}.${extension}`
         );
 
         try {
-            setSendingAudio(true);
+            setError("");
 
-            const response = await api.post(
-                `/messages/${conversationId}/audio`,
-                formData
+            const response =
+                await fetch(
+                    `${API_SERVER}/api/messages/${conversationId}/audio`,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${token}`
+                        },
+
+                        /*
+                         * DO NOT SET Content-Type.
+                         */
+
+                        body: formData
+                    }
+                );
+
+            const data =
+                await parseFetchResponse(
+                    response
+                );
+
+            console.log(
+                "AUDIO UPLOAD RESPONSE:",
+                data
             );
 
-            if (
-                response.data?.success === false
-            ) {
+            if (!response.ok) {
+
+                if (
+                    response.status === 401
+                ) {
+                    setError(
+                        "Your session may have expired. Please refresh and try again."
+                    );
+
+                    return;
+                }
+
                 throw new Error(
-                    response.data?.message ||
-                    "Unable to send audio."
+                    data?.message ||
+                    `Audio upload failed (${response.status}).`
                 );
             }
 
             const newMessage =
-                response.data?.newMessage;
+                data?.newMessage ||
+                data?.message;
 
             if (newMessage) {
-                setMessages((previousMessages) => {
+                setMessages(
+                    previousMessages => {
 
-                    const exists =
-                        previousMessages.some(
-                            (existingMessage) =>
-                                existingMessage.id ===
-                                newMessage.id
-                        );
+                        if (
+                            newMessage.id &&
+                            previousMessages.some(
+                                item =>
+                                    String(item.id) ===
+                                    String(newMessage.id)
+                            )
+                        ) {
+                            return previousMessages;
+                        }
 
-                    if (exists) {
-                        return previousMessages;
+                        return [
+                            ...previousMessages,
+                            newMessage
+                        ];
                     }
+                );
+            }
 
-                    return [
-                        ...previousMessages,
-                        newMessage
-                    ];
-                });
+            if (audioPreviewUrl) {
+                URL.revokeObjectURL(
+                    audioPreviewUrl
+                );
             }
 
             setAudioBlob(null);
+            setAudioPreviewUrl("");
 
         } catch (error) {
             console.error(
-                "SEND AUDIO ERROR:",
+                "AUDIO UPLOAD ERROR:",
                 error
             );
 
-            alert(
-                error.response?.data?.message ||
+            setError(
                 error.message ||
-                "Unable to send audio."
+                "Failed to send voice message."
             );
-
-        } finally {
-            setSendingAudio(false);
         }
     };
 
     /* =====================================================
-       ENTER KEY
+       CLEANUP
     ===================================================== */
 
-    const handleKeyDown = (event) => {
-        if (
-            event.key === "Enter" &&
-            !event.shiftKey
-        ) {
-            event.preventDefault();
+    useEffect(() => {
+        return () => {
 
-            sendMessage();
-        }
-    };
+            if (streamRef.current) {
+                streamRef.current
+                    .getTracks()
+                    .forEach(
+                        track =>
+                            track.stop()
+                    );
+            }
+
+            if (audioPreviewUrl) {
+                URL.revokeObjectURL(
+                    audioPreviewUrl
+                );
+            }
+        };
+    }, [audioPreviewUrl]);
+
+    /* =====================================================
+       TIME FORMAT
+    ===================================================== */
+
+    const formatMessageTime =
+        value => {
+
+            if (!value) {
+                return "";
+            }
+
+            const date =
+                new Date(value);
+
+            if (
+                Number.isNaN(
+                    date.getTime()
+                )
+            ) {
+                return "";
+            }
+
+            return date.toLocaleTimeString(
+                [],
+                {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }
+            );
+        };
+
+    /* =====================================================
+       MESSAGE TYPE
+    ===================================================== */
+
+    const getMessageType =
+        msg => {
+
+            if (msg.type) {
+                return msg.type;
+            }
+
+            if (msg.image) {
+                return "image";
+            }
+
+            if (msg.audio) {
+                return "audio";
+            }
+
+            return "text";
+        };
+
+    /* =====================================================
+       MY MESSAGE
+    ===================================================== */
+
+    const isMyMessage =
+        msg => {
+
+            if (!userId) {
+                return false;
+            }
+
+            return (
+                String(
+                    msg.senderId ??
+                    msg.sender_id
+                ) === userId
+            );
+        };
 
     /* =====================================================
        PRODUCT IMAGE
     ===================================================== */
 
-    const productImage = (() => {
-        if (!product?.images) {
-            return "/images/product-placeholder.png";
-        }
-
-        let images = product.images;
-
-        if (typeof images === "string") {
-            try {
-                images = JSON.parse(images);
-            } catch {
-                images = [images];
-            }
-        }
-
-        if (!Array.isArray(images)) {
-            return "/images/product-placeholder.png";
-        }
-
-        return getImageUrl(
-            images[0],
-            "/images/product-placeholder.png"
+    const productImages =
+        parseImages(
+            product?.images
         );
-    })();
+
+    const productImage =
+        productImages.length > 0
+            ? getImageUrl(
+                productImages[0]
+            )
+            : FALLBACK_IMAGE;
+
+    /* =====================================================
+       AUTH RENDER GUARD
+    ===================================================== */
+
+    if (!token) {
+        return null;
+    }
 
     /* =====================================================
        RENDER
@@ -767,11 +1378,22 @@ function Chat() {
     return (
         <div className="chat-page">
 
-            {/* =========================================
-                CHAT HEADER
-            ========================================= */}
+            {/* =================================================
+                HEADER
+            ================================================= */}
 
             <div className="chat-header">
+
+                <button
+                    type="button"
+                    className="chat-back-btn"
+                    onClick={() =>
+                        navigate("/inbox")
+                    }
+                    aria-label="Back to inbox"
+                >
+                    ←
+                </button>
 
                 <div className="chat-user">
 
@@ -781,7 +1403,8 @@ function Chat() {
                             product?.title ||
                             "Product"
                         }
-                        onError={(event) => {
+                        onError={event => {
+
                             if (
                                 event.currentTarget
                                     .dataset
@@ -790,205 +1413,229 @@ function Chat() {
                                 return;
                             }
 
-                            event.currentTarget.dataset.fallback =
+                            event.currentTarget
+                                .dataset
+                                .fallback =
                                 "true";
 
-                            event.currentTarget.src =
-                                "/images/product-placeholder.png";
+                            event.currentTarget
+                                .src =
+                                FALLBACK_IMAGE;
                         }}
                     />
 
                     <div>
+
                         <h2>
-                            {product?.title ||
-                                "Conversation"}
+                            {
+                                product?.title ||
+                                "Conversation"
+                            }
                         </h2>
 
                         <p>
-                            {seller?.name ||
-                                "User"}
+                            {
+                                seller?.name ||
+                                seller?.username ||
+                                "Marketplace User"
+                            }
                         </p>
+
                     </div>
-
-                </div>
-
-                <div className="chat-actions">
-
-                    <button
-                        type="button"
-                        title="Call"
-                    >
-                        <FaPhone />
-                    </button>
-
-                    <button
-                        type="button"
-                        title="Video call"
-                    >
-                        <FaVideo />
-                    </button>
-
-                    <button
-                        type="button"
-                        title="More options"
-                    >
-                        <FaEllipsisV />
-                    </button>
 
                 </div>
 
             </div>
 
-            {/* =========================================
+            {/* =================================================
+                ERROR
+            ================================================= */}
+
+            {error && (
+                <div
+                    className="chat-error"
+                    role="alert"
+                >
+                    <span>
+                        {error}
+                    </span>
+
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setError("")
+                        }
+                        aria-label="Close error"
+                    >
+                        <FaTimes />
+                    </button>
+                </div>
+            )}
+
+            {/* =================================================
                 MESSAGES
-            ========================================= */}
+            ================================================= */}
 
             <div className="chat-messages">
 
-                {messages.length === 0 ? (
+                {loading ? (
+
+                    <div className="chat-loading">
+                        Loading messages...
+                    </div>
+
+                ) : messages.length === 0 ? (
 
                     <div className="empty-chat">
 
-                        <p>
-                            No messages yet.
-                        </p>
+                        <div className="empty-chat-icon">
+                            💬
+                        </div>
 
-                        <span>
-                            Start the conversation.
-                        </span>
+                        <h3>
+                            Start a conversation
+                        </h3>
+
+                        <p>
+                            Send a message to begin chatting.
+                        </p>
 
                     </div>
 
                 ) : (
 
-                    messages.map((msg) => {
+                    messages.map(
+                        (msg, index) => {
 
-                        const isMine =
-                            Number(msg.senderId) ===
-                            Number(user?.id);
+                            const type =
+                                getMessageType(
+                                    msg
+                                );
 
-                        return (
-                            <div
-                                key={
-                                    msg.id ||
-                                    `${msg.createdAt}-${msg.senderId}`
-                                }
-                                className={
-                                    isMine
-                                        ? "message me"
-                                        : "message other"
-                                }
-                            >
+                            const mine =
+                                isMyMessage(
+                                    msg
+                                );
 
-                                <div className="bubble">
+                            const messageId =
+                                msg.id ||
+                                `${msg.createdAt || msg.created_at}-${index}`;
 
-                                    {/* TEXT */}
+                            return (
+                                <div
+                                    key={messageId}
+                                    className={
+                                        mine
+                                            ? "message me"
+                                            : "message other"
+                                    }
+                                >
 
-                                    {(
-                                        msg.type ===
-                                            "text" ||
-                                        !msg.type
-                                    ) && (
-                                        <p>
-                                            {msg.message}
-                                        </p>
-                                    )}
+                                    <div className="bubble">
 
-                                    {/* IMAGE */}
+                                        {/* TEXT */}
 
-                                    {msg.type ===
-                                        "image" && (
-
-                                        <img
-                                            src={getChatImageUrl(
-                                                msg.image
-                                            )}
-                                            alt="Sent image"
-                                            className="chat-image"
-                                            onError={(event) => {
-                                                event.currentTarget.src =
-                                                    "/images/product-placeholder.png";
-                                            }}
-                                        />
-
-                                    )}
-
-                                    {/* AUDIO */}
-
-                                    {msg.type ===
-                                        "audio" && (
-
-                                        <audio
-                                            controls
-                                        >
-                                            <source
-                                                src={getChatAudioUrl(
-                                                    msg.audio
-                                                )}
-                                                type="audio/webm"
-                                            />
-
-                                            Your browser does
-                                            not support audio.
-                                        </audio>
-
-                                    )}
-
-                                    {/* MESSAGE FOOTER */}
-
-                                    <div className="message-footer">
-
-                                        <small>
-                                            {msg.createdAt
-                                                ? new Date(
-                                                      msg.createdAt
-                                                  ).toLocaleTimeString(
-                                                      [],
-                                                      {
-                                                          hour:
-                                                              "2-digit",
-                                                          minute:
-                                                              "2-digit"
-                                                      }
-                                                  )
-                                                : ""}
-                                        </small>
-
-                                        {isMine && (
-
-                                            <span className="message-status">
-
-                                                {msg.status ===
-                                                    "sent" && (
-                                                    "✓"
-                                                )}
-
-                                                {msg.status ===
-                                                    "delivered" && (
-                                                    "✓✓"
-                                                )}
-
-                                                {msg.status ===
-                                                    "read" && (
-
-                                                    <span className="read-status">
-                                                        ✓✓
-                                                    </span>
-
-                                                )}
-
-                                            </span>
-
+                                        {type === "text" && (
+                                            <p className="text-message">
+                                                {
+                                                    msg.message ||
+                                                    ""
+                                                }
+                                            </p>
                                         )}
+
+                                        {/* IMAGE */}
+
+                                        {type === "image" && (
+                                            <img
+                                                src={
+                                                    getChatImageUrl(
+                                                        msg.image
+                                                    )
+                                                }
+                                                alt="Sent image"
+                                                className="chat-image"
+                                                loading="lazy"
+                                                onError={event => {
+
+                                                    if (
+                                                        event.currentTarget
+                                                            .dataset
+                                                            .fallback
+                                                    ) {
+                                                        return;
+                                                    }
+
+                                                    event.currentTarget
+                                                        .dataset
+                                                        .fallback =
+                                                        "true";
+
+                                                    event.currentTarget
+                                                        .src =
+                                                        FALLBACK_IMAGE;
+                                                }}
+                                            />
+                                        )}
+
+                                        {/* AUDIO */}
+
+                                        {type === "audio" && (
+                                            <div className="chat-audio">
+
+                                                <audio
+                                                    controls
+                                                    preload="metadata"
+                                                >
+                                                    <source
+                                                        src={
+                                                            getChatAudioUrl(
+                                                                msg.audio
+                                                            )
+                                                        }
+                                                    />
+
+                                                    Your browser does not support audio playback.
+                                                </audio>
+
+                                            </div>
+                                        )}
+
+                                        {/* FOOTER */}
+
+                                        <div className="message-footer">
+
+                                            <small>
+                                                {
+                                                    formatMessageTime(
+                                                        msg.createdAt ||
+                                                        msg.created_at
+                                                    )
+                                                }
+                                            </small>
+
+                                            {mine && (
+                                                <span className="message-status">
+                                                    {
+                                                        msg.status ===
+                                                        "read"
+                                                            ? "✓✓"
+                                                            : msg.status ===
+                                                                "delivered"
+                                                                ? "✓✓"
+                                                                : "✓"
+                                                    }
+                                                </span>
+                                            )}
+
+                                        </div>
 
                                     </div>
 
                                 </div>
-
-                            </div>
-                        );
-                    })
-
+                            );
+                        }
+                    )
                 )}
 
                 <div
@@ -997,41 +1644,106 @@ function Chat() {
 
             </div>
 
-            {/* =========================================
-                CHAT FOOTER
-            ========================================= */}
+            {/* =================================================
+                AUDIO PREVIEW
+            ================================================= */}
+
+            {audioBlob && (
+                <div className="audio-preview">
+
+                    <div className="audio-preview-content">
+
+                        <FaMicrophone />
+
+                        <span>
+                            Voice message ready
+                        </span>
+
+                        <audio
+                            controls
+                            src={audioPreviewUrl}
+                        />
+
+                    </div>
+
+                    <div className="audio-preview-actions">
+
+                        <button
+                            type="button"
+                            className="cancel-voice"
+                            onClick={
+                                cancelAudio
+                            }
+                        >
+                            Cancel
+                        </button>
+
+                        <button
+                            type="button"
+                            className="send-voice"
+                            onClick={
+                                sendAudio
+                            }
+                        >
+                            Send Voice
+                        </button>
+
+                    </div>
+
+                </div>
+            )}
+
+            {/* =================================================
+                FOOTER
+            ================================================= */}
 
             <div className="chat-footer">
 
                 {/* IMAGE INPUT */}
 
                 <input
+                    ref={imageInputRef}
                     type="file"
-                    id="chatImage"
                     hidden
                     accept="image/jpeg,image/png,image/webp,image/gif"
-                    onChange={uploadImage}
+                    onChange={
+                        uploadImage
+                    }
                 />
 
-                <label
-                    htmlFor="chatImage"
-                    className="image-upload"
-                    title="Send image"
-                >
-                    <FaImage />
-                </label>
+                {/* IMAGE BUTTON */}
 
-                {/* RECORD / STOP */}
+                <button
+                    type="button"
+                    className="image-upload"
+                    onClick={() =>
+                        imageInputRef.current?.click()
+                    }
+                    disabled={
+                        uploadingImage
+                    }
+                    title="Send image"
+                    aria-label="Send image"
+                >
+                    {
+                        uploadingImage
+                            ? "..."
+                            : <FaImage />
+                    }
+                </button>
+
+                {/* AUDIO */}
 
                 {recording ? (
 
                     <button
                         type="button"
-                        className="record-btn"
+                        className="record-btn recording"
                         onClick={
                             stopRecording
                         }
                         title="Stop recording"
+                        aria-label="Stop recording"
                     >
                         <FaStop />
                     </button>
@@ -1044,67 +1756,69 @@ function Chat() {
                         onClick={
                             startRecording
                         }
+                        disabled={
+                            !!audioBlob
+                        }
                         title="Record voice"
+                        aria-label="Record voice"
                     >
                         <FaMicrophone />
                     </button>
-
                 )}
 
-                {/* MESSAGE INPUT */}
+                {/* TEXT INPUT */}
 
                 <input
                     type="text"
+                    className="chat-input"
+                    value={message}
                     placeholder={
-                        uploadingImage
-                            ? "Uploading image..."
-                            : recording
-                            ? "Recording..."
+                        recording
+                            ? "Recording voice..."
                             : "Type a message..."
                     }
-                    value={message}
-                    disabled={
-                        sendingMessage ||
-                        uploadingImage
-                    }
-                    onChange={(event) =>
+                    onChange={event =>
                         setMessage(
                             event.target.value
                         )
                     }
-                    onKeyDown={handleKeyDown}
+                    onKeyDown={event => {
+
+                        if (
+                            event.key === "Enter" &&
+                            !event.shiftKey
+                        ) {
+                            event.preventDefault();
+
+                            sendMessage();
+                        }
+                    }}
+                    disabled={
+                        recording
+                    }
                 />
-
-                {/* AUDIO SEND */}
-
-                {audioBlob && (
-
-                    <button
-                        type="button"
-                        className="voice-send"
-                        onClick={sendAudio}
-                        disabled={sendingAudio}
-                    >
-                        {sendingAudio
-                            ? "Sending..."
-                            : "Send Voice"}
-                    </button>
-
-                )}
 
                 {/* SEND */}
 
                 <button
                     type="button"
                     className="send-btn"
-                    onClick={sendMessage}
+                    onClick={
+                        sendMessage
+                    }
                     disabled={
-                        sendingMessage ||
-                        !message.trim()
+                        !message.trim() ||
+                        sending ||
+                        recording
                     }
                     title="Send message"
+                    aria-label="Send message"
                 >
-                    <FaPaperPlane />
+                    {
+                        sending
+                            ? "..."
+                            : <FaPaperPlane />
+                    }
                 </button>
 
             </div>

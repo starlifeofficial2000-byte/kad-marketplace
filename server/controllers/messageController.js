@@ -263,31 +263,27 @@ exports.sendMessageToConversation = async (req, res) => {
 /* =========================================================
    SEND IMAGE MESSAGE
 ========================================================= */
-
 exports.sendImageMessage = async (req, res) => {
     try {
-        const conversationId = req.params.conversationId;
-        const senderId = req.user.id;
+        console.log("========== IMAGE MESSAGE ==========");
+        console.log("Conversation ID:", req.params.conversationId);
+        console.log("User ID:", req.user?.id);
+        console.log("Uploaded file:", req.file);
+        console.log("===================================");
 
-        console.log("====================================");
-        console.log("CHAT IMAGE UPLOAD");
-        console.log("Conversation ID:", conversationId);
-        console.log("Sender ID:", senderId);
-        console.log("Request file:", req.file);
-        console.log("Request body:", req.body);
-        console.log(
-            "Content type:",
-            req.headers["content-type"]
-        );
-        console.log("====================================");
+        // 1. Make sure an image was actually uploaded
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "Please select an image."
+            });
+        }
 
-        const {
-            conversation,
-            authorized
-        } = await getConversationForUser(
-            conversationId,
-            senderId
-        );
+        // 2. Find the conversation
+        const conversation =
+            await Conversation.findByPk(
+                req.params.conversationId
+            );
 
         if (!conversation) {
             return res.status(404).json({
@@ -296,42 +292,44 @@ exports.sendImageMessage = async (req, res) => {
             });
         }
 
-        if (!authorized) {
+        // 3. Get the authenticated user
+        const userId = Number(req.user.id);
+
+        // 4. Check that the user belongs to this conversation
+        const isParticipant =
+            Number(conversation.buyerId) === userId ||
+            Number(conversation.sellerId) === userId;
+
+        if (!isParticipant) {
             return res.status(403).json({
                 success: false,
                 message: "You are not part of this conversation."
             });
         }
 
-        if (!req.file) {
-            return res.status(400).json({
-                success: false,
-                message: "Please select an image."
-            });
-        }
-
+        // 5. Create the image message
         const newMessage = await Message.create({
-            conversationId,
-            senderId,
+            conversationId: req.params.conversationId,
+            senderId: req.user.id,
             type: "image",
             image: req.file.filename,
             message: null,
             status: "sent"
         });
 
-        await conversation.update({
-            updatedAt: new Date()
-        });
-
+        // 6. Send real-time message through Socket.IO
         const io = req.app.get("io");
 
         if (io) {
-            io.to(String(conversationId)).emit(
+            io.to(
+                String(req.params.conversationId)
+            ).emit(
                 "receive_message",
                 newMessage
             );
         }
 
+        // 7. Return successful response
         return res.status(201).json({
             success: true,
             newMessage
@@ -349,7 +347,6 @@ exports.sendImageMessage = async (req, res) => {
         });
     }
 };
-
 
 /* =========================================================
    SEND AUDIO MESSAGE
