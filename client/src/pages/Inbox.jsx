@@ -1,5 +1,12 @@
-import { useEffect, useState } from "react";
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useState
+} from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import api from "../config/axios";
 
 import {
@@ -9,158 +16,418 @@ import {
 
 import "./Inbox.css";
 
+
+const SERVER_URL =
+    import.meta.env.VITE_SERVER_URL ||
+    "https://kad-marketplace-production.up.railway.app";
+
+
 function Inbox() {
 
     const navigate = useNavigate();
 
-    const user = JSON.parse(
-        localStorage.getItem("user") || "null"
+    const [conversations, setConversations] = useState([]);
+
+    const [search, setSearch] = useState("");
+
+    const [loading, setLoading] = useState(true);
+
+    const [error, setError] = useState("");
+
+
+    /* =====================================================
+       GET IMAGE URL
+    ===================================================== */
+
+    const getImageUrl = useCallback((imagePath) => {
+
+        if (
+            !imagePath ||
+            typeof imagePath !== "string"
+        ) {
+            return "/images/product-placeholder.png";
+        }
+
+
+        const cleanPath =
+            imagePath.trim();
+
+
+        if (!cleanPath) {
+            return "/images/product-placeholder.png";
+        }
+
+
+        // Already a complete URL
+        if (
+            cleanPath.startsWith("http://") ||
+            cleanPath.startsWith("https://")
+        ) {
+            return cleanPath;
+        }
+
+
+        // /uploads/image.jpg
+        if (
+            cleanPath.startsWith("/uploads/")
+        ) {
+            return `${SERVER_URL}${cleanPath}`;
+        }
+
+
+        // uploads/image.jpg
+        if (
+            cleanPath.startsWith("uploads/")
+        ) {
+            return `${SERVER_URL}/${cleanPath}`;
+        }
+
+
+        // Any other absolute path
+        if (
+            cleanPath.startsWith("/")
+        ) {
+            return `${SERVER_URL}${cleanPath}`;
+        }
+
+
+        // Plain filename
+        return `${SERVER_URL}/uploads/${cleanPath}`;
+
+    }, []);
+
+
+    /* =====================================================
+       GET PRODUCT IMAGE
+    ===================================================== */
+
+    const getProductImage = useCallback(
+        (conversation) => {
+
+            const productImages =
+                conversation?.product?.images;
+
+
+            if (!productImages) {
+
+                return "/images/product-placeholder.png";
+
+            }
+
+
+            let images = [];
+
+
+            try {
+
+                if (
+                    Array.isArray(productImages)
+                ) {
+
+                    images = productImages;
+
+                } else if (
+                    typeof productImages === "string"
+                ) {
+
+                    images =
+                        JSON.parse(productImages);
+
+                }
+
+            } catch (parseError) {
+
+                console.error(
+                    "PRODUCT IMAGE PARSE ERROR:",
+                    parseError
+                );
+
+                images = [];
+
+            }
+
+
+            if (
+                !Array.isArray(images) ||
+                images.length === 0
+            ) {
+
+                return "/images/product-placeholder.png";
+
+            }
+
+
+            return getImageUrl(images[0]);
+
+        },
+        [getImageUrl]
     );
 
-    const [conversations, setConversations] = useState([]);
-    const [search, setSearch] = useState("");
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+
+    /* =====================================================
+       LOAD CONVERSATIONS
+    ===================================================== */
+
+    const loadConversations = useCallback(
+        async () => {
+
+            try {
+
+                const response =
+                    await api.get(
+                        "/messages/conversations"
+                    );
+
+
+                console.log(
+                    "CONVERSATIONS RESPONSE:",
+                    response.data
+                );
+
+
+                /*
+                 * Backend may return:
+                 *
+                 * {
+                 *   success: true,
+                 *   conversations: [...]
+                 * }
+                 *
+                 * OR
+                 *
+                 * {
+                 *   success: true,
+                 *   messages: [...]
+                 * }
+                 *
+                 * OR
+                 *
+                 * {
+                 *   success: true,
+                 *   data: [...]
+                 * }
+                 */
+
+
+                const data =
+                    response.data?.conversations ??
+                    response.data?.messages ??
+                    response.data?.data ??
+                    [];
+
+
+                const conversationArray =
+                    Array.isArray(data)
+                        ? data
+                        : [];
+
+
+                console.log(
+                    "CONVERSATIONS ARRAY:",
+                    conversationArray
+                );
+
+
+                setConversations(
+                    conversationArray
+                );
+
+
+                setError("");
+
+            } catch (requestError) {
+
+                console.error(
+                    "LOAD CONVERSATIONS ERROR:",
+                    requestError.response?.data ||
+                    requestError.message
+                );
+
+
+                setError(
+                    requestError.response?.data?.message ||
+                    "Unable to load conversations."
+                );
+
+            } finally {
+
+                setLoading(false);
+
+            }
+
+        },
+        []
+    );
+
+
+    /* =====================================================
+       AUTH + INITIAL LOAD + REFRESH
+    ===================================================== */
 
     useEffect(() => {
 
-        if (!user) {
+        const storedUser =
+            localStorage.getItem("user");
+
+
+        if (!storedUser) {
 
             navigate("/login");
+
             return;
 
         }
 
+
         loadConversations();
 
-        // Refresh conversations every 10 seconds
-        const interval = setInterval(() => {
 
-            loadConversations();
+        /*
+         * Refresh every 30 seconds.
+         *
+         * We use 30 seconds instead of 10 seconds
+         * to reduce unnecessary API requests.
+         */
 
-        }, 10000);
+        const interval =
+            setInterval(() => {
 
-        return () => clearInterval(interval);
+                loadConversations();
 
-    }, [navigate]);
+            }, 30000);
 
 
-    const loadConversations = async () => {
+        return () => {
 
-        try {
+            clearInterval(interval);
 
-            const response = await api.get(
-                "/messages/conversations"
+        };
+
+    }, [
+        navigate,
+        loadConversations
+    ]);
+
+
+    /* =====================================================
+       SEARCH
+    ===================================================== */
+
+    const filtered =
+        useMemo(() => {
+
+            const searchText =
+                search
+                    .trim()
+                    .toLowerCase();
+
+
+            if (!searchText) {
+
+                return conversations;
+
+            }
+
+
+            return conversations.filter(
+                (item) => {
+
+                    const productTitle =
+                        item?.product?.title
+                            ?.toLowerCase() || "";
+
+
+                    const lastMessage =
+                        item?.lastMessage
+                            ?.toLowerCase() || "";
+
+
+                    const messageText =
+                        item?.message
+                            ?.toLowerCase() || "";
+
+
+                    return (
+                        productTitle.includes(
+                            searchText
+                        ) ||
+                        lastMessage.includes(
+                            searchText
+                        ) ||
+                        messageText.includes(
+                            searchText
+                        )
+                    );
+
+                }
             );
 
-            console.log(
-                "CONVERSATIONS:",
-                response.data
-            );
+        }, [
+            conversations,
+            search
+        ]);
 
-            const data =
-                response.data.conversations ||
-                response.data.data ||
-                response.data ||
-                [];
 
-            setConversations(
-                Array.isArray(data) ? data : []
-            );
+    /* =====================================================
+       OPEN CHAT
+    ===================================================== */
 
-            setError("");
+    const openConversation = (
+        conversation
+    ) => {
 
-        }
+        const conversationId =
+            conversation?.id ||
+            conversation?._id;
 
-        catch (error) {
+
+        if (!conversationId) {
 
             console.error(
-                "LOAD CONVERSATIONS ERROR:",
-                error.response?.data || error.message
+                "CONVERSATION HAS NO ID:",
+                conversation
             );
 
-            setError(
-                error.response?.data?.message ||
-                "Unable to load conversations."
-            );
+            return;
 
         }
 
-        finally {
 
-            setLoading(false);
-
-        }
-
-    };
-
-
-    const filtered = conversations.filter((item) => {
-
-        const searchText = search.toLowerCase();
-
-        const productTitle =
-            item.product?.title?.toLowerCase() || "";
-
-        const lastMessage =
-            item.lastMessage?.toLowerCase() || "";
-
-        return (
-            productTitle.includes(searchText) ||
-            lastMessage.includes(searchText)
+        navigate(
+            `/chat/${conversationId}`
         );
 
-    });
-
-
-    const getProductImage = (conversation) => {
-
-        let images = [];
-
-        const productImages =
-            conversation.product?.images;
-
-        if (!productImages) {
-
-            return "https://via.placeholder.com/100";
-
-        }
-
-        try {
-
-            images = Array.isArray(productImages)
-                ? productImages
-                : JSON.parse(productImages);
-
-        }
-
-        catch {
-
-            images = [];
-
-        }
-
-        if (!images.length) {
-
-            return "https://via.placeholder.com/100";
-
-        }
-
-        const firstImage = images[0];
-
-        // If backend already sends full URL
-        if (
-            firstImage.startsWith("http")
-        ) {
-
-            return firstImage;
-
-        }
-
-        return `/uploads/${firstImage}`;
-
     };
 
+
+    /* =====================================================
+       LOADING
+    ===================================================== */
+
+    if (loading) {
+
+        return (
+
+            <div className="inbox-page">
+
+                <div className="empty-chat">
+
+                    <p>
+                        Loading conversations...
+                    </p>
+
+                </div>
+
+            </div>
+
+        );
+
+    }
+
+
+    /* =====================================================
+       UI
+    ===================================================== */
 
     return (
 
@@ -188,40 +455,22 @@ function Inbox() {
                 <FaSearch />
 
                 <input
-
                     type="text"
-
                     placeholder="Search conversations..."
-
                     value={search}
-
-                    onChange={(e) =>
-                        setSearch(e.target.value)
+                    onChange={(event) =>
+                        setSearch(
+                            event.target.value
+                        )
                     }
-
                 />
 
             </div>
 
 
-            {/* LOADING */}
-
-            {loading && (
-
-                <div className="empty-chat">
-
-                    <p>
-                        Loading conversations...
-                    </p>
-
-                </div>
-
-            )}
-
-
             {/* ERROR */}
 
-            {!loading && error && (
+            {error && (
 
                 <div className="empty-chat">
 
@@ -236,11 +485,16 @@ function Inbox() {
                     </p>
 
                     <button
-                        onClick={loadConversations}
+                        type="button"
+                        onClick={() => {
+
+                            setLoading(true);
+
+                            loadConversations();
+
+                        }}
                     >
-
                         Try Again
-
                     </button>
 
                 </div>
@@ -250,8 +504,7 @@ function Inbox() {
 
             {/* EMPTY */}
 
-            {!loading &&
-                !error &&
+            {!error &&
                 filtered.length === 0 && (
 
                     <div className="empty-chat">
@@ -259,15 +512,11 @@ function Inbox() {
                         <FaComments />
 
                         <h2>
-
                             No Conversations
-
                         </h2>
 
                         <p>
-
                             Conversations will appear here.
-
                         </p>
 
                     </div>
@@ -277,141 +526,181 @@ function Inbox() {
 
             {/* CONVERSATIONS */}
 
-            {!loading &&
-                !error &&
-                filtered.map((conversation) => (
+            {!error &&
+                filtered.length > 0 &&
+                filtered.map(
+                    (conversation) => {
 
-                    <div
-
-                        key={
-                            conversation.id ||
-                            conversation._id
-                        }
-
-                        className="conversation"
-
-                        onClick={() =>
-
-                            navigate(
-                                `/chat/${conversation.id || conversation._id}`
-                            )
-
-                        }
-
-                    >
-
-                        {/* PRODUCT IMAGE */}
-
-                        <img
-
-                            src={
-                                getProductImage(conversation)
-                            }
-
-                            alt={
-                                conversation.product?.title ||
-                                "Product"
-                            }
-
-                            onError={(e) => {
-
-                                e.currentTarget.src =
-                                    "https://via.placeholder.com/100";
-
-                            }}
-
-                        />
+                        const conversationId =
+                            conversation?.id ||
+                            conversation?._id;
 
 
-                        {/* CONVERSATION INFO */}
+                        const productTitle =
+                            conversation?.product?.title ||
+                            "Product Conversation";
 
-                        <div className="conversation-info">
 
-                            <h2>
+                        const lastMessage =
+                            conversation?.lastMessage ||
+                            conversation?.message ||
+                            "Start chatting...";
 
-                                {
-                                    conversation.product?.title ||
-                                    "Product Conversation"
+
+                        const productPrice =
+                            conversation?.product?.price;
+
+
+                        const productImage =
+                            getProductImage(
+                                conversation
+                            );
+
+
+                        return (
+
+                            <div
+                                key={
+                                    conversationId
                                 }
-
-                            </h2>
-
-                            <p>
-
-                                {
-                                    conversation.lastMessage ||
-                                    "Start chatting..."
+                                className="conversation"
+                                onClick={() =>
+                                    openConversation(
+                                        conversation
+                                    )
                                 }
+                            >
 
-                            </p>
+                                {/* PRODUCT IMAGE */}
 
-                            <small>
+                                <img
+                                    src={
+                                        productImage
+                                    }
+                                    alt={
+                                        productTitle
+                                    }
+                                    loading="lazy"
+                                    onError={(
+                                        event
+                                    ) => {
 
-                                GH₵ {
-
-                                    conversation.product?.price ??
-                                    "0"
-
-                                }
-
-                            </small>
-
-                        </div>
-
-
-                        {/* RIGHT SIDE */}
-
-                        <div className="conversation-right">
-
-                            <span>
-
-                                {
-
-                                    conversation.updatedAt
-
-                                        ?
-
-                                        new Date(
-                                            conversation.updatedAt
-                                        ).toLocaleDateString()
-
-                                        :
-
-                                        ""
-
-                                }
-
-                            </span>
+                                        console.error(
+                                            "INBOX PRODUCT IMAGE FAILED:",
+                                            event
+                                                .currentTarget
+                                                .src
+                                        );
 
 
-                            {
+                                        if (
+                                            event
+                                                .currentTarget
+                                                .dataset
+                                                .fallback
+                                        ) {
 
-                                conversation.unreadCount > 0 && (
+                                            return;
 
-                                    <div className="badge">
-
-                                        {
-                                            conversation.unreadCount
                                         }
 
-                                    </div>
 
-                                )
+                                        event
+                                            .currentTarget
+                                            .dataset
+                                            .fallback =
+                                            "true";
 
-                            }
 
-                        </div>
+                                        event
+                                            .currentTarget
+                                            .src =
+                                            "/images/product-placeholder.png";
 
-                    </div>
+                                    }}
+                                />
 
-                ))
 
-            }
+                                {/* CONVERSATION INFO */}
+
+                                <div className="conversation-info">
+
+                                    <h2>
+                                        {
+                                            productTitle
+                                        }
+                                    </h2>
+
+
+                                    <p>
+                                        {
+                                            lastMessage
+                                        }
+                                    </p>
+
+
+                                    <small>
+
+                                        GH₵{" "}
+
+                                        {
+                                            productPrice ??
+                                            "0"
+                                        }
+
+                                    </small>
+
+                                </div>
+
+
+                                {/* RIGHT SIDE */}
+
+                                <div className="conversation-right">
+
+                                    <span>
+
+                                        {
+                                            conversation?.updatedAt
+                                                ? new Date(
+                                                    conversation.updatedAt
+                                                ).toLocaleDateString()
+                                                : ""
+                                        }
+
+                                    </span>
+
+
+                                    {
+                                        Number(
+                                            conversation?.unreadCount ||
+                                            0
+                                        ) > 0 && (
+
+                                            <div className="badge">
+
+                                                {
+                                                    conversation.unreadCount
+                                                }
+
+                                            </div>
+
+                                        )
+                                    }
+
+                                </div>
+
+                            </div>
+
+                        );
+
+                    }
+                )}
 
         </div>
 
     );
 
 }
+
 
 export default Inbox;

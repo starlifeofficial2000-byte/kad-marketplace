@@ -127,54 +127,82 @@ exports.getMessages = async (req, res) => {
 };/* ==========================================
    SEND MESSAGE
 ========================================== */
-
 exports.sendMessageToConversation = async (req, res) => {
-
     try {
 
-       const senderId = req.user.id;
+        const senderId = req.user.id;
+        const conversationId = req.params.conversationId;
+        const { message } = req.body;
 
-const { message } = req.body;
+        if (!message || !message.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Message cannot be empty."
+            });
+        }
+
+        const conversation = await Conversation.findByPk(
+            conversationId
+        );
+
+        if (!conversation) {
+            return res.status(404).json({
+                success: false,
+                message: "Conversation not found."
+            });
+        }
+
+        const isParticipant =
+            Number(conversation.buyerId) === Number(senderId) ||
+            Number(conversation.sellerId) === Number(senderId);
+
+        if (!isParticipant) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not part of this conversation."
+            });
+        }
 
         const newMessage = await Message.create({
-
-            conversationId: req.params.conversationId,
+            conversationId,
             senderId,
-            message
+            message: message.trim(),
+            type: "text",
+            status: "sent"
+        });
 
+        await conversation.update({
+            updatedAt: new Date()
         });
 
         const io = req.app.get("io");
 
-        io.to(req.params.conversationId).emit(
+        if (io) {
+            io.to(String(conversationId)).emit(
+                "receive_message",
+                newMessage
+            );
+        }
 
-            "receive_message",
-
-            newMessage
-
-        );
-
-        res.status(201).json({
-
+        return res.status(201).json({
             success: true,
             newMessage
-
         });
 
-    }
+    } catch (error) {
 
-    catch (error) {
+        console.error(
+            "SEND MESSAGE ERROR:",
+            error
+        );
 
-        res.status(500).json({
-
+        return res.status(500).json({
             success: false,
             message: error.message
-
         });
-
     }
-
 };
+
 /* ==========================================
    SEND IMAGE MESSAGE
 ========================================== */
@@ -733,4 +761,109 @@ exports.getConversationDetails = async (req, res) => {
 
     }
 
+};
+/* ==========================================
+   GET MY CONVERSATIONS
+========================================== */
+
+exports.getMyConversations = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const conversations = await Conversation.findAll({
+            where: {
+                [Op.or]: [
+                    { buyerId: userId },
+                    { sellerId: userId }
+                ]
+            },
+            order: [["updatedAt", "DESC"]]
+        });
+
+        const results = [];
+
+        for (const conversation of conversations) {
+
+            const lastMessage = await Message.findOne({
+                where: {
+                    conversationId: conversation.id
+                },
+                order: [["createdAt", "DESC"]]
+            });
+
+            const product = await Product.findByPk(
+                conversation.productId
+            );
+
+            if (product && product.images) {
+                try {
+                    if (typeof product.images === "string") {
+                        product.images = JSON.parse(product.images);
+                    }
+                } catch {
+                    product.images = [];
+                }
+            }
+
+            const otherUserId =
+                Number(conversation.buyerId) === Number(userId)
+                    ? conversation.sellerId
+                    : conversation.buyerId;
+
+            const otherUser = await User.findByPk(
+                otherUserId,
+                {
+                    attributes: [
+                        "id",
+                        "name",
+                        "profileImage"
+                    ]
+                }
+            );
+
+            results.push({
+                id: conversation.id,
+
+                buyerId: conversation.buyerId,
+                sellerId: conversation.sellerId,
+
+                product,
+
+                user: otherUser,
+
+                lastMessage: lastMessage
+                    ? lastMessage.message || ""
+                    : "",
+
+                lastMessageType: lastMessage
+                    ? lastMessage.type || "text"
+                    : "text",
+
+                lastMessageAt: lastMessage
+                    ? lastMessage.createdAt
+                    : null,
+
+                updatedAt: conversation.updatedAt,
+
+                unreadCount: 0
+            });
+        }
+
+        return res.json({
+            success: true,
+            conversations: results
+        });
+
+    } catch (error) {
+
+        console.error(
+            "GET MY CONVERSATIONS ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
 };

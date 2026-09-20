@@ -7,13 +7,35 @@ const chatUpload = require("../middleware/chatUpload");
 const messageController = require("../controllers/messageController");
 
 /* ==========================================
-   START CONVERSATION
+   START / SEND FIRST MESSAGE
 ========================================== */
 
 router.post(
     "/",
     auth,
     messageController.sendMessage
+);
+
+/* ==========================================
+   OPEN OR CREATE CONVERSATION
+========================================== */
+
+router.post(
+    "/open",
+    auth,
+    messageController.openConversation
+);
+
+/* ==========================================
+   GET MY CONVERSATIONS
+   IMPORTANT:
+   This must come BEFORE /:conversationId
+========================================== */
+
+router.get(
+    "/conversations",
+    auth,
+    messageController.getMyConversations
 );
 
 /* ==========================================
@@ -28,6 +50,7 @@ router.get(
 
 /* ==========================================
    GET USER CONVERSATIONS
+   Legacy / explicit user endpoint
 ========================================== */
 
 router.get(
@@ -37,7 +60,7 @@ router.get(
 );
 
 /* ==========================================
-   GET MESSAGES
+   GET MESSAGES IN A CONVERSATION
 ========================================== */
 
 router.get(
@@ -47,17 +70,9 @@ router.get(
 );
 
 /* ==========================================
-   SEND TEXT MESSAGE
+   SEND TEXT MESSAGE TO CONVERSATION
 ========================================== */
-router.post(
 
-    "/open",
-
-    auth,
-
-    messageController.openConversation
-
-);
 router.post(
     "/:conversationId",
     auth,
@@ -78,30 +93,32 @@ router.post(
 /* ==========================================
    SEND AUDIO MESSAGE
 ========================================== */
-router.put(
 
-    "/:conversationId/delivered",
-
-    auth,
-
-    messageController.markDelivered
-
-);
-
-router.put(
-
-    "/:conversationId/read",
-
-    auth,
-
-    messageController.markRead
-
-);
 router.post(
     "/:conversationId/audio",
     auth,
     chatUpload.single("audio"),
     messageController.sendAudioMessage
+);
+
+/* ==========================================
+   MARK MESSAGES DELIVERED
+========================================== */
+
+router.put(
+    "/:conversationId/delivered",
+    auth,
+    messageController.markDelivered
+);
+
+/* ==========================================
+   MARK MESSAGES READ
+========================================== */
+
+router.put(
+    "/:conversationId/read",
+    auth,
+    messageController.markRead
 );
 
 module.exports = router;
