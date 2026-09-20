@@ -2,20 +2,28 @@ const API_ORIGIN =
     import.meta.env.VITE_API_ORIGIN ||
     "https://kad-marketplace-production.up.railway.app";
 
+const FALLBACK_IMAGE =
+    "/images/product-placeholder.png";
+
 export const getImageUrl = (image) => {
-    // No image
+    // ==========================================
+    // NO IMAGE
+    // ==========================================
+
     if (!image) {
-        return "/images/product-placeholder.png";
+        return FALLBACK_IMAGE;
     }
 
     const value = String(image).trim();
 
-    // Empty value
     if (!value) {
-        return "/images/product-placeholder.png";
+        return FALLBACK_IMAGE;
     }
 
-    // Already a complete URL
+    // ==========================================
+    // ALREADY A COMPLETE URL
+    // ==========================================
+
     if (
         value.startsWith("http://") ||
         value.startsWith("https://")
@@ -23,12 +31,42 @@ export const getImageUrl = (image) => {
         return value;
     }
 
-    // Backend-relative path
+    // ==========================================
+    // BACKEND UPLOAD PATH
+    // Example:
+    // /uploads/abc.jpg
+    // ==========================================
+
+    if (value.startsWith("/uploads/")) {
+        return `${API_ORIGIN}${value}`;
+    }
+
+    // ==========================================
+    // BACKEND UPLOAD PATH WITHOUT /
+    // Example:
+    // uploads/abc.jpg
+    // ==========================================
+
+    if (value.startsWith("uploads/")) {
+        return `${API_ORIGIN}/${value}`;
+    }
+
+    // ==========================================
+    // OTHER ABSOLUTE PATH
+    // Example:
+    // /images/example.jpg
+    // ==========================================
+
     if (value.startsWith("/")) {
         return `${API_ORIGIN}${value}`;
     }
 
-    // Filename only
+    // ==========================================
+    // NORMAL DATABASE FILENAME
+    // Example:
+    // 1789905008592-194091026.jpg
+    // ==========================================
+
     return `${API_ORIGIN}/uploads/${value}`;
 };
 

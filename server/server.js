@@ -361,7 +361,37 @@ app.use(
     )
 
 );
+app.get("/api/debug/uploads", (req, res) => {
+    const fs = require("fs");
+    const path = require("path");
 
+    const uploadDir = path.join(
+        __dirname,
+        "uploads"
+    );
+
+    try {
+        const exists = fs.existsSync(uploadDir);
+
+        const files = exists
+            ? fs.readdirSync(uploadDir)
+            : [];
+
+        return res.json({
+            success: true,
+            uploadDir,
+            exists,
+            fileCount: files.length,
+            files: files.slice(0, 100)
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
 
 /* =====================================================
    SOCKET.IO

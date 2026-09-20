@@ -11,51 +11,91 @@ function ProductCard({ product }) {
         return null;
     }
 
-
     /* ==========================================
        PRODUCT ID
     ========================================== */
 
-    const productId =
-        product.id ||
-        product._id;
-
+    const productId = product.id || product._id;
 
     /* ==========================================
        PRODUCT IMAGES
+       Database may return:
+       1. Array
+       2. JSON string
+       3. Single filename
     ========================================== */
 
-    let images = [];
-
-    if (Array.isArray(product.images)) {
-        images = product.images;
-    }
-
-    else if (typeof product.images === "string") {
-        try {
-            const parsedImages =
-                JSON.parse(product.images);
-
-            images = Array.isArray(parsedImages)
-                ? parsedImages
-                : [product.images];
+    const getProductImages = (value) => {
+        if (!value) {
+            return [];
         }
 
-        catch {
-            images = [product.images];
+        // Already an array
+        if (Array.isArray(value)) {
+            return value.filter(
+                (image) =>
+                    typeof image === "string" &&
+                    image.trim() !== ""
+            );
         }
-    }
 
+        // JSON string from MySQL
+        if (typeof value === "string") {
+            const trimmedValue = value.trim();
+
+            if (!trimmedValue) {
+                return [];
+            }
+
+            try {
+                const parsed = JSON.parse(trimmedValue);
+
+                if (Array.isArray(parsed)) {
+                    return parsed.filter(
+                        (image) =>
+                            typeof image === "string" &&
+                            image.trim() !== ""
+                    );
+                }
+
+                // JSON string containing one filename
+                if (typeof parsed === "string" && parsed.trim()) {
+                    return [parsed.trim()];
+                }
+            } catch {
+                // Not JSON — treat as a normal filename
+                return [trimmedValue];
+            }
+        }
+
+        return [];
+    };
+
+    const images = getProductImages(product.images);
 
     /* ==========================================
        FIRST PRODUCT IMAGE
     ========================================== */
 
-    const imageUrl =
-        images.length > 0
-            ? getImageUrl(images[0])
-            : getImageUrl(null);
+    const firstImage = images.length > 0
+        ? images[0]
+        : null;
 
+    const imageUrl = firstImage
+        ? getImageUrl(firstImage)
+        : "/images/product-placeholder.png";
+
+    /* ==========================================
+       DEBUG
+    ========================================== */
+
+    console.log("PRODUCT IMAGE DEBUG:", {
+        productId,
+        rawImages: product.images,
+        parsedImages: images,
+        firstImage,
+        imageUrl,
+    });
 
     /* ==========================================
        SELLER SUBSCRIPTION
@@ -69,53 +109,48 @@ function ProductCard({ product }) {
         product.seller?.subscriptionPlan?.name ||
         "New User";
 
-
     /* ==========================================
        PLAN BADGE
     ========================================== */
 
     const getPlanBadge = () => {
-        const plan =
-            String(planName).toLowerCase();
+        const plan = String(planName).toLowerCase();
 
         if (plan.includes("premium")) {
             return {
                 text: `👑 ${planName}`,
-                className: "premium"
+                className: "premium",
             };
         }
 
         if (plan.includes("business")) {
             return {
                 text: `🏢 ${planName}`,
-                className: "business"
+                className: "business",
             };
         }
 
         if (plan.includes("pro")) {
             return {
                 text: `⭐ ${planName}`,
-                className: "pro"
+                className: "pro",
             };
         }
 
         if (plan.includes("basic")) {
             return {
                 text: `🔹 ${planName}`,
-                className: "basic"
+                className: "basic",
             };
         }
 
         return {
             text: `🆕 ${planName}`,
-            className: "new-user"
+            className: "new-user",
         };
     };
 
-
-    const planBadge =
-        getPlanBadge();
-
+    const planBadge = getPlanBadge();
 
     /* ==========================================
        PROMOTION STATUS
@@ -133,31 +168,38 @@ function ProductCard({ product }) {
         product.boosted === true ||
         product.isBoosted === true;
 
-
     /* ==========================================
        IMAGE ERROR HANDLER
     ========================================== */
 
     const handleImageError = (event) => {
-        const image =
-            event.currentTarget;
+        const image = event.currentTarget;
 
-        /*
-         * Prevent infinite fallback loops.
-         */
-
-        if (
-            image.dataset.fallbackApplied === "true"
-        ) {
+        // Prevent infinite fallback loop
+        if (image.dataset.fallbackApplied === "true") {
             return;
         }
 
         image.dataset.fallbackApplied = "true";
 
-        image.src =
-            "/images/product-placeholder.png";
+        console.error(
+            "PRODUCT IMAGE FAILED:",
+            image.src
+        );
+
+        image.src = "/images/product-placeholder.png";
     };
 
+    /* ==========================================
+       IMAGE LOADED
+    ========================================== */
+
+    const handleImageLoad = (event) => {
+        console.log(
+            "PRODUCT IMAGE LOADED:",
+            event.currentTarget.src
+        );
+    };
 
     /* ==========================================
        RETURN
@@ -174,19 +216,18 @@ function ProductCard({ product }) {
                 to={`/product/${productId}`}
                 className="product-image-container"
             >
-
                 <img
                     src={imageUrl}
                     alt={
                         product.title ||
+                        product.name ||
                         "Product"
                     }
                     className="product-image"
                     loading="lazy"
-                    decoding="async"
+                    onLoad={handleImageLoad}
                     onError={handleImageError}
                 />
-
 
                 {/* =================================
                     PROMOTION BADGES
@@ -213,9 +254,7 @@ function ProductCard({ product }) {
                     )}
 
                 </div>
-
             </Link>
-
 
             {/* =====================================
                 PRODUCT INFORMATION
@@ -223,8 +262,7 @@ function ProductCard({ product }) {
 
             <div className="product-info">
 
-
-                {/* ================================
+                {/* =================================
                     SUBSCRIPTION PLAN
                 ================================= */}
 
@@ -234,8 +272,7 @@ function ProductCard({ product }) {
                     {planBadge.text}
                 </div>
 
-
-                {/* ================================
+                {/* =================================
                     PRICE
                 ================================= */}
 
@@ -246,8 +283,7 @@ function ProductCard({ product }) {
                     ).toLocaleString()}
                 </div>
 
-
-                {/* ================================
+                {/* =================================
                     PRODUCT TITLE
                 ================================= */}
 
@@ -256,44 +292,35 @@ function ProductCard({ product }) {
                     className="product-title"
                 >
                     {product.title ||
+                        product.name ||
                         "Untitled Product"}
                 </Link>
 
-
-                {/* ================================
+                {/* =================================
                     CONDITION
                 ================================= */}
 
                 <div className="product-condition">
-
                     {product.condition === "New"
                         ? "✨ Brand New"
                         : product.condition
                         ? `♻️ ${product.condition}`
                         : "Condition not specified"}
-
                 </div>
 
-
-                {/* ================================
+                {/* =================================
                     LOCATION
                 ================================= */}
 
                 <div className="product-location">
-
                     📍{" "}
-
-                    {product.city ||
-                        "Unknown"}
-
+                    {product.city || "Unknown"}
                     {product.region
                         ? `, ${product.region}`
                         : ", Ghana"}
-
                 </div>
 
-
-                {/* ================================
+                {/* =================================
                     VIEWS
                 ================================= */}
 
@@ -301,8 +328,7 @@ function ProductCard({ product }) {
                     👁 {product.views || 0} views
                 </div>
 
-
-                {/* ================================
+                {/* =================================
                     ACTION BUTTONS
                 ================================= */}
 
@@ -314,7 +340,6 @@ function ProductCard({ product }) {
                     >
                         View Details
                     </Link>
-
 
                     {product.seller?.store?.storeSlug && (
                         <Link
@@ -328,7 +353,6 @@ function ProductCard({ product }) {
                 </div>
 
             </div>
-
         </div>
     );
 }
