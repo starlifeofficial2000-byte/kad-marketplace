@@ -6,7 +6,7 @@ const SERVER_URL =
     import.meta.env.VITE_SERVER_URL ||
     "https://kad-marketplace-production.up.railway.app";
 
-const initialFormData = {
+const INITIAL_FORM_DATA = {
     title: "",
     subtitle: "",
     description: "",
@@ -14,7 +14,7 @@ const initialFormData = {
     link: "",
     priority: 1,
     startDate: "",
-    endDate: ""
+    endDate: "",
 };
 
 function HeroBanners() {
@@ -26,14 +26,14 @@ function HeroBanners() {
     const [showModal, setShowModal] = useState(false);
     const [editingBanner, setEditingBanner] = useState(null);
 
-    const [preview, setPreview] = useState("");
     const [image, setImage] = useState(null);
+    const [preview, setPreview] = useState("");
 
-    const [formData, setFormData] = useState(initialFormData);
+    const [formData, setFormData] = useState(INITIAL_FORM_DATA);
 
-    /* ==========================================
-       IMAGE URL HELPER
-    ========================================== */
+    /* =====================================================
+       IMAGE URL
+    ===================================================== */
 
     const getImageUrl = (imagePath) => {
         if (!imagePath || typeof imagePath !== "string") {
@@ -46,7 +46,7 @@ function HeroBanners() {
             return "";
         }
 
-        // Already a full URL
+        // Already a complete URL
         if (
             cleanPath.startsWith("http://") ||
             cleanPath.startsWith("https://")
@@ -64,7 +64,7 @@ function HeroBanners() {
             return `${SERVER_URL}/${cleanPath}`;
         }
 
-        // /image.jpg
+        // Any other absolute path
         if (cleanPath.startsWith("/")) {
             return `${SERVER_URL}${cleanPath}`;
         }
@@ -73,9 +73,9 @@ function HeroBanners() {
         return `${SERVER_URL}/uploads/${cleanPath}`;
     };
 
-    /* ==========================================
+    /* =====================================================
        LOAD BANNERS
-    ========================================== */
+    ===================================================== */
 
     useEffect(() => {
         loadBanners();
@@ -95,9 +95,9 @@ function HeroBanners() {
             );
 
             const bannerData =
-                response.data?.banners ||
-                response.data?.data ||
-                response.data ||
+                response.data?.banners ??
+                response.data?.data ??
+                response.data ??
                 [];
 
             const bannersArray = Array.isArray(bannerData)
@@ -127,51 +127,62 @@ function HeroBanners() {
                 error
             );
 
-            alert(
-                error.response?.data?.message ||
-                "Unable to load hero banners."
+            console.error(
+                "SERVER RESPONSE:",
+                error.response?.data
             );
 
             setBanners([]);
+
+            alert(
+                error.response?.data?.message ||
+                    "Unable to load hero banners."
+            );
         } finally {
             setLoading(false);
         }
     };
 
-    /* ==========================================
-       RESET FORM
-    ========================================== */
+    /* =====================================================
+       RESET
+    ===================================================== */
 
     const resetForm = () => {
+        if (preview && preview.startsWith("blob:")) {
+            URL.revokeObjectURL(preview);
+        }
+
         setEditingBanner(null);
         setImage(null);
         setPreview("");
         setFormData({
-            ...initialFormData
+            ...INITIAL_FORM_DATA,
         });
     };
 
-    /* ==========================================
-       OPEN CREATE MODAL
-    ========================================== */
+    /* =====================================================
+       CREATE MODAL
+    ===================================================== */
 
     const openCreateModal = () => {
         resetForm();
         setShowModal(true);
     };
 
-    /* ==========================================
-       OPEN EDIT MODAL
-    ========================================== */
+    /* =====================================================
+       EDIT MODAL
+    ===================================================== */
 
     const openEditModal = (banner) => {
         setEditingBanner(banner);
 
         setImage(null);
 
-        setPreview(
-            getImageUrl(banner.image)
-        );
+        if (banner.image) {
+            setPreview(getImageUrl(banner.image));
+        } else {
+            setPreview("");
+        }
 
         setFormData({
             title: banner.title || "",
@@ -185,15 +196,15 @@ function HeroBanners() {
                 : "",
             endDate: banner.endDate
                 ? String(banner.endDate).substring(0, 10)
-                : ""
+                : "",
         });
 
         setShowModal(true);
     };
 
-    /* ==========================================
+    /* =====================================================
        CLOSE MODAL
-    ========================================== */
+    ===================================================== */
 
     const closeModal = () => {
         if (preview && preview.startsWith("blob:")) {
@@ -204,25 +215,22 @@ function HeroBanners() {
         resetForm();
     };
 
-    /* ==========================================
-       HANDLE INPUT
-    ========================================== */
+    /* =====================================================
+       TEXT INPUT
+    ===================================================== */
 
     const handleChange = (event) => {
-        const {
-            name,
-            value
-        } = event.target;
+        const { name, value } = event.target;
 
         setFormData((previous) => ({
             ...previous,
-            [name]: value
+            [name]: value,
         }));
     };
 
-    /* ==========================================
-       HANDLE IMAGE
-    ========================================== */
+    /* =====================================================
+       IMAGE SELECTION
+    ===================================================== */
 
     const handleImage = (event) => {
         const file = event.target.files?.[0];
@@ -231,46 +239,72 @@ function HeroBanners() {
             return;
         }
 
-        if (!file.type.startsWith("image/")) {
+        console.log("SELECTED BANNER IMAGE:", {
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            file,
+        });
+
+        // Allowed types
+        const allowedTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
             alert(
-                "Please select a valid image file."
+                "Please select a JPG, JPEG, PNG or WEBP image."
             );
 
             event.target.value = "";
             return;
         }
 
+        // 5MB maximum
+        const maxSize = 5 * 1024 * 1024;
+
+        if (file.size > maxSize) {
+            alert(
+                "Banner image must be 5MB or smaller."
+            );
+
+            event.target.value = "";
+            return;
+        }
+
+        // Remove previous object URL
         if (preview && preview.startsWith("blob:")) {
             URL.revokeObjectURL(preview);
         }
 
+        // Store the REAL File object
         setImage(file);
 
-        const imagePreview =
-            URL.createObjectURL(file);
+        // Create local preview
+        const objectUrl = URL.createObjectURL(file);
 
-        setPreview(imagePreview);
+        setPreview(objectUrl);
 
         console.log(
-            "SELECTED BANNER IMAGE:",
-            file.name,
-            file.type,
-            file.size
+            "BANNER FILE STORED:",
+            file.name
         );
     };
 
-    /* ==========================================
-       CREATE / UPDATE
-    ========================================== */
+    /* =====================================================
+       CREATE / UPDATE BANNER
+    ===================================================== */
 
     const handleSubmit = async (event) => {
         event.preventDefault();
 
+        // New banner MUST have an image
         if (!editingBanner && !image) {
             alert(
-                "Please select a banner image."
+                "Please select a banner image before creating the banner."
             );
-
             return;
         }
 
@@ -281,27 +315,27 @@ function HeroBanners() {
 
             data.append(
                 "title",
-                formData.title
+                formData.title.trim()
             );
 
             data.append(
                 "subtitle",
-                formData.subtitle
+                formData.subtitle.trim()
             );
 
             data.append(
                 "description",
-                formData.description
+                formData.description.trim()
             );
 
             data.append(
                 "buttonText",
-                formData.buttonText
+                formData.buttonText.trim()
             );
 
             data.append(
                 "link",
-                formData.link
+                formData.link.trim()
             );
 
             data.append(
@@ -309,38 +343,103 @@ function HeroBanners() {
                 String(formData.priority)
             );
 
-            data.append(
-                "startDate",
-                formData.startDate
-            );
-
-            data.append(
-                "endDate",
-                formData.endDate
-            );
-
-            if (image) {
+            if (formData.startDate) {
                 data.append(
-                    "image",
-                    image
+                    "startDate",
+                    formData.startDate
                 );
             }
 
+            if (formData.endDate) {
+                data.append(
+                    "endDate",
+                    formData.endDate
+                );
+            }
+
+            // IMPORTANT:
+            // Append the actual File object.
+            if (image instanceof File) {
+                data.append(
+                    "image",
+                    image,
+                    image.name
+                );
+            }
+
+            /* =================================================
+               DEBUG FOR UPLOAD
+            ================================================= */
+
             console.log(
-                "SAVING HERO BANNER",
-                {
-                    editing: Boolean(editingBanner),
-                    id: editingBanner?.id,
-                    image: image?.name
-                }
+                "========== BANNER UPLOAD DEBUG =========="
+            );
+
+            console.log(
+                "EDITING:",
+                Boolean(editingBanner)
+            );
+
+            console.log(
+                "IMAGE STATE:",
+                image
+            );
+
+            console.log(
+                "IMAGE NAME:",
+                image?.name
+            );
+
+            console.log(
+                "IMAGE TYPE:",
+                image?.type
+            );
+
+            console.log(
+                "IMAGE SIZE:",
+                image?.size
+            );
+
+            console.log(
+                "FORMDATA IMAGE:",
+                data.get("image")
+            );
+
+            console.log(
+                "FORMDATA IMAGE NAME:",
+                data.get("image")?.name
+            );
+
+            console.log(
+                "FORMDATA IMAGE TYPE:",
+                data.get("image")?.type
+            );
+
+            console.log(
+                "FORMDATA IMAGE SIZE:",
+                data.get("image")?.size
+            );
+
+            console.log(
+                "=========================================="
             );
 
             let response;
 
+            /* =================================================
+               UPDATE
+            ================================================= */
+
             if (editingBanner) {
                 response = await api.put(
                     `/admin/home-builder/banners/${editingBanner.id}`,
-                    data
+                    data,
+                    {
+                        headers: {
+                            "Content-Type":
+                                "multipart/form-data",
+                        },
+                    }
                 );
 
                 console.log(
@@ -351,10 +450,22 @@ function HeroBanners() {
                 alert(
                     "Banner updated successfully."
                 );
-            } else {
+            }
+
+            /* =================================================
+               CREATE
+            ================================================= */
+
+            else {
                 response = await api.post(
                     "/admin/home-builder/banners",
-                    data
+                    data,
+                    {
+                        headers: {
+                            "Content-Type":
+                                "multipart/form-data",
+                        },
+                    }
                 );
 
                 console.log(
@@ -383,16 +494,16 @@ function HeroBanners() {
 
             alert(
                 error.response?.data?.message ||
-                "Unable to save banner."
+                    "Unable to save banner."
             );
         } finally {
             setSaving(false);
         }
     };
 
-    /* ==========================================
+    /* =====================================================
        DELETE
-    ========================================== */
+    ===================================================== */
 
     const deleteBanner = async (id) => {
         const confirmed = window.confirm(
@@ -421,14 +532,14 @@ function HeroBanners() {
 
             alert(
                 error.response?.data?.message ||
-                "Unable to delete banner."
+                    "Unable to delete banner."
             );
         }
     };
 
-    /* ==========================================
+    /* =====================================================
        TOGGLE STATUS
-    ========================================== */
+    ===================================================== */
 
     const toggleBanner = async (id) => {
         try {
@@ -451,14 +562,14 @@ function HeroBanners() {
 
             alert(
                 error.response?.data?.message ||
-                "Unable to update banner status."
+                    "Unable to update banner status."
             );
         }
     };
 
-    /* ==========================================
+    /* =====================================================
        REJECT
-    ========================================== */
+    ===================================================== */
 
     const rejectBanner = async (id) => {
         const confirmed = window.confirm(
@@ -488,14 +599,14 @@ function HeroBanners() {
 
             alert(
                 error.response?.data?.message ||
-                "Unable to reject banner."
+                    "Unable to reject banner."
             );
         }
     };
 
-    /* ==========================================
+    /* =====================================================
        STATUS CLASS
-    ========================================== */
+    ===================================================== */
 
     const getStatusClass = (status) => {
         return String(
@@ -505,9 +616,9 @@ function HeroBanners() {
             .replace(/\s+/g, "-");
     };
 
-    /* ==========================================
+    /* =====================================================
        LOADING
-    ========================================== */
+    ===================================================== */
 
     if (loading) {
         return (
@@ -518,6 +629,10 @@ function HeroBanners() {
             </div>
         );
     }
+
+    /* =====================================================
+       UI
+    ===================================================== */
 
     return (
         <div className="hero-banners">
@@ -562,7 +677,10 @@ function HeroBanners() {
                         <form
                             className="hero-form"
                             onSubmit={handleSubmit}
+                            encType="multipart/form-data"
                         >
+
+                            {/* TITLE */}
 
                             <input
                                 type="text"
@@ -573,6 +691,8 @@ function HeroBanners() {
                                 required
                             />
 
+                            {/* SUBTITLE */}
+
                             <input
                                 type="text"
                                 name="subtitle"
@@ -581,12 +701,16 @@ function HeroBanners() {
                                 onChange={handleChange}
                             />
 
+                            {/* DESCRIPTION */}
+
                             <textarea
                                 name="description"
                                 placeholder="Description"
                                 value={formData.description}
                                 onChange={handleChange}
                             />
+
+                            {/* BUTTON TEXT */}
 
                             <input
                                 type="text"
@@ -596,6 +720,8 @@ function HeroBanners() {
                                 onChange={handleChange}
                             />
 
+                            {/* LINK */}
+
                             <input
                                 type="text"
                                 name="link"
@@ -603,6 +729,8 @@ function HeroBanners() {
                                 value={formData.link}
                                 onChange={handleChange}
                             />
+
+                            {/* PRIORITY */}
 
                             <input
                                 type="number"
@@ -612,6 +740,8 @@ function HeroBanners() {
                                 value={formData.priority}
                                 onChange={handleChange}
                             />
+
+                            {/* START DATE */}
 
                             <label>
                                 Start Date
@@ -624,6 +754,8 @@ function HeroBanners() {
                                 onChange={handleChange}
                             />
 
+                            {/* END DATE */}
+
                             <label>
                                 End Date
                             </label>
@@ -635,26 +767,69 @@ function HeroBanners() {
                                 onChange={handleChange}
                             />
 
+                            {/* IMAGE */}
+
+                            <label className="image-upload-label">
+                                Banner Image
+                            </label>
+
                             <input
                                 type="file"
                                 name="image"
-                                accept="image/jpeg,image/png,image/webp,image/gif"
+                                accept="image/jpeg,image/png,image/webp"
                                 onChange={handleImage}
                             />
 
-                            {preview && (
-                                <img
-                                    src={preview}
-                                    alt="Banner preview"
-                                    className="banner-preview"
-                                    onError={(event) => {
-                                        console.error(
-                                            "BANNER PREVIEW FAILED:",
-                                            event.currentTarget.src
-                                        );
-                                    }}
-                                />
+                            {/* SELECTED FILE */}
+
+                            {image && (
+                                <div className="selected-image-info">
+                                    <strong>
+                                        Selected:
+                                    </strong>{" "}
+                                    {image.name}
+
+                                    <br />
+
+                                    <small>
+                                        {image.type} •{" "}
+                                        {(
+                                            image.size /
+                                            1024 /
+                                            1024
+                                        ).toFixed(2)}{" "}
+                                        MB
+                                    </small>
+                                </div>
                             )}
+
+                            {/* PREVIEW */}
+
+                            {preview && (
+                                <div className="banner-preview-wrapper">
+
+                                    <img
+                                        src={preview}
+                                        alt="Banner preview"
+                                        className="banner-preview"
+                                        onLoad={() => {
+                                            console.log(
+                                                "BANNER PREVIEW LOADED:",
+                                                preview
+                                            );
+                                        }}
+                                        onError={(event) => {
+                                            console.error(
+                                                "BANNER PREVIEW FAILED:",
+                                                event.currentTarget.src
+                                            );
+                                        }}
+                                    />
+
+                                </div>
+                            )}
+
+                            {/* BUTTONS */}
 
                             <div className="modal-buttons">
 
@@ -664,7 +839,7 @@ function HeroBanners() {
                                     disabled={saving}
                                 >
                                     {saving
-                                        ? "Saving..."
+                                        ? "Uploading..."
                                         : editingBanner
                                             ? "Update Banner"
                                             : "Create Banner"}
@@ -811,9 +986,9 @@ function HeroBanners() {
                                         >
                                             {String(
                                                 banner.status ||
-                                                ""
+                                                    ""
                                             ).toLowerCase() ===
-                                                "running"
+                                            "running"
                                                 ? "Pause"
                                                 : "Run"}
                                         </button>
