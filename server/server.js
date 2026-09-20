@@ -3,12 +3,12 @@ require("dotenv").config();
 const express = require("express");
 const http = require("http");
 const path = require("path");
+const fs = require("fs");
 const cors = require("cors");
 const helmet = require("helmet");
 const { Server } = require("socket.io");
 
 const sequelize = require("./config/database");
-
 
 /* =====================================================
    LOAD MODELS AND ASSOCIATIONS
@@ -16,17 +16,27 @@ const sequelize = require("./config/database");
 
 require("./models");
 
-
 /* =====================================================
    ROUTES
 ===================================================== */
 
-const authRoutes = require("./routes/authRoutes");
-const productRoutes = require("./routes/productRoutes");
-const messageRoutes = require("./routes/messageRoutes");
-const adminRoutes = require("./routes/adminRoutes");
-const userRoutes = require("./routes/userRoutes");
-const reviewRoutes = require("./routes/reviewRoutes");
+const authRoutes =
+    require("./routes/authRoutes");
+
+const productRoutes =
+    require("./routes/productRoutes");
+
+const messageRoutes =
+    require("./routes/messageRoutes");
+
+const adminRoutes =
+    require("./routes/adminRoutes");
+
+const userRoutes =
+    require("./routes/userRoutes");
+
+const reviewRoutes =
+    require("./routes/reviewRoutes");
 
 const notificationRoutes =
     require("./routes/notificationRoutes");
@@ -112,8 +122,25 @@ const wishlistRoutes =
 const leadRoutes =
     require("./routes/leadRoutes");
 
+/* =====================================================
+   HOME BUILDER ROUTES
+
+   IMPORTANT:
+   Public and Admin Home Builder routes are intentionally
+   separated.
+
+   Public:
+   /api/home-builder/*
+
+   Admin:
+   /api/admin/home-builder/*
+===================================================== */
+
 const homeBuilderRoutes =
     require("./routes/homeBuilderRoutes");
+
+const homeBuilderAdminRoutes =
+    require("./routes/homeBuilderAdminRoutes");
 
 const contactRoutes =
     require("./routes/contactRoutes");
@@ -136,9 +163,8 @@ const auditLogRoutes =
 const userSettingsRoutes =
     require("./routes/userSettingsRoutes");
 
-const adminSecurityRoutes = require(
-    "./routes/adminSecurityRoutes"
-);
+const adminSecurityRoutes =
+    require("./routes/adminSecurityRoutes");
 
 /* =====================================================
    MIDDLEWARE
@@ -147,7 +173,6 @@ const adminSecurityRoutes = require(
 const maintenanceMode =
     require("./middleware/maintenanceMode");
 
-
 /* =====================================================
    SERVICES
 ===================================================== */
@@ -155,13 +180,11 @@ const maintenanceMode =
 const PromotionService =
     require("./services/promotionService");
 
-
 /* =====================================================
    BACKGROUND JOBS
 ===================================================== */
 
 require("./jobs/subscriptionCron");
-
 
 /* =====================================================
    EXPRESS APPLICATION
@@ -170,7 +193,6 @@ require("./jobs/subscriptionCron");
 const app = express();
 
 const server = http.createServer(app);
-
 
 /* =====================================================
    ENVIRONMENT
@@ -181,7 +203,6 @@ const NODE_ENV =
 
 const PORT =
     process.env.PORT || 5000;
-
 
 /* =====================================================
    SECURITY
@@ -195,131 +216,111 @@ app.use(
     })
 );
 
-
 /* =====================================================
    CORS CONFIGURATION
 ===================================================== */
 
 const allowedOrigins = [
-
-    /* Local Development */
-
     "http://localhost:5173",
-
     "http://127.0.0.1:5173",
-
-    /* Production Frontend */
-
     process.env.FRONTEND_URL
+]
+    .filter(Boolean)
+    .map((url) => url.trim());
 
-].filter(Boolean);
-
-
-/* Allow multiple production domains if needed */
+/* -----------------------------------------------------
+   Additional production frontend domains
+----------------------------------------------------- */
 
 if (process.env.FRONTEND_URLS) {
-
     process.env.FRONTEND_URLS
         .split(",")
         .map((url) => url.trim())
         .filter(Boolean)
         .forEach((url) => {
-
             if (!allowedOrigins.includes(url)) {
-
                 allowedOrigins.push(url);
-
             }
-
         });
-
 }
 
+/* Remove duplicates */
+
+const uniqueAllowedOrigins =
+    [...new Set(allowedOrigins)];
 
 console.log(
     "🌐 Allowed CORS Origins:",
-    allowedOrigins
+    uniqueAllowedOrigins
 );
 
+/* =====================================================
+   CORS HELPER
+===================================================== */
+
+const isAllowedOrigin = (origin) => {
+    if (!origin) {
+        return true;
+    }
+
+    return uniqueAllowedOrigins.includes(origin);
+};
+
+/* =====================================================
+   EXPRESS CORS
+===================================================== */
 
 const corsOptions = {
-
     origin: (origin, callback) => {
-
         /*
-           Allow requests without Origin.
-
-           Examples:
-           - Postman
-           - Mobile applications
-           - Server-to-server requests
-        */
+         * Requests without an Origin are allowed.
+         *
+         * Examples:
+         * - Postman
+         * - Mobile applications
+         * - Server-to-server requests
+         */
 
         if (!origin) {
-
-            return callback(
-                null,
-                true
-            );
-
+            return callback(null, true);
         }
 
-
-        if (
-
-            allowedOrigins.includes(origin)
-
-        ) {
-
-            return callback(
-                null,
-                true
-            );
-
+        if (isAllowedOrigin(origin)) {
+            return callback(null, true);
         }
-
 
         console.warn(
             "❌ CORS BLOCKED:",
             origin
         );
 
-
         return callback(
             new Error(
                 `Not allowed by CORS: ${origin}`
             )
         );
-
     },
 
     credentials: true,
 
     methods: [
-
         "GET",
         "POST",
         "PUT",
         "PATCH",
         "DELETE",
         "OPTIONS"
-
     ],
 
     allowedHeaders: [
-
         "Content-Type",
         "Authorization"
-
     ]
-
 };
-
 
 app.use(
     cors(corsOptions)
 );
-
 
 /* =====================================================
    BODY PARSERS
@@ -331,255 +332,185 @@ app.use(
     })
 );
 
-
 app.use(
     express.urlencoded({
-
         extended: true,
-
         limit: "10mb"
-
     })
 );
-
 
 /* =====================================================
    STATIC FILES
 ===================================================== */
 
+const uploadDirectory =
+    path.join(__dirname, "uploads");
+
 app.use(
-
     "/uploads",
-
-    express.static(
-
-        path.join(
-            __dirname,
-            "uploads"
-        )
-
-    )
-
+    express.static(uploadDirectory)
 );
-app.get("/api/debug/uploads", (req, res) => {
-    const fs = require("fs");
-    const path = require("path");
 
-    const uploadDir = path.join(
-        __dirname,
-        "uploads"
+/* =====================================================
+   UPLOAD DEBUG ENDPOINT
+
+   Development only.
+
+   This endpoint intentionally does not expose
+   filesystem information in production.
+===================================================== */
+
+if (NODE_ENV !== "production") {
+    app.get(
+        "/api/debug/uploads",
+        (req, res) => {
+            try {
+                const exists =
+                    fs.existsSync(uploadDirectory);
+
+                const files =
+                    exists
+                        ? fs.readdirSync(uploadDirectory)
+                        : [];
+
+                return res.status(200).json({
+                    success: true,
+                    uploadDir: uploadDirectory,
+                    exists,
+                    fileCount: files.length,
+                    files: files.slice(0, 100)
+                });
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+        }
     );
-
-    try {
-        const exists = fs.existsSync(uploadDir);
-
-        const files = exists
-            ? fs.readdirSync(uploadDir)
-            : [];
-
-        return res.json({
-            success: true,
-            uploadDir,
-            exists,
-            fileCount: files.length,
-            files: files.slice(0, 100)
-        });
-
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
-});
+}
 
 /* =====================================================
    SOCKET.IO
 ===================================================== */
 
 const io = new Server(
-
     server,
-
     {
-
         cors: {
-
             origin: (
-
                 origin,
-
                 callback
-
             ) => {
-
                 if (!origin) {
-
-                    return callback(
-                        null,
-                        true
-                    );
-
+                    return callback(null, true);
                 }
 
-
-                if (
-
-                    allowedOrigins.includes(origin)
-
-                ) {
-
-                    return callback(
-                        null,
-                        true
-                    );
-
+                if (isAllowedOrigin(origin)) {
+                    return callback(null, true);
                 }
 
+                console.warn(
+                    "❌ Socket.IO CORS BLOCKED:",
+                    origin
+                );
 
                 return callback(
                     new Error(
                         "Socket.IO CORS blocked."
                     )
                 );
-
             },
 
             methods: [
-
                 "GET",
                 "POST",
                 "PUT",
                 "PATCH",
                 "DELETE"
-
             ],
 
             credentials: true
-
         }
-
     }
-
 );
 
-
-app.set(
-    "io",
-    io
-);
-
+app.set("io", io);
 
 /* =====================================================
    HEALTH CHECK
 ===================================================== */
 
 app.get(
-
     "/api/health",
-
     async (req, res) => {
-
         try {
-
             await sequelize.authenticate();
 
-
             return res.status(200).json({
-
                 success: true,
-
                 status: "healthy",
-
                 environment: NODE_ENV,
-
                 database: "connected",
-
                 timestamp:
                     new Date().toISOString()
-
             });
-
-        }
-
-        catch (error) {
+        } catch (error) {
+            console.error(
+                "Health check database error:",
+                error.message
+            );
 
             return res.status(503).json({
-
                 success: false,
-
                 status: "unhealthy",
-
                 database: "disconnected",
-
-                message:
-                    error.message
-
+                message: error.message
             });
-
         }
-
     }
-
 );
-
 
 /* =====================================================
    HOME ROUTE
 ===================================================== */
 
 app.get(
-
     "/",
-
     (req, res) => {
-
-        res.status(200).json({
-
+        return res.status(200).json({
             success: true,
-
             message:
                 "🚀 KAD Marketplace API Running",
-
-            environment:
-                NODE_ENV
-
+            environment: NODE_ENV
         });
-
     }
-
 );
-
 
 /* =====================================================
    PUBLIC ROUTES
 ===================================================== */
 
-
 /* ---------------- AUTH ---------------- */
 
 app.use(
-
     "/api/auth",
-
     authRoutes
-
 );
 
-app.use("/api/settings", settingsRoutes);
+/* ---------------- SETTINGS ---------------- */
+
+app.use(
+    "/api/settings",
+    settingsRoutes
+);
+
+/* ---------------- USER SETTINGS ---------------- */
 
 app.use(
     "/api/user/settings",
     userSettingsRoutes
 );
-
-app.use(
-    "/api/admin",
-    adminSecurityRoutes
-);
-
-
-
 
 /* =====================================================
    MAINTENANCE MODE
@@ -589,11 +520,9 @@ app.use(
     maintenanceMode
 );
 
-
 /* =====================================================
    MARKETPLACE ROUTES
 ===================================================== */
-
 
 /* ---------------- PRODUCTS ---------------- */
 
@@ -602,14 +531,12 @@ app.use(
     productRoutes
 );
 
-
 /* ---------------- STORE FOLLOW ---------------- */
 
 app.use(
     "/api/store",
     storeFollowRoutes
 );
-
 
 /* ---------------- STORE ---------------- */
 
@@ -618,14 +545,12 @@ app.use(
     storeRoutes
 );
 
-
 /* ---------------- SELLER ---------------- */
 
 app.use(
     "/api/seller",
     sellerRoutes
 );
-
 
 /* ---------------- SUBSCRIPTIONS ---------------- */
 
@@ -634,12 +559,10 @@ app.use(
     subscriptionRoutes
 );
 
-
 app.use(
     "/api/subscription-plans",
     subscriptionPlanRoutes
 );
-
 
 /* ---------------- PAYMENTS ---------------- */
 
@@ -648,14 +571,12 @@ app.use(
     paymentRoutes
 );
 
-
 /* ---------------- PROMOTIONS ---------------- */
 
 app.use(
     "/api/promotions",
     promotionRoutes
 );
-
 
 /* ---------------- MESSAGES ---------------- */
 
@@ -664,14 +585,12 @@ app.use(
     messageRoutes
 );
 
-
 /* ---------------- USERS ---------------- */
 
 app.use(
     "/api/users",
     userRoutes
 );
-
 
 /* ---------------- WISHLIST ---------------- */
 
@@ -680,14 +599,12 @@ app.use(
     wishlistRoutes
 );
 
-
 /* ---------------- REVIEWS ---------------- */
 
 app.use(
     "/api/reviews",
     reviewRoutes
 );
-
 
 /* ---------------- NOTIFICATIONS ---------------- */
 
@@ -696,14 +613,12 @@ app.use(
     notificationRoutes
 );
 
-
 /* ---------------- REPORTS ---------------- */
 
 app.use(
     "/api/reports",
     reportRoutes
 );
-
 
 /* ---------------- ANALYTICS ---------------- */
 
@@ -712,14 +627,12 @@ app.use(
     analyticsRoutes
 );
 
-
 /* ---------------- SEARCH ---------------- */
 
 app.use(
     "/api/search",
     searchRoutes
 );
-
 
 /* ---------------- SUPPORT ---------------- */
 
@@ -728,31 +641,12 @@ app.use(
     supportRoutes
 );
 
-
-/* ---------------- SETTINGS ---------------- */
-
-/*
-   This includes:
-
-   GET /api/settings/public
-
-   because settingsRoutes already defines
-   router.get("/public", ...)
-*/
-
-app.use(
-    "/api/settings",
-    settingsRoutes
-);
-
-
 /* ---------------- CONTACT ---------------- */
 
 app.use(
     "/api/contact",
     contactRoutes
 );
-
 
 /* ---------------- LEADS ---------------- */
 
@@ -761,14 +655,12 @@ app.use(
     leadRoutes
 );
 
-
 /* ---------------- ADVERTISEMENTS ---------------- */
 
 app.use(
     "/api/advertisements",
     advertisementRoutes
 );
-
 
 /* ---------------- SECURITY ---------------- */
 
@@ -777,14 +669,12 @@ app.use(
     securityRoutes
 );
 
-
 /* ---------------- ROLES ---------------- */
 
 app.use(
     "/api/roles",
     roleRoutes
 );
-
 
 /* ---------------- PERMISSIONS ---------------- */
 
@@ -793,7 +683,6 @@ app.use(
     permissionRoutes
 );
 
-
 /* ---------------- BACKUPS ---------------- */
 
 app.use(
@@ -801,11 +690,25 @@ app.use(
     backupRoutes
 );
 
+/* =====================================================
+   PUBLIC HOME BUILDER
+===================================================== */
+
+app.use(
+    "/api/home-builder",
+    homeBuilderRoutes
+);
 
 /* =====================================================
    ADMIN ROUTES
 ===================================================== */
 
+/* ---------------- ADMIN SECURITY ---------------- */
+
+app.use(
+    "/api/admin",
+    adminSecurityRoutes
+);
 
 /* ---------------- MAIN ADMIN ---------------- */
 
@@ -814,14 +717,12 @@ app.use(
     adminRoutes
 );
 
-
 /* ---------------- ADMIN PRODUCTS ---------------- */
 
 app.use(
     "/api/admin",
     adminProductRoutes
 );
-
 
 /* ---------------- ADMIN STORES ---------------- */
 
@@ -830,14 +731,12 @@ app.use(
     adminStoreRoutes
 );
 
-
 /* ---------------- ADMIN ADVERTISEMENTS ---------------- */
 
 app.use(
     "/api/admin",
     adminAdvertisementRoutes
 );
-
 
 /* ---------------- ADMIN PAYMENTS ---------------- */
 
@@ -846,14 +745,12 @@ app.use(
     adminPaymentRoutes
 );
 
-
 /* ---------------- ADMIN REVENUE ---------------- */
 
 app.use(
     "/api/admin",
     adminRevenueRoutes
 );
-
 
 /* ---------------- ADMIN SUBSCRIPTIONS ---------------- */
 
@@ -862,14 +759,12 @@ app.use(
     adminSubscriptionPlanRoutes
 );
 
-
 /* ---------------- ADMIN NOTIFICATIONS ---------------- */
 
 app.use(
     "/api/admin/notifications",
     adminNotificationRoutes
 );
-
 
 /* ---------------- ADMIN SETTINGS ---------------- */
 
@@ -878,12 +773,12 @@ app.use(
     adminSettingsRoutes
 );
 
+/* ---------------- MARKETPLACE SETTINGS ---------------- */
 
 app.use(
     "/api/admin/settings",
     marketplaceSettingsRoutes
 );
-
 
 /* ---------------- ADMIN SUPPORT ---------------- */
 
@@ -892,14 +787,12 @@ app.use(
     adminSupportRoutes
 );
 
-
 /* ---------------- ADMIN CATEGORIES ---------------- */
 
 app.use(
     "/api/admin/categories",
     categoryRoutes
 );
-
 
 /* ---------------- ADMIN FEATURED PRODUCTS ---------------- */
 
@@ -908,20 +801,24 @@ app.use(
     featuredProductRoutes
 );
 
-/* ---------------- PUBLIC HOME BUILDER ---------------- */
+/* =====================================================
+   ADMIN HOME BUILDER
 
-app.use(
-    "/api/home-builder",
-    homeBuilderRoutes
-);
+   IMPORTANT:
+   This MUST use homeBuilderAdminRoutes and NOT
+   homeBuilderRoutes.
 
-/* ---------------- ADMIN HOME BUILDER ---------------- */
+   This is what fixes:
+
+   GET /api/admin/home-builder/featured
+
+   previously reaching the public controller.
+===================================================== */
 
 app.use(
     "/api/admin/home-builder",
-    homeBuilderRoutes
+    homeBuilderAdminRoutes
 );
-
 
 /* ---------------- ADMIN AUDIT LOGS ---------------- */
 
@@ -930,354 +827,306 @@ app.use(
     auditLogRoutes
 );
 
-
 /* =====================================================
    SOCKET EVENTS
 ===================================================== */
 
 io.on(
-
     "connection",
-
     (socket) => {
-
         console.log(
             `🟢 Socket Connected: ${socket.id}`
         );
 
-
-        /* JOIN CONVERSATION */
+        /* =================================================
+           JOIN CONVERSATION
+        ================================================= */
 
         socket.on(
-
             "join_conversation",
-
             (conversationId) => {
-
-                if (!conversationId) return;
-
+                if (!conversationId) {
+                    return;
+                }
 
                 socket.join(
                     String(conversationId)
                 );
 
-
                 console.log(
-
                     `User joined conversation: ${conversationId}`
-
                 );
-
             }
-
         );
 
-
-        /* LEAVE CONVERSATION */
+        /* =================================================
+           LEAVE CONVERSATION
+        ================================================= */
 
         socket.on(
-
             "leave_conversation",
-
             (conversationId) => {
-
-                if (!conversationId) return;
-
+                if (!conversationId) {
+                    return;
+                }
 
                 socket.leave(
                     String(conversationId)
                 );
-
             }
-
         );
 
-
-        /* USER TYPING */
+        /* =================================================
+           USER TYPING
+        ================================================= */
 
         socket.on(
-
             "typing",
-
             (data) => {
-
-                if (!data?.conversationId) {
-
+                if (
+                    !data ||
+                    !data.conversationId
+                ) {
                     return;
-
                 }
 
-
-                socket.to(
-
-                    String(
-                        data.conversationId
+                socket
+                    .to(
+                        String(
+                            data.conversationId
+                        )
                     )
-
-                ).emit(
-
-                    "typing",
-
-                    data
-
-                );
-
+                    .emit(
+                        "typing",
+                        data
+                    );
             }
-
         );
 
-
-        /* USER STOPPED TYPING */
+        /* =================================================
+           USER STOPPED TYPING
+        ================================================= */
 
         socket.on(
-
             "stop_typing",
-
             (data) => {
-
-                if (!data?.conversationId) {
-
+                if (
+                    !data ||
+                    !data.conversationId
+                ) {
                     return;
-
                 }
 
-
-                socket.to(
-
-                    String(
-                        data.conversationId
+                socket
+                    .to(
+                        String(
+                            data.conversationId
+                        )
                     )
-
-                ).emit(
-
-                    "stop_typing",
-
-                    data
-
-                );
-
+                    .emit(
+                        "stop_typing",
+                        data
+                    );
             }
-
         );
 
-
-        /* DISCONNECT */
+        /* =================================================
+           DISCONNECT
+        ================================================= */
 
         socket.on(
-
             "disconnect",
-
             () => {
-
                 console.log(
                     `🔴 Socket Disconnected: ${socket.id}`
                 );
-
             }
-
         );
-
     }
-
 );
-
 
 /* =====================================================
    PRODUCTION FRONTEND
-
-   When deployed as a single service, Express serves the
-   compiled React application from client/dist. API routes
-   continue to be handled by the routes registered above.
 ===================================================== */
 
-const clientDistPath = path.join(
-    __dirname,
-    "../client/dist"
-);
+const clientDistPath =
+    path.join(
+        __dirname,
+        "../client/dist"
+    );
 
 if (NODE_ENV === "production") {
-
     app.use(
         express.static(clientDistPath)
     );
 
-    app.use((req, res, next) => {
+    /*
+     * React SPA fallback.
+     *
+     * API and upload requests must never be sent to
+     * index.html.
+     */
 
-        if (
-            req.method === "GET" &&
-            !req.path.startsWith("/api") &&
-            !req.path.startsWith("/uploads")
-        ) {
+    app.use(
+        (req, res, next) => {
+            if (
+                req.method === "GET" &&
+                !req.path.startsWith("/api") &&
+                !req.path.startsWith("/uploads")
+            ) {
+                return res.sendFile(
+                    path.join(
+                        clientDistPath,
+                        "index.html"
+                    )
+                );
+            }
 
-            return res.sendFile(
-                path.join(
-                    clientDistPath,
-                    "index.html"
-                )
-            );
+            return next();
         }
-
-        return next();
-
-    });
-
+    );
 }
-
 
 /* =====================================================
    404 HANDLER
 ===================================================== */
 
 app.use(
-
     (req, res) => {
-
-        res.status(404).json({
-
+        return res.status(404).json({
             success: false,
-
             message:
                 `API route not found: ${req.method} ${req.originalUrl}`
-
         });
-
     }
-
 );
-
 
 /* =====================================================
    GLOBAL ERROR HANDLER
 ===================================================== */
 
 app.use(
-
     (error, req, res, next) => {
-
         console.error(
             "SERVER ERROR:",
             error
         );
 
-
-        /* CORS ERROR */
+        /* ---------------------------------------------
+           CORS ERROR
+        --------------------------------------------- */
 
         if (
-
             error.message &&
             error.message.includes("CORS")
-
         ) {
-
             return res.status(403).json({
-
                 success: false,
-
-                message:
-                    error.message
-
+                message: error.message
             });
-
         }
 
+        /* ---------------------------------------------
+           Multer errors
+        --------------------------------------------- */
+
+        if (
+            error.name === "MulterError"
+        ) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    error.message ||
+                    "File upload error."
+            });
+        }
+
+        /* ---------------------------------------------
+           Generic error
+        --------------------------------------------- */
 
         return res.status(
-
             error.status || 500
-
         ).json({
-
             success: false,
 
             message:
-
                 NODE_ENV === "production"
-
                     ? "Internal server error."
-
                     : (
-
                         error.message ||
-
                         "Internal server error."
-
                     )
-
         });
-
     }
-
 );
-
 
 /* =====================================================
    PROMOTION EXPIRY CHECKER
 ===================================================== */
 
+let promotionExpiryInterval = null;
+
 const startPromotionExpiryChecker = () => {
+    /*
+     * Prevent duplicate intervals.
+     */
+
+    if (promotionExpiryInterval) {
+        console.warn(
+            "⚠️ Promotion expiry checker is already running."
+        );
+
+        return;
+    }
 
     console.log(
         "🚀 Promotion expiry checker started."
     );
 
-
     const checkExpiredPromotions =
         async () => {
-
             try {
-
                 await PromotionService
                     .removeExpiredPromotions();
-
 
                 console.log(
                     "Promotion expiry check completed."
                 );
-
-            }
-
-            catch (error) {
-
+            } catch (error) {
                 console.error(
-
                     "Promotion expiry check failed:",
-
                     error.message
-
                 );
-
             }
-
         };
 
-
-    /* Run immediately */
+    /*
+     * Run immediately.
+     */
 
     checkExpiredPromotions();
 
+    /*
+     * Run every minute.
+     */
 
-    /* Run every minute */
-
-    setInterval(
-
-        checkExpiredPromotions,
-
-        60 * 1000
-
-    );
-
+    promotionExpiryInterval =
+        setInterval(
+            checkExpiredPromotions,
+            60 * 1000
+        );
 };
-
 
 /* =====================================================
    DATABASE AND SERVER STARTUP
 ===================================================== */
 
 const startServer = async () => {
-
     try {
-
-        /* DATABASE CONNECTION */
+        /* ---------------------------------------------
+           DATABASE CONNECTION
+        --------------------------------------------- */
 
         await sequelize.authenticate();
 
@@ -1285,14 +1134,16 @@ const startServer = async () => {
             "✅ MySQL Connected Successfully"
         );
 
+        /* ---------------------------------------------
+           DATABASE SYNC
+        --------------------------------------------- */
 
         /*
-           Keep sync for now while developing.
-
-           Later, after the database structure
-           becomes stable, replace this with
-           Sequelize migrations.
-        */
+         * Keep sync enabled while the project is still
+         * under active development.
+         *
+         * Later, migrate to Sequelize migrations.
+         */
 
         await sequelize.sync();
 
@@ -1300,164 +1151,185 @@ const startServer = async () => {
             "✅ Database Synced Successfully"
         );
 
-
-        /* =============================================
+        /* ---------------------------------------------
            SEED ROLES AND PERMISSIONS
-        ============================================= */
+        --------------------------------------------- */
 
         const seedRolesAndPermissions =
-
             require(
                 "./seeders/rolePermissionSeeder"
             );
 
-
         await seedRolesAndPermissions();
-
 
         console.log(
             "✅ Roles and permissions checked."
         );
 
-
-        /* =============================================
+        /* ---------------------------------------------
            START BACKGROUND SERVICES
-        ============================================= */
+        --------------------------------------------- */
 
         startPromotionExpiryChecker();
 
-
-        /* =============================================
-           START SERVER
-        ============================================= */
+        /* ---------------------------------------------
+           START HTTP SERVER
+        --------------------------------------------- */
 
         server.listen(
-
             PORT,
-
             () => {
-
                 console.log("");
-
                 console.log(
                     "===================================="
                 );
-
                 console.log(
                     "🚀 KAD MARKETPLACE SERVER STARTED"
                 );
-
                 console.log(
                     "===================================="
                 );
-
                 console.log(
                     `🌍 Port: ${PORT}`
                 );
-
                 console.log(
                     `📦 Environment: ${NODE_ENV}`
                 );
-
                 console.log(
-                    `🌐 Allowed Origins: ${allowedOrigins.join(", ")}`
+                    `🌐 Allowed Origins: ${uniqueAllowedOrigins.join(", ")}`
                 );
-
                 console.log(
                     "===================================="
                 );
-
                 console.log("");
-
             }
-
         );
-
-    }
-
-    catch (error) {
-
+    } catch (error) {
         console.error("");
-
         console.error(
             "❌ SERVER STARTUP FAILED"
         );
-
         console.error(error);
+        console.error("");
+
+        /*
+         * Stop the process because the application
+         * cannot safely operate without the database.
+         */
 
         process.exit(1);
-
     }
-
 };
-
 
 /* =====================================================
    GRACEFUL SHUTDOWN
 ===================================================== */
 
 const shutdown = async (signal) => {
-
     console.log(
         `\n${signal} received. Shutting down...`
     );
 
-
     try {
+        /* ---------------------------------------------
+           Stop background jobs
+        --------------------------------------------- */
 
-        server.close(() => {
-
-            console.log(
-                "HTTP server closed."
+        if (promotionExpiryInterval) {
+            clearInterval(
+                promotionExpiryInterval
             );
 
-        });
+            promotionExpiryInterval = null;
 
+            console.log(
+                "Promotion expiry checker stopped."
+            );
+        }
+
+        /* ---------------------------------------------
+           Close HTTP server
+        --------------------------------------------- */
+
+        await new Promise(
+            (resolve) => {
+                server.close(
+                    () => {
+                        console.log(
+                            "HTTP server closed."
+                        );
+
+                        resolve();
+                    }
+                );
+            }
+        );
+
+        /* ---------------------------------------------
+           Close database
+        --------------------------------------------- */
 
         await sequelize.close();
-
 
         console.log(
             "Database connection closed."
         );
 
-
         process.exit(0);
-
-    }
-
-    catch (error) {
-
+    } catch (error) {
         console.error(
             "Shutdown error:",
             error
         );
 
-
         process.exit(1);
-
     }
-
 };
 
+/* =====================================================
+   PROCESS SIGNALS
+===================================================== */
 
 process.on(
-
     "SIGTERM",
-
     () => shutdown("SIGTERM")
-
 );
-
 
 process.on(
-
     "SIGINT",
-
     () => shutdown("SIGINT")
-
 );
 
+/* =====================================================
+   UNHANDLED ERRORS
+===================================================== */
+
+process.on(
+    "unhandledRejection",
+    (reason) => {
+        console.error(
+            "❌ UNHANDLED PROMISE REJECTION:",
+            reason
+        );
+    }
+);
+
+process.on(
+    "uncaughtException",
+    (error) => {
+        console.error(
+            "❌ UNCAUGHT EXCEPTION:",
+            error
+        );
+
+        /*
+         * An uncaught exception can leave the application
+         * in an unsafe state, so shut down gracefully.
+         */
+
+        shutdown("UNCAUGHT_EXCEPTION");
+    }
+);
 
 /* =====================================================
    START APPLICATION
