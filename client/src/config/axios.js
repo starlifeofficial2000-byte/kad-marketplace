@@ -5,53 +5,29 @@ import axios from "axios";
 KAD MARKETPLACE
 CENTRAL API CLIENT
 =========================================================
-
-Development:
-http://localhost:5000/api
-
-Production:
-https://kad-marketplace-production.up.railway.app/api
-
-IMPORTANT:
-All frontend API requests should use this instance:
-
-    api.get("/products")
-    api.get("/subscription/plans")
-    api.get("/subscription/my-subscription")
-
-DO NOT use:
-
-    axios.get("/products")
-
-because that bypasses this configuration.
-=========================================================
 */
 
-
 /* =====================================================
-   API SERVER
+   DEFAULT SERVER
 ===================================================== */
 
 const DEFAULT_API_SERVER =
     "http://localhost:5000";
 
-const API_SERVER =
+
+/* =====================================================
+   READ ENVIRONMENT VARIABLES
+===================================================== */
+
+const RAW_API_SERVER =
     import.meta.env.VITE_API_SERVER ||
     import.meta.env.VITE_SERVER_URL ||
     DEFAULT_API_SERVER;
 
 
 /* =====================================================
-   NORMALIZE API SERVER
-=====================================================
-
-Examples:
-
-https://example.com
-https://example.com/
-https://example.com/api
-https://example.com/api/
-*/
+   NORMALIZE SERVER URL
+===================================================== */
 
 const normalizeServerUrl = (url) => {
 
@@ -62,18 +38,14 @@ const normalizeServerUrl = (url) => {
     let normalized = String(url).trim();
 
     /*
-    Remove trailing slashes
+    Remove trailing slash.
     */
 
     normalized = normalized.replace(/\/+$/, "");
 
     /*
-    Remove /api if someone accidentally puts it
-    inside VITE_API_SERVER.
-
-    This prevents:
-
-    /api/api/products
+    Prevent accidental /api/api
+    if somebody puts /api in the environment variable.
     */
 
     normalized = normalized.replace(/\/api$/i, "");
@@ -83,11 +55,11 @@ const normalizeServerUrl = (url) => {
 
 
 /* =====================================================
-   SERVER URL
+   FINAL SERVER URL
 ===================================================== */
 
 const SERVER_URL =
-    normalizeServerUrl(API_SERVER);
+    normalizeServerUrl(RAW_API_SERVER);
 
 
 /* =====================================================
@@ -99,24 +71,18 @@ const API_URL =
 
 
 /* =====================================================
-   DEBUG INFORMATION
-=====================================================
-
-This helps us immediately see what the production
-frontend is using.
-
-It does NOT expose the JWT token.
+   DEVELOPMENT DEBUG
 ===================================================== */
 
 if (import.meta.env.DEV) {
 
     console.log(
-        "🔧 KAD API SERVER:",
+        "🔧 KAD MARKETPLACE SERVER:",
         SERVER_URL
     );
 
     console.log(
-        "🔧 KAD API BASE URL:",
+        "🔧 KAD MARKETPLACE API:",
         API_URL
     );
 }
@@ -149,7 +115,7 @@ api.interceptors.request.use(
 
         /*
         -----------------------------------------------
-        JWT TOKEN
+        JWT
         -----------------------------------------------
         */
 
@@ -170,15 +136,6 @@ api.interceptors.request.use(
         -----------------------------------------------
         FORM DATA
         -----------------------------------------------
-
-        IMPORTANT:
-
-        Do NOT manually set:
-
-        multipart/form-data
-
-        Axios/browser must generate the boundary.
-        -----------------------------------------------
         */
 
         if (
@@ -186,13 +143,19 @@ api.interceptors.request.use(
             config.data instanceof FormData
         ) {
 
+            /*
+            Let Axios/browser generate:
+
+            multipart/form-data;
+            boundary=...
+
+            */
+
             delete config.headers["Content-Type"];
 
             delete config.headers["content-type"];
 
-        }
-
-        else {
+        } else {
 
             config.headers =
                 config.headers || {};
@@ -204,7 +167,7 @@ api.interceptors.request.use(
 
         /*
         -----------------------------------------------
-        DEBUG REQUEST URL
+        DEVELOPMENT REQUEST LOG
         -----------------------------------------------
         */
 
@@ -213,8 +176,7 @@ api.interceptors.request.use(
             console.log(
                 "➡️ API REQUEST:",
                 config.method?.toUpperCase(),
-                config.baseURL,
-                config.url
+                `${config.baseURL}${config.url}`
             );
         }
 
@@ -254,12 +216,6 @@ api.interceptors.response.use(
 
     (error) => {
 
-        /*
-        -----------------------------------------------
-        SERVER RESPONSE
-        -----------------------------------------------
-        */
-
         const status =
             error.response?.status;
 
@@ -275,16 +231,6 @@ api.interceptors.response.use(
             console.warn(
                 "🔐 Authentication expired or invalid."
             );
-
-            /*
-            Do not automatically remove the token here.
-
-            Some pages intentionally receive 401 responses
-            while authentication is being initialized.
-
-            Authentication handling should remain controlled
-            by the application's auth layer.
-            */
         }
 
 
@@ -292,16 +238,12 @@ api.interceptors.response.use(
         -----------------------------------------------
         404
         -----------------------------------------------
-
-        This is particularly useful during the current
-        Marketplace deployment.
-        -----------------------------------------------
         */
 
         if (status === 404) {
 
             console.error(
-                "❌ API ROUTE NOT FOUND:",
+                "❌ API ROUTE NOT FOUND",
                 {
                     method:
                         error.config?.method?.toUpperCase(),
@@ -328,11 +270,13 @@ api.interceptors.response.use(
         if (status >= 500) {
 
             console.error(
-                "🔥 API SERVER ERROR:",
+                "🔥 API SERVER ERROR",
                 {
                     status,
+
                     url:
                         error.config?.url,
+
                     message:
                         error.response?.data?.message ||
                         error.message
@@ -347,9 +291,5 @@ api.interceptors.response.use(
 
 );
 
-
-/* =====================================================
-   EXPORT
-===================================================== */
 
 export default api;
