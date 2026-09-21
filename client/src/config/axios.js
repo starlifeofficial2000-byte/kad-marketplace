@@ -1,11 +1,29 @@
 import axios from "axios";
 
 /* =========================================
+   API SERVER
+========================================= */
+
+const API_SERVER =
+    import.meta.env.VITE_API_SERVER ||
+    import.meta.env.VITE_SERVER_URL ||
+    "http://localhost:5000";
+
+
+/* =========================================
    API BASE URL
+=========================================
+
+   Development:
+   http://localhost:5000/api
+
+   Production:
+   https://kad-marketplace-production.up.railway.app/api
+
 ========================================= */
 
 const API_URL =
-    import.meta.env.VITE_API_URL || "/api";
+    `${API_SERVER.replace(/\/+$/, "")}/api`;
 
 
 /* =========================================
@@ -32,9 +50,8 @@ const api = axios.create({
 
    Automatically attaches JWT token.
 
-   IMPORTANT:
-   FormData requests must NOT use
-   application/json.
+   FormData requests must NOT manually
+   specify multipart boundaries.
 ========================================= */
 
 api.interceptors.request.use(
@@ -65,22 +82,6 @@ api.interceptors.request.use(
             config.data instanceof FormData
         ) {
 
-            /*
-             * VERY IMPORTANT:
-             *
-             * Do NOT manually set:
-             *
-             * Content-Type:
-             * multipart/form-data
-             *
-             * and do NOT use:
-             *
-             * application/json
-             *
-             * Axios/browser will automatically
-             * generate the correct boundary.
-             */
-
             delete config.headers[
                 "Content-Type"
             ];
@@ -92,10 +93,6 @@ api.interceptors.request.use(
         }
 
         else {
-
-            /*
-             * Normal JSON requests
-             */
 
             config.headers[
                 "Content-Type"
