@@ -126,8 +126,6 @@ const leadRoutes =
    HOME BUILDER ROUTES
 
    IMPORTANT:
-   Public and Admin Home Builder routes are intentionally
-   separated.
 
    Public:
    /api/home-builder/*
@@ -220,34 +218,66 @@ app.use(
    CORS CONFIGURATION
 ===================================================== */
 
+/*
+ * Normalize origins.
+ *
+ * This prevents problems such as:
+ *
+ * https://kadmarket.com
+ *
+ * versus:
+ *
+ * https://kadmarket.com/
+ */
+
+const normalizeOrigin = (url) => {
+    if (!url) {
+        return null;
+    }
+
+    return url
+        .trim()
+        .replace(/\/+$/, "");
+};
+
+/*
+ * Build allowed origins.
+ *
+ * KAD Marketplace production domain is explicitly
+ * included here.
+ */
+
 const allowedOrigins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    process.env.FRONTEND_URL
+
+    /*
+     * Production domain
+     */
+    "https://kadmarket.com",
+
+    /*
+     * Environment configuration
+     */
+    process.env.FRONTEND_URL,
+
+    /*
+     * Additional domains
+     */
+    ...(process.env.FRONTEND_URLS
+        ? process.env.FRONTEND_URLS.split(",")
+        : [])
 ]
-    .filter(Boolean)
-    .map((url) => url.trim());
+    .map(normalizeOrigin)
+    .filter(Boolean);
 
-/* -----------------------------------------------------
-   Additional production frontend domains
------------------------------------------------------ */
+/*
+ * Remove duplicates.
+ */
 
-if (process.env.FRONTEND_URLS) {
-    process.env.FRONTEND_URLS
-        .split(",")
-        .map((url) => url.trim())
-        .filter(Boolean)
-        .forEach((url) => {
-            if (!allowedOrigins.includes(url)) {
-                allowedOrigins.push(url);
-            }
-        });
-}
-
-/* Remove duplicates */
-
-const uniqueAllowedOrigins =
-    [...new Set(allowedOrigins)];
+const uniqueAllowedOrigins = [
+    ...new Set(allowedOrigins)
+];
 
 console.log(
     "🌐 Allowed CORS Origins:",
@@ -259,11 +289,25 @@ console.log(
 ===================================================== */
 
 const isAllowedOrigin = (origin) => {
+    /*
+     * Requests without Origin are allowed.
+     *
+     * Examples:
+     * - Postman
+     * - Mobile applications
+     * - Server-to-server requests
+     */
+
     if (!origin) {
         return true;
     }
 
-    return uniqueAllowedOrigins.includes(origin);
+    const normalizedOrigin =
+        normalizeOrigin(origin);
+
+    return uniqueAllowedOrigins.includes(
+        normalizedOrigin
+    );
 };
 
 /* =====================================================
@@ -272,15 +316,6 @@ const isAllowedOrigin = (origin) => {
 
 const corsOptions = {
     origin: (origin, callback) => {
-        /*
-         * Requests without an Origin are allowed.
-         *
-         * Examples:
-         * - Postman
-         * - Mobile applications
-         * - Server-to-server requests
-         */
-
         if (!origin) {
             return callback(null, true);
         }
@@ -366,24 +401,32 @@ if (NODE_ENV !== "production") {
         (req, res) => {
             try {
                 const exists =
-                    fs.existsSync(uploadDirectory);
+                    fs.existsSync(
+                        uploadDirectory
+                    );
 
                 const files =
                     exists
-                        ? fs.readdirSync(uploadDirectory)
+                        ? fs.readdirSync(
+                            uploadDirectory
+                        )
                         : [];
 
                 return res.status(200).json({
                     success: true,
-                    uploadDir: uploadDirectory,
+                    uploadDir:
+                        uploadDirectory,
                     exists,
-                    fileCount: files.length,
-                    files: files.slice(0, 100)
+                    fileCount:
+                        files.length,
+                    files:
+                        files.slice(0, 100)
                 });
             } catch (error) {
                 return res.status(500).json({
                     success: false,
-                    message: error.message
+                    message:
+                        error.message
                 });
             }
         }
@@ -394,48 +437,88 @@ if (NODE_ENV !== "production") {
    SOCKET.IO
 ===================================================== */
 
-const io = new Server(
-    server,
-    {
-        cors: {
-            origin: (
-                origin,
-                callback
-            ) => {
-                if (!origin) {
-                    return callback(null, true);
-                }
+/*
+ * Socket.IO shares the same HTTP server as Express.
+ *
+ * Production:
+ *
+ * https://kadmarket.com/socket.io
+ *
+ * Local:
+ *
+ * http://localhost:5000/socket.io
+ */
 
-                if (isAllowedOrigin(origin)) {
-                    return callback(null, true);
-                }
+const io = new Server(server, {
+    path: "/socket.io",
 
-                console.warn(
-                    "❌ Socket.IO CORS BLOCKED:",
-                    origin
-                );
-
+    cors: {
+        origin: (
+            origin,
+            callback
+        ) => {
+            if (!origin) {
                 return callback(
-                    new Error(
-                        "Socket.IO CORS blocked."
-                    )
+                    null,
+                    true
                 );
-            },
+            }
 
-            methods: [
-                "GET",
-                "POST",
-                "PUT",
-                "PATCH",
-                "DELETE"
-            ],
+            if (
+                isAllowedOrigin(origin)
+            ) {
+                return callback(
+                    null,
+                    true
+                );
+            }
 
-            credentials: true
-        }
-    }
+            console.warn(
+                "❌ SOCKET.IO CORS BLOCKED:",
+                origin
+            );
+
+            return callback(
+                new Error(
+                    `Socket.IO CORS blocked: ${origin}`
+                )
+            );
+        },
+
+        methods: [
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE",
+            "OPTIONS"
+        ],
+
+        credentials: true
+    },
+
+    transports: [
+        "websocket",
+        "polling"
+    ],
+
+    allowEIO3: false,
+
+    pingTimeout: 60000,
+
+    pingInterval: 25000,
+
+    connectTimeout: 45000
+});
+
+app.set(
+    "io",
+    io
 );
 
-app.set("io", io);
+console.log(
+    "🔌 Socket.IO initialized successfully."
+);
 
 /* =====================================================
    HEALTH CHECK
@@ -450,8 +533,10 @@ app.get(
             return res.status(200).json({
                 success: true,
                 status: "healthy",
-                environment: NODE_ENV,
-                database: "connected",
+                environment:
+                    NODE_ENV,
+                database:
+                    "connected",
                 timestamp:
                     new Date().toISOString()
             });
@@ -464,8 +549,10 @@ app.get(
             return res.status(503).json({
                 success: false,
                 status: "unhealthy",
-                database: "disconnected",
-                message: error.message
+                database:
+                    "disconnected",
+                message:
+                    error.message
             });
         }
     }
@@ -482,7 +569,8 @@ app.get(
             success: true,
             message:
                 "🚀 KAD Marketplace API Running",
-            environment: NODE_ENV
+            environment:
+                NODE_ENV
         });
     }
 );
@@ -805,14 +893,15 @@ app.use(
    ADMIN HOME BUILDER
 
    IMPORTANT:
+
    This MUST use homeBuilderAdminRoutes and NOT
    homeBuilderRoutes.
 
-   This is what fixes:
+   This keeps:
 
    GET /api/admin/home-builder/featured
 
-   previously reaching the public controller.
+   on the admin controller.
 ===================================================== */
 
 app.use(
@@ -850,7 +939,9 @@ io.on(
                 }
 
                 socket.join(
-                    String(conversationId)
+                    String(
+                        conversationId
+                    )
                 );
 
                 console.log(
@@ -871,7 +962,13 @@ io.on(
                 }
 
                 socket.leave(
-                    String(conversationId)
+                    String(
+                        conversationId
+                    )
+                );
+
+                console.log(
+                    `User left conversation: ${conversationId}`
                 );
             }
         );
@@ -936,9 +1033,24 @@ io.on(
 
         socket.on(
             "disconnect",
-            () => {
+            (reason) => {
                 console.log(
-                    `🔴 Socket Disconnected: ${socket.id}`
+                    `🔴 Socket Disconnected: ${socket.id}`,
+                    reason
+                );
+            }
+        );
+
+        /* =================================================
+           SOCKET ERROR
+        ================================================= */
+
+        socket.on(
+            "error",
+            (error) => {
+                console.error(
+                    `❌ Socket Error [${socket.id}]:`,
+                    error
                 );
             }
         );
@@ -957,22 +1069,31 @@ const clientDistPath =
 
 if (NODE_ENV === "production") {
     app.use(
-        express.static(clientDistPath)
+        express.static(
+            clientDistPath
+        )
     );
 
     /*
      * React SPA fallback.
      *
-     * API and upload requests must never be sent to
-     * index.html.
+     * API and upload requests must never
+     * be sent to index.html.
      */
 
     app.use(
         (req, res, next) => {
             if (
                 req.method === "GET" &&
-                !req.path.startsWith("/api") &&
-                !req.path.startsWith("/uploads")
+                !req.path.startsWith(
+                    "/api"
+                ) &&
+                !req.path.startsWith(
+                    "/uploads"
+                ) &&
+                !req.path.startsWith(
+                    "/socket.io"
+                )
             ) {
                 return res.sendFile(
                     path.join(
@@ -1018,11 +1139,19 @@ app.use(
 
         if (
             error.message &&
-            error.message.includes("CORS")
+            (
+                error.message.includes(
+                    "CORS"
+                ) ||
+                error.message.includes(
+                    "Not allowed by CORS"
+                )
+            )
         ) {
             return res.status(403).json({
                 success: false,
-                message: error.message
+                message:
+                    error.message
             });
         }
 
@@ -1031,7 +1160,8 @@ app.use(
         --------------------------------------------- */
 
         if (
-            error.name === "MulterError"
+            error.name ===
+            "MulterError"
         ) {
             return res.status(400).json({
                 success: false,
@@ -1051,7 +1181,8 @@ app.use(
             success: false,
 
             message:
-                NODE_ENV === "production"
+                NODE_ENV ===
+                "production"
                     ? "Internal server error."
                     : (
                         error.message ||
@@ -1065,226 +1196,268 @@ app.use(
    PROMOTION EXPIRY CHECKER
 ===================================================== */
 
-let promotionExpiryInterval = null;
+let promotionExpiryInterval =
+    null;
 
-const startPromotionExpiryChecker = () => {
-    /*
-     * Prevent duplicate intervals.
-     */
+const startPromotionExpiryChecker =
+    () => {
+        /*
+         * Prevent duplicate intervals.
+         */
 
-    if (promotionExpiryInterval) {
-        console.warn(
-            "⚠️ Promotion expiry checker is already running."
+        if (
+            promotionExpiryInterval
+        ) {
+            console.warn(
+                "⚠️ Promotion expiry checker is already running."
+            );
+
+            return;
+        }
+
+        console.log(
+            "🚀 Promotion expiry checker started."
         );
 
-        return;
-    }
+        const checkExpiredPromotions =
+            async () => {
+                try {
+                    await PromotionService
+                        .removeExpiredPromotions();
 
-    console.log(
-        "🚀 Promotion expiry checker started."
-    );
+                    console.log(
+                        "Promotion expiry check completed."
+                    );
+                } catch (error) {
+                    console.error(
+                        "Promotion expiry check failed:",
+                        error.message
+                    );
+                }
+            };
 
-    const checkExpiredPromotions =
-        async () => {
-            try {
-                await PromotionService
-                    .removeExpiredPromotions();
+        /*
+         * Run immediately.
+         */
 
-                console.log(
-                    "Promotion expiry check completed."
-                );
-            } catch (error) {
-                console.error(
-                    "Promotion expiry check failed:",
-                    error.message
-                );
-            }
-        };
+        checkExpiredPromotions();
 
-    /*
-     * Run immediately.
-     */
+        /*
+         * Run every minute.
+         */
 
-    checkExpiredPromotions();
-
-    /*
-     * Run every minute.
-     */
-
-    promotionExpiryInterval =
-        setInterval(
-            checkExpiredPromotions,
-            60 * 1000
-        );
-};
+        promotionExpiryInterval =
+            setInterval(
+                checkExpiredPromotions,
+                60 * 1000
+            );
+    };
 
 /* =====================================================
    DATABASE AND SERVER STARTUP
 ===================================================== */
 
-const startServer = async () => {
-    try {
-        /* ---------------------------------------------
-           DATABASE CONNECTION
-        --------------------------------------------- */
+const startServer =
+    async () => {
+        try {
+            /* ---------------------------------------------
+               DATABASE CONNECTION
+            --------------------------------------------- */
 
-        await sequelize.authenticate();
+            await sequelize.authenticate();
 
-        console.log(
-            "✅ MySQL Connected Successfully"
-        );
-
-        /* ---------------------------------------------
-           DATABASE SYNC
-        --------------------------------------------- */
-
-        /*
-         * Keep sync enabled while the project is still
-         * under active development.
-         *
-         * Later, migrate to Sequelize migrations.
-         */
-
-        await sequelize.sync();
-
-        console.log(
-            "✅ Database Synced Successfully"
-        );
-
-        /* ---------------------------------------------
-           SEED ROLES AND PERMISSIONS
-        --------------------------------------------- */
-
-        const seedRolesAndPermissions =
-            require(
-                "./seeders/rolePermissionSeeder"
+            console.log(
+                "✅ MySQL Connected Successfully"
             );
 
-        await seedRolesAndPermissions();
+            /* ---------------------------------------------
+               DATABASE SYNC
+            --------------------------------------------- */
 
-        console.log(
-            "✅ Roles and permissions checked."
-        );
+            /*
+             * Keep sync enabled while the project is still
+             * under active development.
+             *
+             * Later, migrate to Sequelize migrations.
+             */
 
-        /* ---------------------------------------------
-           START BACKGROUND SERVICES
-        --------------------------------------------- */
+            await sequelize.sync();
 
-        startPromotionExpiryChecker();
+            console.log(
+                "✅ Database Synced Successfully"
+            );
 
-        /* ---------------------------------------------
-           START HTTP SERVER
-        --------------------------------------------- */
+            /* ---------------------------------------------
+               SEED ROLES AND PERMISSIONS
+            --------------------------------------------- */
 
-        server.listen(
-            PORT,
-            () => {
-                console.log("");
-                console.log(
-                    "===================================="
+            const seedRolesAndPermissions =
+                require(
+                    "./seeders/rolePermissionSeeder"
                 );
-                console.log(
-                    "🚀 KAD MARKETPLACE SERVER STARTED"
-                );
-                console.log(
-                    "===================================="
-                );
-                console.log(
-                    `🌍 Port: ${PORT}`
-                );
-                console.log(
-                    `📦 Environment: ${NODE_ENV}`
-                );
-                console.log(
-                    `🌐 Allowed Origins: ${uniqueAllowedOrigins.join(", ")}`
-                );
-                console.log(
-                    "===================================="
-                );
-                console.log("");
-            }
-        );
-    } catch (error) {
-        console.error("");
-        console.error(
-            "❌ SERVER STARTUP FAILED"
-        );
-        console.error(error);
-        console.error("");
 
-        /*
-         * Stop the process because the application
-         * cannot safely operate without the database.
-         */
+            await seedRolesAndPermissions();
 
-        process.exit(1);
-    }
-};
+            console.log(
+                "✅ Roles and permissions checked."
+            );
+
+            /* ---------------------------------------------
+               START BACKGROUND SERVICES
+            --------------------------------------------- */
+
+            startPromotionExpiryChecker();
+
+            /* ---------------------------------------------
+               START HTTP SERVER
+            --------------------------------------------- */
+
+            server.listen(
+                PORT,
+                () => {
+                    console.log("");
+
+                    console.log(
+                        "===================================="
+                    );
+
+                    console.log(
+                        "🚀 KAD MARKETPLACE SERVER STARTED"
+                    );
+
+                    console.log(
+                        "===================================="
+                    );
+
+                    console.log(
+                        `🌍 Port: ${PORT}`
+                    );
+
+                    console.log(
+                        `📦 Environment: ${NODE_ENV}`
+                    );
+
+                    console.log(
+                        `🌐 Allowed Origins: ${uniqueAllowedOrigins.join(", ")}`
+                    );
+
+                    console.log(
+                        "🔌 Socket.IO: /socket.io"
+                    );
+
+                    console.log(
+                        "===================================="
+                    );
+
+                    console.log("");
+                }
+            );
+        } catch (error) {
+            console.error("");
+
+            console.error(
+                "❌ SERVER STARTUP FAILED"
+            );
+
+            console.error(error);
+
+            console.error("");
+
+            /*
+             * Stop the process because the application
+             * cannot safely operate without the database.
+             */
+
+            process.exit(1);
+        }
+    };
 
 /* =====================================================
    GRACEFUL SHUTDOWN
 ===================================================== */
 
-const shutdown = async (signal) => {
-    console.log(
-        `\n${signal} received. Shutting down...`
-    );
+const shutdown =
+    async (signal) => {
+        console.log(
+            `\n${signal} received. Shutting down...`
+        );
 
-    try {
-        /* ---------------------------------------------
-           Stop background jobs
-        --------------------------------------------- */
+        try {
+            /* ---------------------------------------------
+               Stop background jobs
+            --------------------------------------------- */
 
-        if (promotionExpiryInterval) {
-            clearInterval(
+            if (
                 promotionExpiryInterval
-            );
+            ) {
+                clearInterval(
+                    promotionExpiryInterval
+                );
 
-            promotionExpiryInterval = null;
+                promotionExpiryInterval =
+                    null;
 
-            console.log(
-                "Promotion expiry checker stopped."
-            );
-        }
-
-        /* ---------------------------------------------
-           Close HTTP server
-        --------------------------------------------- */
-
-        await new Promise(
-            (resolve) => {
-                server.close(
-                    () => {
-                        console.log(
-                            "HTTP server closed."
-                        );
-
-                        resolve();
-                    }
+                console.log(
+                    "Promotion expiry checker stopped."
                 );
             }
-        );
 
-        /* ---------------------------------------------
-           Close database
-        --------------------------------------------- */
+            /* ---------------------------------------------
+               Close Socket.IO
+            --------------------------------------------- */
 
-        await sequelize.close();
+            await new Promise(
+                (resolve) => {
+                    io.close(
+                        () => {
+                            console.log(
+                                "Socket.IO server closed."
+                            );
 
-        console.log(
-            "Database connection closed."
-        );
+                            resolve();
+                        }
+                    );
+                }
+            );
 
-        process.exit(0);
-    } catch (error) {
-        console.error(
-            "Shutdown error:",
-            error
-        );
+            /* ---------------------------------------------
+               Close HTTP server
+            --------------------------------------------- */
 
-        process.exit(1);
-    }
-};
+            await new Promise(
+                (resolve) => {
+                    server.close(
+                        () => {
+                            console.log(
+                                "HTTP server closed."
+                            );
+
+                            resolve();
+                        }
+                    );
+                }
+            );
+
+            /* ---------------------------------------------
+               Close database
+            --------------------------------------------- */
+
+            await sequelize.close();
+
+            console.log(
+                "Database connection closed."
+            );
+
+            process.exit(0);
+        } catch (error) {
+            console.error(
+                "Shutdown error:",
+                error
+            );
+
+            process.exit(1);
+        }
+    };
 
 /* =====================================================
    PROCESS SIGNALS
@@ -1322,12 +1495,9 @@ process.on(
             error
         );
 
-        /*
-         * An uncaught exception can leave the application
-         * in an unsafe state, so shut down gracefully.
-         */
-
-        shutdown("UNCAUGHT_EXCEPTION");
+        shutdown(
+            "UNCAUGHT_EXCEPTION"
+        );
     }
 );
 

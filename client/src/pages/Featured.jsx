@@ -22,17 +22,47 @@ function Featured() {
 
             const data = response?.data;
 
-            let featuredProducts = [];
+            let promotions = [];
 
             if (Array.isArray(data)) {
-                featuredProducts = data;
+                promotions = data;
             } else if (Array.isArray(data?.products)) {
-                featuredProducts = data.products;
+                promotions = data.products;
             } else if (Array.isArray(data?.data)) {
-                featuredProducts = data.data;
+                promotions = data.data;
             }
 
-            setProducts(featuredProducts);
+            /*
+             * The public Featured API returns promotion records.
+             * Each promotion contains the actual product inside:
+             *
+             * promotion.product
+             *
+             * Convert them into actual products before passing
+             * them to ProductCard.
+             */
+            const featuredProducts = promotions
+                .map((promotion) => {
+                    if (promotion?.product) {
+                        return promotion.product;
+                    }
+
+                    return promotion;
+                })
+                .filter((product) => product && product.id);
+
+            /*
+             * Remove duplicate products.
+             */
+            const uniqueProducts = featuredProducts.filter(
+                (product, index, array) =>
+                    index ===
+                    array.findIndex(
+                        (item) => item.id === product.id
+                    )
+            );
+
+            setProducts(uniqueProducts);
         } catch (error) {
             console.error(
                 "Error loading featured products:",
@@ -52,6 +82,9 @@ function Featured() {
 
     return (
         <Layout>
+            {/* ==========================================
+                FEATURED HERO
+            ========================================== */}
             <section className="featured-page-hero">
                 <div className="featured-overlay">
                     <h1>⭐ Featured Products</h1>
@@ -63,7 +96,11 @@ function Featured() {
                 </div>
             </section>
 
+            {/* ==========================================
+                FEATURED PRODUCTS
+            ========================================== */}
             <section className="featured-page">
+
                 {loading ? (
                     <div className="loading">
                         <h2>Loading featured products...</h2>
