@@ -1,7 +1,5 @@
 const { Op } = require("sequelize");
 
-
-
 const sanitize = require("../services/sanitizeService");
 const Product = require("../models/Product");
 const User = require("../models/User");
@@ -15,6 +13,10 @@ const sequelize = require("../config/database");
 const promotionController = require("./promotionController");
 const ProductPromotion = require("../models/ProductPromotion");
 
+const {
+    getR2PublicUrl,
+    deleteFromR2
+} = require("../config/r2");
 
 
 /* ===========================================================
@@ -22,3218 +24,3536 @@ const ProductPromotion = require("../models/ProductPromotion");
 =========================================================== */
 
 async function getSubscription(userId) {
-
     return await Subscription.findOne({
-
         where: {
-
             userId,
-
             status: "Active"
-
         }
-
     });
-
 }
+
 
 /* ===========================================================
    LOAD SUBSCRIPTION PLAN
 =========================================================== */
 
 async function getPlan(userId) {
-
     const subscription = await getSubscription(userId);
 
     if (!subscription) {
-
         return {
-
             subscription: null,
-
             plan: null
-
         };
-
     }
 
     const plan = await SubscriptionPlan.findByPk(
-
         subscription.planId
-
     );
 
     return {
-
         subscription,
-
         plan
-
     };
-
 }
+
 
 /* ===========================================================
    UPLOAD LIMIT
 =========================================================== */
 
 function getUploadLimit(plan) {
-
-    if (!plan)
-
+    if (!plan) {
         return 10;
+    }
 
-    if (plan.unlimitedListings)
-
+    if (plan.unlimitedListings) {
         return Number.MAX_SAFE_INTEGER;
+    }
 
     return plan.uploadLimit || 10;
-
 }
+
 
 /* ===========================================================
    PRODUCT PRIORITY
 =========================================================== */
 
 function getPriority(plan) {
-
     if (!plan) {
-
         return {
-
             listingPriority: 1,
-
             homepagePriority: 1,
-
             searchPriority: 1
-
         };
-
     }
 
     return {
-
-        listingPriority:
-
-            plan.listingPriority,
-
-        homepagePriority:
-
-            plan.homepagePriority ? 2 : 1,
-
-        searchPriority:
-
-            plan.listingPriority
-
+        listingPriority: plan.listingPriority,
+        homepagePriority: plan.homepagePriority ? 2 : 1,
+        searchPriority: plan.listingPriority
     };
-
 }
+
 
 /* ===========================================================
    PRODUCT FEATURES
 =========================================================== */
 
 function getFeatures(plan) {
-
     if (!plan) {
-
         return {
-
             featured: false,
-
             express: false,
-
             aiRecommended: false
-
         };
-
     }
 
     return {
-
-        featured:
-
-            plan.featuredProducts,
-
-        express:
-
-            plan.expressCredits > 0,
-
-        aiRecommended:
-
-            plan.aiRecommendation
-
+        featured: plan.featuredProducts,
+        express: plan.expressCredits > 0,
+        aiRecommended: plan.aiRecommendation
     };
-
 }
+
 
 /* ===========================================================
    PRODUCT SCORE
 =========================================================== */
-function calculateScore(plan) {
 
+function calculateScore(plan) {
     let score = 100;
 
-    if (!plan)
-
+    if (!plan) {
         return score;
+    }
 
-    score += plan.listingPriority * 100;
+    score += Number(plan.listingPriority || 0) * 100;
 
-    if (plan.homepagePriority)
-
+    if (plan.homepagePriority) {
         score += 300;
+    }
 
-    if (plan.featuredProducts)
-
+    if (plan.featuredProducts) {
         score += 500;
+    }
 
-    if (plan.aiRecommendation)
-
+    if (plan.aiRecommendation) {
         score += 200;
+    }
 
-    if (plan.storeAccess)
-
+    if (plan.storeAccess) {
         score += 100;
+    }
 
     return score;
+}
 
-}async function validateSubscription(userId) {
 
-    const { subscription, plan } = await getPlan(userId);
+/* ===========================================================
+   VALIDATE SUBSCRIPTION
+=========================================================== */
+
+async function validateSubscription(userId) {
+    const {
+        subscription,
+        plan
+    } = await getPlan(userId);
 
     if (!subscription || !plan) {
-
         return {
-
             valid: false,
-
             message: "No active subscription found."
-
         };
-
     }
 
     return {
-
         valid: true,
-
         subscription,
-
         plan
-
     };
+}
 
-}function generateSlug(title) {
 
+/* ===========================================================
+   GENERATE SLUG
+=========================================================== */
+
+function generateSlug(title) {
     return slugify(title, {
-
         lower: true,
-
         strict: true
-
     });
+}
 
-}/* ===========================================================
+
+/* ===========================================================
    VALIDATE PRODUCT
 =========================================================== */
 
 function validateProduct(data) {
-
     const required = [
-
         "title",
-
         "description",
-
         "price",
-
         "category",
-
         "condition",
-
         "location",
-
         "region",
-
         "city"
-
     ];
 
     for (const field of required) {
-
-        if (!data[field]) {
-
+        if (
+            data[field] === undefined ||
+            data[field] === null ||
+            String(data[field]).trim() === ""
+        ) {
             return {
-
                 success: false,
-
                 message: `${field} is required.`
-
             };
-
         }
+    }
 
+    const price = Number(data.price);
+
+    if (!Number.isFinite(price) || price < 0) {
+        return {
+            success: false,
+            message: "Price must be a valid non-negative number."
+        };
     }
 
     return {
-
         success: true
-
     };
-
 }
+
 
 /* ===========================================================
    GET PLAN FEATURES
 =========================================================== */
 
 function getPlanFeatures(plan) {
-
     return {
-
-        listingPriority:
-
-            plan?.listingPriority || 1,
+        listingPriority: plan?.listingPriority || 1,
 
         homepagePriority:
-
             plan?.homepagePriority ? 2 : 1,
 
         searchPriority:
-
             plan?.listingPriority || 1,
 
         featured:
-
             plan?.featuredProducts || false,
 
         express:
-
             (plan?.expressCredits || 0) > 0,
 
         aiRecommended:
-
             plan?.aiRecommendation || false,
 
         verifiedStore:
-
             plan?.storeAccess || false
-
     };
-
 }
+
 
 /* ===========================================================
    PROCESS IMAGES
 =========================================================== */
 
 function processImages(files) {
-
-    if (!files)
-
+    if (!Array.isArray(files) || files.length === 0) {
         return [];
+    }
 
-    return files.map(file => file.filename);
+    return files
+        .map((file) => {
+            if (!file) {
+                return null;
+            }
 
+            return (
+                file.r2Key ||
+                file.key ||
+                file.filename ||
+                null
+            );
+        })
+        .filter(Boolean);
 }
+
+
+/* ===========================================================
+   PARSE PRODUCT IMAGES
+=========================================================== */
+
+function parseProductImages(images) {
+    if (Array.isArray(images)) {
+        return images;
+    }
+
+    if (typeof images === "string") {
+        const value = images.trim();
+
+        if (!value) {
+            return [];
+        }
+
+        try {
+            const parsed = JSON.parse(value);
+
+            if (Array.isArray(parsed)) {
+                return parsed;
+            }
+
+            if (
+                typeof parsed === "string" &&
+                parsed.trim()
+            ) {
+                return [parsed.trim()];
+            }
+        } catch (error) {
+            // Legacy filename format.
+        }
+
+        return [value];
+    }
+
+    return [];
+}
+
+
+/* ===========================================================
+   RESOLVE IMAGE URL
+=========================================================== */
+
+function resolveImageUrl(image) {
+    if (!image || typeof image !== "string") {
+        return null;
+    }
+
+    const clean = image.trim();
+
+    if (!clean) {
+        return null;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Already a full URL
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        clean.startsWith("http://") ||
+        clean.startsWith("https://")
+    ) {
+        return clean;
+    }
+
+    const normalizedKey = clean.replace(/^\/+/, "");
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cloudflare R2
+    |--------------------------------------------------------------------------
+    */
+
+    if (normalizedKey.startsWith("uploads/")) {
+        const r2Url = getR2PublicUrl(normalizedKey);
+
+        if (r2Url) {
+            return r2Url;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Local fallback for old files
+        |--------------------------------------------------------------------------
+        */
+
+        return `/uploads/${normalizedKey.replace(
+            /^uploads\//i,
+            ""
+        )}`;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Legacy local image
+    |--------------------------------------------------------------------------
+    */
+
+    return `/uploads/${normalizedKey.replace(
+        /^uploads\//i,
+        ""
+    )}`;
+}
+
+
+/* ===========================================================
+   FORMAT PRODUCT
+=========================================================== */
+
+function formatProduct(product) {
+    if (!product) {
+        return null;
+    }
+
+    const item =
+        typeof product.toJSON === "function"
+            ? product.toJSON()
+            : { ...product };
+
+    /*
+    |--------------------------------------------------------------------------
+    | Product images
+    |--------------------------------------------------------------------------
+    */
+
+    item.images = parseProductImages(item.images)
+        .map(resolveImageUrl)
+        .filter(Boolean);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Seller profile image
+    |--------------------------------------------------------------------------
+    */
+
+    if (item.seller) {
+        item.seller.profileImage =
+            resolveImageUrl(
+                item.seller.profileImage
+            );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Store images
+    |--------------------------------------------------------------------------
+    */
+
+    if (item.store) {
+        item.store.logo =
+            resolveImageUrl(
+                item.store.logo
+            );
+
+        item.store.banner =
+            resolveImageUrl(
+                item.store.banner
+            );
+    }
+
+    return item;
+}
+
+
+/* ===========================================================
+   FORMAT PRODUCTS
+=========================================================== */
+
+function formatProducts(products) {
+    if (!Array.isArray(products)) {
+        return [];
+    }
+
+    return products
+        .map(formatProduct)
+        .filter(Boolean);
+}
+
+
+/* ===========================================================
+   GET R2 PRODUCT IMAGE KEYS
+=========================================================== */
+
+function getProductImageKeys(product) {
+    if (!product) {
+        return [];
+    }
+
+    return parseProductImages(product.images)
+        .filter((image) => {
+            if (typeof image !== "string") {
+                return false;
+            }
+
+            const key = image
+                .trim()
+                .replace(/^\/+/, "");
+
+            return (
+                key.startsWith("uploads/") &&
+                !key.startsWith("http://") &&
+                !key.startsWith("https://")
+            );
+        })
+        .map((image) =>
+            image
+                .trim()
+                .replace(/^\/+/, "")
+        )
+        .filter(Boolean);
+}
+
+
+/* ===========================================================
+   DELETE PRODUCT IMAGES FROM R2
+=========================================================== */
+
+async function deleteProductImages(product) {
+    const keys = [
+        ...new Set(
+            getProductImageKeys(product)
+        )
+    ];
+
+    if (keys.length === 0) {
+        return;
+    }
+
+    const results =
+        await Promise.allSettled(
+            keys.map((key) =>
+                deleteFromR2(key)
+            )
+        );
+
+    const failed =
+        results.filter(
+            (result) =>
+                result.status === "rejected"
+        );
+
+    if (failed.length > 0) {
+        console.error(
+            "Some R2 product images could not be deleted:",
+            failed.map(
+                (result) =>
+                    result.reason?.message ||
+                    String(result.reason)
+            )
+        );
+    }
+}
+
+
+/* ===========================================================
+   GET UPLOADED R2 KEYS
+=========================================================== */
+
+function getUploadedR2Keys(files) {
+    if (!Array.isArray(files)) {
+        return [];
+    }
+
+    return [
+        ...new Set(
+            files
+                .map(
+                    (file) =>
+                        file?.r2Key ||
+                        file?.key
+                )
+                .filter(
+                    (key) =>
+                        typeof key === "string" &&
+                        key.trim()
+                )
+        )
+    ];
+}
+
+
+/* ===========================================================
+   CLEANUP NEW R2 UPLOADS
+=========================================================== */
+
+async function cleanupUploadedFiles(files) {
+    const keys =
+        getUploadedR2Keys(files);
+
+    if (keys.length === 0) {
+        return;
+    }
+
+    await Promise.allSettled(
+        keys.map((key) =>
+            deleteFromR2(key)
+        )
+    );
+}
+
+
+/* ===========================================================
+   ROLLBACK TRANSACTION
+=========================================================== */
+
+async function rollbackTransaction(
+    transaction,
+    files
+) {
+    try {
+        if (transaction) {
+            await transaction.rollback();
+        }
+    } catch (rollbackError) {
+        console.error(
+            "Transaction rollback failed:",
+            rollbackError
+        );
+    }
+
+    try {
+        await cleanupUploadedFiles(files);
+    } catch (cleanupError) {
+        console.error(
+            "R2 cleanup failed:",
+            cleanupError
+        );
+    }
+}
+
+
+/* ===========================================================
+   FORMAT PROMOTION PRODUCT
+=========================================================== */
+
+function formatPromotionProduct(product) {
+    if (!product) {
+        return null;
+    }
+
+    return formatProduct(product);
+}
+
 
 /* ===========================================================
    MONTHLY UPLOADS
 =========================================================== */
 
 async function getMonthlyUploads(userId) {
-
     const start = new Date();
 
     start.setDate(1);
 
     start.setHours(
-
         0,
-
         0,
-
         0,
-
         0
-
     );
 
     return await Product.count({
-
         where: {
-
             userId,
 
             createdAt: {
-
                 [Op.gte]: start
-
             }
-
         }
-
     });
+}
 
-}/* ===========================================================
+
+/* ===========================================================
    CREATE PRODUCT
 =========================================================== */
 
-exports.createProduct = async (req, res) => {
-    
+exports.createProduct =
+    async (req, res) => {
 
-    const transaction = await sequelize.transaction();
-console.log("Logged in user:", req.user);
-    try {
+        let transaction = null;
 
-        if (!req.user) {
+        try {
 
-            await transaction.rollback();
+            if (!req.user) {
 
-            return res.status(401).json({
+                await cleanupUploadedFiles(
+                    req.files
+                );
 
-                success: false,
+                return res.status(401).json({
+                    success: false,
+                    message: "Please login first."
+                });
+            }
 
-                message: "Please login first."
+            transaction =
+                await sequelize.transaction();
 
+            const validation =
+                validateProduct(
+                    req.body
+                );
+
+            if (!validation.success) {
+
+                await rollbackTransaction(
+                    transaction,
+                    req.files
+                );
+
+                return res.status(400).json(
+                    validation
+                );
+            }
+
+            if (
+                !Array.isArray(req.files) ||
+                req.files.length === 0
+            ) {
+
+                await rollbackTransaction(
+                    transaction,
+                    req.files
+                );
+
+                return res.status(400).json({
+                    success: false,
+                    message: "Upload at least one image."
+                });
+            }
+
+            const subscriptionResult =
+                await validateSubscription(
+                    req.user.id
+                );
+
+            let subscription = null;
+            let plan = null;
+
+            if (subscriptionResult.valid) {
+
+                subscription =
+                    subscriptionResult.subscription;
+
+                plan =
+                    subscriptionResult.plan;
+
+                const uploads =
+                    await getMonthlyUploads(
+                        req.user.id
+                    );
+
+                const uploadLimit =
+                    getUploadLimit(plan);
+
+                if (
+                    uploadLimit !==
+                        Number.MAX_SAFE_INTEGER &&
+                    uploads >= uploadLimit
+                ) {
+
+                    await rollbackTransaction(
+                        transaction,
+                        req.files
+                    );
+
+                    return res.status(403).json({
+                        success: false,
+                        message:
+                            `Your ${plan.name} plan allows only ${uploadLimit} uploads this month.`
+                    });
+                }
+
+            } else {
+
+                const user =
+                    await User.findByPk(
+                        req.user.id,
+                        {
+                            transaction
+                        }
+                    );
+
+                if (!user) {
+
+                    await rollbackTransaction(
+                        transaction,
+                        req.files
+                    );
+
+                    return res.status(404).json({
+                        success: false,
+                        message: "User not found."
+                    });
+                }
+
+                const FREE_UPLOAD_LIMIT = 5;
+
+                if (
+                    Number(
+                        user.freeUploadsUsed || 0
+                    ) >= FREE_UPLOAD_LIMIT
+                ) {
+
+                    await rollbackTransaction(
+                        transaction,
+                        req.files
+                    );
+
+                    return res.status(403).json({
+                        success: false,
+                        requiresSubscription: true,
+                        message:
+                            "You have reached your free upload limit. Please subscribe."
+                    });
+                }
+            }
+
+            let features;
+            let score;
+
+            if (plan) {
+
+                features =
+                    getPlanFeatures(plan);
+
+                score =
+                    calculateScore(plan);
+
+            } else {
+
+                features = {
+                    listingPriority: 1,
+                    homepagePriority: 0,
+                    searchPriority: 1,
+                    featured: false,
+                    express: false,
+                    aiRecommended: false,
+                    verifiedStore: false
+                };
+
+                score = 10;
+            }
+
+            const images =
+                processImages(
+                    req.files
+                );
+
+            if (images.length === 0) {
+
+                await rollbackTransaction(
+                    transaction,
+                    req.files
+                );
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "No valid uploaded images were found."
+                });
+            }
+
+            const title =
+                sanitize(
+                    req.body.title
+                );
+
+            const description =
+                sanitize(
+                    req.body.description
+                );
+
+            const slug =
+                generateSlug(title);
+
+            if (!slug) {
+
+                await rollbackTransaction(
+                    transaction,
+                    req.files
+                );
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "A valid product title is required."
+                });
+            }
+
+            const product =
+                await Product.create(
+                    {
+                        userId:
+                            req.user.id,
+
+                        subscriptionPlanId:
+                            plan
+                                ? plan.id
+                                : null,
+
+                        title,
+
+                        description,
+
+                        price:
+                            Number(
+                                req.body.price
+                            ),
+
+                        category:
+                            req.body.category,
+
+                        condition:
+                            req.body.condition,
+
+                        location:
+                            req.body.location,
+
+                        region:
+                            req.body.region,
+
+                        city:
+                            req.body.city,
+
+                        images:
+                            JSON.stringify(
+                                images
+                            ),
+
+                        slug,
+
+                        status:
+                            "Pending",
+
+                        promotionType:
+                            plan
+                                ? plan.name
+                                : "Free",
+
+                        listingPriority:
+                            features.listingPriority,
+
+                        homepagePriority:
+                            features.homepagePriority,
+
+                        searchPriority:
+                            features.searchPriority,
+
+                        featured:
+                            features.featured,
+
+                        express:
+                            features.express,
+
+                        aiRecommended:
+                            features.aiRecommended,
+
+                        verifiedStore:
+                            features.verifiedStore,
+
+                        listingScore:
+                            score,
+
+                        qualityScore:
+                            score,
+
+                        displayDate:
+                            new Date()
+                    },
+                    {
+                        transaction
+                    }
+                );
+
+            if (subscription) {
+
+                subscription.uploadsUsed =
+                    Number(
+                        subscription.uploadsUsed || 0
+                    ) + 1;
+
+                await subscription.save({
+                    transaction
+                });
+
+            } else {
+
+                const user =
+                    await User.findByPk(
+                        req.user.id,
+                        {
+                            transaction
+                        }
+                    );
+
+                if (!user) {
+                    throw new Error(
+                        "User account was not found."
+                    );
+                }
+
+                user.freeUploadsUsed =
+                    Number(
+                        user.freeUploadsUsed || 0
+                    ) + 1;
+
+                await user.save({
+                    transaction
+                });
+            }
+
+            const store =
+                await Store.findOne({
+                    where: {
+                        userId:
+                            req.user.id,
+
+                        status:
+                            "Verified"
+                    },
+
+                    transaction
+                });
+
+            if (store) {
+
+                product.verifiedStore =
+                    true;
+
+                await product.save({
+                    transaction
+                });
+            }
+
+            await transaction.commit();
+
+            transaction = null;
+
+            return res.status(201).json({
+                success: true,
+
+                message:
+                    "Product created successfully. Awaiting admin approval.",
+
+                product:
+                    formatProduct(
+                        product
+                    )
             });
 
-        }
+        } catch (error) {
 
-        /* ===============================
-           VALIDATE INPUT
-        =============================== */
+            if (transaction) {
 
-        const validation = validateProduct(req.body);
+                await rollbackTransaction(
+                    transaction,
+                    req.files
+                );
 
-        if (!validation.success) {
+            } else {
 
-            await transaction.rollback();
+                await cleanupUploadedFiles(
+                    req.files
+                );
+            }
 
-            return res.status(400).json(validation);
+            console.error(
+                "CREATE PRODUCT ERROR:",
+                error
+            );
 
-        }
-
-        if (!req.files || req.files.length === 0) {
-
-            await transaction.rollback();
-
-            return res.status(400).json({
-
+            return res.status(500).json({
                 success: false,
-
-                message: "Upload at least one image."
-
+                message:
+                    "Internal server error."
             });
-
         }
-
-        /* ===============================
-           SUBSCRIPTION
-        =============================== */
-console.log("Searching subscription for user:", req.user.id);
-      
-
-      /* ===============================
-   FREE / SUBSCRIBED USER CHECK
-=============================== */
-
-const subscriptionResult = await validateSubscription(req.user.id);
-
-let subscription = null;
-let plan = null;
-
-// User has an active subscription
-if (subscriptionResult.valid) {
-
-    subscription = subscriptionResult.subscription;
-    plan = subscriptionResult.plan;
-
-    const uploads = await getMonthlyUploads(req.user.id);
-
-    const uploadLimit = getUploadLimit(plan);
-
-    if (
-
-        uploadLimit !== Number.MAX_SAFE_INTEGER &&
-        uploads >= uploadLimit
-
-    ) {
-
-        await transaction.rollback();
-
-        return res.status(403).json({
-
-            success: false,
-
-            message: `Your ${plan.name} plan allows only ${uploadLimit} uploads this month.`
-
-        });
-
-    }
-
-}
-
-// User has NO subscription
-else {
-
-    const user = await User.findByPk(req.user.id);
-
-    const FREE_UPLOAD_LIMIT = 5;
-
-    if (user.freeUploadsUsed >= FREE_UPLOAD_LIMIT) {
-
-        await transaction.rollback();
-
-        return res.status(403).json({
-
-            success: false,
-
-            requiresSubscription: true,
-
-            message: "You have reached your free upload limit. Please subscribe."
-
-        });
-
-    }
-
-}
-
-       
-/* ===============================
-   PLAN FEATURES
-=============================== */
-
-let features;
-let score;
-
-if (plan) {
-
-    features = getPlanFeatures(plan);
-
-    score = calculateScore(plan);
-
-} else {
-
-    // Free user defaults
-    features = {
-
-        listingPriority: 1,
-        homepagePriority: 0,
-        searchPriority: 1,
-        featured: false,
-        express: false,
-        aiRecommended: false,
-        verifiedStore: false
-
     };
 
-    score = 10;
 
-}
-
-const images = processImages(req.files);
-
-const slug = generateSlug(req.body.title);      /* ===============================
-           CREATE PRODUCT
-        =============================== */
-
-        const product = await Product.create({
-
-            
-            userId: req.user.id,
-
-           subscriptionPlanId: plan ? plan.id : null,
-
-           title: sanitize(req.body.title),
-
-description: sanitize(req.body.description),
-
-            price: Number(req.body.price),
-
-            category: req.body.category,
-
-            condition: req.body.condition,
-
-            location: req.body.location,
-
-            region: req.body.region,
-
-            city: req.body.city,
-
-            images: JSON.stringify(images),
-
-            slug,
-
-            status: "Pending",
-
-          promotionType: plan ? plan.name : "Free",
-
-            listingPriority: features.listingPriority,
-
-            homepagePriority: features.homepagePriority,
-
-            searchPriority: features.searchPriority,
-
-            featured: features.featured,
-
-            express: features.express,
-
-            aiRecommended: features.aiRecommended,
-
-            verifiedStore: features.verifiedStore,
-
-            listingScore: score,
-
-            qualityScore: score,
-
-            displayDate: new Date()
-
-        },
-        {
-
-            transaction
-
-        });
-/* ===============================
-   UPDATE UPLOAD COUNTERS
-=============================== */
-
-// User has a subscription
-if (subscription) {
-
-    subscription.uploadsUsed += 1;
-
-    await subscription.save({
-
-        transaction
-
-    });
-
-}
-
-// Free user
-else {
-
-    const user = await User.findByPk(
-
-        req.user.id,
-
-        {
-
-            transaction
-
-        }
-
-    );
-
-    user.freeUploadsUsed += 1;
-
-    await user.save({
-
-        transaction
-
-    });
-
-}
-
-        /* ===============================
-           VERIFIED STORE
-        =============================== */
-
-        const store = await Store.findOne({
-
-            where: {
-
-                userId: req.user.id,
-
-                status: "Verified"
-
-            },
-
-            transaction
-
-        });
-
-        if (store) {
-
-            product.verifiedStore = true;
-
-            await product.save({
-
-                transaction
-
-            });
-
-        }
-
-        /* ===============================
-           COMMIT
-        =============================== */
-
-        await transaction.commit();
-
-        return res.status(201).json({
-
-            success: true,
-
-            message:
-
-                "Product created successfully. Awaiting admin approval.",
-
-            product
-
-        });
-
-    }
-
-   catch (error) {
-    await transaction.rollback();
-
-    console.error("🔥 CREATE PRODUCT ERROR");
-    console.error("Message:", error?.message);
-    console.error("Name:", error?.name);
-    console.error("Code:", error?.code);
-    console.error("Stack:", error?.stack);
-
-    return res.status(500).json({
-        success: false,
-        message: "Internal server error."
-    });
-}
-
-};
 /* ===========================================================
-   GET ALL APPROVED PUBLIC PRODUCTS
+   GET ALL APPROVED PRODUCTS
 =========================================================== */
 
-exports.getProducts = async (req, res) => {
+exports.getProducts =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const products = await Product.findAll({
+            const products =
+                await Product.findAll({
 
-            where: {
+                    where: {
 
-                status: "Approved",
+                        status:
+                            "Approved",
 
-                deleted: false
+                        deleted:
+                            false
 
-            },
-
-            include: [
-
-                {
-                    model: User,
-
-                    as: "seller",
-
-                    attributes: [
-
-                        "id",
-
-                        "name",
-
-                        "email",
-
-                        "profileImage"
-
-                    ],
+                    },
 
                     include: [
 
-                        /* =====================================
-                           USER SUBSCRIPTION
-                        ====================================== */
-
                         {
-                            model: Subscription,
+                            model:
+                                User,
 
-                            as: "subscriptions",
+                            as:
+                                "seller",
 
-                            required: false,
-
-                            where: {
-
-                                status: "active"
-
-                            },
+                            attributes: [
+                                "id",
+                                "name",
+                                "email",
+                                "profileImage"
+                            ],
 
                             include: [
 
                                 {
-                                    model: SubscriptionPlan,
+                                    model:
+                                        Subscription,
 
-                                    as: "subscriptionPlan",
+                                    as:
+                                        "subscriptions",
 
-                                    required: false
+                                    required:
+                                        false,
 
+                                    where: {
+                                        status:
+                                            "active"
+                                    },
+
+                                    include: [
+
+                                        {
+                                            model:
+                                                SubscriptionPlan,
+
+                                            as:
+                                                "subscriptionPlan",
+
+                                            required:
+                                                false
+                                        }
+
+                                    ]
+                                },
+
+                                {
+                                    model:
+                                        Store,
+
+                                    as:
+                                        "store",
+
+                                    required:
+                                        false,
+
+                                    attributes: [
+                                        "id",
+                                        "storeName",
+                                        "storeSlug",
+                                        "logo",
+                                        "banner",
+                                        "verified",
+                                        "status"
+                                    ]
                                 }
 
-                            ],
-
-                            order: [
-
-                                ["createdAt", "DESC"]
-
                             ]
-
-                        },
-
-                        /* =====================================
-                           USER STORE
-                        ====================================== */
-
-                        {
-                            model: Store,
-
-                            as: "store",
-
-                            required: false,
-
-                            attributes: [
-
-                                "id",
-
-                                "storeName",
-
-                                "storeSlug",
-
-                                "logo",
-
-                                "banner",
-
-                                "verified",
-
-                                "status"
-
-                            ]
-
                         }
 
+                    ],
+
+                    order: [
+                        [
+                            "listingPriority",
+                            "DESC"
+                        ],
+
+                        [
+                            "createdAt",
+                            "DESC"
+                        ]
                     ]
 
-                }
+                });
 
-            ],
+            const formattedProducts =
+                products.map(
+                    (product) => {
 
-            order: [
+                        const item =
+                            product.toJSON();
 
-                ["listingPriority", "DESC"],
+                        let subscription =
+                            null;
 
-                ["createdAt", "DESC"]
+                        let planName =
+                            "New User";
 
-            ]
+                        if (
+                            item.seller &&
+                            Array.isArray(
+                                item.seller.subscriptions
+                            ) &&
+                            item.seller.subscriptions.length
+                        ) {
 
-        });
+                            const activeSubscription =
+                                item.seller
+                                    .subscriptions[0];
 
+                            const plan =
+                                activeSubscription
+                                    .subscriptionPlan;
 
-        /* ===================================================
-           FORMAT PRODUCTS
-        =================================================== */
+                            if (plan) {
 
-        const formattedProducts = products.map((product) => {
+                                planName =
+                                    plan.name ||
+                                    plan.planName ||
+                                    "New User";
 
-            const item = product.toJSON();
+                                subscription = {
+                                    id:
+                                        activeSubscription.id,
 
+                                    status:
+                                        activeSubscription.status,
 
-            /* ===============================================
-               DEFAULT PLAN
-            =============================================== */
+                                    subscriptionPlanId:
+                                        activeSubscription
+                                            .subscriptionPlanId,
 
-            let subscription = null;
+                                    planName,
 
-            let planName = "New User";
+                                    plan: {
+                                        id:
+                                            plan.id,
 
-
-            /* ===============================================
-               GET USER'S ACTIVE SUBSCRIPTION
-            =============================================== */
-
-            if (
-
-                item.seller &&
-
-                Array.isArray(item.seller.subscriptions) &&
-
-                item.seller.subscriptions.length > 0
-
-            ) {
-
-                const activeSubscription =
-                    item.seller.subscriptions[0];
-
-
-                const plan =
-                    activeSubscription.subscriptionPlan;
-
-
-                if (plan) {
-
-                    planName =
-                        plan.name ||
-                        plan.planName ||
-                        "New User";
-
-
-                    subscription = {
-
-                        id: activeSubscription.id,
-
-                        status: activeSubscription.status,
-
-                        subscriptionPlanId:
-                            activeSubscription.subscriptionPlanId,
-
-                        planName: planName,
-
-                        plan: {
-
-                            id: plan.id,
-
-                            name: plan.name ||
-
-                                plan.planName ||
-
-                                "New User"
-
+                                        name:
+                                            plan.name ||
+                                            plan.planName ||
+                                            "New User"
+                                    }
+                                };
+                            }
                         }
 
-                    };
+                        if (item.seller) {
 
-                }
+                            item.seller.subscription =
+                                subscription || {
+                                    planName:
+                                        "New User",
 
-            }
+                                    plan: {
+                                        name:
+                                            "New User"
+                                    }
+                                };
 
+                            delete item
+                                .seller
+                                .subscriptions;
 
-            /* ===============================================
-               FORMAT SELLER
-            =============================================== */
+                            item.store =
+                                item.seller.store ||
+                                null;
+                        }
 
-            if (item.seller) {
-
-                item.seller.subscription = subscription || {
-
-                    planName: "New User",
-
-                    plan: {
-
-                        name: "New User"
-
+                        return formatProduct(
+                            item
+                        );
                     }
+                )
+                .filter(Boolean);
 
-                };
+            return res.status(200).json({
+                success: true,
+                products:
+                    formattedProducts
+            });
 
-            }
+        } catch (error) {
 
+            console.error(
+                "GET PRODUCTS ERROR:",
+                error
+            );
 
-            /* ===============================================
-               ADD STORE TO PRODUCT DIRECTLY
+            return res.status(500).json({
+                success: false,
+                message:
+                    "Unable to load products.",
+                error:
+                    error.message
+            });
+        }
+    };
 
-               This allows:
-
-               product.store.storeSlug
-            =============================================== */
-
-            item.store =
-
-                item.seller?.store || null;
-
-
-            /* ===============================================
-               REMOVE UNNECESSARY SUBSCRIPTIONS ARRAY
-            =============================================== */
-
-            if (item.seller) {
-
-                delete item.seller.subscriptions;
-
-            }
-
-
-            return item;
-
-        });
-
-
-        return res.status(200).json({
-
-            success: true,
-
-            products: formattedProducts
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.error(
-
-            "GET PRODUCTS ERROR:",
-
-            error
-
-        );
-
-
-        return res.status(500).json({
-
-            success: false,
-
-            message:
-                "Unable to load products.",
-
-            error:
-                error.message
-
-        });
-
-    }
-
-};
 
 /* ===========================================================
    GET PRODUCT BY ID
 =========================================================== */
 
-exports.getProductById = async (req, res) => {
-
-    try {
-
-        const product = await Product.findOne({
-
-            where: {
-
-                id: req.params.id,
-
-                status: "Approved"
-
-            }
-
-        });
-
-        if (!product) {
-
-            return res.status(404).json({
-
-                success: false,
-
-                message: "Product not found."
-
-            });
-
-        }
-
-        /* ===============================
-           UPDATE VIEW COUNT
-        =============================== */
-
-        product.views += 1;
-
-        await product.save();
-
-        const item = product.toJSON();
+exports.getProductById =
+    async (req, res) => {
 
         try {
 
-            item.images = JSON.parse(item.images);
+            const product =
+                await Product.findOne({
 
-        }
+                    where: {
+                        id:
+                            req.params.id,
 
-        catch {
+                        status:
+                            "Approved",
 
-            item.images = [];
+                        deleted:
+                            false
+                    }
 
-        }
+                });
 
-        /* ===============================
-           RELATED PRODUCTS
-        =============================== */
+            if (!product) {
 
-        const relatedProducts = await Product.findAll({
-
-            where: {
-
-                id: {
-
-                    [Op.ne]: product.id
-
-                },
-
-                category: product.category,
-
-                status: "Approved"
-
-            },
-
-            limit: 8,
-
-            order: [
-
-                ["homepagePriority", "DESC"],
-
-                ["featured", "DESC"],
-
-                ["express", "DESC"],
-
-                ["listingPriority", "DESC"],
-
-                ["listingScore", "DESC"]
-
-            ]
-
-        });
-
-        const related = relatedProducts.map(p => {
-
-            const data = p.toJSON();
-
-            try {
-
-                data.images = JSON.parse(data.images);
-
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Product not found."
+                });
             }
 
-            catch {
+            product.views =
+                Number(
+                    product.views || 0
+                ) + 1;
 
-                data.images = [];
+            await product.save();
 
-            }
+            const item =
+                formatProduct(
+                    product
+                );
 
-            return data;
+            const relatedProducts =
+                await Product.findAll({
 
-        });
+                    where: {
 
-        return res.json({
+                        id: {
+                            [Op.ne]:
+                                product.id
+                        },
 
-            success: true,
+                        category:
+                            product.category,
 
-            product: item,
+                        status:
+                            "Approved",
 
-            relatedProducts: related
+                        deleted:
+                            false
+                    },
 
-        });
+                    limit:
+                        8,
 
-    }
+                    order: [
 
-    catch (error) {
+                        [
+                            "homepagePriority",
+                            "DESC"
+                        ],
 
-        console.log(error);
+                        [
+                            "featured",
+                            "DESC"
+                        ],
 
-        return res.status(500).json({
+                        [
+                            "express",
+                            "DESC"
+                        ],
 
-            success: false,
+                        [
+                            "listingPriority",
+                            "DESC"
+                        ],
 
-            message: error.message
+                        [
+                            "listingScore",
+                            "DESC"
+                        ]
+                    ]
+                });
 
-        });
+            return res.json({
+                success: true,
 
-    }
+                product:
+                    item,
 
-};/* ===========================================================
+                relatedProducts:
+                    formatProducts(
+                        relatedProducts
+                    )
+            });
+
+        } catch (error) {
+
+            console.error(
+                "GET PRODUCT BY ID ERROR:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
+        }
+    };
+
+
+/* ===========================================================
    SEARCH PRODUCTS
 =========================================================== */
 
-exports.searchProducts = async (req, res) => {
+exports.searchProducts =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const {
+            const {
+                keyword,
+                category,
+                region,
+                city,
+                minPrice,
+                maxPrice
+            } = req.query;
 
-            keyword,
+            const where = {
+                status:
+                    "Approved",
 
-            category,
+                deleted:
+                    false
+            };
 
-            region,
+            if (keyword) {
 
-            city,
+                where[Op.or] = [
 
-            minPrice,
+                    {
+                        title: {
+                            [Op.like]:
+                                `%${keyword}%`
+                        }
+                    },
 
-            maxPrice
-
-        } = req.query;
-
-        const where = {
-
-            status: "Approved"
-
-        };
-
-        if (keyword) {
-
-            where[Op.or] = [
-
-                {
-
-                    title: {
-
-                        [Op.like]:
-
-                            `%${keyword}%`
-
+                    {
+                        description: {
+                            [Op.like]:
+                                `%${keyword}%`
+                        }
                     }
 
-                },
+                ];
+            }
 
-                {
+            if (category) {
+                where.category =
+                    category;
+            }
 
-                    description: {
+            if (region) {
+                where.region =
+                    region;
+            }
 
-                        [Op.like]:
+            if (city) {
+                where.city =
+                    city;
+            }
 
-                            `%${keyword}%`
+            if (
+                minPrice !== undefined ||
+                maxPrice !== undefined
+            ) {
 
-                    }
+                where.price = {};
 
+                if (
+                    minPrice !== undefined &&
+                    minPrice !== ""
+                ) {
+
+                    where.price[Op.gte] =
+                        Number(minPrice);
                 }
 
-            ];
+                if (
+                    maxPrice !== undefined &&
+                    maxPrice !== ""
+                ) {
 
+                    where.price[Op.lte] =
+                        Number(maxPrice);
+                }
+            }
+
+            const products =
+                await Product.findAll({
+
+                    where,
+
+                    order: [
+
+                        [
+                            "homepagePriority",
+                            "DESC"
+                        ],
+
+                        [
+                            "featured",
+                            "DESC"
+                        ],
+
+                        [
+                            "express",
+                            "DESC"
+                        ],
+
+                        [
+                            "listingPriority",
+                            "DESC"
+                        ],
+
+                        [
+                            "qualityScore",
+                            "DESC"
+                        ],
+
+                        [
+                            "views",
+                            "DESC"
+                        ],
+
+                        [
+                            "createdAt",
+                            "DESC"
+                        ]
+                    ]
+                });
+
+            return res.json({
+                success: true,
+
+                total:
+                    products.length,
+
+                products:
+                    formatProducts(
+                        products
+                    )
+            });
+
+        } catch (error) {
+
+            console.error(
+                "SEARCH PRODUCTS ERROR:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
         }
+    };
 
-        if (category)
-
-            where.category = category;
-
-        if (region)
-
-            where.region = region;
-
-        if (city)
-
-            where.city = city;
-
-        if (minPrice || maxPrice) {
-
-            where.price = {};
-
-            if (minPrice)
-
-                where.price[Op.gte] = Number(minPrice);
-
-            if (maxPrice)
-
-                where.price[Op.lte] = Number(maxPrice);
-
-        }
-
-        const products = await Product.findAll({
-
-            where,
-
-            order: [
-
-                ["homepagePriority","DESC"],
-
-                ["featured","DESC"],
-
-                ["express","DESC"],
-
-                ["listingPriority","DESC"],
-
-                ["qualityScore","DESC"],
-
-                ["views","DESC"],
-
-                ["createdAt","DESC"]
-
-            ]
-
-        });
-
-        return res.json({
-
-            success: true,
-
-            total: products.length,
-
-            products
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 
 /* ===========================================================
-   FEATURED PRODUCTS
+   HOMEPAGE PROMOTIONS
 =========================================================== */
-exports.getFeaturedProducts = async (req, res) => {
 
-    try {
+async function getHomepagePromotionProducts(
+    promotionType
+) {
 
-        const promotions = await ProductPromotion.findAll({
+    const promotions =
+        await ProductPromotion.findAll({
 
             where: {
 
-                promotionType: "FEATURED",
+                promotionType,
 
-                paymentStatus: "PAID",
+                paymentStatus:
+                    "PAID",
 
-                status: "APPROVED",
+                status:
+                    "APPROVED",
 
-                showOnHomepage: true,
+                showOnHomepage:
+                    true,
 
-                endDate: {
+                [Op.or]: [
 
-                    [Op.gt]: new Date()
+                    {
+                        endDate: {
+                            [Op.gt]:
+                                new Date()
+                        }
+                    },
 
-                }
+                    {
+                        endDate:
+                            null
+                    }
 
+                ]
             },
 
             include: [
 
                 {
+                    model:
+                        Product,
 
-                    model: Product,
+                    as:
+                        "product",
 
-                    as: "product",
+                    required:
+                        true,
 
                     where: {
 
-                        status: "Approved",
+                        status:
+                            "Approved",
 
-                        deleted: false,
-
-                        
-
+                        deleted:
+                            false
                     }
-
                 }
 
             ],
 
             order: [
 
-                ["homepageOrder", "ASC"],
+                [
+                    "homepageOrder",
+                    "ASC"
+                ],
 
-                ["approvedAt", "DESC"]
+                [
+                    "approvedAt",
+                    "DESC"
+                ],
+
+                [
+                    "createdAt",
+                    "DESC"
+                ]
 
             ]
-
         });
 
-        const products = promotions.map((promotion) => {
+    return promotions
+        .map(
+            (promotion) =>
+                formatPromotionProduct(
+                    promotion.product
+                )
+        )
+        .filter(Boolean);
+}
 
-            const product = promotion.product;
 
-            if (product && product.images) {
+/* ===========================================================
+   FEATURED PRODUCTS
+=========================================================== */
 
-                try {
+exports.getFeaturedProducts =
+    async (req, res) => {
 
-                    product.images = JSON.parse(product.images);
+        try {
 
-                }
+            const products =
+                await getHomepagePromotionProducts(
+                    "FEATURED"
+                );
 
-                catch {
+            return res.json({
+                success: true,
+                products
+            });
 
-                    product.images = [];
+        } catch (error) {
 
-                }
+            console.error(
+                "GET FEATURED PRODUCTS ERROR:",
+                error
+            );
 
-            }
+            return res.status(500).json({
+                success: false,
+                message:
+                    "Unable to load featured products."
+            });
+        }
+    };
 
-            return product;
-
-        });
-
-        return res.json({
-
-            success: true,
-
-            products
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 
 /* ===========================================================
    EXPRESS PRODUCTS
 =========================================================== */
 
-exports.getExpressProducts = async (req, res) => {
+exports.getExpressProducts =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const promotions = await ProductPromotion.findAll({
+            const products =
+                await getHomepagePromotionProducts(
+                    "EXPRESS"
+                );
 
-            where: {
+            return res.json({
+                success: true,
+                products
+            });
 
-                promotionType: "EXPRESS",
+        } catch (error) {
 
-                paymentStatus: "PAID",
+            console.error(
+                "GET EXPRESS PRODUCTS ERROR:",
+                error
+            );
 
-                status: "APPROVED",
+            return res.status(500).json({
+                success: false,
+                message:
+                    "Unable to load express products."
+            });
+        }
+    };
 
-                showOnHomepage: true,
 
-                endDate: {
-
-                    [Op.gt]: new Date()
-
-                }
-
-            },
-
-            include: [
-
-                {
-
-                    model: Product,
-
-                    as: "product",
-
-                    where: {
-
-                        status: "Approved",
-
-                        deleted: false,
-
-                        express: true
-
-                    }
-
-                }
-
-            ],
-
-            order: [
-
-                ["homepageOrder", "ASC"],
-
-                ["approvedAt", "DESC"]
-
-            ]
-
-        });
-
-        const products = promotions.map((promotion) => {
-
-            const product = promotion.product;
-
-            if (product && product.images) {
-
-                try {
-
-                    product.images = JSON.parse(product.images);
-
-                }
-
-                catch {
-
-                    product.images = [];
-
-                }
-
-            }
-
-            return product;
-
-        });
-
-        return res.json({
-
-            success: true,
-
-            products
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 /* ===========================================================
    TRENDING PRODUCTS
 =========================================================== */
 
-exports.getTrendingProducts = async (req, res) => {
+exports.getTrendingProducts =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const promotions = await ProductPromotion.findAll({
+            const products =
+                await getHomepagePromotionProducts(
+                    "BOOST"
+                );
 
-            where: {
+            return res.json({
+                success: true,
+                products
+            });
 
-                promotionType: "BOOST",
+        } catch (error) {
 
-                paymentStatus: "PAID",
+            console.error(
+                "GET TRENDING PRODUCTS ERROR:",
+                error
+            );
 
-                status: "APPROVED",
+            return res.status(500).json({
+                success: false,
+                message:
+                    "Unable to load trending products."
+            });
+        }
+    };
 
-                showOnHomepage: true,
 
-                endDate: {
-
-                    [Op.gt]: new Date()
-
-                }
-
-            },
-
-            include: [
-
-                {
-
-                    model: Product,
-
-                    as: "product",
-
-                    where: {
-
-                        status: "Approved",
-
-                        deleted: false,
-
-                     
-
-                    }
-
-                }
-
-            ],
-
-            order: [
-
-                ["homepageOrder", "ASC"],
-
-                ["approvedAt", "DESC"]
-
-            ]
-
-        });
-
-        const products = promotions.map((promotion) => {
-
-            const product = promotion.product;
-
-            if (product && product.images) {
-
-                try {
-
-                    product.images = JSON.parse(product.images);
-
-                }
-
-                catch {
-
-                    product.images = [];
-
-                }
-
-            }
-
-            return product;
-
-        });
-
-        return res.json({
-
-            success: true,
-
-            products
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 /* ===========================================================
    NEW PRODUCTS
 =========================================================== */
 
-exports.getNewestProducts = async(req,res)=>{
+exports.getNewestProducts =
+    async (req, res) => {
 
-    try{
+        try {
 
-        const products = await Product.findAll({
+            const products =
+                await Product.findAll({
 
-            where:{
+                    where: {
 
-                status:"Approved"
+                        status:
+                            "Approved",
 
-            },
+                        deleted:
+                            false
+                    },
 
-            order:[
+                    order: [
+                        [
+                            "createdAt",
+                            "DESC"
+                        ]
+                    ],
 
-                ["createdAt","DESC"]
+                    limit:
+                        20
+                });
 
-            ],
+            return res.json({
+                success: true,
 
-            limit:20
+                products:
+                    formatProducts(
+                        products
+                    )
+            });
 
-        });
+        } catch (error) {
 
-        return res.json({
+            console.error(
+                "GET NEWEST PRODUCTS ERROR:",
+                error
+            );
 
-            success:true,
+            return res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
+        }
+    };
 
-            products
 
-        });
-
-    }
-
-    catch(error){
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success:false,
-
-            message:error.message
-
-        });
-
-    }
-
-};/* ===========================================================
+/* ===========================================================
    MY PRODUCTS
 =========================================================== */
 
-exports.getMyProducts = async (req, res) => {
+exports.getMyProducts =
+    async (req, res) => {
 
-    try {
+        try {
 
-        if (!req.user) {
+            if (!req.user) {
 
-            return res.status(401).json({
+                return res.status(401).json({
+                    success: false,
+                    message:
+                        "Unauthorized"
+                });
+            }
 
-                success: false,
+            const products =
+                await Product.findAll({
 
-                message: "Unauthorized"
+                    where: {
+                        userId:
+                            req.user.id
+                    },
 
+                    order: [
+                        [
+                            "createdAt",
+                            "DESC"
+                        ]
+                    ]
+                });
+
+            const data =
+                formatProducts(
+                    products
+                );
+
+            return res.json({
+                success: true,
+
+                total:
+                    data.length,
+
+                products:
+                    data
             });
 
+        } catch (error) {
+
+            console.error(
+                "GET MY PRODUCTS ERROR:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
         }
+    };
 
-        const products = await Product.findAll({
-
-            where: {
-
-                userId: req.user.id
-
-            },
-
-            order: [
-
-                ["createdAt", "DESC"]
-
-            ]
-
-        });
-
-        const data = products.map(product => {
-
-            const item = product.toJSON();
-
-            try {
-
-                item.images = JSON.parse(item.images);
-
-            }
-
-            catch {
-
-                item.images = [];
-
-            }
-
-            return item;
-
-        });
-
-        return res.json({
-
-            success: true,
-
-            total: data.length,
-
-            products: data
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 
 /* ===========================================================
    UPDATE PRODUCT
 =========================================================== */
 
-exports.updateProduct = async (req, res) => {
+exports.updateProduct =
+    async (req, res) => {
 
-    try {
+        let transaction = null;
 
-        const product = await Product.findByPk(req.params.id);
+        try {
 
-        if (!product) {
+            if (!req.user) {
 
-            return res.status(404).json({
+                await cleanupUploadedFiles(
+                    req.files
+                );
 
-                success: false,
+                return res.status(401).json({
+                    success: false,
+                    message:
+                        "Unauthorized."
+                });
+            }
 
-                message: "Product not found."
+            const product =
+                await Product.findByPk(
+                    req.params.id
+                );
 
+            if (!product) {
+
+                await cleanupUploadedFiles(
+                    req.files
+                );
+
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Product not found."
+                });
+            }
+
+            if (
+                Number(product.userId) !==
+                Number(req.user.id)
+            ) {
+
+                await cleanupUploadedFiles(
+                    req.files
+                );
+
+                return res.status(403).json({
+                    success: false,
+                    message:
+                        "Unauthorized."
+                });
+            }
+
+            transaction =
+                await sequelize.transaction();
+
+            const {
+                title,
+                description,
+                price,
+                category,
+                condition,
+                location,
+                region,
+                city
+            } = req.body;
+
+            if (
+                title !== undefined &&
+                String(title).trim()
+            ) {
+
+                product.title =
+                    sanitize(title);
+
+                product.slug =
+                    generateSlug(
+                        product.title
+                    );
+            }
+
+            if (
+                description !== undefined
+            ) {
+
+                product.description =
+                    sanitize(
+                        description
+                    );
+            }
+
+            if (
+                price !== undefined &&
+                price !== ""
+            ) {
+
+                const numericPrice =
+                    Number(price);
+
+                if (
+                    !Number.isFinite(
+                        numericPrice
+                    ) ||
+                    numericPrice < 0
+                ) {
+
+                    await rollbackTransaction(
+                        transaction,
+                        req.files
+                    );
+
+                    return res.status(400).json({
+                        success: false,
+                        message:
+                            "Price must be a valid non-negative number."
+                    });
+                }
+
+                product.price =
+                    numericPrice;
+            }
+
+            if (
+                category !== undefined
+            ) {
+                product.category =
+                    category;
+            }
+
+            if (
+                condition !== undefined
+            ) {
+                product.condition =
+                    condition;
+            }
+
+            if (
+                location !== undefined
+            ) {
+                product.location =
+                    location;
+            }
+
+            if (
+                region !== undefined
+            ) {
+                product.region =
+                    region;
+            }
+
+            if (
+                city !== undefined
+            ) {
+                product.city =
+                    city;
+            }
+
+            let oldImages = [];
+
+            if (
+                Array.isArray(req.files) &&
+                req.files.length > 0
+            ) {
+
+                oldImages =
+                    parseProductImages(
+                        product.images
+                    );
+
+                const newImages =
+                    processImages(
+                        req.files
+                    );
+
+                if (
+                    newImages.length === 0
+                ) {
+
+                    await rollbackTransaction(
+                        transaction,
+                        req.files
+                    );
+
+                    return res.status(400).json({
+                        success: false,
+                        message:
+                            "The uploaded images could not be processed."
+                    });
+                }
+
+                product.images =
+                    JSON.stringify(
+                        newImages
+                    );
+            }
+
+            await product.save({
+                transaction
             });
 
-        }
+            await transaction.commit();
 
-        if (product.userId !== req.user.id) {
+            transaction = null;
 
-            return res.status(403).json({
+            /*
+            |--------------------------------------------------------------------------
+            | Remove old R2 images
+            |--------------------------------------------------------------------------
+            */
 
-                success: false,
+            if (
+                oldImages.length > 0
+            ) {
 
-                message: "Unauthorized."
+                const oldKeys =
+                    oldImages
+                        .filter(
+                            (image) => {
 
+                                if (
+                                    typeof image !==
+                                    "string"
+                                ) {
+                                    return false;
+                                }
+
+                                const key =
+                                    image
+                                        .trim()
+                                        .replace(
+                                            /^\/+/,
+                                            ""
+                                        );
+
+                                return (
+                                    key.startsWith(
+                                        "uploads/"
+                                    ) &&
+                                    !key.startsWith(
+                                        "http://"
+                                    ) &&
+                                    !key.startsWith(
+                                        "https://"
+                                    )
+                                );
+                            }
+                        )
+                        .map(
+                            (image) =>
+                                image
+                                    .trim()
+                                    .replace(
+                                        /^\/+/,
+                                        ""
+                                    )
+                        );
+
+                await Promise.allSettled(
+                    [
+                        ...new Set(
+                            oldKeys
+                        )
+                    ].map(
+                        (key) =>
+                            deleteFromR2(
+                                key
+                            )
+                    )
+                );
+            }
+
+            return res.json({
+                success: true,
+
+                message:
+                    "Product updated successfully.",
+
+                product:
+                    formatProduct(
+                        product
+                    )
             });
 
-        }
+        } catch (error) {
 
-        const {
+            if (transaction) {
 
-            title,
+                await rollbackTransaction(
+                    transaction,
+                    req.files
+                );
 
-            description,
+            } else {
 
-            price,
+                await cleanupUploadedFiles(
+                    req.files
+                );
+            }
 
-            category,
-
-            condition,
-
-            location,
-
-            region,
-
-            city
-
-        } = req.body;
-
-        if (title) product.title = title;
-
-        if (description) product.description = description;
-
-        if (price) product.price = price;
-
-        if (category) product.category = category;
-
-        if (condition) product.condition = condition;
-
-        if (location) product.location = location;
-
-        if (region) product.region = region;
-
-        if (city) product.city = city;
-
-        if (req.files && req.files.length > 0) {
-
-            product.images = JSON.stringify(
-
-                req.files.map(file => file.filename)
-
+            console.error(
+                "UPDATE PRODUCT ERROR:",
+                error
             );
 
+            return res.status(500).json({
+                success: false,
+                message:
+                    "Unable to update product."
+            });
         }
+    };
 
-        await product.save();
-
-        return res.json({
-
-            success: true,
-
-            message: "Product updated successfully.",
-
-            product
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 
 /* ===========================================================
    DELETE PRODUCT
 =========================================================== */
 
-exports.deleteProduct = async (req, res) => {
+exports.deleteProduct =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const product = await Product.findByPk(req.params.id);
+            if (!req.user) {
 
-        if (!product) {
+                return res.status(401).json({
+                    success: false,
+                    message:
+                        "Unauthorized."
+                });
+            }
 
-            return res.status(404).json({
+            const product =
+                await Product.findByPk(
+                    req.params.id
+                );
 
-                success: false,
+            if (!product) {
 
-                message: "Product not found."
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Product not found."
+                });
+            }
 
+            if (
+                Number(product.userId) !==
+                Number(req.user.id)
+            ) {
+
+                return res.status(403).json({
+                    success: false,
+                    message:
+                        "Unauthorized."
+                });
+            }
+
+            await product.destroy();
+
+            await deleteProductImages(
+                product
+            );
+
+            return res.json({
+                success: true,
+                message:
+                    "Product deleted successfully."
             });
 
-        }
+        } catch (error) {
 
-        if (product.userId !== req.user.id) {
+            console.error(
+                "DELETE PRODUCT ERROR:",
+                error
+            );
 
-            return res.status(403).json({
-
+            return res.status(500).json({
                 success: false,
-
-                message: "Unauthorized."
-
+                message:
+                    "Unable to delete product."
             });
-
         }
+    };
 
-        await product.destroy();
-
-        return res.json({
-
-            success: true,
-
-            message: "Product deleted successfully."
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 
 /* ===========================================================
    CHANGE PRODUCT STATUS
 =========================================================== */
 
-exports.changeProductStatus = async (req, res) => {
+exports.changeProductStatus =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const product = await Product.findByPk(req.params.id);
+            const product =
+                await Product.findByPk(
+                    req.params.id
+                );
 
-        if (!product) {
+            if (!product) {
 
-            return res.status(404).json({
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Product not found."
+                });
+            }
 
-                success: false,
+            product.status =
+                req.body.status;
 
-                message: "Product not found."
+            await product.save();
 
+            return res.json({
+                success: true,
+
+                message:
+                    "Product status updated.",
+
+                product:
+                    formatProduct(
+                        product
+                    )
             });
 
+        } catch (error) {
+
+            console.error(
+                "CHANGE PRODUCT STATUS ERROR:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
         }
+    };
 
-        product.status = req.body.status;
-
-        await product.save();
-
-        return res.json({
-
-            success: true,
-
-            message: "Product status updated.",
-
-            product
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 
 /* ===========================================================
-   SELLER DASHBOARD STATS
+   SELLER DASHBOARD STATISTICS
 =========================================================== */
 
-exports.getSellerStatistics = async (req, res) => {
+exports.getSellerStatistics =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const totalProducts = await Product.count({
+            const totalProducts =
+                await Product.count({
+                    where: {
+                        userId:
+                            req.user.id
+                    }
+                });
 
-            where: {
+            const approved =
+                await Product.count({
+                    where: {
+                        userId:
+                            req.user.id,
 
-                userId: req.user.id
+                        status:
+                            "Approved"
+                    }
+                });
 
-            }
+            const pending =
+                await Product.count({
+                    where: {
+                        userId:
+                            req.user.id,
 
-        });
+                        status:
+                            "Pending"
+                    }
+                });
 
-        const approved = await Product.count({
+            const rejected =
+                await Product.count({
+                    where: {
+                        userId:
+                            req.user.id,
 
-            where: {
+                        status:
+                            "Rejected"
+                    }
+                });
 
-                userId: req.user.id,
+            const totalViews =
+                await Product.sum(
+                    "views",
+                    {
+                        where: {
+                            userId:
+                                req.user.id
+                        }
+                    }
+                );
 
-                status: "Approved"
+            return res.json({
+                success: true,
 
-            }
+                statistics: {
+                    totalProducts,
+                    approved,
+                    pending,
+                    rejected,
+                    totalViews:
+                        totalViews || 0
+                }
+            });
 
-        });
+        } catch (error) {
 
-        const pending = await Product.count({
+            console.error(
+                "GET SELLER STATISTICS ERROR:",
+                error
+            );
 
-            where: {
+            return res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
+        }
+    };
 
-                userId: req.user.id,
 
-                status: "Pending"
-
-            }
-
-        });
-
-        const rejected = await Product.count({
-
-            where: {
-
-                userId: req.user.id,
-
-                status: "Rejected"
-
-            }
-
-        });
-
-        const totalViews = await Product.sum("views", {
-
-            where: {
-
-                userId: req.user.id
-
-            }
-
-        });
-
-        return res.json({
-
-            success: true,
-
-            statistics: {
-
-                totalProducts,
-
-                approved,
-
-                pending,
-
-                rejected,
-
-                totalViews: totalViews || 0
-
-            }
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};/* ===========================================================
+/* ===========================================================
    ADD TO WISHLIST
 =========================================================== */
 
-exports.addToWishlist = async (req, res) => {
+exports.addToWishlist =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const product = await Product.findByPk(req.params.id);
+            const product =
+                await Product.findByPk(
+                    req.params.id
+                );
 
-        if (!product) {
+            if (!product) {
 
-            return res.status(404).json({
-
-                success: false,
-
-                message: "Product not found."
-
-            });
-
-        }
-
-        const existing = await Wishlist.findOne({
-
-            where: {
-
-                userId: req.user.id,
-
-                productId: product.id
-
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Product not found."
+                });
             }
 
-        });
+            const existing =
+                await Wishlist.findOne({
+                    where: {
+                        userId:
+                            req.user.id,
 
-        if (existing) {
+                        productId:
+                            product.id
+                    }
+                });
 
-            return res.status(400).json({
+            if (existing) {
 
-                success: false,
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Product already in wishlist."
+                });
+            }
 
-                message: "Product already in wishlist."
+            await Wishlist.create({
+                userId:
+                    req.user.id,
 
+                productId:
+                    product.id
             });
 
+            product.favourites =
+                Number(
+                    product.favourites || 0
+                ) + 1;
+
+            await product.save();
+
+            return res.json({
+                success: true,
+                message:
+                    "Added to wishlist."
+            });
+
+        } catch (error) {
+
+            console.error(
+                "ADD TO WISHLIST ERROR:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
         }
+    };
 
-        await Wishlist.create({
-
-            userId: req.user.id,
-
-            productId: product.id
-
-        });
-
-        product.favourites += 1;
-
-        await product.save();
-
-        return res.json({
-
-            success: true,
-
-            message: "Added to wishlist."
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 
 /* ===========================================================
    REMOVE FROM WISHLIST
 =========================================================== */
 
-exports.removeFromWishlist = async (req, res) => {
+exports.removeFromWishlist =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const wishlist = await Wishlist.findOne({
+            const wishlist =
+                await Wishlist.findOne({
+                    where: {
+                        userId:
+                            req.user.id,
 
-            where: {
+                        productId:
+                            req.params.id
+                    }
+                });
 
-                userId: req.user.id,
+            if (!wishlist) {
 
-                productId: req.params.id
-
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Wishlist item not found."
+                });
             }
 
-        });
+            await wishlist.destroy();
 
-        if (!wishlist) {
+            const product =
+                await Product.findByPk(
+                    req.params.id
+                );
 
-            return res.status(404).json({
+            if (
+                product &&
+                Number(
+                    product.favourites || 0
+                ) > 0
+            ) {
 
-                success: false,
+                product.favourites -= 1;
 
-                message: "Wishlist item not found."
+                await product.save();
+            }
 
+            return res.json({
+                success: true,
+                message:
+                    "Removed from wishlist."
             });
 
+        } catch (error) {
+
+            console.error(
+                "REMOVE FROM WISHLIST ERROR:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
         }
+    };
 
-        await wishlist.destroy();
-
-        const product = await Product.findByPk(req.params.id);
-
-        if (product && product.favourites > 0) {
-
-            product.favourites -= 1;
-
-            await product.save();
-
-        }
-
-        return res.json({
-
-            success: true,
-
-            message: "Removed from wishlist."
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 
 /* ===========================================================
-   GET MY WISHLIST
+   GET WISHLIST
 =========================================================== */
 
-exports.getWishlist = async (req, res) => {
+exports.getWishlist =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const wishlist = await Wishlist.findAll({
+            const wishlist =
+                await Wishlist.findAll({
 
-            where: {
+                    where: {
+                        userId:
+                            req.user.id
+                    },
 
-                userId: req.user.id
+                    include: [
+                        {
+                            model:
+                                Product
+                        }
+                    ],
 
-            },
+                    order: [
+                        [
+                            "createdAt",
+                            "DESC"
+                        ]
+                    ]
+                });
 
-            include: [
+            const formattedWishlist =
+                wishlist.map(
+                    (item) => {
 
-                {
+                        const data =
+                            typeof item.toJSON ===
+                            "function"
+                                ? item.toJSON()
+                                : item;
 
-                    model: Product
+                        if (
+                            data.product
+                        ) {
 
-                }
+                            data.product =
+                                formatProduct(
+                                    data.product
+                                );
+                        }
 
-            ],
+                        return data;
+                    }
+                );
 
-            order: [
+            return res.json({
+                success: true,
+                wishlist:
+                    formattedWishlist
+            });
 
-                ["createdAt", "DESC"]
+        } catch (error) {
 
-            ]
+            console.error(
+                "GET WISHLIST ERROR:",
+                error
+            );
 
-        });
+            return res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
+        }
+    };
 
-        return res.json({
-
-            success: true,
-
-            wishlist
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 
 /* ===========================================================
    RECORD PRODUCT VIEW
 =========================================================== */
 
-exports.recordProductView = async (req, res) => {
+exports.recordProductView =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const product = await Product.findByPk(req.params.id);
+            const product =
+                await Product.findByPk(
+                    req.params.id
+                );
 
-        if (!product) {
+            if (!product) {
 
-            return res.status(404).json({
-
-                success: false,
-
-                message: "Product not found."
-
-            });
-
-        }
-
-        // Logged-in user
-        if (req.user) {
-
-            const viewed = await ProductView.findOne({
-
-                where: {
-
-                    userId: req.user.id,
-
-                    productId: product.id
-
-                }
-
-            });
-
-            if (!viewed) {
-
-                await ProductView.create({
-
-                    userId: req.user.id,
-
-                    productId: product.id
-
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Product not found."
                 });
-
             }
 
+            if (req.user) {
+
+                const viewed =
+                    await ProductView.findOne({
+                        where: {
+                            userId:
+                                req.user.id,
+
+                            productId:
+                                product.id
+                        }
+                    });
+
+                if (!viewed) {
+
+                    await ProductView.create({
+                        userId:
+                            req.user.id,
+
+                        productId:
+                            product.id
+                    });
+                }
+            }
+
+            product.views =
+                Number(
+                    product.views || 0
+                ) + 1;
+
+            product.listingScore =
+                Number(
+                    product.listingScore || 0
+                ) + 1;
+
+            await product.save();
+
+            return res.json({
+                success: true
+            });
+
+        } catch (error) {
+
+            console.error(
+                "RECORD PRODUCT VIEW ERROR:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
         }
+    };
 
-        // Increase product views
-        product.views = (product.views || 0) + 1;
-
-        product.listingScore = (product.listingScore || 0) + 1;
-
-        await product.save();
-
-        return res.json({
-
-            success: true
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 
 /* ===========================================================
    RECENTLY VIEWED
 =========================================================== */
 
-exports.getRecentlyViewed = async (req, res) => {
+exports.getRecentlyViewed =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const views = await ProductView.findAll({
+            const views =
+                await ProductView.findAll({
 
-            where: {
+                    where: {
+                        userId:
+                            req.user.id
+                    },
 
-                userId: req.user.id
+                    include: [
+                        {
+                            model:
+                                Product
+                        }
+                    ],
 
-            },
+                    order: [
+                        [
+                            "createdAt",
+                            "DESC"
+                        ]
+                    ],
 
-            include: [
+                    limit:
+                        20
+                });
 
-                {
+            const products =
+                views.map(
+                    (view) => {
 
-                    model: Product
+                        const data =
+                            typeof view.toJSON ===
+                            "function"
+                                ? view.toJSON()
+                                : view;
 
-                }
+                        if (
+                            data.product
+                        ) {
 
-            ],
+                            data.product =
+                                formatProduct(
+                                    data.product
+                                );
+                        }
 
-            order: [
+                        return data;
+                    }
+                );
 
-                ["createdAt", "DESC"]
+            return res.json({
+                success: true,
+                products
+            });
 
-            ],
+        } catch (error) {
 
-            limit: 20
+            console.error(
+                "GET RECENTLY VIEWED ERROR:",
+                error
+            );
 
-        });
+            return res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
+        }
+    };
 
-        return res.json({
-
-            success: true,
-
-            products: views
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 
 /* ===========================================================
    RECOMMENDED PRODUCTS
 =========================================================== */
 
-exports.getRecommendedProducts = async (req, res) => {
+exports.getRecommendedProducts =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const products = await Product.findAll({
+            const products =
+                await getHomepagePromotionProducts(
+                    "BOOST"
+                );
 
-            where: {
+            return res.json({
+                success: true,
+                products
+            });
 
-                status: "Approved"
+        } catch (error) {
 
-            },
+            console.error(
+                "GET RECOMMENDED PRODUCTS ERROR:",
+                error
+            );
 
-            order: [
+            return res.status(500).json({
+                success: false,
+                message:
+                    "Unable to load recommended products."
+            });
+        }
+    };
 
-                ["aiRecommended", "DESC"],
 
-                ["homepagePriority", "DESC"],
-
-                ["featured", "DESC"],
-
-                ["express", "DESC"],
-
-                ["qualityScore", "DESC"],
-
-                ["listingScore", "DESC"]
-
-            ],
-
-            limit: 20
-
-        });
-
-        return res.json({
-
-            success: true,
-
-            products
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};/* ===========================================================
-   GET PENDING PRODUCTS (ADMIN)
-=========================================================== */
-
-exports.getRecommendedProducts = async (req, res) => {
-
-    try {
-
-        const promotions = await ProductPromotion.findAll({
-
-            where: {
-
-                promotionType: "BOOST",
-
-                paymentStatus: "PAID",
-
-                status: "APPROVED",
-
-                showOnHomepage: true,
-
-                endDate: {
-
-                    [Op.gt]: new Date()
-
-                }
-
-            },
-
-            include: [
-
-                {
-
-                    model: Product,
-
-                    as: "product",
-
-                    where: {
-
-                        status: "Approved",
-
-                        deleted: false,
-
-                        boosted: true
-
-                    }
-
-                }
-
-            ],
-
-            order: [
-
-                ["homepageOrder", "ASC"],
-
-                ["approvedAt", "DESC"]
-
-            ]
-
-        });
-
-        const products = promotions.map((promotion) => {
-
-            const product = promotion.product;
-
-            if (product && product.images) {
-
-                try {
-
-                    product.images = JSON.parse(product.images);
-
-                }
-
-                catch {
-
-                    product.images = [];
-
-                }
-
-            }
-
-            return product;
-
-        });
-
-        return res.json({
-
-            success: true,
-
-            products
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 /* ===========================================================
    APPROVE PRODUCT
 =========================================================== */
 
-exports.approveProduct = async (req, res) => {
+exports.approveProduct =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const product = await Product.findByPk(req.params.id);
+            const product =
+                await Product.findByPk(
+                    req.params.id
+                );
 
-        if (!product) {
+            if (!product) {
 
-            return res.status(404).json({
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Product not found."
+                });
+            }
 
-                success: false,
+            product.status =
+                "Approved";
 
-                message: "Product not found."
+            product.displayDate =
+                new Date();
 
+            product.deleted =
+                false;
+
+            await product.save();
+
+            return res.json({
+                success: true,
+
+                message:
+                    "Product approved successfully.",
+
+                product:
+                    formatProduct(
+                        product
+                    )
             });
 
+        } catch (error) {
+
+            console.error(
+                "APPROVE PRODUCT ERROR:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
         }
+    };
 
-        product.status = "Approved";
-
-        product.displayDate = new Date();
-
-        await product.save();
-
-        return res.json({
-
-            success: true,
-
-            message: "Product approved successfully.",
-
-            product
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 
 /* ===========================================================
    REJECT PRODUCT
 =========================================================== */
 
-exports.rejectProduct = async (req, res) => {
+exports.rejectProduct =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const product = await Product.findByPk(req.params.id);
+            const product =
+                await Product.findByPk(
+                    req.params.id
+                );
 
-        if (!product) {
+            if (!product) {
 
-            return res.status(404).json({
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Product not found."
+                });
+            }
 
-                success: false,
+            product.status =
+                "Rejected";
 
-                message: "Product not found."
+            product.rejectionReason =
+                req.body.reason ||
+                "Rejected by administrator.";
 
+            await product.save();
+
+            return res.json({
+                success: true,
+                message:
+                    "Product rejected."
             });
 
+        } catch (error) {
+
+            console.error(
+                "REJECT PRODUCT ERROR:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
         }
+    };
 
-        product.status = "Rejected";
-
-        product.rejectionReason =
-
-            req.body.reason ||
-
-            "Rejected by administrator.";
-
-        await product.save();
-
-        return res.json({
-
-            success: true,
-
-            message: "Product rejected."
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 
 /* ===========================================================
    RESTORE PRODUCT
 =========================================================== */
 
-exports.restoreProduct = async (req, res) => {
+exports.restoreProduct =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const product = await Product.findByPk(req.params.id);
+            const product =
+                await Product.findByPk(
+                    req.params.id
+                );
 
-        if (!product) {
+            if (!product) {
 
-            return res.status(404).json({
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Product not found."
+                });
+            }
 
-                success: false,
+            product.status =
+                "Approved";
 
-                message: "Product not found."
+            product.deleted =
+                false;
 
+            await product.save();
+
+            return res.json({
+                success: true,
+
+                message:
+                    "Product restored.",
+
+                product:
+                    formatProduct(
+                        product
+                    )
             });
 
+        } catch (error) {
+
+            console.error(
+                "RESTORE PRODUCT ERROR:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
         }
+    };
 
-        product.status = "Approved";
-
-        await product.save();
-
-        return res.json({
-
-            success: true,
-
-            message: "Product restored.",
-
-            product
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 
 /* ===========================================================
-   PERMANENT DELETE
+   ADMIN PERMANENT DELETE
 =========================================================== */
 
-exports.adminDeleteProduct = async (req, res) => {
+exports.adminDeleteProduct =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const product = await Product.findByPk(req.params.id);
+            const product =
+                await Product.findByPk(
+                    req.params.id
+                );
 
-        if (!product) {
+            if (!product) {
 
-            return res.status(404).json({
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Product not found."
+                });
+            }
 
-                success: false,
-
-                message: "Product not found."
-
+            await Wishlist.destroy({
+                where: {
+                    productId:
+                        product.id
+                }
             });
 
+            await ProductView.destroy({
+                where: {
+                    productId:
+                        product.id
+                }
+            });
+
+            await product.destroy();
+
+            await deleteProductImages(
+                product
+            );
+
+            return res.json({
+                success: true,
+                message:
+                    "Product permanently deleted."
+            });
+
+        } catch (error) {
+
+            console.error(
+                "ADMIN DELETE PRODUCT ERROR:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    "Unable to permanently delete product."
+            });
         }
+    };
 
-        await Wishlist.destroy({
-
-            where: {
-
-                productId: product.id
-
-            }
-
-        });
-
-        await ProductView.destroy({
-
-            where: {
-
-                productId: product.id
-
-            }
-
-        });
-
-        await product.destroy();
-
-        return res.json({
-
-            success: true,
-
-            message: "Product permanently deleted."
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 
 /* ===========================================================
    MARKETPLACE STATISTICS
 =========================================================== */
 
-exports.getMarketplaceStatistics = async (req, res) => {
+exports.getMarketplaceStatistics =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const totalProducts = await Product.count();
+            const totalProducts =
+                await Product.count();
 
-        const approvedProducts = await Product.count({
+            const approvedProducts =
+                await Product.count({
+                    where: {
+                        status:
+                            "Approved"
+                    }
+                });
 
-            where: {
+            const pendingProducts =
+                await Product.count({
+                    where: {
+                        status:
+                            "Pending"
+                    }
+                });
 
-                status: "Approved"
+            const rejectedProducts =
+                await Product.count({
+                    where: {
+                        status:
+                            "Rejected"
+                    }
+                });
 
-            }
+            const featuredProducts =
+                await Product.count({
+                    where: {
+                        featured:
+                            true
+                    }
+                });
 
-        });
+            const expressProducts =
+                await Product.count({
+                    where: {
+                        express:
+                            true
+                    }
+                });
 
-        const pendingProducts = await Product.count({
+            const totalViews =
+                await Product.sum(
+                    "views"
+                );
 
-            where: {
+            return res.json({
+                success: true,
 
-                status: "Pending"
+                statistics: {
+                    totalProducts,
+                    approvedProducts,
+                    pendingProducts,
+                    rejectedProducts,
+                    featuredProducts,
+                    expressProducts,
+                    totalViews:
+                        totalViews || 0
+                }
+            });
 
-            }
+        } catch (error) {
 
-        });
+            console.error(
+                "GET MARKETPLACE STATISTICS ERROR:",
+                error
+            );
 
-        const rejectedProducts = await Product.count({
+            return res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
+        }
+    };
 
-            where: {
 
-                status: "Rejected"
-
-            }
-
-        });
-
-        const featuredProducts = await Product.count({
-
-            where: {
-
-                featured: true
-
-            }
-
-        });
-
-        const expressProducts = await Product.count({
-
-            where: {
-
-                express: true
-
-            }
-
-        });
-
-        const totalViews = await Product.sum(
-
-            "views"
-
-        );
-
-        return res.json({
-
-            success: true,
-
-            statistics: {
-
-                totalProducts,
-
-                approvedProducts,
-
-                pendingProducts,
-
-                rejectedProducts,
-
-                featuredProducts,
-
-                expressProducts,
-
-                totalViews: totalViews || 0
-
-            }
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};/* ===========================================================
+/* ===========================================================
    RECORD SHARE
 =========================================================== */
 
-exports.recordShare = async (req, res) => {
+exports.recordShare =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const product = await Product.findByPk(req.params.id);
+            const product =
+                await Product.findByPk(
+                    req.params.id
+                );
 
-        if (!product) {
+            if (!product) {
 
-            return res.status(404).json({
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Product not found."
+                });
+            }
 
-                success: false,
+            product.shares =
+                Number(
+                    product.shares || 0
+                ) + 1;
 
-                message: "Product not found."
+            product.listingScore =
+                Number(
+                    product.listingScore || 0
+                ) + 2;
 
+            await product.save();
+
+            return res.json({
+                success: true,
+                shares:
+                    product.shares
             });
 
+        } catch (error) {
+
+            console.error(
+                "RECORD SHARE ERROR:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
         }
+    };
 
-        product.shares += 1;
-
-        product.listingScore += 2;
-
-        await product.save();
-
-        return res.json({
-
-            success: true,
-
-            shares: product.shares
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 
 /* ===========================================================
    RECORD CHAT
 =========================================================== */
 
-exports.recordChat = async (req, res) => {
+exports.recordChat =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const product = await Product.findByPk(req.params.id);
+            const product =
+                await Product.findByPk(
+                    req.params.id
+                );
 
-        if (!product) {
+            if (!product) {
 
-            return res.status(404).json({
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Product not found."
+                });
+            }
 
-                success: false,
+            product.chatCount =
+                Number(
+                    product.chatCount || 0
+                ) + 1;
 
-                message: "Product not found."
+            product.listingScore =
+                Number(
+                    product.listingScore || 0
+                ) + 5;
 
+            await product.save();
+
+            return res.json({
+                success: true,
+                chats:
+                    product.chatCount
             });
 
+        } catch (error) {
+
+            console.error(
+                "RECORD CHAT ERROR:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
         }
+    };
 
-        product.chatCount += 1;
-
-        product.listingScore += 5;
-
-        await product.save();
-
-        return res.json({
-
-            success: true,
-
-            chats: product.chatCount
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 
 /* ===========================================================
    NEARBY PRODUCTS
 =========================================================== */
 
-exports.getNearbyProducts = async (req, res) => {
+exports.getNearbyProducts =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const user = await User.findByPk(req.user.id);
+            const user =
+                await User.findByPk(
+                    req.user.id
+                );
 
-        if (!user) {
+            if (!user) {
 
-            return res.status(404).json({
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "User not found."
+                });
+            }
 
-                success: false,
+            const products =
+                await Product.findAll({
 
-                message: "User not found."
+                    where: {
 
+                        status:
+                            "Approved",
+
+                        deleted:
+                            false,
+
+                        region:
+                            user.region
+                    },
+
+                    order: [
+
+                        [
+                            "homepagePriority",
+                            "DESC"
+                        ],
+
+                        [
+                            "featured",
+                            "DESC"
+                        ],
+
+                        [
+                            "listingScore",
+                            "DESC"
+                        ],
+
+                        [
+                            "createdAt",
+                            "DESC"
+                        ]
+                    ],
+
+                    limit:
+                        20
+                });
+
+            return res.json({
+                success: true,
+
+                products:
+                    formatProducts(
+                        products
+                    )
             });
 
+        } catch (error) {
+
+            console.error(
+                "GET NEARBY PRODUCTS ERROR:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
         }
+    };
 
-        const products = await Product.findAll({
-
-            where: {
-
-                status: "Approved",
-
-                region: user.region
-
-            },
-
-            order: [
-
-                ["homepagePriority","DESC"],
-
-                ["featured","DESC"],
-
-                ["listingScore","DESC"],
-
-                ["createdAt","DESC"]
-
-            ],
-
-            limit: 20
-
-        });
-
-        return res.json({
-
-            success: true,
-
-            products
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
 
 /* ===========================================================
    BOOST PRODUCT
 =========================================================== */
-exports.boostProduct = async (req, res) => {
 
-    req.body.productId = req.params.id;
+exports.boostProduct =
+    async (req, res) => {
 
-    req.body.promotionType = "Boost";
+        req.body.productId =
+            req.params.id;
 
-    return require("./promotionController")
+        req.body.promotionType =
+            "Boost";
 
-        .initializePromotion(req, res);
-return promotionController.initializePromotion(req, res);
-};
+        return promotionController
+            .initializePromotion(
+                req,
+                res
+            );
+    };
+
 
 /* ===========================================================
    FEATURE PRODUCT
 =========================================================== */
 
-exports.featureProduct = async (req, res) => {
+exports.featureProduct =
+    async (req, res) => {
 
-    req.body.productId = req.params.id;
+        req.body.productId =
+            req.params.id;
 
-    req.body.promotionType = "Feature";
+        req.body.promotionType =
+            "Feature";
 
-    return require("./promotionController")
+        return promotionController
+            .initializePromotion(
+                req,
+                res
+            );
+    };
 
-        .initializePromotion(req, res);
-return promotionController.initializePromotion(req, res);
-};
+
 /* ===========================================================
    EXPRESS PRODUCT
 =========================================================== */
 
-exports.expressProduct = async (req, res) => {
+exports.expressProduct =
+    async (req, res) => {
 
-    req.body.productId = req.params.id;
+        req.body.productId =
+            req.params.id;
 
-    req.body.promotionType = "Express";
+        req.body.promotionType =
+            "Express";
 
-    return require("./promotionController")
+        return promotionController
+            .initializePromotion(
+                req,
+                res
+            );
+    };
 
-        .initializePromotion(req, res);
-return promotionController.initializePromotion(req, res);
-};/* ===========================================================
+
+/* ===========================================================
    GET RELATED PRODUCTS
 =========================================================== */
 
-exports.getRelatedProducts = async (req, res) => {
+exports.getRelatedProducts =
+    async (req, res) => {
 
-    try {
+        try {
 
-        const product = await Product.findByPk(req.params.id);
+            const product =
+                await Product.findByPk(
+                    req.params.id
+                );
 
-        if (!product) {
+            if (!product) {
 
-            return res.status(404).json({
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Product not found."
+                });
+            }
 
-                success: false,
+            const products =
+                await Product.findAll({
 
-                message: "Product not found."
+                    where: {
 
+                        id: {
+                            [Op.ne]:
+                                product.id
+                        },
+
+                        category:
+                            product.category,
+
+                        status:
+                            "Approved",
+
+                        deleted:
+                            false
+                    },
+
+                    order: [
+
+                        [
+                            "homepagePriority",
+                            "DESC"
+                        ],
+
+                        [
+                            "featured",
+                            "DESC"
+                        ],
+
+                        [
+                            "express",
+                            "DESC"
+                        ],
+
+                        [
+                            "listingScore",
+                            "DESC"
+                        ],
+
+                        [
+                            "createdAt",
+                            "DESC"
+                        ]
+                    ],
+
+                    limit:
+                        8
+                });
+
+            return res.json({
+                success: true,
+
+                products:
+                    formatProducts(
+                        products
+                    )
             });
 
+        } catch (error) {
+
+            console.error(
+                "GET RELATED PRODUCTS ERROR:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
         }
-
-        const products = await Product.findAll({
-
-            where: {
-
-                id: {
-
-                    [Op.ne]: product.id
-
-                },
-
-                category: product.category,
-
-                status: "Approved"
-
-            },
-
-            order: [
-
-                ["homepagePriority", "DESC"],
-
-                ["featured", "DESC"],
-
-                ["express", "DESC"],
-
-                ["listingScore", "DESC"],
-
-                ["createdAt", "DESC"]
-
-            ],
-
-            limit: 8
-
-        });
-
-        return res.json({
-
-            success: true,
-
-            products
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
+    };

@@ -4,136 +4,302 @@ const {
     DeleteObjectCommand
 } = require("@aws-sdk/client-s3");
 
-const requiredEnv = [
+const REQUIRED_ENV = [
     "R2_ACCOUNT_ID",
     "R2_ACCESS_KEY_ID",
     "R2_SECRET_ACCESS_KEY",
     "R2_BUCKET_NAME"
 ];
 
-for (const key of requiredEnv) {
+/*
+|--------------------------------------------------------------------------
+| Validate environment variables
+|--------------------------------------------------------------------------
+*/
+
+for (const key of REQUIRED_ENV) {
     if (!process.env[key]) {
         console.warn(`[R2] Missing environment variable: ${key}`);
     }
 }
 
-const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
-const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
-const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
-const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
+/*
+|--------------------------------------------------------------------------
+| Environment
+|--------------------------------------------------------------------------
+*/
+
+const R2_ACCOUNT_ID =
+    process.env.R2_ACCOUNT_ID?.trim();
+
+const R2_ACCESS_KEY_ID =
+    process.env.R2_ACCESS_KEY_ID?.trim();
+
+const R2_SECRET_ACCESS_KEY =
+    process.env.R2_SECRET_ACCESS_KEY?.trim();
+
+const R2_BUCKET_NAME =
+    process.env.R2_BUCKET_NAME?.trim();
+
+const R2_REGION =
+    process.env.R2_REGION?.trim() || "auto";
+
+/*
+|--------------------------------------------------------------------------
+| R2 S3 Endpoint
+|--------------------------------------------------------------------------
+*/
 
 const R2_ENDPOINT =
-    process.env.R2_ENDPOINT ||
-    (R2_ACCOUNT_ID
-        ? `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
-        : null);
+    process.env.R2_ENDPOINT?.trim() ||
+    (
+        R2_ACCOUNT_ID
+            ? `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
+            : null
+    );
 
-const R2_REGION = process.env.R2_REGION || "auto";
+/*
+|--------------------------------------------------------------------------
+| Public CDN URL
+|--------------------------------------------------------------------------
+|
+| Production:
+|
+| R2_PUBLIC_URL=https://cdn.kadmarket.com
+|
+*/
 
 const R2_PUBLIC_URL =
-    process.env.R2_PUBLIC_URL || "";
+    process.env.R2_PUBLIC_URL
+        ?.trim()
+        .replace(/\/+$/, "") || "";
+
+/*
+|--------------------------------------------------------------------------
+| R2 Client
+|--------------------------------------------------------------------------
+*/
 
 const r2Client =
     R2_ENDPOINT &&
     R2_ACCESS_KEY_ID &&
-    R2_SECRET_ACCESS_KEY
+    R2_SECRET_ACCESS_KEY &&
+    R2_BUCKET_NAME
         ? new S3Client({
               region: R2_REGION,
+
               endpoint: R2_ENDPOINT,
+
               credentials: {
-                  accessKeyId: R2_ACCESS_KEY_ID,
-                  secretAccessKey: R2_SECRET_ACCESS_KEY
-              }
+                  accessKeyId:
+                      R2_ACCESS_KEY_ID,
+
+                  secretAccessKey:
+                      R2_SECRET_ACCESS_KEY
+              },
+
+              forcePathStyle: false
           })
         : null;
 
+/*
+|--------------------------------------------------------------------------
+| Verify R2 configuration
+|--------------------------------------------------------------------------
+*/
 
-/**
- * Upload a file to Cloudflare R2
- */
-const uploadToR2 = async ({
+function assertConfigured() {
+
+    if (!r2Client) {
+
+        throw new Error(
+            "Cloudflare R2 is not configured. " +
+            "Check R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, " +
+            "R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME " +
+            "and R2_ENDPOINT."
+        );
+
+    }
+
+}
+
+/*
+|--------------------------------------------------------------------------
+| Normalize object key
+|--------------------------------------------------------------------------
+*/
+
+function normalizeKey(key) {
+
+    return String(key || "")
+        .trim()
+        .replace(/^\/+/, "");
+
+}
+
+/*
+|--------------------------------------------------------------------------
+| Generate public R2 URL
+|--------------------------------------------------------------------------
+*/
+
+function getR2PublicUrl(key) {
+
+    const normalizedKey =
+        normalizeKey(key);
+
+    if (
+        !normalizedKey ||
+        !R2_PUBLIC_URL
+    ) {
+        return null;
+    }
+
+    return (
+        `${R2_PUBLIC_URL}/` +
+        normalizedKey
+            .split("/")
+            .map(
+                encodeURIComponent
+            )
+            .join("/")
+    );
+
+}
+
+/*
+|--------------------------------------------------------------------------
+| Upload object to R2
+|--------------------------------------------------------------------------
+*/
+
+async function uploadToR2({
     key,
     buffer,
-    contentType
-}) => {
-    if (!r2Client) {
+    contentType,
+    cacheControl =
+        "public, max-age=31536000, immutable"
+}) {
+
+    assertConfigured();
+
+    const normalizedKey =
+        normalizeKey(key);
+
+    if (!normalizedKey) {
+
         throw new Error(
-            "Cloudflare R2 is not configured correctly."
+            "R2 upload requires an object key."
         );
+
     }
 
-    if (!key) {
-        throw new Error("R2 upload requires an object key.");
+    if (
+        !Buffer.isBuffer(buffer) ||
+        buffer.length === 0
+    ) {
+
+        throw new Error(
+            "R2 upload requires a non-empty file buffer."
+        );
+
     }
 
-    if (!buffer) {
-        throw new Error("R2 upload requires a file buffer.");
-    }
+    const command =
+        new PutObjectCommand({
 
-    const command = new PutObjectCommand({
-        Bucket: R2_BUCKET_NAME,
-        Key: key,
-        Body: buffer,
-        ContentType: contentType
-    });
+            Bucket:
+                R2_BUCKET_NAME,
 
-    await r2Client.send(command);
+            Key:
+                normalizedKey,
+
+            Body:
+                buffer,
+
+            ContentType:
+                contentType ||
+                "application/octet-stream",
+
+            CacheControl:
+                cacheControl
+
+        });
+
+    await r2Client.send(
+        command
+    );
 
     return {
-        key,
-        url: getR2PublicUrl(key)
+
+        key:
+            normalizedKey,
+
+        url:
+            getR2PublicUrl(
+                normalizedKey
+            )
+
     };
-};
 
+}
 
-/**
- * Delete a file from Cloudflare R2
- */
-const deleteFromR2 = async (key) => {
-    if (!key) {
+/*
+|--------------------------------------------------------------------------
+| Delete object from R2
+|--------------------------------------------------------------------------
+*/
+
+async function deleteFromR2(key) {
+
+    const normalizedKey =
+        normalizeKey(key);
+
+    if (!normalizedKey) {
         return;
     }
 
-    if (!r2Client) {
-        throw new Error(
-            "Cloudflare R2 is not configured correctly."
-        );
-    }
+    assertConfigured();
 
-    const command = new DeleteObjectCommand({
-        Bucket: R2_BUCKET_NAME,
-        Key: key
-    });
+    const command =
+        new DeleteObjectCommand({
 
-    await r2Client.send(command);
-};
+            Bucket:
+                R2_BUCKET_NAME,
 
+            Key:
+                normalizedKey
 
-/**
- * Convert an R2 object key into its public URL
- */
-const getR2PublicUrl = (key) => {
-    if (!key) {
-        return null;
-    }
+        });
 
-    if (!R2_PUBLIC_URL) {
-        return null;
-    }
+    await r2Client.send(
+        command
+    );
 
-    return `${R2_PUBLIC_URL.replace(/\/+$/, "")}/${key
-        .split("/")
-        .map(encodeURIComponent)
-        .join("/")}`;
-};
+}
 
+/*
+|--------------------------------------------------------------------------
+| Exports
+|--------------------------------------------------------------------------
+*/
 
 module.exports = {
+
     r2Client,
+
     R2_BUCKET_NAME,
+
     R2_ENDPOINT,
+
     R2_PUBLIC_URL,
+
+    R2_REGION,
+
     uploadToR2,
+
     deleteFromR2,
+
     getR2PublicUrl
+
 };

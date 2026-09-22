@@ -4,233 +4,536 @@ const crypto = require("crypto");
 
 const {
     uploadToR2,
+    deleteFromR2,
     getR2PublicUrl
 } = require("../config/r2");
 
 /*
-=====================================================
-MULTER MEMORY STORAGE
-=====================================================
-Files are temporarily held in memory and then
-uploaded directly to Cloudflare R2.
-
-Nothing is permanently written to Railway's disk.
-=====================================================
+|--------------------------------------------------------------------------
+| Upload configuration
+|--------------------------------------------------------------------------
 */
 
-const storage = multer.memoryStorage();
+const MAX_FILE_SIZE =
+    5 * 1024 * 1024;
+
+const R2_UPLOAD_PREFIX =
+    "uploads";
 
 /*
-=====================================================
-FILE FILTER
-=====================================================
+|--------------------------------------------------------------------------
+| Allowed image types
+|--------------------------------------------------------------------------
 */
 
-const fileFilter = (req, file, cb) => {
-    const allowedMimeTypes = [
+const allowedMimeTypes =
+    new Set([
         "image/jpeg",
         "image/png",
         "image/webp"
-    ];
+    ]);
 
-    const allowedExtensions =
-        /\.(jpg|jpeg|png|webp)$/i;
-
-    const extensionValid =
-        allowedExtensions.test(
-            file.originalname
-        );
-
-    const mimeValid =
-        allowedMimeTypes.includes(
-            file.mimetype
-        );
-
-    if (mimeValid && extensionValid) {
-        return cb(null, true);
-    }
-
-    return cb(
-        new Error(
-            "Only JPG, JPEG, PNG and WEBP images are allowed."
-        )
-    );
-};
+const allowedExtensions =
+    /\.(jpg|jpeg|png|webp)$/i;
 
 /*
-=====================================================
-MULTER
-=====================================================
+|--------------------------------------------------------------------------
+| Multer memory storage
+|--------------------------------------------------------------------------
+|
+| Files are kept in memory temporarily.
+|
+| They are then uploaded directly to Cloudflare R2.
+|
 */
 
-const multerUpload = multer({
-    storage,
-    fileFilter,
-
-    limits: {
-        fileSize: 5 * 1024 * 1024
-    }
-});
+const storage =
+    multer.memoryStorage();
 
 /*
-=====================================================
-GENERATE R2 OBJECT KEY
-=====================================================
+|--------------------------------------------------------------------------
+| File validation
+|--------------------------------------------------------------------------
 */
 
-const createR2Key = (file) => {
+const fileFilter =
+    (req, file, cb) => {
+
+        const extensionValid =
+            allowedExtensions.test(
+                path.basename(
+                    file.originalname || ""
+                )
+            );
+
+        const mimeValid =
+            allowedMimeTypes.has(
+                file.mimetype
+            );
+
+        if (
+            extensionValid &&
+            mimeValid
+        ) {
+
+            return cb(
+                null,
+                true
+            );
+
+        }
+
+        return cb(
+            new multer.MulterError(
+                "LIMIT_UNEXPECTED_FILE",
+                file.fieldname
+            ),
+            false
+        );
+
+    };
+
+/*
+|--------------------------------------------------------------------------
+| Multer
+|--------------------------------------------------------------------------
+*/
+
+const multerUpload =
+    multer({
+
+        storage,
+
+        fileFilter,
+
+        limits: {
+
+            fileSize:
+                MAX_FILE_SIZE
+
+        }
+
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Create unique R2 object key
+|--------------------------------------------------------------------------
+*/
+
+function createObjectKey(file) {
+
     const extension =
         path
-            .extname(file.originalname)
+            .extname(
+                file.originalname || ""
+            )
             .toLowerCase();
 
-    const uniqueId =
-        `${Date.now()}-${crypto.randomBytes(8).toString("hex")}`;
+    const uniqueName =
+        `${Date.now()}-` +
+        `${crypto.randomBytes(8).toString("hex")}` +
+        `${extension}`;
 
-    /*
-    Keep uploads organized inside R2.
-    */
+    return (
+        `${R2_UPLOAD_PREFIX}/` +
+        uniqueName
+    );
 
-    return `uploads/${uniqueId}${extension}`;
-};
+}
 
 /*
-=====================================================
-UPLOAD FILE TO R2
-=====================================================
+|--------------------------------------------------------------------------
+| Collect files from request
+|--------------------------------------------------------------------------
 */
 
-const processR2Files = async (req) => {
+function getRequestFiles(req) {
+
     const files = [];
 
+    /*
+    |--------------------------------------------------------------------------
+    | upload.single()
+    |--------------------------------------------------------------------------
+    */
+
     if (req.file) {
-        files.push(req.file);
+
+        files.push(
+            req.file
+        );
+
     }
 
-    if (Array.isArray(req.files)) {
-        files.push(...req.files);
-    } else if (req.files && typeof req.files === "object") {
-        Object.values(req.files).forEach((fieldFiles) => {
-            if (Array.isArray(fieldFiles)) {
-                files.push(...fieldFiles);
+    /*
+    |--------------------------------------------------------------------------
+    | upload.array()
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        Array.isArray(
+            req.files
+        )
+    ) {
+
+        files.push(
+            ...req.files
+        );
+
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | upload.fields()
+    |--------------------------------------------------------------------------
+    */
+
+    else if (
+        req.files &&
+        typeof req.files === "object"
+    ) {
+
+        Object.values(
+            req.files
+        ).forEach(
+            fieldFiles => {
+
+                if (
+                    Array.isArray(
+                        fieldFiles
+                    )
+                ) {
+
+                    files.push(
+                        ...fieldFiles
+                    );
+
+                }
+
             }
-        });
+        );
+
     }
 
-    if (files.length === 0) {
-        return;
-    }
+    return files;
 
-    await Promise.all(
-        files.map(async (file) => {
-            const key = createR2Key(file);
-
-            await uploadToR2({
-                buffer: file.buffer,
-                key,
-                contentType: file.mimetype
-            });
-
-            /*
-            =================================================
-            COMPATIBILITY VALUES
-            =================================================
-
-            filename = R2 object key
-
-            This is important because your existing
-            controllers may already use:
-
-                req.file.filename
-
-            We keep that working.
-            */
-
-            file.filename = key;
-
-            file.key = key;
-
-            file.r2Key = key;
-
-            file.location =
-                getR2PublicUrl(key);
-
-            file.r2Url =
-                getR2PublicUrl(key);
-
-            /*
-            The file is no longer stored on Railway.
-            */
-
-            delete file.buffer;
-        })
-    );
-};
+}
 
 /*
-=====================================================
-ERROR HANDLER
-=====================================================
+|--------------------------------------------------------------------------
+| Cleanup R2 files
+|--------------------------------------------------------------------------
 */
 
-const runUpload = (method, args) => {
-    return (req, res, next) => {
-        const middleware =
-            multerUpload[method](...args);
+async function cleanupFiles(
+    files
+) {
 
-        middleware(req, res, async (error) => {
-            if (error) {
-                return next(error);
-            }
+    if (
+        !Array.isArray(files) ||
+        files.length === 0
+    ) {
 
-            try {
-                await processR2Files(req);
+        return;
 
-                next();
-            } catch (r2Error) {
-                console.error(
-                    "[R2] Upload failed:",
-                    r2Error
-                );
+    }
 
-                next(r2Error);
-            }
-        });
-    };
-};
+    const keys = [
+        ...new Set(
+
+            files
+
+                .map(
+                    file =>
+                        file?.r2Key ||
+                        file?.key
+                )
+
+                .filter(Boolean)
+
+        )
+    ];
+
+    await Promise.allSettled(
+
+        keys.map(
+            key =>
+                deleteFromR2(
+                    key
+                )
+        )
+
+    );
+
+}
 
 /*
-=====================================================
-PUBLIC UPLOAD API
-=====================================================
+|--------------------------------------------------------------------------
+| Upload files to R2
+|--------------------------------------------------------------------------
+*/
 
-Keeps compatibility with:
+async function processR2Files(
+    req
+) {
 
-upload.single(...)
-upload.array(...)
-upload.fields(...)
-upload.none(...)
-=====================================================
+    const files =
+        getRequestFiles(req);
+
+    if (
+        files.length === 0
+    ) {
+
+        return;
+
+    }
+
+    const uploaded = [];
+
+    try {
+
+        await Promise.all(
+
+            files.map(
+                async file => {
+
+                    const key =
+                        createObjectKey(
+                            file
+                        );
+
+                    const result =
+                        await uploadToR2({
+
+                            key,
+
+                            buffer:
+                                file.buffer,
+
+                            contentType:
+                                file.mimetype
+
+                        });
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Backward compatibility
+                    |--------------------------------------------------------------------------
+                    |
+                    | Existing controllers use:
+                    |
+                    | file.filename
+                    |
+                    */
+
+                    file.filename =
+                        path.basename(
+                            key
+                        );
+
+                    file.originalFilename =
+                        file.originalname;
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | R2 metadata
+                    |--------------------------------------------------------------------------
+                    */
+
+                    file.r2Key =
+                        result.key;
+
+                    file.key =
+                        result.key;
+
+                    file.location =
+                        result.url ||
+                        getR2PublicUrl(
+                            result.key
+                        ) ||
+                        null;
+
+                    file.storage =
+                        "r2";
+
+                    uploaded.push(
+                        file
+                    );
+
+                }
+            )
+
+        );
+
+    }
+
+    catch (error) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | If one upload fails, delete
+        | everything that already uploaded.
+        |--------------------------------------------------------------------------
+        */
+
+        await cleanupFiles(
+            uploaded
+        );
+
+        throw error;
+
+    }
+
+    finally {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Release image buffers
+        |--------------------------------------------------------------------------
+        */
+
+        files.forEach(
+            file => {
+
+                delete file.buffer;
+
+            }
+        );
+
+    }
+
+}
+
+/*
+|--------------------------------------------------------------------------
+| Wrap Multer and R2
+|--------------------------------------------------------------------------
+*/
+
+function withR2(
+    multerMiddleware
+) {
+
+    return (
+        req,
+        res,
+        next
+    ) => {
+
+        multerMiddleware(
+            req,
+            res,
+            async error => {
+
+                if (error) {
+
+                    return next(
+                        error
+                    );
+
+                }
+
+                try {
+
+                    await processR2Files(
+                        req
+                    );
+
+                    return next();
+
+                }
+
+                catch (
+                    uploadError
+                ) {
+
+                    return next(
+                        uploadError
+                    );
+
+                }
+
+            }
+        );
+
+    };
+
+}
+
+/*
+|--------------------------------------------------------------------------
+| Public upload API
+|--------------------------------------------------------------------------
 */
 
 const upload = {
-    single: (fieldName) =>
-        runUpload("single", [fieldName]),
 
-    array: (fieldName, maxCount) =>
-        runUpload(
-            "array",
-            [fieldName, maxCount]
-        ),
+    single(fieldName) {
 
-    fields: (fields) =>
-        runUpload(
-            "fields",
-            [fields]
-        ),
+        return withR2(
+            multerUpload.single(
+                fieldName
+            )
+        );
 
-    none: () =>
-        runUpload("none", [])
+    },
+
+    array(
+        fieldName,
+        maxCount
+    ) {
+
+        return withR2(
+            multerUpload.array(
+                fieldName,
+                maxCount
+            )
+        );
+
+    },
+
+    fields(fields) {
+
+        return withR2(
+            multerUpload.fields(
+                fields
+            )
+        );
+
+    },
+
+    any() {
+
+        return withR2(
+            multerUpload.any()
+        );
+
+    },
+
+    none() {
+
+        return multerUpload.none();
+
+    }
+
 };
 
-module.exports = upload;
+/*
+|--------------------------------------------------------------------------
+| Expose processor when needed
+|--------------------------------------------------------------------------
+*/
+
+upload.processR2Files =
+    processR2Files;
+
+/*
+|--------------------------------------------------------------------------
+| Export
+|--------------------------------------------------------------------------
+*/
+
+module.exports =
+    upload;
