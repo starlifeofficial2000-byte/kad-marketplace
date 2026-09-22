@@ -7,7 +7,7 @@ import {
     FaTimesCircle
 } from "react-icons/fa";
 
-import api from "../../services/api";
+import api from "../../config/api";
 import "./SubscriptionPage.css";
 
 
