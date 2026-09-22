@@ -688,21 +688,20 @@ else {
 
     }
 
-    catch (error) {
+   catch (error) {
+    await transaction.rollback();
 
-        await transaction.rollback();
+    console.error("🔥 CREATE PRODUCT ERROR");
+    console.error("Message:", error?.message);
+    console.error("Name:", error?.name);
+    console.error("Code:", error?.code);
+    console.error("Stack:", error?.stack);
 
-        console.log(error);
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
+    return res.status(500).json({
+        success: false,
+        message: "Internal server error."
+    });
+}
 
 };
 /* ===========================================================
