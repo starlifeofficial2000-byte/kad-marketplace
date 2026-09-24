@@ -1,21 +1,33 @@
 const FALLBACK_IMAGE =
     "/images/product-placeholder.png";
 
-
-/* =========================================================
-   GET R2/CDN PUBLIC URL
-========================================================= */
+/*
+ * =========================================================
+ * KAD MARKETPLACE CDN
+ * =========================================================
+ *
+ * This is a PUBLIC URL.
+ * It is safe to use as a frontend fallback.
+ *
+ * VITE_R2_PUBLIC_URL can still override it when configured.
+ */
+const DEFAULT_CDN_URL =
+    "https://cdn.kadmarket.com";
 
 const R2_PUBLIC_URL =
-    import.meta.env.VITE_R2_PUBLIC_URL
-        ?.trim()
-        .replace(/\/+$/, "") || "";
+    (
+        import.meta.env.VITE_R2_PUBLIC_URL ||
+        DEFAULT_CDN_URL
+    )
+        .trim()
+        .replace(/\/+$/, "");
 
 
-/* =========================================================
-   NORMALIZE IMAGE KEY
-========================================================= */
-
+/*
+ * =========================================================
+ * NORMALIZE IMAGE KEY
+ * =========================================================
+ */
 const normalizeKey = (value) => {
     return String(value || "")
         .trim()
@@ -24,20 +36,28 @@ const normalizeKey = (value) => {
 };
 
 
-/* =========================================================
-   IMAGE URL RESOLVER
-========================================================= */
-
+/*
+ * =========================================================
+ * IMAGE URL RESOLVER
+ * =========================================================
+ */
 export const getImageUrl = (image) => {
+
+    /*
+     * =====================================================
+     * NO IMAGE
+     * =====================================================
+     */
     if (!image) {
         return FALLBACK_IMAGE;
     }
 
 
-    /* =====================================================
-       ARRAY
-    ===================================================== */
-
+    /*
+     * =====================================================
+     * ARRAY
+     * =====================================================
+     */
     if (Array.isArray(image)) {
         return image.length > 0
             ? getImageUrl(image[0])
@@ -45,15 +65,16 @@ export const getImageUrl = (image) => {
     }
 
 
-    /* =====================================================
-       OBJECT
-       Supports different backend formats.
-    ===================================================== */
-
+    /*
+     * =====================================================
+     * OBJECT
+     * =====================================================
+     */
     if (
         typeof image === "object" &&
         image !== null
     ) {
+
         const value =
             image.url ||
             image.location ||
@@ -69,34 +90,40 @@ export const getImageUrl = (image) => {
     }
 
 
-    /* =====================================================
-       STRING
-    ===================================================== */
-
-    const value = String(image).trim();
+    /*
+     * =====================================================
+     * STRING
+     * =====================================================
+     */
+    const value =
+        String(image).trim();
 
     if (!value) {
         return FALLBACK_IMAGE;
     }
 
 
-    /* =====================================================
-       FULL URL
-       R2/CDN URL
-       External image URL
-    ===================================================== */
-
-    if (/^https?:\/\//i.test(value)) {
+    /*
+     * =====================================================
+     * FULL URL
+     * =====================================================
+     *
+     * Keep R2/CDN/external URLs untouched.
+     */
+    if (
+        /^https?:\/\//i.test(value) ||
+        value.startsWith("blob:") ||
+        value.startsWith("data:")
+    ) {
         return value;
     }
 
 
-    /* =====================================================
-       LOCAL FRONTEND STATIC ASSETS
-       
-       These are NOT uploaded marketplace files.
-    ===================================================== */
-
+    /*
+     * =====================================================
+     * LOCAL FRONTEND STATIC ASSETS
+     * =====================================================
+     */
     if (
         value.startsWith("/images/") ||
         value.startsWith("/assets/")
@@ -105,16 +132,13 @@ export const getImageUrl = (image) => {
     }
 
 
-    /* =====================================================
-       R2 OBJECT KEY
-       
-       Examples:
-
-       uploads/products/image.jpg
-       uploads/123-image.webp
-    ===================================================== */
-
-    const key = normalizeKey(value);
+    /*
+     * =====================================================
+     * NORMALIZE R2 KEY
+     * =====================================================
+     */
+    const key =
+        normalizeKey(value);
 
     if (!key) {
         return FALLBACK_IMAGE;
@@ -122,43 +146,38 @@ export const getImageUrl = (image) => {
 
 
     /*
-     * If the backend has not supplied a full URL but the
-     * frontend has the R2 public URL configured, construct
-     * the R2 URL.
+     * =====================================================
+     * ALREADY A CDN PATH
+     * =====================================================
+     *
+     * Prevent:
+     *
+     * cdn.kadmarket.com/uploads/uploads/file.jpg
      */
-
-    if (R2_PUBLIC_URL) {
-        const r2Key = key.startsWith("uploads/")
+    const r2Key =
+        key.startsWith("uploads/")
             ? key
             : `uploads/${key}`;
 
-        return `${R2_PUBLIC_URL}/${r2Key
-            .split("/")
-            .map(encodeURIComponent)
-            .join("/")}`;
-    }
-
 
     /*
-     * IMPORTANT:
-     *
-     * Do NOT fall back to:
-     *
-     * /uploads/image.jpg
-     *
-     * or:
-     *
-     * https://kad-marketplace-production.up.railway.app/uploads/...
-     *
-     * because those point to local/Railway storage.
+     * =====================================================
+     * CLOUDFLARE R2 / CDN URL
+     * =====================================================
      */
-
-    return FALLBACK_IMAGE;
+    return `${R2_PUBLIC_URL}/${r2Key
+        .split("/")
+        .map(
+            (part) =>
+                encodeURIComponent(part)
+        )
+        .join("/")}`;
 };
 
 
-/* =========================================================
-   DEFAULT EXPORT
-========================================================= */
-
+/*
+ * =========================================================
+ * DEFAULT EXPORT
+ * =========================================================
+ */
 export default getImageUrl;
