@@ -1,108 +1,128 @@
 /* =========================================================
-   USERS PAGE
-   ========================================================= */
+   KAD MARKETPLACE
+   USER MANAGEMENT
+   PROFESSIONAL RESPONSIVE STYLES
+========================================================= */
+
+
+/* =========================================================
+   RESET / PAGE
+========================================================= */
 
 .users-page {
     width: 100%;
-    min-height: 100vh;
+    max-width: 1500px;
 
-    padding: 30px;
+    margin: 0 auto;
+
+    padding: 24px;
 
     box-sizing: border-box;
 
-    background: #f8fafc;
-
     overflow-x: hidden;
 
-    animation: usersFadeIn 0.4s ease;
+    color: #172033;
 }
+
 
 /* =========================================================
    HEADER
-   ========================================================= */
+========================================================= */
 
 .users-header {
     width: 100%;
 
     display: flex;
 
-    justify-content: space-between;
     align-items: center;
 
-    gap: 20px;
+    justify-content: space-between;
 
-    margin-bottom: 30px;
+    gap: 24px;
+
+    margin-bottom: 24px;
 }
 
-.users-header > div {
+
+.users-title {
     min-width: 0;
 }
 
-.users-header h1 {
-    margin: 0;
 
-    color: #1e293b;
+.users-title h1 {
+    margin: 0 0 7px;
 
-    font-size: 34px;
+    font-size: 30px;
+
     line-height: 1.2;
-    font-weight: 700;
+
+    font-weight: 800;
+
+    color: #111827;
 }
 
-.users-header p {
-    margin: 8px 0 0;
 
-    color: #64748b;
+.users-title p {
+    margin: 0;
+
+    color: #6b7280;
 
     font-size: 14px;
+
     line-height: 1.5;
 }
 
-.users-header input,
-.users-header .search-input {
-    width: 350px;
+
+.users-search {
+    width: 360px;
+
     max-width: 100%;
+}
 
-    min-height: 48px;
 
-    padding: 13px 17px;
+.search-input {
+    width: 100%;
+
+    height: 44px;
+
+    padding: 0 15px;
 
     box-sizing: border-box;
 
-    border: 1px solid #dbe2ea;
+    border: 1px solid #d8dee8;
 
-    border-radius: 12px;
-
-    outline: none;
+    border-radius: 9px;
 
     background: #ffffff;
 
-    color: #1e293b;
+    color: #111827;
 
-    font-family: inherit;
+    font-size: 14px;
 
-    font-size: 15px;
+    outline: none;
 
     transition:
         border-color 0.2s ease,
         box-shadow 0.2s ease;
 }
 
-.users-header input::placeholder,
-.users-header .search-input::placeholder {
-    color: #94a3b8;
+
+.search-input::placeholder {
+    color: #9ca3af;
 }
 
-.users-header input:focus,
-.users-header .search-input:focus {
-    border-color: #2563eb;
+
+.search-input:focus {
+    border-color: #0a66c2;
 
     box-shadow:
-        0 0 0 3px rgba(37, 99, 235, 0.12);
+        0 0 0 3px rgba(10, 102, 194, 0.1);
 }
 
+
 /* =========================================================
-   USER STATISTICS
-   ========================================================= */
+   STATISTICS
+========================================================= */
 
 .stats-grid {
     width: 100%;
@@ -112,702 +132,985 @@
     grid-template-columns:
         repeat(4, minmax(0, 1fr));
 
-    gap: 20px;
+    gap: 16px;
 
-    margin-bottom: 30px;
+    margin-bottom: 24px;
 }
+
 
 .stat-card {
     min-width: 0;
 
-    padding: 24px;
-
-    box-sizing: border-box;
+    padding: 20px;
 
     background: #ffffff;
 
-    border-radius: 18px;
+    border: 1px solid #e5e7eb;
 
-    text-align: center;
-
-    box-shadow:
-        0 10px 25px rgba(0, 0, 0, 0.07);
-
-    transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
-}
-
-.stat-card:hover {
-    transform: translateY(-4px);
+    border-radius: 12px;
 
     box-shadow:
-        0 14px 30px rgba(0, 0, 0, 0.09);
+        0 3px 12px rgba(15, 23, 42, 0.05);
+
+    box-sizing: border-box;
 }
 
-.stat-card h2 {
-    margin: 0 0 8px;
 
-    color: #2563eb;
+.stat-card strong {
+    display: block;
 
-    font-size: 38px;
+    margin-top: 8px;
+
+    font-size: 28px;
+
     line-height: 1.1;
-    font-weight: 700;
+
+    font-weight: 800;
+
+    color: #111827;
 }
 
-.stat-card p {
-    margin: 0;
 
-    color: #64748b;
+.stat-label {
+    display: block;
 
-    font-size: 15px;
-    font-weight: 500;
+    color: #6b7280;
+
+    font-size: 13px;
+
+    font-weight: 600;
 }
+
 
 /* =========================================================
-   STAT CARD VARIATIONS
-   ========================================================= */
+   TABLE CARD
+========================================================= */
 
-.stats-grid .stat-card:nth-child(2) h2 {
-    color: #22c55e;
+.table-card {
+    width: 100%;
+
+    min-width: 0;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 12px;
+
+    box-shadow:
+        0 4px 18px rgba(15, 23, 42, 0.05);
+
+    overflow: hidden;
 }
 
-.stats-grid .stat-card:nth-child(3) h2 {
-    color: #ef4444;
+
+.table-header {
+    min-height: 74px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 18px 20px;
+
+    box-sizing: border-box;
+
+    border-bottom: 1px solid #edf0f4;
 }
 
-.stats-grid .stat-card:nth-child(4) h2 {
-    color: #7c3aed;
+
+.table-header h2 {
+    margin: 0 0 4px;
+
+    font-size: 18px;
+
+    font-weight: 750;
+
+    color: #111827;
 }
+
+
+.table-header span {
+    color: #6b7280;
+
+    font-size: 13px;
+}
+
+
+.table-header strong {
+    color: #374151;
+}
+
 
 /* =========================================================
    TABLE WRAPPER
-   ========================================================= */
+   THIS ELEMENT OWNS HORIZONTAL SCROLLING
+========================================================= */
 
 .table-wrapper {
     width: 100%;
 
+    max-width: 100%;
+
     overflow-x: auto;
-    overflow-y: hidden;
 
-    border-radius: 18px;
-
-    background: #ffffff;
-
-    box-shadow:
-        0 10px 30px rgba(0, 0, 0, 0.08);
+    overflow-y: visible;
 
     -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: thin;
+
+    box-sizing: border-box;
 }
 
+
 /* =========================================================
-   USERS TABLE
-   ========================================================= */
+   TABLE
+========================================================= */
 
 .users-table {
     width: 100%;
 
-    min-width: 1100px;
+    min-width: 1180px;
 
     border-collapse: separate;
+
     border-spacing: 0;
+
+    table-layout: fixed;
 
     background: #ffffff;
 }
 
-/* =========================================================
-   TABLE HEADER
-   ========================================================= */
 
-.users-table thead {
-    background: #2563eb;
+.users-table th,
+.users-table td {
+    box-sizing: border-box;
 
-    color: #ffffff;
-}
+    padding: 14px 12px;
 
-.users-table th {
-    padding: 16px 15px;
+    border-bottom: 1px solid #edf0f4;
 
     text-align: left;
 
-    color: #ffffff;
-
-    font-size: 14px;
-    font-weight: 600;
-
-    white-space: nowrap;
-
-    border-bottom: 1px solid #1d4ed8;
-}
-
-/* =========================================================
-   TABLE BODY
-   ========================================================= */
-
-.users-table td {
-    padding: 15px;
-
-    color: #475569;
-
-    font-size: 14px;
-
     vertical-align: middle;
 
-    border-bottom: 1px solid #edf2f7;
-
     white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    font-size: 13px;
 }
+
+
+.users-table th {
+    height: 48px;
+
+    background: #f8fafc;
+
+    color: #4b5563;
+
+    font-size: 12px;
+
+    font-weight: 750;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.02em;
+}
+
 
 .users-table tbody tr {
+    height: 72px;
+
     background: #ffffff;
 
-    transition: background 0.2s ease;
+    transition:
+        background-color 0.15s ease;
 }
+
 
 .users-table tbody tr:hover {
-    background: #f8fbff;
+    background: #f9fbfd;
 }
+
 
 .users-table tbody tr:last-child td {
-    border-bottom: none;
+    border-bottom: 0;
 }
+
 
 /* =========================================================
-   EMPTY STATE
-   ========================================================= */
+   FIXED COLUMN WIDTHS
+========================================================= */
 
-.users-table td[colspan] {
-    color: #64748b;
-
-    font-size: 15px;
+.users-table .photo-column,
+.users-table td:nth-child(1) {
+    width: 78px;
 }
+
+
+.users-table .name-column,
+.users-table td:nth-child(2) {
+    width: 160px;
+}
+
+
+.users-table .email-column,
+.users-table td:nth-child(3) {
+    width: 220px;
+}
+
+
+.users-table .phone-column,
+.users-table td:nth-child(4) {
+    width: 140px;
+}
+
+
+.users-table .role-column,
+.users-table td:nth-child(5) {
+    width: 155px;
+}
+
+
+.users-table .change-role-column,
+.users-table td:nth-child(6) {
+    width: 175px;
+}
+
+
+.users-table .status-column,
+.users-table td:nth-child(7) {
+    width: 110px;
+}
+
+
+.users-table .joined-column,
+.users-table td:nth-child(8) {
+    width: 120px;
+}
+
+
+.users-table .actions-column,
+.users-table td:nth-child(9) {
+    width: 225px;
+}
+
 
 /* =========================================================
    USER PHOTO
-   ========================================================= */
+========================================================= */
 
 .user-photo {
     display: block;
 
-    width: 55px;
-    height: 55px;
+    width: 42px;
+
+    height: 42px;
+
+    min-width: 42px;
 
     border-radius: 50%;
 
     object-fit: cover;
 
-    border: 3px solid #2563eb;
+    border: 2px solid #edf0f4;
 
-    background: #f1f5f9;
-
-    box-shadow:
-        0 4px 12px rgba(0, 0, 0, 0.15);
+    background: #f3f4f6;
 }
 
+
 /* =========================================================
-   ROLE BADGE
-   ========================================================= */
+   USER NAME
+========================================================= */
+
+.user-name-cell {
+    min-width: 0;
+
+    overflow: hidden;
+}
+
+
+.user-name-cell strong {
+    display: block;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    color: #111827;
+}
+
+
+/* =========================================================
+   ROLE BADGES
+========================================================= */
 
 .role-badge {
     display: inline-flex;
 
     align-items: center;
 
-    max-width: 220px;
-
-    padding: 6px 12px;
-
-    border-radius: 30px;
-
-    background: #7c3aed;
-
-    color: #ffffff;
-
-    font-size: 12px;
-    font-weight: 600;
-
-    line-height: 1.3;
-
-    white-space: normal;
-}
-
-/* =========================================================
-   STATUS
-   ========================================================= */
-
-.active,
-.blocked {
-    display: inline-flex;
-
-    align-items: center;
     justify-content: center;
 
-    min-width: 70px;
+    max-width: 130px;
 
-    padding: 6px 12px;
+    min-height: 30px;
 
-    border-radius: 30px;
-
-    color: #ffffff;
-
-    font-size: 12px;
-    font-weight: 600;
-
-    line-height: 1.2;
-}
-
-.active {
-    background: #22c55e;
-}
-
-.blocked {
-    background: #ef4444;
-}
-
-/* =========================================================
-   ROLE SELECT
-   ========================================================= */
-
-.users-table select {
-    width: 180px;
-
-    min-height: 42px;
-
-    padding: 9px 12px;
+    padding: 5px 10px;
 
     box-sizing: border-box;
 
-    border: 1px solid #d1d5db;
+    border-radius: 999px;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    font-size: 11px;
+
+    font-weight: 750;
+}
+
+
+.role-badge.admin-role {
+    background: #eef2ff;
+
+    color: #4338ca;
+
+    border: 1px solid #c7d2fe;
+}
+
+
+.role-badge.user-role {
+    background: #f3f4f6;
+
+    color: #4b5563;
+
+    border: 1px solid #e5e7eb;
+}
+
+
+/* =========================================================
+   ROLE SELECT
+========================================================= */
+
+.role-select-container {
+    position: relative;
+
+    width: 150px;
+
+    min-width: 150px;
+
+    height: 40px;
+}
+
+
+.role-select {
+    display: block;
+
+    width: 150px;
+
+    min-width: 150px;
+
+    max-width: 150px;
+
+    height: 40px;
+
+    padding: 0 30px 0 11px;
+
+    box-sizing: border-box;
+
+    border: 1px solid #d6dce5;
 
     border-radius: 8px;
 
-    outline: none;
-
     background: #ffffff;
 
-    color: #1e293b;
+    color: #1f2937;
 
-    font-family: inherit;
+    font-size: 12px;
 
-    font-size: 13px;
+    font-weight: 600;
+
+    outline: none;
 
     cursor: pointer;
 
+    appearance: auto;
+
     transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease;
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        background-color 0.15s ease;
 }
 
-.users-table select:hover {
-    border-color: #94a3b8;
+
+.role-select:hover:not(:disabled) {
+    border-color: #0a66c2;
 }
 
-.users-table select:focus {
-    border-color: #2563eb;
+
+.role-select:focus {
+    border-color: #0a66c2;
 
     box-shadow:
-        0 0 0 3px rgba(37, 99, 235, 0.12);
+        0 0 0 3px rgba(10, 102, 194, 0.1);
 }
+
+
+.role-select:disabled {
+    cursor: not-allowed;
+
+    opacity: 0.65;
+
+    background: #f5f7fa;
+}
+
+
+.role-select.updating {
+    padding-right: 32px;
+}
+
 
 /* =========================================================
-   USER ACTIONS
-   ========================================================= */
+   ROLE LOADING SPINNER
+========================================================= */
 
-.user-actions {
-    min-width: 250px;
+.role-spinner {
+    position: absolute;
 
-    white-space: normal !important;
+    top: 50%;
+
+    right: 10px;
+
+    width: 14px;
+
+    height: 14px;
+
+    margin-top: -7px;
+
+    border: 2px solid #dbeafe;
+
+    border-top-color: #0a66c2;
+
+    border-radius: 50%;
+
+    animation:
+        users-spin 0.7s linear infinite;
+
+    pointer-events: none;
 }
 
-.user-actions {
-    display: flex;
 
-    flex-wrap: wrap;
+@keyframes users-spin {
+
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+
+}
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.status-badge {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-width: 66px;
+
+    min-height: 28px;
+
+    padding: 4px 9px;
+
+    box-sizing: border-box;
+
+    border-radius: 999px;
+
+    font-size: 11px;
+
+    font-weight: 750;
+}
+
+
+.status-badge.active {
+    background: #ecfdf3;
+
+    color: #15803d;
+
+    border: 1px solid #bbf7d0;
+}
+
+
+.status-badge.blocked {
+    background: #fef2f2;
+
+    color: #dc2626;
+
+    border: 1px solid #fecaca;
+}
+
+
+/* =========================================================
+   ACTION BUTTONS
+========================================================= */
+
+.user-actions {
+    width: 100%;
+
+    min-width: 205px;
+
+    display: flex;
 
     align-items: center;
 
     gap: 7px;
+
+    white-space: nowrap;
 }
 
+
 .user-actions button {
-    min-height: 36px;
+    flex: 0 0 auto;
 
-    padding: 8px 12px;
+    height: 34px;
 
-    border: none;
+    padding: 0 10px;
 
-    border-radius: 8px;
+    border: 0;
 
-    color: #ffffff;
+    border-radius: 7px;
+
+    font-size: 11px;
+
+    font-weight: 700;
 
     cursor: pointer;
 
-    font-family: inherit;
-
-    font-size: 12px;
-    font-weight: 600;
+    white-space: nowrap;
 
     transition:
-        background 0.2s ease,
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
+        transform 0.15s ease,
+        opacity 0.15s ease,
+        background-color 0.15s ease;
 }
 
-.user-actions button:hover {
+
+.user-actions button:hover:not(:disabled) {
     transform: translateY(-1px);
-
-    box-shadow:
-        0 5px 12px rgba(0, 0, 0, 0.12);
 }
 
-.user-actions button:active {
-    transform: translateY(0);
+
+.user-actions button:disabled {
+    opacity: 0.5;
+
+    cursor: not-allowed;
+
+    transform: none;
 }
+
+
+.view-btn {
+    background: #eff6ff;
+
+    color: #2563eb;
+}
+
+
+.view-btn:hover:not(:disabled) {
+    background: #dbeafe;
+}
+
+
+.block-btn {
+    background: #fff7ed;
+
+    color: #c2410c;
+}
+
+
+.block-btn:hover:not(:disabled) {
+    background: #ffedd5;
+}
+
+
+.unblock-btn {
+    background: #ecfdf5;
+
+    color: #047857;
+}
+
+
+.unblock-btn:hover:not(:disabled) {
+    background: #d1fae5;
+}
+
+
+.delete-btn {
+    background: #fef2f2;
+
+    color: #dc2626;
+}
+
+
+.delete-btn:hover:not(:disabled) {
+    background: #fee2e2;
+}
+
 
 /* =========================================================
-   VIEW
-   ========================================================= */
+   ROLE UPDATE ROW
+========================================================= */
 
-.user-actions .view-btn {
-    background: #2563eb;
+.users-table tbody tr.role-updating {
+    background: #f8fbff;
 }
 
-.user-actions .view-btn:hover {
-    background: #1d4ed8;
+
+.users-table tbody tr.role-updating td {
+    transition: none;
 }
+
 
 /* =========================================================
-   BLOCK
-   ========================================================= */
+   EMPTY TABLE
+========================================================= */
 
-.user-actions .block-btn {
-    background: #f59e0b;
+.empty-table {
+    height: 180px;
+
+    padding: 30px !important;
+
+    text-align: center !important;
+
+    white-space: normal !important;
 }
 
-.user-actions .block-btn:hover {
-    background: #d97706;
+
+.empty-content {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 6px;
 }
 
-/* =========================================================
-   UNBLOCK
-   ========================================================= */
 
-.user-actions .unblock-btn {
-    background: #22c55e;
+.empty-content strong {
+    color: #374151;
+
+    font-size: 15px;
 }
 
-.user-actions .unblock-btn:hover {
-    background: #16a34a;
+
+.empty-content span {
+    color: #9ca3af;
+
+    font-size: 13px;
 }
 
-/* =========================================================
-   DELETE
-   ========================================================= */
-
-.user-actions .delete-btn {
-    background: #374151;
-}
-
-.user-actions .delete-btn:hover {
-    background: #111827;
-}
 
 /* =========================================================
    LOADING
-   ========================================================= */
+========================================================= */
 
-.users-page > h2 {
-    margin: 50px 0;
+.users-loading {
+    min-height: 420px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
 
     text-align: center;
-
-    color: #2563eb;
-
-    font-size: 22px;
-    font-weight: 600;
 }
 
-.loading {
-    text-align: center;
 
-    margin-top: 50px;
+.users-loading h2 {
+    margin: 18px 0 6px;
 
-    color: #2563eb;
+    color: #111827;
 
-    font-size: 22px;
+    font-size: 20px;
 }
+
+
+.users-loading p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 13px;
+}
+
+
+.users-loader {
+    width: 40px;
+
+    height: 40px;
+
+    border: 3px solid #dbeafe;
+
+    border-top-color: #0a66c2;
+
+    border-radius: 50%;
+
+    animation:
+        users-spin 0.8s linear infinite;
+}
+
 
 /* =========================================================
    TABLET
-   ========================================================= */
+========================================================= */
 
 @media (max-width: 1100px) {
 
     .users-page {
-        padding: 25px 20px;
+        padding: 20px;
     }
 
-    .users-header h1 {
-        font-size: 30px;
+
+    .users-header {
+        align-items: flex-start;
+
+        flex-direction: column;
     }
+
+
+    .users-search {
+        width: 100%;
+
+        max-width: 500px;
+    }
+
 
     .stats-grid {
         grid-template-columns:
             repeat(2, minmax(0, 1fr));
     }
 
-    .users-table {
-        min-width: 1050px;
-    }
 }
 
+
 /* =========================================================
-   MOBILE / TABLET
-   ========================================================= */
+   MOBILE
+========================================================= */
 
 @media (max-width: 768px) {
 
     .users-page {
-        padding: 20px 15px;
+        padding: 14px;
     }
+
+
+    .users-title h1 {
+        font-size: 24px;
+    }
+
 
     .users-header {
-        flex-direction: column;
-
-        align-items: stretch;
-
         gap: 15px;
 
-        margin-bottom: 22px;
+        margin-bottom: 18px;
     }
 
-    .users-header h1 {
-        font-size: 25px;
+
+    .stats-grid {
+        gap: 10px;
+
+        margin-bottom: 18px;
     }
 
-    .users-header p {
-        margin-top: 6px;
 
-        font-size: 13px;
+    .stat-card {
+        padding: 15px;
     }
 
-    .users-header input,
-    .users-header .search-input {
-        width: 100%;
 
-        max-width: none;
+    .stat-card strong {
+        font-size: 23px;
     }
+
+
+    .table-card {
+        border-radius: 10px;
+    }
+
+
+    .table-header {
+        padding: 15px;
+    }
+
+
+    .table-wrapper {
+        overflow-x: auto;
+
+        overflow-y: hidden;
+
+        overscroll-behavior-x: contain;
+    }
+
+
+    .users-table {
+        min-width: 1180px;
+    }
+
+}
+
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media (max-width: 500px) {
+
+    .users-page {
+        padding: 10px;
+    }
+
+
+    .users-title h1 {
+        font-size: 21px;
+    }
+
+
+    .users-title p {
+        font-size: 12px;
+    }
+
 
     .stats-grid {
         grid-template-columns:
             repeat(2, minmax(0, 1fr));
 
-        gap: 14px;
-
-        margin-bottom: 22px;
+        gap: 8px;
     }
+
 
     .stat-card {
-        padding: 18px 14px;
-
-        border-radius: 14px;
+        padding: 13px;
     }
 
-    .stat-card h2 {
-        font-size: 30px;
+
+    .stat-card strong {
+        font-size: 21px;
     }
 
-    .stat-card p {
-        font-size: 13px;
+
+    .stat-label {
+        font-size: 11px;
     }
 
-    .table-wrapper {
-        border-radius: 13px;
-    }
 
-    .users-table {
-        min-width: 1000px;
-    }
-
-    .users-table th,
-    .users-table td {
-        padding: 12px;
-    }
-
-    .user-photo {
-        width: 48px;
-        height: 48px;
-
-        border-width: 2px;
-    }
-
-    .user-actions {
-        min-width: 230px;
-    }
-}
-
-/* =========================================================
-   SMALL PHONES
-   ========================================================= */
-
-@media (max-width: 500px) {
-
-    .users-page {
-        padding: 15px 10px;
-    }
-
-    .users-header {
-        margin-bottom: 18px;
-    }
-
-    .users-header h1 {
-        font-size: 22px;
-    }
-
-    .users-header p {
-        font-size: 12px;
-    }
-
-    .users-header input,
-    .users-header .search-input {
-        min-height: 45px;
-
-        padding: 11px 13px;
+    .search-input {
+        height: 42px;
 
         font-size: 13px;
     }
 
-    .stats-grid {
-        gap: 10px;
+
+    .table-header {
+        padding: 13px;
     }
 
-    .stat-card {
-        padding: 16px 10px;
 
-        border-radius: 12px;
+    .table-header h2 {
+        font-size: 16px;
     }
 
-    .stat-card h2 {
-        font-size: 27px;
-    }
 
-    .stat-card p {
+    .table-header span {
         font-size: 12px;
     }
 
-    .users-table {
-        min-width: 980px;
-    }
-
-    .users-table th,
-    .users-table td {
-        padding: 10px;
-
-        font-size: 12px;
-    }
-
-    .users-table select {
-        width: 165px;
-
-        min-height: 39px;
-
-        font-size: 12px;
-    }
-
-    .user-photo {
-        width: 45px;
-        height: 45px;
-    }
-
-    .role-badge,
-    .active,
-    .blocked {
-        padding: 5px 9px;
-
-        font-size: 11px;
-    }
-
-    .user-actions {
-        min-width: 215px;
-    }
-
-    .user-actions button {
-        min-height: 34px;
-
-        padding: 7px 10px;
-
-        font-size: 11px;
-    }
 }
+
 
 /* =========================================================
    VERY SMALL PHONES
-   ========================================================= */
+========================================================= */
 
 @media (max-width: 360px) {
 
     .users-page {
-        padding: 12px 8px;
+        padding: 8px;
     }
 
-    .users-header h1 {
-        font-size: 20px;
+
+    .users-title h1 {
+        font-size: 19px;
     }
+
 
     .stats-grid {
-        grid-template-columns: 1fr 1fr;
-
-        gap: 8px;
+        gap: 6px;
     }
+
 
     .stat-card {
-        padding: 14px 8px;
+        padding: 11px;
     }
 
-    .stat-card h2 {
-        font-size: 24px;
+
+    .stat-card strong {
+        font-size: 19px;
     }
 
-    .stat-card p {
-        font-size: 11px;
+
+    .stat-label {
+        font-size: 10px;
     }
 
-    .users-table {
-        min-width: 950px;
-    }
 }
 
+
 /* =========================================================
-   REDUCED MOTION
-   ========================================================= */
+   ACCESSIBILITY / REDUCED MOTION
+========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
 
-    .users-page,
-    .stat-card,
-    .users-table tbody tr,
-    .user-actions button,
-    .users-header input,
-    .users-header .search-input,
-    .users-table select {
-        animation: none;
-        transition: none;
-    }
-}
+    .users-page *,
+    .users-page *::before,
+    .users-page *::after {
+        animation-duration: 0.01ms !important;
 
-/* =========================================================
-   ANIMATION
-   ========================================================= */
+        animation-iteration-count: 1 !important;
 
-@keyframes usersFadeIn {
+        transition-duration: 0.01ms !important;
 
-    from {
-        opacity: 0;
-        transform: translateY(12px);
+        scroll-behavior: auto !important;
     }
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
