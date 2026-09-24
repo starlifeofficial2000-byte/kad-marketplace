@@ -645,18 +645,7 @@ function Dashboard() {
                     </p>
 
 
-                    <button
-                        type="button"
-                        onClick={
-                            goToSubscriptionPlans
-                        }
-                    >
-
-                        View Subscription Plans
-
-                        <FaArrowRight />
-
-                    </button>
+                   
 
                 </div>
 
@@ -673,21 +662,7 @@ function Dashboard() {
                         )}
                     />
 
-                    <StatCard
-                        icon={<FaEye />}
-                        title="Total Views"
-                        value={formatNumber(
-                            stats.views
-                        )}
-                    />
-
-                    <StatCard
-                        icon={<FaComments />}
-                        title="Messages"
-                        value={formatNumber(
-                            stats.messages
-                        )}
-                    />
+                
 
                 </section>
 
