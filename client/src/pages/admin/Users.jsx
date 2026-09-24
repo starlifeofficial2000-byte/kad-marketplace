@@ -205,35 +205,26 @@ function Users() {
     };
 
 
-    const getProfileImage = (user) => {
+   const getProfileImage = (user) => {
+    if (!user) {
+        return "/default.png";
+    }
 
-        if (!user?.profileImage) {
-            return "/default.png";
-        }
+    if (user.profileImageUrl) {
+        return user.profileImageUrl;
+    }
 
+    if (
+        user.profileImage &&
+        /^https?:\/\//i.test(
+            user.profileImage
+        )
+    ) {
+        return user.profileImage;
+    }
 
-        const image =
-            String(user.profileImage);
-
-
-        if (
-            image.startsWith("http://") ||
-            image.startsWith("https://")
-        ) {
-
-            return image;
-
-        }
-
-
-        const baseUrl =
-            import.meta.env.VITE_API_BASE_URL || "";
-
-
-        return `${baseUrl}/uploads/${image}`;
-
-    };
-
+    return "/default.png";
+};
 
     /* =========================================================
        LOAD USERS
