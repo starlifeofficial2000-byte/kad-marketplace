@@ -5,11 +5,59 @@ const Message = require("../models/Message");
 const Product = require("../models/Product");
 const User = require("../models/User");
 
+const {
+    getR2PublicUrl,
+    deleteFromR2
+} = require("../config/r2");
+
 /* =========================================================
    HELPER
    CHECK IF USER BELONGS TO CONVERSATION
 ========================================================= */
+/* =========================================================
+   CHAT MEDIA URL HELPERS
+========================================================= */
 
+const resolveChatMediaUrl = (value) => {
+    if (!value) return null;
+
+    const clean = String(value).trim();
+
+    if (!clean) return null;
+
+    // Already a complete URL
+    if (/^https?:\/\//i.test(clean)) {
+        return clean;
+    }
+
+    // R2 object key
+    const r2Url = getR2PublicUrl(clean);
+
+    if (r2Url) {
+        return r2Url;
+    }
+
+    return clean;
+};
+
+const formatChatMessage = (message) => {
+    if (!message) return null;
+
+    const data =
+        typeof message.toJSON === "function"
+            ? message.toJSON()
+            : { ...message };
+
+    if (data.image) {
+        data.image = resolveChatMediaUrl(data.image);
+    }
+
+    if (data.audio) {
+        data.audio = resolveChatMediaUrl(data.audio);
+    }
+
+    return data;
+};
 const getConversationForUser = async (conversationId, userId) => {
     const conversation = await Conversation.findByPk(conversationId);
 
@@ -165,13 +213,20 @@ exports.getMessages = async (req, res) => {
             ]
         });
 
+        const formattedMessages = messages.map(
+            formatChatMessage
+        );
+
         return res.json({
             success: true,
-            messages
+            messages: formattedMessages
         });
 
     } catch (error) {
-        console.error("GET MESSAGES ERROR:", error);
+        console.error(
+            "GET MESSAGES ERROR:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
@@ -179,7 +234,6 @@ exports.getMessages = async (req, res) => {
         });
     }
 };
-
 
 /* =========================================================
    SEND MESSAGE TO EXISTING CONVERSATION
@@ -263,15 +317,27 @@ exports.sendMessageToConversation = async (req, res) => {
 /* =========================================================
    SEND IMAGE MESSAGE
 ========================================================= */
+/* =========================================================
+   SEND IMAGE MESSAGE
+========================================================= */
+
 exports.sendImageMessage = async (req, res) => {
+    let uploadedR2Key = null;
+
     try {
+        const conversationId = req.params.conversationId;
+        const userId = Number(req.user.id);
+
         console.log("========== IMAGE MESSAGE ==========");
-        console.log("Conversation ID:", req.params.conversationId);
-        console.log("User ID:", req.user?.id);
-        console.log("Uploaded file:", req.file);
+        console.log("Conversation ID:", conversationId);
+        console.log("User ID:", userId);
+        console.log("Uploaded file:", req.file?.r2Key);
         console.log("===================================");
 
-        // 1. Make sure an image was actually uploaded
+        /* =================================================
+           1. MAKE SURE IMAGE WAS UPLOADED
+        ================================================= */
+
         if (!req.file) {
             return res.status(400).json({
                 success: false,
@@ -279,71 +345,145 @@ exports.sendImageMessage = async (req, res) => {
             });
         }
 
-        // 2. Find the conversation
+        uploadedR2Key =
+            req.file.r2Key ||
+            req.file.key ||
+            null;
+
+        if (!uploadedR2Key) {
+            return res.status(500).json({
+                success: false,
+                message: "Image upload failed. No R2 object key was returned."
+            });
+        }
+
+        /* =================================================
+           2. FIND CONVERSATION
+        ================================================= */
+
         const conversation =
-            await Conversation.findByPk(
-                req.params.conversationId
-            );
+            await Conversation.findByPk(conversationId);
 
         if (!conversation) {
+            await deleteFromR2(uploadedR2Key).catch(() => {});
+
             return res.status(404).json({
                 success: false,
                 message: "Conversation not found."
             });
         }
 
-        // 3. Get the authenticated user
-        const userId = Number(req.user.id);
+        /* =================================================
+           3. CHECK PARTICIPANT
+        ================================================= */
 
-        // 4. Check that the user belongs to this conversation
         const isParticipant =
             Number(conversation.buyerId) === userId ||
             Number(conversation.sellerId) === userId;
 
         if (!isParticipant) {
+            await deleteFromR2(uploadedR2Key).catch(() => {});
+
             return res.status(403).json({
                 success: false,
                 message: "You are not part of this conversation."
             });
         }
 
-        // 5. Create the image message
+        /* =================================================
+           4. CREATE MESSAGE
+
+           Store the R2 object key in the database.
+        ================================================= */
+
         const newMessage = await Message.create({
-            conversationId: req.params.conversationId,
+            conversationId,
             senderId: req.user.id,
             type: "image",
-            image: req.file.filename,
+
+            image: uploadedR2Key,
+
             message: null,
             status: "sent"
         });
 
-        // 6. Send real-time message through Socket.IO
+        /* =================================================
+           5. UPDATE CONVERSATION
+        ================================================= */
+
+        await conversation.update({
+            updatedAt: new Date()
+        });
+
+        /* =================================================
+           6. CREATE PUBLIC R2 URL
+        ================================================= */
+
+        const imageUrl =
+            getR2PublicUrl(uploadedR2Key);
+
+        /* =================================================
+           7. REAL-TIME SOCKET MESSAGE
+
+           Send the URL to connected clients.
+        ================================================= */
+
+        const socketMessage = {
+            ...newMessage.toJSON(),
+            image: imageUrl || uploadedR2Key
+        };
+
         const io = req.app.get("io");
 
         if (io) {
-            io.to(
-                String(req.params.conversationId)
-            ).emit(
+            io.to(String(conversationId)).emit(
                 "receive_message",
-                newMessage
+                socketMessage
             );
         }
 
-        // 7. Return successful response
+        /* =================================================
+           8. RESPONSE
+        ================================================= */
+
         return res.status(201).json({
             success: true,
-            newMessage
+            newMessage: socketMessage
         });
 
     } catch (error) {
+
         console.error(
             "SEND IMAGE MESSAGE ERROR:",
             error
         );
 
+        /* =================================================
+           CLEAN UP ORPHANED R2 FILE
+        ================================================= */
+
+        if (uploadedR2Key) {
+            try {
+                await deleteFromR2(uploadedR2Key);
+
+                console.log(
+                    "Deleted orphaned chat image from R2:",
+                    uploadedR2Key
+                );
+
+            } catch (cleanupError) {
+                console.error(
+                    "FAILED TO DELETE ORPHANED CHAT IMAGE:",
+                    cleanupError
+                );
+            }
+        }
+
         return res.status(500).json({
             success: false,
-            message: error.message
+            message:
+                error.message ||
+                "Failed to send image message."
         });
     }
 };
@@ -353,9 +493,15 @@ exports.sendImageMessage = async (req, res) => {
 ========================================================= */
 
 exports.sendAudioMessage = async (req, res) => {
+    let uploadedR2Key = null;
+
     try {
         const conversationId = req.params.conversationId;
-        const senderId = req.user.id;
+        const senderId = Number(req.user.id);
+
+        /* =================================================
+           1. CHECK CONVERSATION
+        ================================================= */
 
         const {
             conversation,
@@ -379,17 +525,9 @@ exports.sendAudioMessage = async (req, res) => {
             });
         }
 
-        console.log("====================================");
-        console.log("CHAT AUDIO UPLOAD");
-        console.log("Conversation ID:", conversationId);
-        console.log("Sender ID:", senderId);
-        console.log("Request file:", req.file);
-        console.log("Request body:", req.body);
-        console.log(
-            "Content type:",
-            req.headers["content-type"]
-        );
-        console.log("====================================");
+        /* =================================================
+           2. CHECK AUDIO
+        ================================================= */
 
         if (!req.file) {
             return res.status(400).json({
@@ -398,46 +536,121 @@ exports.sendAudioMessage = async (req, res) => {
             });
         }
 
+        uploadedR2Key =
+            req.file.r2Key ||
+            req.file.key ||
+            null;
+
+        if (!uploadedR2Key) {
+            return res.status(500).json({
+                success: false,
+                message: "Audio upload failed. No R2 object key was returned."
+            });
+        }
+
+        console.log("====================================");
+        console.log("CHAT AUDIO UPLOAD");
+        console.log("Conversation ID:", conversationId);
+        console.log("Sender ID:", senderId);
+        console.log("R2 Key:", uploadedR2Key);
+        console.log("Duration:", req.body.duration || 0);
+        console.log("====================================");
+
+        /* =================================================
+           3. CREATE AUDIO MESSAGE
+        ================================================= */
+
         const newMessage = await Message.create({
             conversationId,
             senderId,
             type: "audio",
-            audio: req.file.filename,
-            audioDuration: req.body.duration || 0,
+
+            audio: uploadedR2Key,
+
+            audioDuration:
+                Number(req.body.duration) || 0,
+
             status: "sent"
         });
+
+        /* =================================================
+           4. UPDATE CONVERSATION
+        ================================================= */
 
         await conversation.update({
             updatedAt: new Date()
         });
+
+        /* =================================================
+           5. PUBLIC R2 URL
+        ================================================= */
+
+        const audioUrl =
+            getR2PublicUrl(uploadedR2Key);
+
+        /* =================================================
+           6. REAL-TIME MESSAGE
+        ================================================= */
+
+        const socketMessage = {
+            ...newMessage.toJSON(),
+            audio: audioUrl || uploadedR2Key
+        };
 
         const io = req.app.get("io");
 
         if (io) {
             io.to(String(conversationId)).emit(
                 "receive_message",
-                newMessage
+                socketMessage
             );
         }
 
+        /* =================================================
+           7. RESPONSE
+        ================================================= */
+
         return res.status(201).json({
             success: true,
-            newMessage
+            newMessage: socketMessage
         });
 
     } catch (error) {
+
         console.error(
             "SEND AUDIO MESSAGE ERROR:",
             error
         );
 
+        /* =================================================
+           CLEAN UP ORPHANED R2 FILE
+        ================================================= */
+
+        if (uploadedR2Key) {
+            try {
+                await deleteFromR2(uploadedR2Key);
+
+                console.log(
+                    "Deleted orphaned chat audio from R2:",
+                    uploadedR2Key
+                );
+
+            } catch (cleanupError) {
+                console.error(
+                    "FAILED TO DELETE ORPHANED CHAT AUDIO:",
+                    cleanupError
+                );
+            }
+        }
+
         return res.status(500).json({
             success: false,
-            message: error.message
+            message:
+                error.message ||
+                "Failed to send audio message."
         });
     }
 };
-
 
 /* =========================================================
    GET USER CONVERSATIONS

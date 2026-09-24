@@ -18,17 +18,17 @@ const {
     deleteFromR2
 } = require("../config/r2");
 
-
 /* ===========================================================
-   LOAD USER SUBSCRIPTION
+   LOAD USER ACTIVE SUBSCRIPTION
 =========================================================== */
 
 async function getSubscription(userId) {
     return await Subscription.findOne({
         where: {
-            userId,
-            status: "Active"
-        }
+            userId: Number(userId),
+            status: "active"
+        },
+        order: [["createdAt", "DESC"]]
     });
 }
 
@@ -48,12 +48,65 @@ async function getPlan(userId) {
     }
 
     const plan = await SubscriptionPlan.findByPk(
-        subscription.planId
+        subscription.subscriptionPlanId
     );
+
+    if (!plan) {
+        return {
+            subscription,
+            plan: null
+        };
+    }
 
     return {
         subscription,
         plan
+    };
+}
+
+
+/* ===========================================================
+   SUBSCRIPTION BENEFITS
+=========================================================== */
+
+function getSubscriptionBenefits(plan) {
+    if (!plan) {
+        return {
+            uploadLimit: 5,
+            boostCredits: 0,
+            featuredCredits: 0,
+            expressCredits: 0,
+            featured: false,
+            express: false,
+            features: []
+        };
+    }
+
+    return {
+        uploadLimit: Number(plan.maxProducts || 5),
+
+        boostCredits: Number(
+            plan.boostCredits || 0
+        ),
+
+        featuredCredits: Number(
+            plan.featuredCredits || 0
+        ),
+
+        expressCredits: Number(
+            plan.expressCredits || 0
+        ),
+
+        featured:
+            Number(plan.featuredCredits || 0) > 0,
+
+        express:
+            Number(plan.expressCredits || 0) > 0,
+
+        features:
+            Array.isArray(plan.features)
+                ? plan.features
+                : []
     };
 }
 
@@ -64,14 +117,12 @@ async function getPlan(userId) {
 
 function getUploadLimit(plan) {
     if (!plan) {
-        return 10;
+        return 5;
     }
 
-    if (plan.unlimitedListings) {
-        return Number.MAX_SAFE_INTEGER;
-    }
-
-    return plan.uploadLimit || 10;
+    return Number(
+        plan.maxProducts || 5
+    );
 }
 
 
@@ -88,10 +139,36 @@ function getPriority(plan) {
         };
     }
 
+    /*
+       Your current SubscriptionPlan model does not contain
+       listingPriority/homepagePriority fields.
+
+       Therefore we derive a safe priority from the plan
+       benefits instead of reading nonexistent columns.
+    */
+
+    const benefits =
+        getSubscriptionBenefits(plan);
+
+    let priority = 1;
+
+    if (benefits.featured) {
+        priority += 2;
+    }
+
+    if (benefits.express) {
+        priority += 1;
+    }
+
+    if (benefits.boostCredits > 0) {
+        priority += 1;
+    }
+
     return {
-        listingPriority: plan.listingPriority,
-        homepagePriority: plan.homepagePriority ? 2 : 1,
-        searchPriority: plan.listingPriority
+        listingPriority: priority,
+        homepagePriority:
+            benefits.featured ? 2 : 1,
+        searchPriority: priority
     };
 }
 
@@ -109,10 +186,18 @@ function getFeatures(plan) {
         };
     }
 
+    const benefits =
+        getSubscriptionBenefits(plan);
+
     return {
-        featured: plan.featuredProducts,
-        express: plan.expressCredits > 0,
-        aiRecommended: plan.aiRecommendation
+        featured: benefits.featured,
+        express: benefits.express,
+
+        /*
+           aiRecommended is not a field in the current
+           SubscriptionPlan model.
+        */
+        aiRecommended: false
     };
 }
 
@@ -128,27 +213,38 @@ function calculateScore(plan) {
         return score;
     }
 
-    score += Number(plan.listingPriority || 0) * 100;
+    const priority =
+        getPriority(plan);
 
-    if (plan.homepagePriority) {
+    score +=
+        Number(priority.listingPriority || 1) * 100;
+
+    if (
+        Number(priority.homepagePriority || 0) > 1
+    ) {
         score += 300;
     }
 
-    if (plan.featuredProducts) {
+    if (
+        Number(plan.featuredCredits || 0) > 0
+    ) {
         score += 500;
     }
 
-    if (plan.aiRecommendation) {
+    if (
+        Number(plan.expressCredits || 0) > 0
+    ) {
         score += 200;
     }
 
-    if (plan.storeAccess) {
+    if (
+        Number(plan.boostCredits || 0) > 0
+    ) {
         score += 100;
     }
 
     return score;
 }
-
 
 /* ===========================================================
    VALIDATE SUBSCRIPTION
@@ -230,35 +326,55 @@ function validateProduct(data) {
     };
 }
 
-
 /* ===========================================================
    GET PLAN FEATURES
 =========================================================== */
 
 function getPlanFeatures(plan) {
+    if (!plan) {
+        return {
+            listingPriority: 1,
+            homepagePriority: 1,
+            searchPriority: 1,
+            featured: false,
+            express: false,
+            aiRecommended: false,
+            verifiedStore: false
+        };
+    }
+
+    const priority =
+        getPriority(plan);
+
+    const features =
+        getFeatures(plan);
+
     return {
-        listingPriority: plan?.listingPriority || 1,
+        listingPriority:
+            priority.listingPriority,
 
         homepagePriority:
-            plan?.homepagePriority ? 2 : 1,
+            priority.homepagePriority,
 
         searchPriority:
-            plan?.listingPriority || 1,
+            priority.searchPriority,
 
         featured:
-            plan?.featuredProducts || false,
+            features.featured,
 
         express:
-            (plan?.expressCredits || 0) > 0,
+            features.express,
 
         aiRecommended:
-            plan?.aiRecommendation || false,
+            features.aiRecommended,
 
-        verifiedStore:
-            plan?.storeAccess || false
+        /*
+           storeAccess does not exist in the
+           current SubscriptionPlan model.
+        */
+        verifiedStore: false
     };
 }
-
 
 /* ===========================================================
    PROCESS IMAGES
@@ -735,33 +851,26 @@ exports.createProduct =
 
                 plan =
                     subscriptionResult.plan;
+const uploadLimit =
+    getUploadLimit(plan);
 
-                const uploads =
-                    await getMonthlyUploads(
-                        req.user.id
-                    );
+const uploadsUsed =
+    Number(subscription.uploadsUsed || 0);
 
-                const uploadLimit =
-                    getUploadLimit(plan);
+if (uploadsUsed >= uploadLimit) {
 
-                if (
-                    uploadLimit !==
-                        Number.MAX_SAFE_INTEGER &&
-                    uploads >= uploadLimit
-                ) {
+    await rollbackTransaction(
+        transaction,
+        req.files
+    );
 
-                    await rollbackTransaction(
-                        transaction,
-                        req.files
-                    );
-
-                    return res.status(403).json({
-                        success: false,
-                        message:
-                            `Your ${plan.name} plan allows only ${uploadLimit} uploads this month.`
-                    });
-                }
-
+    return res.status(403).json({
+        success: false,
+        subscriptionLimitReached: true,
+        message:
+            `Your ${plan.name} plan allows ${uploadLimit} product listings per subscription period. You have used ${uploadsUsed}.`
+    });
+}
             } else {
 
                 const user =

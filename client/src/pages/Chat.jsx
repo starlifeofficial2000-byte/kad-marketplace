@@ -11,9 +11,7 @@ import {
     useParams
 } from "react-router-dom";
 
-import {
-    io
-} from "socket.io-client";
+import { io } from "socket.io-client";
 
 import api from "../config/axios";
 
@@ -28,33 +26,20 @@ import {
 import "./Chat.css";
 
 /* =========================================================
-   SERVER CONFIGURATION
+   CONFIGURATION
 ========================================================= */
 
-const IS_PRODUCTION =
-    import.meta.env.PROD;
+const IS_PRODUCTION = import.meta.env.PROD;
 
-const normalizeServerUrl = (url) => {
-    if (!url) {
-        return "";
-    }
+const normalizeUrl = (value) => {
+    if (!value) return "";
 
-    return url
+    return String(value)
         .trim()
         .replace(/\/+$/, "");
 };
 
-/*
- * Production MUST use the same domain as the website.
- *
- * https://kadmarket.com
- *
- * Local development:
- *
- * http://localhost:5000
- */
-
-const API_SERVER = normalizeServerUrl(
+const API_SERVER = normalizeUrl(
     import.meta.env.VITE_API_SERVER ||
     import.meta.env.VITE_SERVER_URL ||
     (
@@ -64,13 +49,13 @@ const API_SERVER = normalizeServerUrl(
     )
 );
 
-const SOCKET_URL = normalizeServerUrl(
+const SOCKET_URL = normalizeUrl(
     import.meta.env.VITE_SOCKET_URL ||
-    (
-        IS_PRODUCTION
-            ? window.location.origin
-            : "http://localhost:5000"
-    )
+    API_SERVER
+);
+
+const R2_PUBLIC_URL = normalizeUrl(
+    import.meta.env.VITE_R2_PUBLIC_URL
 );
 
 const SOCKET_PATH = "/socket.io";
@@ -79,167 +64,198 @@ const FALLBACK_IMAGE =
     "/images/product-placeholder.png";
 
 /* =========================================================
-   SOCKET.IO
+   SOCKET
 ========================================================= */
 
 const socket = io(
     SOCKET_URL,
     {
         path: SOCKET_PATH,
-
-        transports: [
-            "websocket",
-            "polling"
-        ],
-
+        transports: ["websocket", "polling"],
         withCredentials: true,
-
         autoConnect: false,
-
         reconnection: true,
-
         reconnectionAttempts: Infinity,
-
         reconnectionDelay: 1000,
-
         reconnectionDelayMax: 5000,
-
-        timeout: 20000,
-
-        forceNew: false
+        timeout: 20000
     }
 );
 
 /* =========================================================
-   HELPERS
+   MEDIA URL HELPERS
 ========================================================= */
 
-function getImageUrl(image) {
-    if (
-        !image ||
-        typeof image !== "string"
-    ) {
-        return FALLBACK_IMAGE;
-    }
-
-    const value = image.trim();
-
+/**
+ * Converts an R2 object key into a public R2 URL.
+ *
+ * Examples:
+ *
+ * uploads/chat/images/file.jpg
+ * ->
+ * https://media.kadmarket.com/uploads/chat/images/file.jpg
+ *
+ * https://media.kadmarket.com/uploads/chat/images/file.jpg
+ * ->
+ * unchanged
+ *
+ * Old:
+ * /uploads/chat/images/file.jpg
+ * ->
+ * Railway/API URL temporarily
+ */
+const resolveMediaUrl = (
+    value,
+    legacyFolder = ""
+) => {
     if (!value) {
-        return FALLBACK_IMAGE;
-    }
-
-    if (
-        value.startsWith("http://") ||
-        value.startsWith("https://") ||
-        value.startsWith("data:") ||
-        value.startsWith("blob:")
-    ) {
-        return value;
-    }
-
-    if (
-        value.startsWith("/uploads/")
-    ) {
-        return `${API_SERVER}${value}`;
-    }
-
-    if (
-        value.startsWith("uploads/")
-    ) {
-        return `${API_SERVER}/${value}`;
-    }
-
-    return `${API_SERVER}/uploads/${value}`;
-}
-
-/* =========================================================
-   CHAT IMAGE URL
-========================================================= */
-
-function getChatImageUrl(image) {
-    if (
-        !image ||
-        typeof image !== "string"
-    ) {
-        return FALLBACK_IMAGE;
-    }
-
-    const value = image.trim();
-
-    if (!value) {
-        return FALLBACK_IMAGE;
-    }
-
-    if (
-        value.startsWith("http://") ||
-        value.startsWith("https://") ||
-        value.startsWith("data:") ||
-        value.startsWith("blob:")
-    ) {
-        return value;
-    }
-
-    if (
-        value.startsWith("/uploads/")
-    ) {
-        return `${API_SERVER}${value}`;
-    }
-
-    if (
-        value.startsWith("uploads/")
-    ) {
-        return `${API_SERVER}/${value}`;
-    }
-
-    return `${API_SERVER}/uploads/chat/images/${value}`;
-}
-
-/* =========================================================
-   CHAT AUDIO URL
-========================================================= */
-
-function getChatAudioUrl(audio) {
-    if (
-        !audio ||
-        typeof audio !== "string"
-    ) {
         return "";
     }
 
-    const value = audio.trim();
+    /*
+     * Handle objects returned by the backend.
+     */
+    if (
+        typeof value === "object" &&
+        !Array.isArray(value)
+    ) {
+        value =
+            value.url ||
+            value.location ||
+            value.src ||
+            value.path ||
+            value.key ||
+            value.r2Key ||
+            value.filename ||
+            "";
+    }
 
     if (!value) {
         return "";
     }
 
+    const raw = String(value).trim();
+
+    if (!raw) {
+        return "";
+    }
+
+    /*
+     * Already a complete URL.
+     */
     if (
-        value.startsWith("http://") ||
-        value.startsWith("https://") ||
-        value.startsWith("blob:")
+        raw.startsWith("http://") ||
+        raw.startsWith("https://") ||
+        raw.startsWith("data:") ||
+        raw.startsWith("blob:")
     ) {
-        return value;
+        return raw;
+    }
+
+    /*
+     * Frontend/static assets.
+     */
+    if (
+        raw.startsWith("/images/") ||
+        raw.startsWith("/assets/") ||
+        raw.startsWith("/src/")
+    ) {
+        return raw;
+    }
+
+    /*
+     * Remove leading slash for object-key processing.
+     */
+    const normalized = raw.replace(/^\/+/, "");
+
+    /*
+     * R2 object key.
+     */
+    if (
+        R2_PUBLIC_URL &&
+        (
+            normalized.startsWith("uploads/") ||
+            normalized.startsWith("products/") ||
+            normalized.startsWith("profiles/") ||
+            normalized.startsWith("stores/") ||
+            normalized.startsWith("chat/")
+        )
+    ) {
+        return `${R2_PUBLIC_URL}/${normalized}`;
+    }
+
+    /*
+     * Legacy Railway/local uploads.
+     *
+     * This is intentionally kept only for old files.
+     */
+    if (
+        raw.startsWith("/uploads/")
+    ) {
+        return `${API_SERVER}${raw}`;
     }
 
     if (
-        value.startsWith("/uploads/")
+        raw.startsWith("uploads/")
     ) {
-        return `${API_SERVER}${value}`;
+        return `${API_SERVER}/${raw}`;
     }
 
+    /*
+     * Legacy bare filename.
+     *
+     * Used only when old database records contain
+     * a filename instead of an R2 key.
+     */
     if (
-        value.startsWith("uploads/")
+        legacyFolder &&
+        !raw.includes("/")
     ) {
-        return `${API_SERVER}/${value}`;
+        return `${API_SERVER}/uploads/${legacyFolder}/${raw}`;
     }
 
-    return `${API_SERVER}/uploads/chat/audio/${value}`;
-}
+    return raw;
+};
 
 /* =========================================================
-   PARSE IMAGES
+   PRODUCT IMAGE
 ========================================================= */
 
-function parseImages(images) {
+const getImageUrl = (image) => {
+    const url = resolveMediaUrl(image);
+
+    return url || FALLBACK_IMAGE;
+};
+
+/* =========================================================
+   CHAT IMAGE
+========================================================= */
+
+const getChatImageUrl = (image) => {
+    const url = resolveMediaUrl(
+        image,
+        "chat/images"
+    );
+
+    return url || FALLBACK_IMAGE;
+};
+
+/* =========================================================
+   CHAT AUDIO
+========================================================= */
+
+const getChatAudioUrl = (audio) => {
+    return resolveMediaUrl(
+        audio,
+        "chat/audio"
+    );
+};
+
+/* =========================================================
+   PARSE PRODUCT IMAGES
+========================================================= */
+
+const parseImages = (images) => {
     if (!images) {
         return [];
     }
@@ -248,58 +264,53 @@ function parseImages(images) {
         return images;
     }
 
-    if (
-        typeof images === "string"
-    ) {
+    if (typeof images === "string") {
         try {
-            const parsed =
-                JSON.parse(images);
+            const parsed = JSON.parse(images);
 
-            if (
-                Array.isArray(parsed)
-            ) {
+            if (Array.isArray(parsed)) {
                 return parsed;
             }
 
-            return parsed
-                ? [parsed]
-                : [];
+            if (parsed) {
+                return [parsed];
+            }
+
+            return [];
         } catch {
             return [images];
         }
     }
 
     return [];
-}
+};
 
 /* =========================================================
    STORED USER
 ========================================================= */
 
-function getStoredUser() {
-    const storedUser =
-        localStorage.getItem("user");
-
-    if (!storedUser) {
-        return null;
-    }
-
+const getStoredUser = () => {
     try {
-        return JSON.parse(
-            storedUser
-        );
+        const value =
+            localStorage.getItem("user");
+
+        if (!value) {
+            return null;
+        }
+
+        return JSON.parse(value);
     } catch {
         return null;
     }
-}
+};
 
 /* =========================================================
-   SAFE FETCH RESPONSE
+   SAFE RESPONSE
 ========================================================= */
 
-async function parseFetchResponse(
+const parseFetchResponse = async (
     response
-) {
+) => {
     const contentType =
         response.headers.get(
             "content-type"
@@ -310,7 +321,7 @@ async function parseFetchResponse(
             "application/json"
         )
     ) {
-        return await response.json();
+        return response.json();
     }
 
     const text =
@@ -320,7 +331,7 @@ async function parseFetchResponse(
         success: response.ok,
         message: text
     };
-}
+};
 
 /* =========================================================
    COMPONENT
@@ -339,9 +350,7 @@ function Chat() {
     ===================================================== */
 
     const token =
-        localStorage.getItem(
-            "token"
-        );
+        localStorage.getItem("token");
 
     const storedUser =
         useMemo(
@@ -350,7 +359,7 @@ function Chat() {
         );
 
     const userId =
-        storedUser?.id
+        storedUser?.id != null
             ? String(storedUser.id)
             : null;
 
@@ -506,27 +515,27 @@ function Chat() {
                         data.seller ||
                         null
                     );
-                } catch (error) {
+                } catch (err) {
                     console.error(
                         "LOAD CONVERSATION ERROR:",
-                        error.response?.data ||
-                        error.message
+                        err.response?.data ||
+                        err.message
                     );
 
                     if (
-                        error.response?.status ===
+                        err.response?.status ===
                         401
                     ) {
                         setError(
-                            "Your session may have expired. Please refresh and try again."
+                            "Your session has expired. Please log in again."
                         );
 
                         return;
                     }
 
                     setError(
-                        error.response?.data?.message ||
-                        error.message ||
+                        err.response?.data?.message ||
+                        err.message ||
                         "Unable to load conversation."
                     );
                 }
@@ -569,60 +578,66 @@ function Chat() {
                                 data.data
                             )
                                 ? data.data
-                                : [];
+                                : Array.isArray(
+                                    data
+                                )
+                                    ? data
+                                    : [];
 
                     setMessages(
                         loadedMessages
                     );
 
-                    /* MARK DELIVERED */
-
+                    /*
+                     * Mark delivered.
+                     */
                     try {
                         await api.put(
                             `/messages/${conversationId}/delivered`
                         );
-                    } catch (error) {
+                    } catch (err) {
                         console.warn(
                             "MARK DELIVERED ERROR:",
-                            error.response?.data ||
-                            error.message
+                            err.response?.data ||
+                            err.message
                         );
                     }
 
-                    /* MARK READ */
-
+                    /*
+                     * Mark read.
+                     */
                     try {
                         await api.put(
                             `/messages/${conversationId}/read`
                         );
-                    } catch (error) {
+                    } catch (err) {
                         console.warn(
                             "MARK READ ERROR:",
-                            error.response?.data ||
-                            error.message
+                            err.response?.data ||
+                            err.message
                         );
                     }
-                } catch (error) {
+                } catch (err) {
                     console.error(
                         "LOAD MESSAGES ERROR:",
-                        error.response?.data ||
-                        error.message
+                        err.response?.data ||
+                        err.message
                     );
 
                     if (
-                        error.response?.status ===
+                        err.response?.status ===
                         401
                     ) {
                         setError(
-                            "Your session may have expired. Please refresh and try again."
+                            "Your session has expired. Please log in again."
                         );
 
                         return;
                     }
 
                     setError(
-                        error.response?.data?.message ||
-                        error.message ||
+                        err.response?.data?.message ||
+                        err.message ||
                         "Unable to load messages."
                     );
                 } finally {
@@ -636,7 +651,7 @@ function Chat() {
         );
 
     /* =====================================================
-       INITIAL CHAT LOAD
+       INITIAL LOAD
     ===================================================== */
 
     useEffect(() => {
@@ -650,6 +665,9 @@ function Chat() {
         const id =
             String(conversationId);
 
+        /*
+         * Prevent duplicate loading.
+         */
         if (
             loadedConversationRef.current ===
             id
@@ -661,9 +679,7 @@ function Chat() {
             id;
 
         setLoading(true);
-
         setError("");
-
         setMessages([]);
 
         const loadChat =
@@ -698,10 +714,6 @@ function Chat() {
         currentConversationRef.current =
             id;
 
-        /* =================================================
-           JOIN CONVERSATION
-        ================================================= */
-
         const joinConversation =
             () => {
                 if (
@@ -710,16 +722,6 @@ function Chat() {
                 ) {
                     return;
                 }
-
-                console.log(
-                    "🟢 Socket connected:",
-                    socket.id
-                );
-
-                console.log(
-                    "📩 Joining conversation:",
-                    id
-                );
 
                 setSocketConnected(
                     true
@@ -731,14 +733,10 @@ function Chat() {
                 );
             };
 
-        /* =================================================
-           CONNECT ERROR
-        ================================================= */
-
         const handleConnectError =
             (socketError) => {
                 console.error(
-                    "❌ Socket.IO connection error:",
+                    "SOCKET CONNECTION ERROR:",
                     socketError?.message ||
                     socketError
                 );
@@ -748,14 +746,10 @@ function Chat() {
                 );
             };
 
-        /* =================================================
-           DISCONNECT
-        ================================================= */
-
         const handleDisconnect =
             (reason) => {
                 console.warn(
-                    "🔴 Socket disconnected:",
+                    "SOCKET DISCONNECTED:",
                     reason
                 );
 
@@ -763,10 +757,6 @@ function Chat() {
                     false
                 );
             };
-
-        /* =================================================
-           RECEIVE MESSAGE
-        ================================================= */
 
         const handleReceiveMessage =
             (incomingMessage) => {
@@ -794,7 +784,6 @@ function Chat() {
                         /*
                          * Prevent duplicate messages.
                          */
-
                         if (
                             incomingMessage.id &&
                             previousMessages.some(
@@ -818,10 +807,6 @@ function Chat() {
                 );
             };
 
-        /* =================================================
-           SOCKET EVENTS
-        ================================================= */
-
         socket.on(
             "connect",
             joinConversation
@@ -842,10 +827,6 @@ function Chat() {
             handleReceiveMessage
         );
 
-        /*
-         * Start socket if it is not connected.
-         */
-
         if (
             !socket.connected
         ) {
@@ -853,10 +834,6 @@ function Chat() {
         } else {
             joinConversation();
         }
-
-        /* =================================================
-           CLEANUP
-        ================================================= */
 
         return () => {
             socket.off(
@@ -907,7 +884,45 @@ function Chat() {
     ]);
 
     /* =====================================================
-       SEND TEXT MESSAGE
+       ADD MESSAGE WITHOUT DUPLICATES
+    ===================================================== */
+
+    const addMessage =
+        useCallback(
+            (newMessage) => {
+                if (!newMessage) {
+                    return;
+                }
+
+                setMessages(
+                    previousMessages => {
+                        if (
+                            newMessage.id &&
+                            previousMessages.some(
+                                item =>
+                                    String(
+                                        item.id
+                                    ) ===
+                                    String(
+                                        newMessage.id
+                                    )
+                            )
+                        ) {
+                            return previousMessages;
+                        }
+
+                        return [
+                            ...previousMessages,
+                            newMessage
+                        ];
+                    }
+                );
+            },
+            []
+        );
+
+    /* =====================================================
+       SEND TEXT
     ===================================================== */
 
     const sendMessage =
@@ -925,7 +940,6 @@ function Chat() {
 
             try {
                 setSending(true);
-
                 setError("");
 
                 const response =
@@ -941,53 +955,33 @@ function Chat() {
                     response.data?.message;
 
                 if (newMessage) {
-                    setMessages(
-                        previousMessages => {
-                            if (
-                                newMessage.id &&
-                                previousMessages.some(
-                                    item =>
-                                        String(
-                                            item.id
-                                        ) ===
-                                        String(
-                                            newMessage.id
-                                        )
-                                )
-                            ) {
-                                return previousMessages;
-                            }
-
-                            return [
-                                ...previousMessages,
-                                newMessage
-                            ];
-                        }
+                    addMessage(
+                        newMessage
                     );
                 }
 
                 setMessage("");
-            } catch (error) {
+            } catch (err) {
                 console.error(
                     "SEND MESSAGE ERROR:",
-                    error.response?.data ||
-                    error.message
+                    err.response?.data ||
+                    err.message
                 );
 
                 if (
-                    error.response?.status ===
+                    err.response?.status ===
                     401
                 ) {
                     setError(
-                        "Your session may have expired. Please refresh and try again."
+                        "Your session has expired. Please log in again."
                     );
 
                     return;
                 }
 
                 setError(
-                    error.response?.data?.message ||
-                    error.message ||
+                    err.response?.data?.message ||
+                    err.message ||
                     "Failed to send message."
                 );
             } finally {
@@ -1022,6 +1016,12 @@ function Chat() {
                 return;
             }
 
+            /*
+             * Frontend limit.
+             *
+             * Backend chatUpload currently
+             * allows up to 10MB.
+             */
             if (
                 file.size >
                 10 * 1024 * 1024
@@ -1085,7 +1085,7 @@ function Chat() {
                         401
                     ) {
                         setError(
-                            "Your session may have expired. Please refresh and try again."
+                            "Your session has expired. Please log in again."
                         );
 
                         return;
@@ -1102,38 +1102,18 @@ function Chat() {
                     data?.message;
 
                 if (newMessage) {
-                    setMessages(
-                        previousMessages => {
-                            if (
-                                newMessage.id &&
-                                previousMessages.some(
-                                    item =>
-                                        String(
-                                            item.id
-                                        ) ===
-                                        String(
-                                            newMessage.id
-                                        )
-                                )
-                            ) {
-                                return previousMessages;
-                            }
-
-                            return [
-                                ...previousMessages,
-                                newMessage
-                            ];
-                        }
+                    addMessage(
+                        newMessage
                     );
                 }
-            } catch (error) {
+            } catch (err) {
                 console.error(
                     "IMAGE UPLOAD ERROR:",
-                    error
+                    err
                 );
 
                 setError(
-                    error.message ||
+                    err.message ||
                     "Failed to send image."
                 );
             } finally {
@@ -1276,13 +1256,13 @@ function Chat() {
                                 blob
                             );
 
-                            const url =
+                            const previewUrl =
                                 URL.createObjectURL(
                                     blob
                                 );
 
                             setAudioPreviewUrl(
-                                url
+                                previewUrl
                             );
                         }
 
@@ -1322,10 +1302,10 @@ function Chat() {
                 setRecording(
                     true
                 );
-            } catch (error) {
+            } catch (err) {
                 console.error(
                     "START RECORDING ERROR:",
-                    error
+                    err
                 );
 
                 setRecording(
@@ -1337,7 +1317,7 @@ function Chat() {
                 );
 
                 setError(
-                    error.message ||
+                    err.message ||
                     "Unable to access microphone."
                 );
             }
@@ -1349,7 +1329,9 @@ function Chat() {
 
     const stopRecording =
         () => {
-            if (!mediaRecorder) {
+            if (
+                !mediaRecorder
+            ) {
                 return;
             }
 
@@ -1404,6 +1386,9 @@ function Chat() {
                     audioPreviewUrl
                 );
             }
+
+            chunksRef.current =
+                [];
 
             setRecording(
                 false
@@ -1501,7 +1486,7 @@ function Chat() {
                         401
                     ) {
                         setError(
-                            "Your session may have expired. Please refresh and try again."
+                            "Your session has expired. Please log in again."
                         );
 
                         return;
@@ -1518,28 +1503,8 @@ function Chat() {
                     data?.message;
 
                 if (newMessage) {
-                    setMessages(
-                        previousMessages => {
-                            if (
-                                newMessage.id &&
-                                previousMessages.some(
-                                    item =>
-                                        String(
-                                            item.id
-                                        ) ===
-                                        String(
-                                            newMessage.id
-                                        )
-                                )
-                            ) {
-                                return previousMessages;
-                            }
-
-                            return [
-                                ...previousMessages,
-                                newMessage
-                            ];
-                        }
+                    addMessage(
+                        newMessage
                     );
                 }
 
@@ -1551,6 +1516,9 @@ function Chat() {
                     );
                 }
 
+                chunksRef.current =
+                    [];
+
                 setAudioBlob(
                     null
                 );
@@ -1558,21 +1526,21 @@ function Chat() {
                 setAudioPreviewUrl(
                     ""
                 );
-            } catch (error) {
+            } catch (err) {
                 console.error(
                     "AUDIO UPLOAD ERROR:",
-                    error
+                    err
                 );
 
                 setError(
-                    error.message ||
+                    err.message ||
                     "Failed to send voice message."
                 );
             }
         };
 
     /* =====================================================
-       CLEANUP
+       CLEANUP MEDIA
     ===================================================== */
 
     useEffect(() => {
@@ -1604,26 +1572,21 @@ function Chat() {
     ]);
 
     /* =====================================================
-       GLOBAL SOCKET CLEANUP
+       SOCKET CLEANUP
     ===================================================== */
 
     useEffect(() => {
         return () => {
-            /*
-             * We intentionally disconnect when
-             * Chat is completely unmounted.
-             */
-
             socket.disconnect();
         };
     }, []);
 
     /* =====================================================
-       TIME FORMAT
+       FORMAT TIME
     ===================================================== */
 
     const formatMessageTime =
-        value => {
+        (value) => {
             if (!value) {
                 return "";
             }
@@ -1653,16 +1616,22 @@ function Chat() {
     ===================================================== */
 
     const getMessageType =
-        msg => {
-            if (msg.type) {
+        (msg) => {
+            if (
+                msg?.type
+            ) {
                 return msg.type;
             }
 
-            if (msg.image) {
+            if (
+                msg?.image
+            ) {
                 return "image";
             }
 
-            if (msg.audio) {
+            if (
+                msg?.audio
+            ) {
                 return "audio";
             }
 
@@ -1674,16 +1643,17 @@ function Chat() {
     ===================================================== */
 
     const isMyMessage =
-        msg => {
+        (msg) => {
             if (!userId) {
                 return false;
             }
 
             return (
                 String(
-                    msg.senderId ??
-                    msg.sender_id
-                ) === userId
+                    msg?.senderId ??
+                    msg?.sender_id
+                ) ===
+                userId
             );
         };
 
@@ -1728,9 +1698,7 @@ function Chat() {
                     type="button"
                     className="chat-back-btn"
                     onClick={() =>
-                        navigate(
-                            "/inbox"
-                        )
+                        navigate("/inbox")
                     }
                     aria-label="Back to inbox"
                 >
@@ -1801,6 +1769,7 @@ function Chat() {
                     }
                 >
                     <span />
+
                     {
                         socketConnected
                             ? "Online"
@@ -1885,7 +1854,7 @@ function Chat() {
 
                             const messageId =
                                 msg.id ||
-                                `${msg.createdAt || msg.created_at}-${index}`;
+                                `${msg.createdAt || msg.created_at || "message"}-${index}`;
 
                             return (
                                 <div
@@ -2084,12 +2053,7 @@ function Chat() {
                     }
                     type="file"
                     hidden
-                    accept="
-                        image/jpeg,
-                        image/png,
-                        image/webp,
-                        image/gif
-                    "
+                    accept="image/jpeg,image/png,image/webp,image/gif"
                     onChange={
                         uploadImage
                     }
@@ -2118,7 +2082,7 @@ function Chat() {
                     }
                 </button>
 
-                {/* AUDIO */}
+                {/* AUDIO BUTTON */}
 
                 {recording ? (
 
@@ -2190,7 +2154,7 @@ function Chat() {
                     }
                 />
 
-                {/* SEND */}
+                {/* SEND BUTTON */}
 
                 <button
                     type="button"

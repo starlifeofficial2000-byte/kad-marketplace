@@ -1,62 +1,17 @@
 const multer = require("multer");
 const path = require("path");
-const fs = require("fs");
+
+const {
+    uploadToR2
+} = require("../config/r2");
 
 /*
 ==========================================================
-PROFILE UPLOAD DIRECTORY
+MEMORY STORAGE
 ==========================================================
 */
 
-const uploadPath = path.join(
-    __dirname,
-    "..",
-    "uploads"
-);
-
-/*
- * Make sure uploads directory exists.
- */
-if (!fs.existsSync(uploadPath)) {
-    fs.mkdirSync(uploadPath, {
-        recursive: true,
-    });
-}
-
-/*
-==========================================================
-MULTER STORAGE
-==========================================================
-*/
-
-const storage = multer.diskStorage({
-
-    destination: (req, file, cb) => {
-
-        cb(null, uploadPath);
-
-    },
-
-    filename: (req, file, cb) => {
-
-        const extension =
-            path.extname(
-                file.originalname
-            ).toLowerCase();
-
-        const uniqueName =
-            `${Date.now()}-${Math.round(
-                Math.random() * 1e9
-            )}${extension}`;
-
-        cb(
-            null,
-            uniqueName
-        );
-
-    },
-
-});
+const storage = multer.memoryStorage();
 
 /*
 ==========================================================
@@ -88,12 +43,9 @@ const fileFilter = (
 
     const extension =
         path.extname(
-            file.originalname
+            file.originalname || ""
         ).toLowerCase();
 
-    /*
-     * Check both MIME type and extension.
-     */
     const validMimeType =
         allowedMimeTypes.includes(
             file.mimetype
@@ -121,7 +73,119 @@ const fileFilter = (
         );
 
     }
+};
 
+/*
+==========================================================
+CREATE R2 KEY
+==========================================================
+*/
+
+const createProfileImageKey = (file) => {
+
+    const extension =
+        path.extname(
+            file.originalname || ""
+        ).toLowerCase();
+
+    /*
+     * Keep GIF support because your existing
+     * profile uploader allowed GIF.
+     */
+
+    const allowedExtensions = [
+        ".jpeg",
+        ".jpg",
+        ".png",
+        ".gif",
+        ".webp",
+    ];
+
+    const safeExtension =
+        allowedExtensions.includes(extension)
+            ? extension
+            : ".jpg";
+
+    const randomPart =
+        Math.random()
+            .toString(36)
+            .substring(2, 12);
+
+    return (
+        `uploads/profiles/` +
+        `${Date.now()}-${randomPart}` +
+        `${safeExtension}`
+    );
+};
+
+/*
+==========================================================
+UPLOAD PROFILE IMAGE TO R2
+==========================================================
+*/
+
+const uploadProfileImageToR2 = async (
+    file
+) => {
+
+    if (
+        !file ||
+        !file.buffer
+    ) {
+        throw new Error(
+            "Invalid profile image upload."
+        );
+    }
+
+    const key =
+        createProfileImageKey(file);
+
+    const result =
+        await uploadToR2({
+
+            key,
+
+            buffer:
+                file.buffer,
+
+            contentType:
+                file.mimetype,
+
+            cacheControl:
+                "public, max-age=31536000, immutable"
+
+        });
+
+    /*
+     * Keep metadata available to
+     * userController.js.
+     */
+
+    file.r2Key =
+        result.key;
+
+    file.key =
+        result.key;
+
+    file.url =
+        result.url;
+
+    file.location =
+        result.url;
+
+    file.filename =
+        result.key.split("/").pop();
+
+    file.storage =
+        "r2";
+
+    /*
+     * Buffer is no longer needed.
+     */
+
+    file.buffer = null;
+
+    return file;
 };
 
 /*
@@ -130,19 +194,98 @@ MULTER
 ==========================================================
 */
 
-const upload = multer({
+const multerUpload =
+    multer({
 
-    storage,
+        storage,
 
-    fileFilter,
+        fileFilter,
 
-    limits: {
-        fileSize:
-            5 * 1024 * 1024,
+        limits: {
 
-        files: 1,
+            fileSize:
+                5 * 1024 * 1024,
+
+            files: 1,
+
+        },
+
+    });
+
+/*
+==========================================================
+PROFILE UPLOAD MIDDLEWARE
+==========================================================
+*/
+
+const upload = {
+
+    single: (fieldName) => {
+
+        const middleware =
+            multerUpload.single(
+                fieldName
+            );
+
+        return async (
+            req,
+            res,
+            next
+        ) => {
+
+            try {
+
+                await new Promise(
+                    (
+                        resolve,
+                        reject
+                    ) => {
+
+                        middleware(
+                            req,
+                            res,
+                            (error) => {
+
+                                if (error) {
+                                    reject(
+                                        error
+                                    );
+                                    return;
+                                }
+
+                                resolve();
+
+                            }
+                        );
+
+                    }
+                );
+
+                if (req.file) {
+
+                    await uploadProfileImageToR2(
+                        req.file
+                    );
+
+                }
+
+                next();
+
+            } catch (error) {
+
+                console.error(
+                    "PROFILE IMAGE R2 UPLOAD ERROR:",
+                    error
+                );
+
+                next(error);
+
+            }
+
+        };
+
     },
 
-});
+};
 
 module.exports = upload;

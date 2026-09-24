@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../config/axios";
 
 import {
@@ -10,14 +11,25 @@ import {
     FaCalendarAlt,
     FaStore,
     FaEye,
-    FaComments
+    FaComments,
+    FaCheckCircle,
+    FaExclamationTriangle,
+    FaArrowRight,
+    FaSyncAlt
 } from "react-icons/fa";
 
 import "./Dashboard.css";
 
+
 function Dashboard() {
+    const navigate = useNavigate();
+
+    // =========================================================
+    // STATE
+    // =========================================================
 
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
     const [subscription, setSubscription] = useState(null);
 
@@ -27,21 +39,21 @@ function Dashboard() {
         messages: 0
     });
 
+    const [error, setError] = useState("");
 
-    /* ==========================================
-       LOAD DASHBOARD DATA
-    ========================================== */
+
+    // =========================================================
+    // LOAD DASHBOARD
+    // =========================================================
 
     useEffect(() => {
-
         loadDashboard();
-
     }, []);
 
 
     const loadDashboard = async () => {
-
         try {
+            setError("");
 
             setLoading(true);
 
@@ -49,31 +61,57 @@ function Dashboard() {
                 loadSubscription(),
                 loadStats()
             ]);
-
-        } catch (error) {
-
+        } catch (err) {
             console.error(
                 "DASHBOARD LOAD ERROR:",
-                error.response?.data || error.message
+                err?.response?.data || err?.message || err
             );
 
+            setError(
+                err?.response?.data?.message ||
+                "Unable to load dashboard data."
+            );
         } finally {
-
             setLoading(false);
-
         }
-
     };
 
 
-    /* ==========================================
-       LOAD SUBSCRIPTION
-    ========================================== */
+    // =========================================================
+    // REFRESH DASHBOARD
+    // =========================================================
+
+    const refreshDashboard = async () => {
+        try {
+            setRefreshing(true);
+            setError("");
+
+            await Promise.all([
+                loadSubscription(),
+                loadStats()
+            ]);
+        } catch (err) {
+            console.error(
+                "DASHBOARD REFRESH ERROR:",
+                err?.response?.data || err?.message || err
+            );
+
+            setError(
+                err?.response?.data?.message ||
+                "Unable to refresh dashboard."
+            );
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
+
+    // =========================================================
+    // LOAD SUBSCRIPTION
+    // =========================================================
 
     const loadSubscription = async () => {
-
         try {
-
             const response = await api.get(
                 "/subscription/status"
             );
@@ -83,45 +121,60 @@ function Dashboard() {
                 response.data
             );
 
+            const data = response?.data || {};
+
+            /*
+             * Backend normally returns:
+             *
+             * {
+             *   success: true,
+             *   hasSubscription: true,
+             *   subscription: {
+             *      ...
+             *      plan: {...},
+             *      usage: {...}
+             *   }
+             * }
+             */
+
+            const subscriptionData =
+                data.subscription ||
+                data.data?.subscription ||
+                null;
+
 
             if (
-                response.data?.success &&
-                response.data?.hasSubscription &&
-                response.data?.subscription
+                data.success === true &&
+                data.hasSubscription === true &&
+                subscriptionData
             ) {
-
-                setSubscription(
-                    response.data.subscription
-                );
-
+                setSubscription(subscriptionData);
             } else {
-
                 setSubscription(null);
-
             }
 
-        } catch (error) {
-
+        } catch (err) {
             console.error(
                 "SUBSCRIPTION ERROR:",
-                error.response?.data || error.message
+                err?.response?.data || err?.message || err
             );
 
             setSubscription(null);
 
+            /*
+             * Do not make the entire dashboard fail simply
+             * because subscription information could not load.
+             */
         }
-
     };
 
 
-    /* ==========================================
-       LOAD DASHBOARD STATISTICS
-    ========================================== */
+    // =========================================================
+    // LOAD SELLER STATISTICS
+    // =========================================================
 
     const loadStats = async () => {
-
         try {
-
             const response = await api.get(
                 "/seller/dashboard"
             );
@@ -131,160 +184,265 @@ function Dashboard() {
                 response.data
             );
 
+            const responseData =
+                response?.data || {};
 
             const data =
-                response.data?.data ||
-                response.data?.stats ||
-                response.data ||
-                {};
+                responseData.data ||
+                responseData.stats ||
+                responseData;
 
 
             setStats({
+                products: Number(
+                    data?.products ??
+                    data?.totalProducts ??
+                    0
+                ),
 
-                products:
-                    Number(
-                        data.products ||
-                        data.totalProducts ||
-                        0
-                    ),
+                views: Number(
+                    data?.views ??
+                    data?.totalViews ??
+                    0
+                ),
 
-                views:
-                    Number(
-                        data.views ||
-                        data.totalViews ||
-                        0
-                    ),
-
-                messages:
-                    Number(
-                        data.messages ||
-                        data.totalMessages ||
-                        0
-                    )
-
+                messages: Number(
+                    data?.messages ??
+                    data?.totalMessages ??
+                    0
+                )
             });
 
-        } catch (error) {
-
+        } catch (err) {
             console.error(
                 "STATS ERROR:",
-                error.response?.data || error.message
+                err?.response?.data || err?.message || err
             );
 
+            /*
+             * Keep dashboard usable even if statistics
+             * endpoint fails.
+             */
+            setStats({
+                products: 0,
+                views: 0,
+                messages: 0
+            });
         }
-
     };
 
 
-    /* ==========================================
-       LOADING SCREEN
-    ========================================== */
+    // =========================================================
+    // PLAN
+    // =========================================================
 
-    if (loading) {
-
+    const plan = useMemo(() => {
         return (
+            subscription?.plan ||
+            subscription?.subscriptionPlan ||
+            null
+        );
+    }, [subscription]);
 
-            <div className="dashboard-loading">
 
-                <div className="loading-spinner"></div>
+    // =========================================================
+    // SUBSCRIPTION USAGE
+    //
+    // IMPORTANT:
+    // Backend formatSubscription() returns usage as:
+    //
+    // subscription.usage.uploadsUsed
+    // subscription.usage.boostsUsed
+    // subscription.usage.featuredUsed
+    // subscription.usage.expressUsed
+    //
+    // =========================================================
 
-                <p>Loading dashboard...</p>
+    const usage = useMemo(() => {
+        return (
+            subscription?.usage ||
+            {}
+        );
+    }, [subscription]);
 
-            </div>
 
+    const uploadsUsed = Number(
+        usage?.uploadsUsed ??
+        subscription?.uploadsUsed ??
+        0
+    );
+
+
+    const boostsUsed = Number(
+        usage?.boostsUsed ??
+        subscription?.boostsUsed ??
+        0
+    );
+
+
+    const featuredUsed = Number(
+        usage?.featuredUsed ??
+        subscription?.featuredUsed ??
+        0
+    );
+
+
+    const expressUsed = Number(
+        usage?.expressUsed ??
+        subscription?.expressUsed ??
+        0
+    );
+
+
+    // =========================================================
+    // PLAN LIMITS
+    // =========================================================
+
+    const maxProducts = Number(
+        plan?.maxProducts ?? 0
+    );
+
+
+    const boostCredits = Number(
+        plan?.boostCredits ?? 0
+    );
+
+
+    const featuredCredits = Number(
+        plan?.featuredCredits ?? 0
+    );
+
+
+    const expressCredits = Number(
+        plan?.expressCredits ?? 0
+    );
+
+
+    const duration = Number(
+        plan?.duration ?? 0
+    );
+
+
+    const price = Number(
+        plan?.price ?? 0
+    );
+
+
+    // =========================================================
+    // REMAINING BENEFITS
+    // =========================================================
+
+    const uploadsRemaining = Math.max(
+        maxProducts - uploadsUsed,
+        0
+    );
+
+
+    const boostsRemaining = Math.max(
+        boostCredits - boostsUsed,
+        0
+    );
+
+
+    const featuredRemaining = Math.max(
+        featuredCredits - featuredUsed,
+        0
+    );
+
+
+    const expressRemaining = Math.max(
+        expressCredits - expressUsed,
+        0
+    );
+
+
+    // =========================================================
+    // SUBSCRIPTION STATUS
+    // =========================================================
+
+    const subscriptionStatus =
+        String(
+            subscription?.status || ""
+        ).toLowerCase();
+
+
+    const isActive =
+        !!subscription &&
+        (
+            subscriptionStatus === "active" ||
+            subscriptionStatus === ""
         );
 
-    }
+
+    // =========================================================
+    // DAYS REMAINING
+    // =========================================================
+
+    const daysRemaining = useMemo(() => {
+        if (!subscription?.endDate) {
+            return Number(
+                subscription?.daysLeft ?? 0
+            );
+        }
+
+        const endDate = new Date(
+            subscription.endDate
+        );
+
+        if (Number.isNaN(endDate.getTime())) {
+            return Number(
+                subscription?.daysLeft ?? 0
+            );
+        }
+
+        const now = new Date();
+
+        const difference =
+            endDate.getTime() -
+            now.getTime();
+
+        const days = Math.ceil(
+            difference /
+            (1000 * 60 * 60 * 24)
+        );
+
+        return Math.max(days, 0);
+
+    }, [subscription]);
 
 
-    /* ==========================================
-       GET SUBSCRIPTION PLAN
-    ========================================== */
+    // =========================================================
+    // PERCENTAGE
+    // =========================================================
 
-    const plan =
-        subscription?.subscriptionPlan ||
-        subscription?.plan ||
-        null;
+    const getPercentage = (
+        used,
+        total
+    ) => {
 
+        const safeUsed =
+            Number(used || 0);
 
-    /* ==========================================
-       SUBSCRIPTION VALUES
-    ========================================== */
+        const safeTotal =
+            Number(total || 0);
 
-    const uploadsUsed =
-        Number(subscription?.uploadsUsed ?? 0);
-
-    const boostsUsed =
-        Number(subscription?.boostsUsed ?? 0);
-
-    const featuredUsed =
-        Number(subscription?.featuredUsed ?? 0);
-
-    const expressUsed =
-        Number(subscription?.expressUsed ?? 0);
-
-
-    /* ==========================================
-       PLAN VALUES
-    ========================================== */
-
-    const maxProducts =
-        Number(plan?.maxProducts ?? 0);
-
-    const boostCredits =
-        Number(plan?.boostCredits ?? 0);
-
-    const featuredCredits =
-        Number(plan?.featuredCredits ?? 0);
-
-    const expressCredits =
-        Number(plan?.expressCredits ?? 0);
-
-    const duration =
-        Number(plan?.duration ?? 0);
-
-    const price =
-        Number(plan?.price ?? 0);
-
-
-    /* ==========================================
-       REMAINING CREDITS
-    ========================================== */
-
-    const uploadsRemaining =
-        Math.max(maxProducts - uploadsUsed, 0);
-
-    const boostsRemaining =
-        Math.max(boostCredits - boostsUsed, 0);
-
-    const featuredRemaining =
-        Math.max(featuredCredits - featuredUsed, 0);
-
-    const expressRemaining =
-        Math.max(expressCredits - expressUsed, 0);
-
-
-    /* ==========================================
-       PERCENTAGE CALCULATOR
-    ========================================== */
-
-    const getPercentage = (used, total) => {
-
-        if (!total || Number(total) <= 0) {
+        if (
+            safeTotal <= 0 ||
+            safeUsed <= 0
+        ) {
             return 0;
         }
 
         return Math.min(
-            (Number(used) / Number(total)) * 100,
+            (safeUsed / safeTotal) * 100,
             100
         );
-
     };
 
 
-    /* ==========================================
-       FORMAT DATE
-    ========================================== */
+    // =========================================================
+    // DATE FORMAT
+    // =========================================================
 
     const formatDate = (date) => {
 
@@ -292,7 +450,18 @@ function Dashboard() {
             return "N/A";
         }
 
-        return new Date(date).toLocaleDateString(
+        const parsedDate =
+            new Date(date);
+
+        if (
+            Number.isNaN(
+                parsedDate.getTime()
+            )
+        ) {
+            return "N/A";
+        }
+
+        return parsedDate.toLocaleDateString(
             "en-GB",
             {
                 day: "numeric",
@@ -300,54 +469,98 @@ function Dashboard() {
                 year: "numeric"
             }
         );
-
     };
 
 
-    /* ==========================================
-       DAYS REMAINING
-    ========================================== */
+    // =========================================================
+    // NUMBER FORMAT
+    // =========================================================
 
-    const getDaysRemaining = () => {
+    const formatNumber = (value) => {
+        return Number(
+            value || 0
+        ).toLocaleString();
+    };
 
-        if (!subscription?.endDate) {
-            return 0;
-        }
 
-        const today = new Date();
+    // =========================================================
+    // UPLOAD STATUS
+    // =========================================================
 
-        const endDate = new Date(
-            subscription.endDate
+    const uploadLimitReached =
+        maxProducts > 0 &&
+        uploadsUsed >= maxProducts;
+
+
+    // =========================================================
+    // PROMOTION CREDIT STATUS
+    // =========================================================
+
+    const hasBoostCredits =
+        boostsRemaining > 0;
+
+
+    const hasFeaturedCredits =
+        featuredRemaining > 0;
+
+
+    const hasExpressCredits =
+        expressRemaining > 0;
+
+
+    // =========================================================
+    // NAVIGATION
+    // =========================================================
+
+    const goToSubscriptionPlans = () => {
+        navigate("/subscription-plans");
+    };
+
+
+    const goToSell = () => {
+        navigate("/sell");
+    };
+
+
+    const goToProducts = () => {
+        navigate("/products");
+    };
+
+
+    // =========================================================
+    // LOADING SCREEN
+    // =========================================================
+
+    if (loading) {
+
+        return (
+            <div className="dashboard-page">
+
+                <div className="dashboard-loading">
+
+                    <div className="loading-spinner"></div>
+
+                    <p>
+                        Loading dashboard...
+                    </p>
+
+                </div>
+
+            </div>
         );
-
-        const difference =
-            endDate.getTime() -
-            today.getTime();
-
-        const days =
-            Math.ceil(
-                difference /
-                (1000 * 60 * 60 * 24)
-            );
-
-        return Math.max(days, 0);
-
-    };
+    }
 
 
-    const daysRemaining =
-        getDaysRemaining();
-
-
-    /* ==========================================
-       NO SUBSCRIPTION
-    ========================================== */
+    // =========================================================
+    // NO SUBSCRIPTION
+    // =========================================================
 
     if (!subscription || !plan) {
 
         return (
-
             <div className="dashboard-page">
+
+                {/* HEADER */}
 
                 <div className="dashboard-header">
 
@@ -358,116 +571,142 @@ function Dashboard() {
                         </h1>
 
                         <p>
-                            Manage your marketplace business.
+                            Manage your marketplace
+                            business from one place.
                         </p>
+
+                    </div>
+
+
+                    <div className="dashboard-header-actions">
+
+                        <button
+                            type="button"
+                            className="dashboard-refresh-btn"
+                            onClick={refreshDashboard}
+                            disabled={refreshing}
+                        >
+
+                            <FaSyncAlt
+                                className={
+                                    refreshing
+                                        ? "refresh-spinning"
+                                        : ""
+                                }
+                            />
+
+                            {refreshing
+                                ? "Refreshing..."
+                                : "Refresh"}
+
+                        </button>
 
                     </div>
 
                 </div>
 
 
+                {/* ERROR */}
+
+                {error && (
+
+                    <div className="dashboard-error">
+
+                        <FaExclamationTriangle />
+
+                        <span>
+                            {error}
+                        </span>
+
+                    </div>
+
+                )}
+
+
+                {/* NO SUBSCRIPTION */}
+
                 <div className="no-subscription-card">
 
-                    <FaCrown />
+                    <FaCrown className="no-subscription-icon" />
 
                     <h2>
                         No Active Subscription
                     </h2>
 
                     <p>
-                        Subscribe to a plan to unlock
-                        product uploads and promotion features.
+                        You currently do not have
+                        an active subscription.
                     </p>
 
+                    <p>
+                        Subscribe to a plan to unlock
+                        your marketplace listing and
+                        promotion benefits.
+                    </p>
+
+
                     <button
-                        onClick={() => {
-                            window.location.href =
-                                "/subscription-plans";
-                        }}
+                        type="button"
+                        onClick={
+                            goToSubscriptionPlans
+                        }
                     >
 
                         View Subscription Plans
+
+                        <FaArrowRight />
 
                     </button>
 
                 </div>
 
 
+                {/* BASIC STATISTICS */}
+
                 <section className="dashboard-stats">
 
-                    <div className="stat-card">
+                    <StatCard
+                        icon={<FaBoxOpen />}
+                        title="Products"
+                        value={formatNumber(
+                            stats.products
+                        )}
+                    />
 
-                        <div className="stat-icon">
-                            <FaBoxOpen />
-                        </div>
+                    <StatCard
+                        icon={<FaEye />}
+                        title="Total Views"
+                        value={formatNumber(
+                            stats.views
+                        )}
+                    />
 
-                        <div>
-
-                            <p>Products</p>
-
-                            <h3>
-                                {stats.products}
-                            </h3>
-
-                        </div>
-
-                    </div>
-
-
-                    <div className="stat-card">
-
-                        <div className="stat-icon">
-                            <FaEye />
-                        </div>
-
-                        <div>
-
-                            <p>Total Views</p>
-
-                            <h3>
-                                {stats.views}
-                            </h3>
-
-                        </div>
-
-                    </div>
-
-
-                    <div className="stat-card">
-
-                        <div className="stat-icon">
-                            <FaComments />
-                        </div>
-
-                        <div>
-
-                            <p>Messages</p>
-
-                            <h3>
-                                {stats.messages}
-                            </h3>
-
-                        </div>
-
-                    </div>
+                    <StatCard
+                        icon={<FaComments />}
+                        title="Messages"
+                        value={formatNumber(
+                            stats.messages
+                        )}
+                    />
 
                 </section>
 
             </div>
-
         );
-
     }
 
 
-    /* ==========================================
-       MAIN DASHBOARD
-    ========================================== */
+    // =========================================================
+    // MAIN DASHBOARD
+    // =========================================================
 
     return (
 
         <div className="dashboard-page">
 
+            {/* =================================================
+                HEADER
+            ================================================= */}
 
             <div className="dashboard-header">
 
@@ -478,37 +717,85 @@ function Dashboard() {
                     </h1>
 
                     <p>
-                        Manage your marketplace business
-                        from one place.
+                        Manage your marketplace
+                        business from one place.
                     </p>
 
                 </div>
 
 
-                <div className="dashboard-date">
+                <div className="dashboard-header-actions">
 
-                    <FaCalendarAlt />
+                    <div className="dashboard-date">
 
-                    {new Date().toLocaleDateString(
-                        "en-GB",
-                        {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric"
-                        }
-                    )}
+                        <FaCalendarAlt />
+
+                        {new Date().toLocaleDateString(
+                            "en-GB",
+                            {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric"
+                            }
+                        )}
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        className="dashboard-refresh-btn"
+                        onClick={refreshDashboard}
+                        disabled={refreshing}
+                    >
+
+                        <FaSyncAlt
+                            className={
+                                refreshing
+                                    ? "refresh-spinning"
+                                    : ""
+                            }
+                        />
+
+                        {refreshing
+                            ? "Refreshing..."
+                            : "Refresh"}
+
+                    </button>
 
                 </div>
 
             </div>
 
 
-            {/* SUBSCRIPTION */}
+            {/* =================================================
+                ERROR
+            ================================================= */}
+
+            {error && (
+
+                <div className="dashboard-error">
+
+                    <FaExclamationTriangle />
+
+                    <span>
+                        {error}
+                    </span>
+
+                </div>
+
+            )}
+
+
+            {/* =================================================
+                SUBSCRIPTION CARD
+            ================================================= */}
 
             <section className="subscription-card">
 
                 <div className="subscription-header">
 
+                    {/* PLAN INFORMATION */}
 
                     <div className="plan-information">
 
@@ -516,20 +803,22 @@ function Dashboard() {
 
                             <FaCrown />
 
-                            ACTIVE PLAN
+                            {isActive
+                                ? "ACTIVE PLAN"
+                                : "INACTIVE PLAN"}
 
                         </span>
 
 
                         <h2>
-                            {plan.name ||
+                            {plan?.name ||
                                 "Subscription Plan"}
                         </h2>
 
 
                         <p className="plan-description">
 
-                            {plan.description ||
+                            {plan?.description ||
                                 "Premium marketplace subscription plan."}
 
                         </p>
@@ -537,30 +826,56 @@ function Dashboard() {
 
                         <div className="plan-price">
 
-                            GH₵ {price.toFixed(2)}
+                            GH₵{" "}
+
+                            {price.toFixed(2)}
 
                         </div>
 
                     </div>
 
 
+                    {/* STATUS */}
+
                     <div className="subscription-status">
 
-                        <span className="active-status">
+                        <span
+                            className={
+                                isActive
+                                    ? "active-status"
+                                    : "inactive-status"
+                            }
+                        >
 
-                            ● ACTIVE
+                            {isActive
+                                ? "● ACTIVE"
+                                : "● INACTIVE"}
 
                         </span>
 
 
                         <h3>
-                            {daysRemaining} Days Left
+
+                            {daysRemaining}
+
+                            {" "}
+
+                            {daysRemaining === 1
+                                ? "Day"
+                                : "Days"}
+
+                            {" "}Left
+
                         </h3>
 
 
-                        <small>
-                            {duration} Day Subscription
-                        </small>
+                        {duration > 0 && (
+
+                            <small>
+                                {duration} Day Subscription
+                            </small>
+
+                        )}
 
 
                         <p>
@@ -568,7 +883,7 @@ function Dashboard() {
                             Ends:{" "}
 
                             {formatDate(
-                                subscription.endDate
+                                subscription?.endDate
                             )}
 
                         </p>
@@ -578,17 +893,72 @@ function Dashboard() {
                 </div>
 
 
+                {/* =================================================
+                    SUBSCRIPTION WARNING
+                ================================================= */}
+
+                {daysRemaining <= 3 && (
+
+                    <div className="subscription-warning">
+
+                        <FaExclamationTriangle />
+
+                        <div>
+
+                            <strong>
+                                Subscription Expiring Soon
+                            </strong>
+
+                            <p>
+                                Your subscription has
+                                {daysRemaining === 0
+                                    ? " expired or expires today."
+                                    : ` ${daysRemaining} day${
+                                        daysRemaining === 1
+                                            ? ""
+                                            : "s"
+                                      } remaining.`}
+                            </p>
+
+                        </div>
+
+
+                        <button
+                            type="button"
+                            onClick={
+                                goToSubscriptionPlans
+                            }
+                        >
+                            Renew Plan
+                        </button>
+
+                    </div>
+
+                )}
+
+
+                {/* =================================================
+                    USAGE
+                ================================================= */}
+
                 <div className="usage-section">
 
-
-                    {/* PRODUCTS */}
+                    {/* PRODUCT UPLOADS */}
 
                     <UsageItem
                         icon={<FaBoxOpen />}
                         title="Product Uploads"
                         used={uploadsUsed}
                         total={maxProducts}
-                        remaining={`${uploadsRemaining} uploads remaining`}
+                        remaining={
+                            maxProducts > 0
+                                ? `${uploadsRemaining} ${
+                                    uploadsRemaining === 1
+                                        ? "upload"
+                                        : "uploads"
+                                  } remaining`
+                                : "No upload limit configured"
+                        }
                         percentage={
                             getPercentage(
                                 uploadsUsed,
@@ -596,6 +966,9 @@ function Dashboard() {
                             )
                         }
                         type="uploads"
+                        limitReached={
+                            uploadLimitReached
+                        }
                     />
 
 
@@ -606,7 +979,15 @@ function Dashboard() {
                         title="Boost Credits"
                         used={boostsUsed}
                         total={boostCredits}
-                        remaining={`${boostsRemaining} boost credits remaining`}
+                        remaining={
+                            boostCredits > 0
+                                ? `${boostsRemaining} ${
+                                    boostsRemaining === 1
+                                        ? "credit"
+                                        : "credits"
+                                  } remaining`
+                                : "No boost credits"
+                        }
                         percentage={
                             getPercentage(
                                 boostsUsed,
@@ -614,6 +995,10 @@ function Dashboard() {
                             )
                         }
                         type="boost"
+                        limitReached={
+                            boostCredits > 0 &&
+                            !hasBoostCredits
+                        }
                     />
 
 
@@ -624,7 +1009,15 @@ function Dashboard() {
                         title="Featured Credits"
                         used={featuredUsed}
                         total={featuredCredits}
-                        remaining={`${featuredRemaining} featured credits remaining`}
+                        remaining={
+                            featuredCredits > 0
+                                ? `${featuredRemaining} ${
+                                    featuredRemaining === 1
+                                        ? "credit"
+                                        : "credits"
+                                  } remaining`
+                                : "No featured credits"
+                        }
                         percentage={
                             getPercentage(
                                 featuredUsed,
@@ -632,6 +1025,10 @@ function Dashboard() {
                             )
                         }
                         type="featured"
+                        limitReached={
+                            featuredCredits > 0 &&
+                            !hasFeaturedCredits
+                        }
                     />
 
 
@@ -642,7 +1039,15 @@ function Dashboard() {
                         title="Express Credits"
                         used={expressUsed}
                         total={expressCredits}
-                        remaining={`${expressRemaining} express credits remaining`}
+                        remaining={
+                            expressCredits > 0
+                                ? `${expressRemaining} ${
+                                    expressRemaining === 1
+                                        ? "credit"
+                                        : "credits"
+                                  } remaining`
+                                : "No express credits"
+                        }
                         percentage={
                             getPercentage(
                                 expressUsed,
@@ -650,36 +1055,135 @@ function Dashboard() {
                             )
                         }
                         type="express"
+                        limitReached={
+                            expressCredits > 0 &&
+                            !hasExpressCredits
+                        }
                     />
+
+                </div>
+
+
+                {/* =================================================
+                    SUBSCRIPTION ACTION
+                ================================================= */}
+
+                <div className="subscription-actions">
+
+                    <button
+                        type="button"
+                        onClick={
+                            goToSubscriptionPlans
+                        }
+                    >
+                        <FaCrown />
+
+                        Manage Subscription
+                    </button>
 
                 </div>
 
             </section>
 
 
-            {/* QUICK STATS */}
+            {/* =================================================
+                QUICK ACTIONS
+            ================================================= */}
+
+            <section className="dashboard-quick-actions">
+
+                <div className="quick-action-card">
+
+                    <div className="quick-action-icon">
+                        <FaBoxOpen />
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            Sell a Product
+                        </h3>
+
+                        <p>
+                            Add a new product to
+                            your marketplace.
+                        </p>
+
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={goToSell}
+                    >
+                        Sell Now
+                        <FaArrowRight />
+                    </button>
+
+                </div>
+
+
+                <div className="quick-action-card">
+
+                    <div className="quick-action-icon">
+                        <FaStore />
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            My Products
+                        </h3>
+
+                        <p>
+                            View and manage your
+                            marketplace listings.
+                        </p>
+
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={goToProducts}
+                    >
+                        View Products
+                        <FaArrowRight />
+                    </button>
+
+                </div>
+
+            </section>
+
+
+            {/* =================================================
+                QUICK STATISTICS
+            ================================================= */}
 
             <section className="dashboard-stats">
-
 
                 <StatCard
                     icon={<FaBoxOpen />}
                     title="Products"
-                    value={stats.products}
+                    value={formatNumber(
+                        stats.products
+                    )}
                 />
 
 
                 <StatCard
                     icon={<FaEye />}
                     title="Total Views"
-                    value={stats.views}
+                    value={formatNumber(
+                        stats.views
+                    )}
                 />
 
 
                 <StatCard
                     icon={<FaComments />}
                     title="Messages"
-                    value={stats.messages}
+                    value={formatNumber(
+                        stats.messages
+                    )}
                 />
 
 
@@ -691,16 +1195,107 @@ function Dashboard() {
 
             </section>
 
+
+            {/* =================================================
+                BENEFITS
+            ================================================= */}
+
+            <section className="dashboard-benefits">
+
+                <div className="dashboard-section-title">
+
+                    <div>
+
+                        <h2>
+                            Your Plan Benefits
+                        </h2>
+
+                        <p>
+                            Features and credits
+                            included with your
+                            current subscription.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div className="benefits-grid">
+
+                    <BenefitCard
+                        icon={<FaBoxOpen />}
+                        title="Product Listings"
+                        value={
+                            maxProducts > 0
+                                ? `${maxProducts} Listings`
+                                : "Not configured"
+                        }
+                        enabled={
+                            maxProducts > 0
+                        }
+                    />
+
+
+                    <BenefitCard
+                        icon={<FaRocket />}
+                        title="Boost Credits"
+                        value={
+                            `${boostCredits} ${
+                                boostCredits === 1
+                                    ? "Credit"
+                                    : "Credits"
+                            }`
+                        }
+                        enabled={
+                            boostCredits > 0
+                        }
+                    />
+
+
+                    <BenefitCard
+                        icon={<FaStar />}
+                        title="Featured Credits"
+                        value={
+                            `${featuredCredits} ${
+                                featuredCredits === 1
+                                    ? "Credit"
+                                    : "Credits"
+                            }`
+                        }
+                        enabled={
+                            featuredCredits > 0
+                        }
+                    />
+
+
+                    <BenefitCard
+                        icon={<FaBolt />}
+                        title="Express Credits"
+                        value={
+                            `${expressCredits} ${
+                                expressCredits === 1
+                                    ? "Credit"
+                                    : "Credits"
+                            }`
+                        }
+                        enabled={
+                            expressCredits > 0
+                        }
+                    />
+
+                </div>
+
+            </section>
+
         </div>
-
     );
-
 }
 
 
-/* ==========================================
-   REUSABLE USAGE ITEM
-========================================== */
+// =============================================================
+// USAGE ITEM
+// =============================================================
 
 function UsageItem({
     icon,
@@ -709,12 +1304,27 @@ function UsageItem({
     total,
     remaining,
     percentage,
-    type
+    type,
+    limitReached
 }) {
+
+    const safeUsed =
+        Number(used || 0);
+
+    const safeTotal =
+        Number(total || 0);
 
     return (
 
-        <div className="usage-item">
+        <div
+            className={
+                `usage-item ${
+                    limitReached
+                        ? "usage-limit-reached"
+                        : ""
+                }`
+            }
+        >
 
             <div className="usage-row">
 
@@ -726,9 +1336,14 @@ function UsageItem({
 
                 </span>
 
+
                 <strong>
 
-                    {used} / {total}
+                    {safeUsed}
+
+                    {" / "}
+
+                    {safeTotal}
 
                 </strong>
 
@@ -738,33 +1353,61 @@ function UsageItem({
             <div className="progress-bar">
 
                 <div
-                    className={`progress-fill ${type}`}
+                    className={
+                        `progress-fill ${type}`
+                    }
                     style={{
-                        width: `${percentage}%`
+                        width:
+                            `${Math.min(
+                                Math.max(
+                                    Number(
+                                        percentage || 0
+                                    ),
+                                    0
+                                ),
+                                100
+                            )}%`
                     }}
                 />
 
             </div>
 
 
-            <small className="remaining-text">
+            <div className="usage-bottom-row">
 
-                {remaining}
+                <small className="remaining-text">
 
-            </small>
+                    {remaining}
+
+                </small>
+
+
+                {limitReached && (
+
+                    <small className="limit-reached-text">
+
+                        Limit reached
+
+                    </small>
+
+                )}
+
+            </div>
 
         </div>
-
     );
-
 }
 
 
-/* ==========================================
-   REUSABLE STAT CARD
-========================================== */
+// =============================================================
+// STAT CARD
+// =============================================================
 
-function StatCard({ icon, title, value }) {
+function StatCard({
+    icon,
+    title,
+    value
+}) {
 
     return (
 
@@ -776,18 +1419,77 @@ function StatCard({ icon, title, value }) {
 
             </div>
 
+
             <div>
 
-                <p>{title}</p>
+                <p>
+                    {title}
+                </p>
 
-                <h3>{value}</h3>
+                <h3>
+                    {value}
+                </h3>
 
             </div>
 
         </div>
-
     );
+}
 
+
+// =============================================================
+// BENEFIT CARD
+// =============================================================
+
+function BenefitCard({
+    icon,
+    title,
+    value,
+    enabled
+}) {
+
+    return (
+
+        <div
+            className={
+                `benefit-card ${
+                    enabled
+                        ? "benefit-enabled"
+                        : "benefit-disabled"
+                }`
+            }
+        >
+
+            <div className="benefit-icon">
+
+                {icon}
+
+            </div>
+
+
+            <div className="benefit-content">
+
+                <h3>
+                    {title}
+                </h3>
+
+                <p>
+                    {value}
+                </p>
+
+            </div>
+
+
+            <div className="benefit-status">
+
+                {enabled
+                    ? <FaCheckCircle />
+                    : <span>—</span>}
+
+            </div>
+
+        </div>
+    );
 }
 
 

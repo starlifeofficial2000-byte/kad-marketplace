@@ -31,6 +31,10 @@ const {
     SecurityAlert
 
 } = require("../models");
+const {
+    getR2PublicUrl,
+    deleteFromR2
+} = require("../config/r2");
 
 /* ==========================================
    GET LOGGED IN USER PROFILE
@@ -89,25 +93,188 @@ exports.getProfile = async (req, res) => {
    UPDATE PROFILE
 ========================================== */
 
+
+/* ==========================================
+   PROFILE IMAGE HELPERS
+========================================== */
+
+const getR2ProfileKey = (image) => {
+    if (!image) return null;
+
+    let value = String(image).trim();
+
+    if (!value) return null;
+
+    /*
+     * R2 public URL
+     */
+    if (
+        value.startsWith("http://") ||
+        value.startsWith("https://")
+    ) {
+        const r2PublicUrl =
+            process.env.R2_PUBLIC_URL
+                ?.trim()
+                .replace(/\/+$/, "");
+
+        if (
+            r2PublicUrl &&
+            value.startsWith(r2PublicUrl)
+        ) {
+            try {
+                const parsed = new URL(value);
+
+                const key =
+                    decodeURIComponent(
+                        parsed.pathname
+                            .replace(/^\/+/, "")
+                    );
+
+                if (
+                    key.startsWith(
+                        "uploads/profiles/"
+                    )
+                ) {
+                    return key;
+                }
+            } catch {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    /*
+     * Stored R2 key
+     */
+    value = value
+        .replace(/\\/g, "/")
+        .replace(/^\/+/, "");
+
+    if (
+        value.startsWith(
+            "uploads/profiles/"
+        )
+    ) {
+        return value;
+    }
+
+    return null;
+};
+
+
+const getProfileImageUrl = (image) => {
+    if (!image) return null;
+
+    const value =
+        String(image).trim();
+
+    if (!value) return null;
+
+    /*
+     * Already a complete URL
+     */
+    if (
+        value.startsWith("http://") ||
+        value.startsWith("https://")
+    ) {
+        return value;
+    }
+
+    const normalized =
+        value
+            .replace(/\\/g, "/")
+            .replace(/^\/+/, "");
+
+    /*
+     * New R2 profile image
+     */
+    if (
+        normalized.startsWith(
+            "uploads/profiles/"
+        )
+    ) {
+        return (
+            getR2PublicUrl(
+                normalized
+            ) || null
+        );
+    }
+
+    /*
+     * Legacy profile image.
+     *
+     * Keep existing users working while
+     * migration is completed.
+     */
+    if (
+        normalized.startsWith(
+            "uploads/"
+        )
+    ) {
+        return `/${normalized}`;
+    }
+
+    /*
+     * Very old database records may contain
+     * only the filename.
+     */
+    return `/uploads/${normalized}`;
+};
+
+
+/* ==========================================
+   UPDATE PROFILE
+========================================== */
+
 exports.updateProfile = async (req, res) => {
 
     try {
 
-        const user = await User.findByPk(
-            req.user.id
-        );
+        const user =
+            await User.findByPk(
+                req.user.id
+            );
 
         if (!user) {
+
+            /*
+             * The middleware may already have
+             * uploaded the image to R2.
+             *
+             * If there is no user, remove it.
+             */
+            if (req.file?.r2Key) {
+
+                try {
+
+                    await deleteFromR2(
+                        req.file.r2Key
+                    );
+
+                } catch (cleanupError) {
+
+                    console.error(
+                        "PROFILE IMAGE CLEANUP ERROR:",
+                        cleanupError.message
+                    );
+
+                }
+
+            }
 
             return res.status(404).json({
 
                 success: false,
 
-                message: "User not found."
+                message:
+                    "User not found."
 
             });
 
         }
+
 
         /* ==========================================
            PROFILE IMAGE
@@ -116,43 +283,95 @@ exports.updateProfile = async (req, res) => {
         let profileImage =
             user.profileImage;
 
+        let newProfileImageKey =
+            null;
+
+
         if (req.file) {
 
+            /*
+             * New R2 upload
+             */
+            newProfileImageKey =
+                req.file.r2Key ||
+                req.file.key;
+
+            if (!newProfileImageKey) {
+
+                return res.status(500).json({
+
+                    success: false,
+
+                    message:
+                        "Profile image upload did not return an R2 object key."
+
+                });
+
+            }
+
             profileImage =
-                req.file.filename;
+                newProfileImageKey;
 
         }
+
 
         /* ==========================================
            SANITIZED INPUT
         ========================================== */
 
         const name =
-            sanitize(req.body.name);
+            sanitize(
+                req.body.name
+            );
 
         const email =
-            sanitize(req.body.email);
+            sanitize(
+                req.body.email
+            );
 
         const phone =
-            sanitize(req.body.phone);
+            sanitize(
+                req.body.phone
+            );
 
         const ghanaCard =
-            sanitize(req.body.ghanaCard);
+            sanitize(
+                req.body.ghanaCard
+            );
 
         const region =
-            sanitize(req.body.region);
+            sanitize(
+                req.body.region
+            );
 
         const city =
-            sanitize(req.body.city);
+            sanitize(
+                req.body.city
+            );
 
         const address =
-            sanitize(req.body.address);
+            sanitize(
+                req.body.address
+            );
+
 
         /* ==========================================
            BASIC VALIDATION
         ========================================== */
 
         if (!name) {
+
+            if (newProfileImageKey) {
+
+                try {
+
+                    await deleteFromR2(
+                        newProfileImageKey
+                    );
+
+                } catch {}
+
+            }
 
             return res.status(400).json({
 
@@ -165,7 +384,20 @@ exports.updateProfile = async (req, res) => {
 
         }
 
+
         if (!email) {
+
+            if (newProfileImageKey) {
+
+                try {
+
+                    await deleteFromR2(
+                        newProfileImageKey
+                    );
+
+                } catch {}
+
+            }
 
             return res.status(400).json({
 
@@ -178,29 +410,129 @@ exports.updateProfile = async (req, res) => {
 
         }
 
+
+        /* ==========================================
+           SAVE OLD PROFILE IMAGE
+        ========================================== */
+
+        const oldProfileImage =
+            user.profileImage;
+
+
         /* ==========================================
            UPDATE USER
         ========================================== */
 
-        await user.update({
+        try {
 
-            name,
+            await user.update({
 
-            email,
+                name,
 
-            phone,
+                email,
 
-            ghanaCard,
+                phone,
 
-            region,
+                ghanaCard,
 
-            city,
+                region,
 
-            address,
+                city,
 
-            profileImage
+                address,
 
-        });
+                profileImage
+
+            });
+
+        } catch (databaseError) {
+
+            /*
+             * Database update failed.
+             *
+             * Remove the newly uploaded R2
+             * object so it doesn't become orphaned.
+             */
+            if (newProfileImageKey) {
+
+                try {
+
+                    await deleteFromR2(
+                        newProfileImageKey
+                    );
+
+                } catch (cleanupError) {
+
+                    console.error(
+                        "FAILED TO CLEAN NEW PROFILE IMAGE:",
+                        cleanupError.message
+                    );
+
+                }
+
+            }
+
+            throw databaseError;
+
+        }
+
+
+        /* ==========================================
+           DELETE OLD R2 IMAGE
+        ========================================== */
+
+        if (
+            newProfileImageKey &&
+            oldProfileImage
+        ) {
+
+            const oldKey =
+                getR2ProfileKey(
+                    oldProfileImage
+                );
+
+            /*
+             * Only delete images that are
+             * actually stored in R2.
+             *
+             * Legacy Railway images are left
+             * untouched until migration.
+             */
+            if (
+                oldKey &&
+                oldKey !==
+                    newProfileImageKey
+            ) {
+
+                try {
+
+                    await deleteFromR2(
+                        oldKey
+                    );
+
+                    console.log(
+                        "OLD PROFILE IMAGE DELETED:",
+                        oldKey
+                    );
+
+                } catch (deleteError) {
+
+                    /*
+                     * Do not fail the profile
+                     * update just because cleanup
+                     * failed.
+                     */
+                    console.error(
+                        "OLD PROFILE IMAGE DELETE ERROR:",
+                        deleteError.message
+                    );
+
+                }
+
+            }
+
+        }
+
 
         /* ==========================================
            GET UPDATED USER
@@ -208,22 +540,29 @@ exports.updateProfile = async (req, res) => {
 
         const updatedUser =
             await User.findByPk(
-
                 req.user.id,
-
                 {
-
                     attributes: {
-
                         exclude: [
                             "password"
                         ]
-
                     }
-
                 }
-
             );
+
+
+        /* ==========================================
+           FORMAT PROFILE IMAGE URL
+        ========================================== */
+
+        const userData =
+            updatedUser.toJSON();
+
+        userData.profileImage =
+            getProfileImageUrl(
+                userData.profileImage
+            );
+
 
         /* ==========================================
            RESPONSE
@@ -236,13 +575,12 @@ exports.updateProfile = async (req, res) => {
             message:
                 "Profile updated successfully.",
 
-            user: updatedUser
+            user:
+                userData
 
         });
 
-    }
-
-    catch (error) {
+    } catch (error) {
 
         console.error(
             "UPDATE PROFILE ERROR:",
@@ -262,6 +600,7 @@ exports.updateProfile = async (req, res) => {
     }
 
 };
+
 /* ==========================================
    GET SELLER PROFILE
 ========================================== */
