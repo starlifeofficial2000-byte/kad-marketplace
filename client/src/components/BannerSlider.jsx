@@ -1,202 +1,200 @@
 import { useEffect, useState } from "react";
-import api from "../config/axios";
 import { Link } from "react-router-dom";
-
+import api from "../config/axios";
 import getImageUrl from "../utils/imageUrl";
-
 import "./BannerSlider.css";
 
 function BannerSlider() {
-
     const [banners, setBanners] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentSlide, setCurrentSlide] = useState(0);
 
-
-    /* ==========================================
-       LOAD APPROVED BANNERS
-    ========================================== */
-
-    useEffect(() => {
-
-        fetchBanners();
-
-    }, []);
-
-
+    /*
+     * ============================================================
+     * LOAD PUBLIC HOMEPAGE BANNERS
+     * ============================================================
+     *
+     * IMPORTANT:
+     * We use the new Home Builder public endpoint.
+     *
+     * DO NOT use:
+     * /advertisements/approved
+     *
+     * The new system is:
+     * /home-builder/banners
+     */
     const fetchBanners = async () => {
-
         try {
-
             setLoading(true);
 
             const response = await api.get(
-                "/advertisements/approved"
+                "/home-builder/banners"
+            );
+
+            console.log(
+                "HOMEPAGE BANNERS RESPONSE:",
+                response.data
             );
 
             if (
                 response.data?.success &&
-                Array.isArray(
-                    response.data?.advertisements
-                )
+                Array.isArray(response.data?.banners)
             ) {
-
-                setBanners(
-                    response.data.advertisements
-                );
-
+                setBanners(response.data.banners);
+                setCurrentSlide(0);
             } else {
-
                 setBanners([]);
-
             }
-
-        }
-
-        catch (error) {
-
+        } catch (error) {
             console.error(
-                "BANNER LOAD ERROR:",
+                "HOMEPAGE BANNER LOAD ERROR:",
                 error.response?.data ||
-                error.message ||
-                error
+                    error.message ||
+                    error
             );
 
             setBanners([]);
-
-        }
-
-        finally {
-
+        } finally {
             setLoading(false);
-
         }
-
     };
 
-
-    /* ==========================================
-       AUTO SLIDER
-    ========================================== */
-
+    /*
+     * ============================================================
+     * INITIAL LOAD
+     * ============================================================
+     */
     useEffect(() => {
+        fetchBanners();
+    }, []);
 
+    /*
+     * ============================================================
+     * AUTO SLIDE
+     * ============================================================
+     *
+     * Changes banner every 5 seconds.
+     */
+    useEffect(() => {
         if (banners.length <= 1) {
             return;
         }
 
         const interval = setInterval(() => {
+            setCurrentSlide((previous) => {
+                if (previous >= banners.length - 1) {
+                    return 0;
+                }
 
-            setCurrentSlide((previous) =>
-                previous >= banners.length - 1
-                    ? 0
-                    : previous + 1
-            );
-
+                return previous + 1;
+            });
         }, 5000);
-
 
         return () => {
             clearInterval(interval);
         };
-
     }, [banners.length]);
 
-
-    /* ==========================================
-       KEEP CURRENT SLIDE VALID
-    ========================================== */
-
+    /*
+     * ============================================================
+     * KEEP CURRENT SLIDE VALID
+     * ============================================================
+     */
     useEffect(() => {
-
         if (
-            currentSlide >= banners.length &&
-            banners.length > 0
+            banners.length > 0 &&
+            currentSlide >= banners.length
         ) {
-
             setCurrentSlide(0);
-
         }
+    }, [banners.length, currentSlide]);
 
-    }, [
-        banners.length,
-        currentSlide
-    ]);
-
-
-    /* ==========================================
-       LOADING
-    ========================================== */
-
+    /*
+     * ============================================================
+     * LOADING STATE
+     * ============================================================
+     */
     if (loading) {
-
         return (
-
-            <div className="banner-loading">
-
-                Loading advertisements...
-
-            </div>
-
+            <section className="banner-slider">
+                <div className="banner-container">
+                    <div className="banner-loading">
+                        Loading advertisements...
+                    </div>
+                </div>
+            </section>
         );
-
     }
 
-
-    /* ==========================================
-       NO BANNERS
-    ========================================== */
-
+    /*
+     * ============================================================
+     * NO BANNERS
+     * ============================================================
+     */
     if (!banners.length) {
-
         return null;
-
     }
 
+    /*
+     * ============================================================
+     * CURRENT BANNER
+     * ============================================================
+     */
+    const banner = banners[currentSlide];
 
-    /* ==========================================
-       CURRENT BANNER
-    ========================================== */
+    /*
+     * ============================================================
+     * R2 IMAGE URL
+     * ============================================================
+     *
+     * New Home Builder backend returns:
+     *
+     * banner.imageUrl
+     *
+     * But we also support:
+     *
+     * banner.image
+     *
+     * This makes the component compatible with old records too.
+     */
+    const imageSource =
+        banner?.imageUrl ||
+        banner?.image ||
+        "";
 
-    const banner =
-        banners[currentSlide];
-console.log("BANNER DATA:", banner);
-console.log("BANNER IMAGE:", banner?.image);
-console.log(
-    "BANNER IMAGE URL:",
-    getImageUrl(banner?.image)
-);
+    const imageUrl = getImageUrl(imageSource);
 
-    /* ==========================================
-       BANNER IMAGE URL
-    ========================================== */
+    console.log(
+        "CURRENT BANNER:",
+        banner
+    );
 
-    const imageUrl =
-        getImageUrl(
-            banner?.image
-        );
+    console.log(
+        "BANNER IMAGE SOURCE:",
+        imageSource
+    );
 
+    console.log(
+        "BANNER IMAGE URL:",
+        imageUrl
+    );
 
-    /* ==========================================
-       IMAGE ERROR HANDLER
-    ========================================== */
-
+    /*
+     * ============================================================
+     * IMAGE ERROR HANDLER
+     * ============================================================
+     */
     const handleImageError = (event) => {
-
-        const image =
-            event.currentTarget;
+        const image = event.currentTarget;
 
         /*
-         * Prevent an infinite fallback loop.
+         * Prevent an infinite image-error loop.
          */
-
         if (
             image.dataset.fallbackApplied ===
             "true"
         ) {
-
             return;
-
         }
 
         image.dataset.fallbackApplied =
@@ -204,79 +202,72 @@ console.log(
 
         image.src =
             "/images/product-placeholder.png";
-
     };
 
-
-    /* ==========================================
-       PREVIOUS SLIDE
-    ========================================== */
-
+    /*
+     * ============================================================
+     * PREVIOUS SLIDE
+     * ============================================================
+     */
     const previousSlide = () => {
+        setCurrentSlide((previous) => {
+            if (previous === 0) {
+                return banners.length - 1;
+            }
 
-        setCurrentSlide((previous) =>
-            previous === 0
-                ? banners.length - 1
-                : previous - 1
-        );
-
+            return previous - 1;
+        });
     };
 
-
-    /* ==========================================
-       NEXT SLIDE
-    ========================================== */
-
+    /*
+     * ============================================================
+     * NEXT SLIDE
+     * ============================================================
+     */
     const nextSlide = () => {
+        setCurrentSlide((previous) => {
+            if (
+                previous >=
+                banners.length - 1
+            ) {
+                return 0;
+            }
 
-        setCurrentSlide((previous) =>
-            previous >= banners.length - 1
-                ? 0
-                : previous + 1
-        );
-
+            return previous + 1;
+        });
     };
 
-
-    /* ==========================================
-       BANNER LINK
-    ========================================== */
-
+    /*
+     * ============================================================
+     * BANNER LINK
+     * ============================================================
+     */
     const getBannerLink = () => {
-
         if (
             !banner?.link ||
             banner.link === "#"
         ) {
-
             return null;
-
         }
 
         return banner.link;
-
     };
-
 
     const bannerLink =
         getBannerLink();
 
-
-    /* ==========================================
-       PAGE
-    ========================================== */
-
+    /*
+     * ============================================================
+     * RENDER
+     * ============================================================
+     */
     return (
-
         <section className="banner-slider">
-
             <div className="banner-container">
 
-
-                {/* =================================
+                {/* =================================================
                     BANNER IMAGE
-                ================================= */}
-
+                ================================================= */}
                 <img
                     src={imageUrl}
                     alt={
@@ -286,126 +277,105 @@ console.log(
                     className="banner-image"
                     loading="eager"
                     decoding="async"
-                    onError={handleImageError}
+                    onError={
+                        handleImageError
+                    }
                 />
 
-
-                {/* =================================
+                {/* =================================================
                     OVERLAY
-                ================================= */}
-
+                ================================================= */}
                 <div className="banner-overlay">
-
                     <div className="banner-content">
 
-
-                        {/* =============================
+                        {/* =================================================
                             SUBTITLE
-                        ============================= */}
-
+                        ================================================= */}
                         {banner?.subtitle && (
-
                             <span className="banner-subtitle">
-
                                 {banner.subtitle}
-
                             </span>
-
                         )}
 
-
-                        {/* =============================
+                        {/* =================================================
                             TITLE
-                        ============================= */}
-
+                        ================================================= */}
                         {banner?.title && (
-
                             <h2>
-
                                 {banner.title}
-
                             </h2>
-
                         )}
 
-
-                        {/* =============================
+                        {/* =================================================
                             DESCRIPTION
-                        ============================= */}
-
+                        ================================================= */}
                         {banner?.description && (
-
                             <p>
-
-                                {banner.description}
-
+                                {
+                                    banner.description
+                                }
                             </p>
-
                         )}
 
-
-                        {/* =============================
+                        {/* =================================================
                             BUTTON
-                        ============================= */}
-
+                        ================================================= */}
                         {bannerLink && (
-
                             <Link
                                 to={bannerLink}
                                 className="banner-button"
                             >
-
-                                {banner?.buttonText ||
-                                    "Shop Now"}
-
+                                {
+                                    banner?.buttonText ||
+                                    "Shop Now"
+                                }
                             </Link>
-
                         )}
-
                     </div>
-
                 </div>
 
-
-                {/* =================================
+                {/* =================================================
                     SLIDER CONTROLS
-                ================================= */}
-
+                ================================================= */}
                 {banners.length > 1 && (
-
                     <>
-
-                        {/* PREVIOUS */}
-
+                        {/* =================================================
+                            PREVIOUS BUTTON
+                        ================================================= */}
                         <button
                             className="banner-arrow left"
-                            onClick={previousSlide}
+                            onClick={
+                                previousSlide
+                            }
                             type="button"
                             aria-label="Previous banner"
                         >
                             ❮
                         </button>
 
-
-                        {/* NEXT */}
-
+                        {/* =================================================
+                            NEXT BUTTON
+                        ================================================= */}
                         <button
                             className="banner-arrow right"
-                            onClick={nextSlide}
+                            onClick={
+                                nextSlide
+                            }
                             type="button"
                             aria-label="Next banner"
                         >
                             ❯
                         </button>
 
-
-                        {/* DOTS */}
-
+                        {/* =================================================
+                            SLIDE DOTS
+                        ================================================= */}
                         <div className="banner-dots">
-
                             {banners.map(
-                                (item, index) => (
-
+                                (
+                                    item,
+                                    index
+                                ) => (
                                     <button
                                         key={
                                             item.id ||
@@ -424,28 +394,25 @@ console.log(
                                                 index
                                             )
                                         }
-                                        aria-label={
-                                            `Go to slide ${
-                                                index + 1
-                                            }`
+                                        aria-label={`Go to slide ${
+                                            index +
+                                            1
+                                        }`}
+                                        aria-current={
+                                            index ===
+                                            currentSlide
+                                                ? "true"
+                                                : undefined
                                         }
                                     />
-
                                 )
                             )}
-
                         </div>
-
                     </>
-
                 )}
-
             </div>
-
         </section>
-
     );
-
 }
 
 export default BannerSlider;
