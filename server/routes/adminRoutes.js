@@ -7,32 +7,18 @@ const router = express.Router();
    MIDDLEWARE
 ===================================== */
 
-const auth = require(
+const auth = require("../middleware/auth");
 
-    "../middleware/auth"
-
-);
-
-const admin = require(
-
-    "../middleware/admin"
-
-);
+const admin = require("../middleware/admin");
 
 const checkPermission = require(
-
     "../middleware/checkPermission"
-
 );
 
 const {
-
     adminLimiter
-
 } = require(
-
     "../middleware/rateLimiter"
-
 );
 
 
@@ -41,32 +27,34 @@ const {
 ===================================== */
 
 const adminController = require(
-
     "../controllers/adminController"
-
 );
 
 const adminUserController = require(
-
     "../controllers/adminUserController"
-
 );
 
 const adminStoreController = require(
-
     "../controllers/adminStoreController"
+);
 
+/*
+    USER CONTROLLER
+
+    Used for:
+    - Changing user roles
+*/
+const userController = require(
+    "../controllers/userController"
 );
 
 
 /* =====================================
-   APPLY RATE LIMITER
+   APPLY ADMIN RATE LIMITER
 ===================================== */
 
 router.use(
-
     adminLimiter
-
 );
 
 
@@ -77,18 +65,15 @@ router.use(
 
 /*
     MAIN DASHBOARD
+
+    GET /api/admin/dashboard
 */
 
 router.get(
-
     "/dashboard",
-
     auth,
-
     admin,
-
     adminController.dashboard
-
 );
 
 
@@ -99,15 +84,10 @@ router.get(
 */
 
 router.get(
-
     "/stats",
-
     auth,
-
     admin,
-
     adminController.getStats
-
 );
 
 
@@ -118,38 +98,27 @@ router.get(
 */
 
 router.get(
-
     "/revenue/chart",
-
     auth,
-
     admin,
-
     adminController.getRevenueChart
-
 );
 
 
 /*
-    SECURITY SUMMARY
+    SECURITY / ACTIVITY SUMMARY
+
+    GET /api/admin/activity-summary
 */
 
 router.get(
-
     "/activity-summary",
-
     auth,
-
     admin,
-
     checkPermission(
-
         "view_audit_logs"
-
     ),
-
     adminController.getAdminActivitySummary
-
 );
 
 
@@ -157,16 +126,16 @@ router.get(
    TEST AUDIT LOG
 ===================================== */
 
+
+/*
+    POST /api/admin/test-audit
+*/
+
 router.post(
-
     "/test-audit",
-
     auth,
-
     admin,
-
     adminController.testAuditLog
-
 );
 
 
@@ -175,136 +144,169 @@ router.post(
 ===================================== */
 
 
-router.get(
+/*
+    GET ALL USERS
 
+    GET /api/admin/users
+*/
+
+router.get(
     "/users",
-
     auth,
-
     admin,
-
     checkPermission(
-
         "manage_users"
-
     ),
-
     adminUserController.getUsers
-
 );
 
+
+/*
+    GET SINGLE USER
+
+    GET /api/admin/users/:id
+*/
 
 router.get(
-
     "/users/:id",
-
     auth,
-
     admin,
-
     checkPermission(
-
         "manage_users"
-
     ),
-
     adminUserController.getUser
-
 );
 
 
-router.put(
+/* =====================================
+   CHANGE USER ROLE
+===================================== */
 
+
+/*
+    CHANGE USER ROLE
+
+    PUT /api/admin/users/:id/role
+
+    Request body:
+
+    {
+        "roleId": 2
+    }
+
+    Controller:
+
+    userController.changeUserRole
+*/
+
+router.put(
+    "/users/:id/role",
+    auth,
+    admin,
+    checkPermission(
+        "manage_roles"
+    ),
+    userController.changeUserRole
+);
+
+
+/* =====================================
+   BLOCK USER
+===================================== */
+
+
+/*
+    PUT /api/admin/users/:id/block
+*/
+
+router.put(
     "/users/:id/block",
-
     auth,
-
     admin,
-
     checkPermission(
-
         "manage_users"
-
     ),
-
     adminUserController.blockUser
-
 );
 
 
-router.put(
+/* =====================================
+   UNBLOCK USER
+===================================== */
 
+
+/*
+    PUT /api/admin/users/:id/unblock
+*/
+
+router.put(
     "/users/:id/unblock",
-
     auth,
-
     admin,
-
     checkPermission(
-
         "manage_users"
-
     ),
-
     adminUserController.unblockUser
-
 );
 
 
-router.put(
+/* =====================================
+   MAKE USER ADMIN
+===================================== */
 
+
+/*
+    PUT /api/admin/users/:id/admin
+*/
+
+router.put(
     "/users/:id/admin",
-
     auth,
-
     admin,
-
     checkPermission(
-
         "manage_roles"
-
     ),
-
     adminUserController.makeAdmin
-
 );
 
+
+/* =====================================
+   REMOVE ADMIN PRIVILEGES
+===================================== */
+
+
+/*
+    PUT /api/admin/users/:id/remove-admin
+*/
 
 router.put(
-
     "/users/:id/remove-admin",
-
     auth,
-
     admin,
-
     checkPermission(
-
         "manage_roles"
-
     ),
-
     adminUserController.removeAdmin
-
 );
 
+
+/* =====================================
+   DELETE USER
+===================================== */
+
+
+/*
+    DELETE /api/admin/users/:id
+*/
 
 router.delete(
-
     "/users/:id",
-
     auth,
-
     admin,
-
     checkPermission(
-
         "manage_users"
-
     ),
-
     adminUserController.deleteUser
-
 );
 
 
@@ -313,98 +315,88 @@ router.delete(
 ===================================== */
 
 
+/*
+    GET ALL STORES
+
+    GET /api/admin/stores
+*/
+
 router.get(
-
     "/stores",
-
     auth,
-
     admin,
-
     checkPermission(
-
         "manage_stores"
-
     ),
-
     adminStoreController.getStores
-
 );
 
 
-router.put(
+/*
+    VERIFY STORE
 
+    PUT /api/admin/stores/:id/verify
+*/
+
+router.put(
     "/stores/:id/verify",
-
     auth,
-
     admin,
-
     checkPermission(
-
         "manage_stores"
-
     ),
-
     adminStoreController.verifyStore
-
 );
 
 
-router.put(
+/*
+    SUSPEND STORE
 
+    PUT /api/admin/stores/:id/suspend
+*/
+
+router.put(
     "/stores/:id/suspend",
-
     auth,
-
     admin,
-
     checkPermission(
-
         "manage_stores"
-
     ),
-
     adminStoreController.suspendStore
-
 );
 
+
+/*
+    ACTIVATE STORE
+
+    PUT /api/admin/stores/:id/activate
+*/
 
 router.put(
-
     "/stores/:id/activate",
-
     auth,
-
     admin,
-
     checkPermission(
-
         "manage_stores"
-
     ),
-
     adminStoreController.activateStore
-
 );
 
+
+/*
+    DELETE STORE
+
+    DELETE /api/admin/stores/:id
+*/
 
 router.delete(
-
     "/stores/:id",
-
     auth,
-
     admin,
-
     checkPermission(
-
         "manage_stores"
-
     ),
-
     adminStoreController.deleteStore
-
 );
 
 
@@ -412,22 +404,19 @@ router.delete(
    AUDIT LOGS
 ===================================== */
 
+
+/*
+    GET /api/admin/audit-logs
+*/
+
 router.get(
-
     "/audit-logs",
-
     auth,
-
     admin,
-
     checkPermission(
-
         "view_audit_logs"
-
     ),
-
     adminController.getAuditLogs
-
 );
 
 
@@ -435,23 +424,24 @@ router.get(
    LOGIN HISTORY
 ===================================== */
 
+
+/*
+    GET /api/admin/login-history
+*/
+
 router.get(
-
     "/login-history",
-
     auth,
-
     admin,
-
     checkPermission(
-
         "view_login_history"
-
     ),
-
     adminController.getLoginHistory
-
 );
 
+
+/* =====================================
+   EXPORT ROUTER
+===================================== */
 
 module.exports = router;
