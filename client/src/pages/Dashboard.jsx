@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import api from "../config/axios";
 
 import {
@@ -17,8 +16,7 @@ import {
 
 import "./Dashboard.css";
 
-function Dashboard() {
-    const navigate = useNavigate();
+function SellerDashboard() {
 
     // =========================================================
     // STATE
@@ -26,6 +24,7 @@ function Dashboard() {
 
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+
     const [subscription, setSubscription] = useState(null);
 
     const [stats, setStats] = useState({
@@ -33,6 +32,7 @@ function Dashboard() {
     });
 
     const [error, setError] = useState("");
+
 
     // =========================================================
     // LOAD DASHBOARD
@@ -42,8 +42,11 @@ function Dashboard() {
         loadDashboard();
     }, []);
 
+
     const loadDashboard = async () => {
+
         try {
+
             setError("");
             setLoading(true);
 
@@ -51,27 +54,37 @@ function Dashboard() {
                 loadSubscription(),
                 loadStats()
             ]);
+
         } catch (err) {
+
             console.error(
                 "DASHBOARD LOAD ERROR:",
-                err?.response?.data || err?.message || err
+                err?.response?.data ||
+                err?.message ||
+                err
             );
 
             setError(
                 err?.response?.data?.message ||
                 "Unable to load dashboard data."
             );
+
         } finally {
+
             setLoading(false);
+
         }
     };
+
 
     // =========================================================
     // REFRESH
     // =========================================================
 
     const refreshDashboard = async () => {
+
         try {
+
             setRefreshing(true);
             setError("");
 
@@ -79,28 +92,40 @@ function Dashboard() {
                 loadSubscription(),
                 loadStats()
             ]);
+
         } catch (err) {
+
             console.error(
                 "DASHBOARD REFRESH ERROR:",
-                err?.response?.data || err?.message || err
+                err?.response?.data ||
+                err?.message ||
+                err
             );
 
             setError(
                 err?.response?.data?.message ||
                 "Unable to refresh dashboard."
             );
+
         } finally {
+
             setRefreshing(false);
+
         }
     };
+
 
     // =========================================================
     // LOAD SUBSCRIPTION
     // =========================================================
 
     const loadSubscription = async () => {
+
         try {
-            const response = await api.get("/subscription/status");
+
+            const response = await api.get(
+                "/subscription/status"
+            );
 
             console.log(
                 "SUBSCRIPTION RESPONSE:",
@@ -119,27 +144,43 @@ function Dashboard() {
                 data.hasSubscription === true &&
                 subscriptionData
             ) {
-                setSubscription(subscriptionData);
+
+                setSubscription(
+                    subscriptionData
+                );
+
             } else {
+
                 setSubscription(null);
+
             }
+
         } catch (err) {
+
             console.error(
                 "SUBSCRIPTION ERROR:",
-                err?.response?.data || err?.message || err
+                err?.response?.data ||
+                err?.message ||
+                err
             );
 
             setSubscription(null);
+
         }
     };
+
 
     // =========================================================
     // LOAD SELLER PRODUCTS
     // =========================================================
 
     const loadStats = async () => {
+
         try {
-            const response = await api.get("/seller/dashboard");
+
+            const response = await api.get(
+                "/seller/dashboard"
+            );
 
             console.log(
                 "DASHBOARD STATS:",
@@ -155,43 +196,57 @@ function Dashboard() {
                 responseData;
 
             setStats({
+
                 products: Number(
                     data?.products ??
                     data?.totalProducts ??
                     0
                 )
+
             });
+
         } catch (err) {
+
             console.error(
                 "STATS ERROR:",
-                err?.response?.data || err?.message || err
+                err?.response?.data ||
+                err?.message ||
+                err
             );
 
             setStats({
                 products: 0
             });
+
         }
     };
+
 
     // =========================================================
     // PLAN
     // =========================================================
 
     const plan = useMemo(() => {
+
         return (
             subscription?.plan ||
             subscription?.subscriptionPlan ||
             null
         );
+
     }, [subscription]);
+
 
     // =========================================================
     // USAGE
     // =========================================================
 
     const usage = useMemo(() => {
+
         return subscription?.usage || {};
+
     }, [subscription]);
+
 
     const uploadsUsed = Number(
         usage?.uploadsUsed ??
@@ -199,11 +254,13 @@ function Dashboard() {
         0
     );
 
+
     const boostsUsed = Number(
         usage?.boostsUsed ??
         subscription?.boostsUsed ??
         0
     );
+
 
     const featuredUsed = Number(
         usage?.featuredUsed ??
@@ -211,11 +268,13 @@ function Dashboard() {
         0
     );
 
+
     const expressUsed = Number(
         usage?.expressUsed ??
         subscription?.expressUsed ??
         0
     );
+
 
     // =========================================================
     // PLAN LIMITS
@@ -225,25 +284,31 @@ function Dashboard() {
         plan?.maxProducts ?? 0
     );
 
+
     const boostCredits = Number(
         plan?.boostCredits ?? 0
     );
+
 
     const featuredCredits = Number(
         plan?.featuredCredits ?? 0
     );
 
+
     const expressCredits = Number(
         plan?.expressCredits ?? 0
     );
+
 
     const duration = Number(
         plan?.duration ?? 0
     );
 
+
     const price = Number(
         plan?.price ?? 0
     );
+
 
     // =========================================================
     // REMAINING
@@ -254,20 +319,24 @@ function Dashboard() {
         0
     );
 
+
     const boostsRemaining = Math.max(
         boostCredits - boostsUsed,
         0
     );
+
 
     const featuredRemaining = Math.max(
         featuredCredits - featuredUsed,
         0
     );
 
+
     const expressRemaining = Math.max(
         expressCredits - expressUsed,
         0
     );
+
 
     // =========================================================
     // SUBSCRIPTION STATUS
@@ -278,6 +347,7 @@ function Dashboard() {
             subscription?.status || ""
         ).toLowerCase();
 
+
     const isActive =
         !!subscription &&
         (
@@ -285,15 +355,19 @@ function Dashboard() {
             subscriptionStatus === ""
         );
 
+
     // =========================================================
     // DAYS REMAINING
     // =========================================================
 
     const daysRemaining = useMemo(() => {
+
         if (!subscription?.endDate) {
+
             return Number(
                 subscription?.daysLeft ?? 0
             );
+
         }
 
         const endDate = new Date(
@@ -305,9 +379,11 @@ function Dashboard() {
                 endDate.getTime()
             )
         ) {
+
             return Number(
                 subscription?.daysLeft ?? 0
             );
+
         }
 
         const now = new Date();
@@ -322,7 +398,9 @@ function Dashboard() {
         );
 
         return Math.max(days, 0);
+
     }, [subscription]);
+
 
     // =========================================================
     // PERCENTAGE
@@ -332,6 +410,7 @@ function Dashboard() {
         used,
         total
     ) => {
+
         const safeUsed =
             Number(used || 0);
 
@@ -351,11 +430,13 @@ function Dashboard() {
         );
     };
 
+
     // =========================================================
     // DATE FORMAT
     // =========================================================
 
     const formatDate = (date) => {
+
         if (!date) {
             return "N/A";
         }
@@ -368,7 +449,9 @@ function Dashboard() {
                 parsedDate.getTime()
             )
         ) {
+
             return "N/A";
+
         }
 
         return parsedDate.toLocaleDateString(
@@ -381,15 +464,19 @@ function Dashboard() {
         );
     };
 
+
     // =========================================================
     // NUMBER FORMAT
     // =========================================================
 
     const formatNumber = (value) => {
+
         return Number(
             value || 0
         ).toLocaleString();
+
     };
+
 
     // =========================================================
     // STATUS
@@ -399,60 +486,71 @@ function Dashboard() {
         maxProducts > 0 &&
         uploadsUsed >= maxProducts;
 
+
     const hasBoostCredits =
         boostsRemaining > 0;
+
 
     const hasFeaturedCredits =
         featuredRemaining > 0;
 
+
     const hasExpressCredits =
         expressRemaining > 0;
 
-    // =========================================================
-    // NAVIGATION
-    // =========================================================
 
-    const goToSubscriptionPlans = () => {
-        navigate("/subscription-plans");
-    };
+    // =========================================================
+    // SELL PRODUCT
+    // =========================================================
 
     const goToSell = () => {
-        navigate("/sell");
+
+        window.location.href = "/sell";
+
     };
 
-    const goToProducts = () => {
-        navigate("/products");
-    };
 
     // =========================================================
     // LOADING
     // =========================================================
 
     if (loading) {
+
         return (
+
             <div className="dashboard-page">
+
                 <div className="dashboard-loading">
+
                     <div className="loading-spinner"></div>
 
                     <p>
                         Loading dashboard...
                     </p>
+
                 </div>
+
             </div>
+
         );
+
     }
+
 
     // =========================================================
     // NO SUBSCRIPTION
     // =========================================================
 
     if (!subscription || !plan) {
+
         return (
+
             <div className="dashboard-page">
 
                 <div className="dashboard-header">
 
                     <div>
+
                         <h1>
                             Seller Dashboard
                         </h1>
@@ -461,7 +559,9 @@ function Dashboard() {
                             Manage your marketplace
                             business from one place.
                         </p>
+
                     </div>
+
 
                     <div className="dashboard-header-actions">
 
@@ -471,6 +571,7 @@ function Dashboard() {
                             onClick={refreshDashboard}
                             disabled={refreshing}
                         >
+
                             <FaSyncAlt
                                 className={
                                     refreshing
@@ -481,26 +582,36 @@ function Dashboard() {
 
                             {refreshing
                                 ? "Refreshing..."
-                                : "Refresh"}
+                                : "Refresh"
+                            }
+
                         </button>
 
                     </div>
 
                 </div>
 
+
                 {error && (
+
                     <div className="dashboard-error">
+
                         <FaExclamationTriangle />
 
                         <span>
                             {error}
                         </span>
+
                     </div>
+
                 )}
+
 
                 <div className="no-subscription-card">
 
-                    <FaCrown className="no-subscription-icon" />
+                    <FaCrown
+                        className="no-subscription-icon"
+                    />
 
                     <h2>
                         No Active Subscription
@@ -512,21 +623,13 @@ function Dashboard() {
                     </p>
 
                     <p>
-                        Subscribe to a plan to unlock
-                        marketplace listing and
-                        promotion benefits.
+                        Please contact the marketplace
+                        administrator to manage your
+                        subscription.
                     </p>
 
-                    <button
-                        type="button"
-                        onClick={goToSubscriptionPlans}
-                    >
-                        <FaCrown />
-                        View Subscription Plans
-                        <FaArrowRight />
-                    </button>
-
                 </div>
+
 
                 <section className="dashboard-stats">
 
@@ -540,35 +643,78 @@ function Dashboard() {
 
                 </section>
 
+
+                <section className="dashboard-quick-actions">
+
+                    <div className="quick-action-card">
+
+                        <div className="quick-action-icon">
+                            <FaBoxOpen />
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Sell a Product
+                            </h3>
+
+                            <p>
+                                Add a new product to
+                                your marketplace.
+                            </p>
+
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={goToSell}
+                        >
+                            Sell Now
+                            <FaArrowRight />
+                        </button>
+
+                    </div>
+
+                </section>
+
             </div>
+
         );
+
     }
+
 
     // =========================================================
     // MAIN DASHBOARD
     // =========================================================
 
     return (
+
         <div className="dashboard-page">
+
 
             {/* HEADER */}
 
             <div className="dashboard-header">
 
                 <div>
+
                     <h1>
                         Seller Dashboard
                     </h1>
 
                     <p>
-                        Manage your subscription,
+                        Monitor your subscription,
                         listings and marketplace benefits.
                     </p>
+
                 </div>
+
 
                 <div className="dashboard-header-actions">
 
                     <div className="dashboard-date">
+
                         <FaCalendarAlt />
 
                         {new Date().toLocaleDateString(
@@ -579,7 +725,9 @@ function Dashboard() {
                                 year: "numeric"
                             }
                         )}
+
                     </div>
+
 
                     <button
                         type="button"
@@ -587,6 +735,7 @@ function Dashboard() {
                         onClick={refreshDashboard}
                         disabled={refreshing}
                     >
+
                         <FaSyncAlt
                             className={
                                 refreshing
@@ -597,16 +746,20 @@ function Dashboard() {
 
                         {refreshing
                             ? "Refreshing..."
-                            : "Refresh"}
+                            : "Refresh"
+                        }
+
                     </button>
 
                 </div>
 
             </div>
 
+
             {/* ERROR */}
 
             {error && (
+
                 <div className="dashboard-error">
 
                     <FaExclamationTriangle />
@@ -616,7 +769,9 @@ function Dashboard() {
                     </span>
 
                 </div>
+
             )}
+
 
             {/* =================================================
                 SUBSCRIPTION
@@ -626,32 +781,47 @@ function Dashboard() {
 
                 <div className="subscription-header">
 
+
                     <div className="plan-information">
 
                         <span className="plan-badge">
+
                             <FaCrown />
 
                             {isActive
                                 ? "ACTIVE PLAN"
-                                : "INACTIVE PLAN"}
+                                : "INACTIVE PLAN"
+                            }
+
                         </span>
+
 
                         <h2>
                             {plan?.name ||
-                                "Subscription Plan"}
+                                "Subscription Plan"
+                            }
                         </h2>
 
+
                         <p className="plan-description">
+
                             {plan?.description ||
-                                "Premium marketplace subscription plan."}
+                                "Premium marketplace subscription plan."
+                            }
+
                         </p>
 
+
                         <div className="plan-price">
+
                             GH₵{" "}
+
                             {price.toFixed(2)}
+
                         </div>
 
                     </div>
+
 
                     <div className="subscription-status">
 
@@ -662,46 +832,68 @@ function Dashboard() {
                                     : "inactive-status"
                             }
                         >
+
                             {isActive
                                 ? "● ACTIVE"
-                                : "● INACTIVE"}
+                                : "● INACTIVE"
+                            }
+
                         </span>
 
+
                         <h3>
+
                             {daysRemaining}{" "}
+
                             {daysRemaining === 1
                                 ? "Day"
-                                : "Days"}{" "}
+                                : "Days"
+                            }{" "}
+
                             Left
+
                         </h3>
 
+
                         {duration > 0 && (
+
                             <small>
                                 {duration} Day Subscription
                             </small>
+
                         )}
 
+
                         <p>
+
                             Starts:{" "}
+
                             {formatDate(
                                 subscription?.startDate
                             )}
+
                         </p>
 
+
                         <p>
+
                             Ends:{" "}
+
                             {formatDate(
                                 subscription?.endDate
                             )}
+
                         </p>
 
                     </div>
 
                 </div>
 
+
                 {/* EXPIRING WARNING */}
 
                 {daysRemaining <= 3 && (
+
                     <div className="subscription-warning">
 
                         <FaExclamationTriangle />
@@ -713,34 +905,31 @@ function Dashboard() {
                             </strong>
 
                             <p>
+
                                 {daysRemaining === 0
                                     ? "Your subscription has expired or expires today."
                                     : `Your subscription has ${daysRemaining} day${
                                         daysRemaining === 1
                                             ? ""
                                             : "s"
-                                    } remaining.`}
+                                    } remaining.`
+                                }
+
                             </p>
 
                         </div>
 
-                        <button
-                            type="button"
-                            onClick={
-                                goToSubscriptionPlans
-                            }
-                        >
-                            Renew Plan
-                        </button>
-
                     </div>
+
                 )}
+
 
                 {/* =================================================
                     USAGE
                 ================================================= */}
 
                 <div className="usage-section">
+
 
                     <UsageItem
                         icon={<FaBoxOpen />}
@@ -767,6 +956,7 @@ function Dashboard() {
                             uploadLimitReached
                         }
                     />
+
 
                     <UsageItem
                         icon={<FaRocket />}
@@ -795,6 +985,7 @@ function Dashboard() {
                         }
                     />
 
+
                     <UsageItem
                         icon={<FaStar />}
                         title="Featured Credits"
@@ -821,6 +1012,7 @@ function Dashboard() {
                             !hasFeaturedCredits
                         }
                     />
+
 
                     <UsageItem
                         icon={<FaBolt />}
@@ -851,22 +1043,8 @@ function Dashboard() {
 
                 </div>
 
-                <div className="subscription-actions">
-
-                    <button
-                        type="button"
-                        onClick={
-                            goToSubscriptionPlans
-                        }
-                    >
-                        <FaCrown />
-
-                        Manage Subscription
-                    </button>
-
-                </div>
-
             </section>
+
 
             {/* =================================================
                 PRODUCT SUMMARY
@@ -877,6 +1055,7 @@ function Dashboard() {
                 <div className="dashboard-section-title">
 
                     <div>
+
                         <h2>
                             Your Products
                         </h2>
@@ -885,11 +1064,14 @@ function Dashboard() {
                             Track your marketplace
                             listings and subscription allowance.
                         </p>
+
                     </div>
 
                 </div>
 
+
                 <div className="dashboard-stats">
+
 
                     <StatCard
                         icon={<FaBoxOpen />}
@@ -898,6 +1080,7 @@ function Dashboard() {
                             stats.products
                         )}
                     />
+
 
                     <StatCard
                         icon={<FaBoxOpen />}
@@ -910,6 +1093,7 @@ function Dashboard() {
                                 )
                         }
                     />
+
 
                     <StatCard
                         icon={<FaCheckCircle />}
@@ -927,8 +1111,9 @@ function Dashboard() {
 
             </section>
 
+
             {/* =================================================
-                QUICK ACTIONS
+                SELL PRODUCT
             ================================================= */}
 
             <section className="dashboard-quick-actions">
@@ -936,8 +1121,11 @@ function Dashboard() {
                 <div className="quick-action-card">
 
                     <div className="quick-action-icon">
+
                         <FaBoxOpen />
+
                     </div>
+
 
                     <div>
 
@@ -952,46 +1140,22 @@ function Dashboard() {
 
                     </div>
 
+
                     <button
                         type="button"
                         onClick={goToSell}
                     >
+
                         Sell Now
+
                         <FaArrowRight />
-                    </button>
 
-                </div>
-
-                <div className="quick-action-card">
-
-                    <div className="quick-action-icon">
-                        <FaBoxOpen />
-                    </div>
-
-                    <div>
-
-                        <h3>
-                            My Products
-                        </h3>
-
-                        <p>
-                            View and manage your
-                            marketplace listings.
-                        </p>
-
-                    </div>
-
-                    <button
-                        type="button"
-                        onClick={goToProducts}
-                    >
-                        View Products
-                        <FaArrowRight />
                     </button>
 
                 </div>
 
             </section>
+
 
             {/* =================================================
                 PLAN BENEFITS
@@ -1017,7 +1181,9 @@ function Dashboard() {
 
                 </div>
 
+
                 <div className="benefits-grid">
+
 
                     <BenefitCard
                         icon={<FaBoxOpen />}
@@ -1031,6 +1197,7 @@ function Dashboard() {
                             maxProducts > 0
                         }
                     />
+
 
                     <BenefitCard
                         icon={<FaRocket />}
@@ -1047,6 +1214,7 @@ function Dashboard() {
                         }
                     />
 
+
                     <BenefitCard
                         icon={<FaStar />}
                         title="Featured Credits"
@@ -1061,6 +1229,7 @@ function Dashboard() {
                             featuredCredits > 0
                         }
                     />
+
 
                     <BenefitCard
                         icon={<FaBolt />}
@@ -1081,9 +1250,12 @@ function Dashboard() {
 
             </section>
 
+
         </div>
+
     );
 }
+
 
 // =============================================================
 // USAGE ITEM
@@ -1099,13 +1271,16 @@ function UsageItem({
     type,
     limitReached
 }) {
+
     const safeUsed =
         Number(used || 0);
 
     const safeTotal =
         Number(total || 0);
 
+
     return (
+
         <div
             className={
                 `usage-item ${
@@ -1119,17 +1294,26 @@ function UsageItem({
             <div className="usage-row">
 
                 <span>
+
                     {icon}
+
                     {title}
+
                 </span>
 
+
                 <strong>
+
                     {safeUsed}
+
                     {" / "}
+
                     {safeTotal}
+
                 </strong>
 
             </div>
+
 
             <div className="progress-bar">
 
@@ -1153,23 +1337,33 @@ function UsageItem({
 
             </div>
 
+
             <div className="usage-bottom-row">
 
                 <small className="remaining-text">
+
                     {remaining}
+
                 </small>
 
+
                 {limitReached && (
+
                     <small className="limit-reached-text">
+
                         Limit reached
+
                     </small>
+
                 )}
 
             </div>
 
         </div>
+
     );
 }
+
 
 // =============================================================
 // STAT CARD
@@ -1180,12 +1374,17 @@ function StatCard({
     title,
     value
 }) {
+
     return (
+
         <div className="stat-card">
 
             <div className="stat-icon">
+
                 {icon}
+
             </div>
+
 
             <div>
 
@@ -1200,8 +1399,11 @@ function StatCard({
             </div>
 
         </div>
+
     );
+
 }
+
 
 // =============================================================
 // BENEFIT CARD
@@ -1213,7 +1415,9 @@ function BenefitCard({
     value,
     enabled
 }) {
+
     return (
+
         <div
             className={
                 `benefit-card ${
@@ -1225,8 +1429,11 @@ function BenefitCard({
         >
 
             <div className="benefit-icon">
+
                 {icon}
+
             </div>
+
 
             <div className="benefit-content">
 
@@ -1240,16 +1447,21 @@ function BenefitCard({
 
             </div>
 
+
             <div className="benefit-status">
 
                 {enabled
                     ? <FaCheckCircle />
-                    : <span>—</span>}
+                    : <span>—</span>
+                }
 
             </div>
 
         </div>
+
     );
+
 }
 
-export default Dashboard;
+
+export default SellerDashboard;
