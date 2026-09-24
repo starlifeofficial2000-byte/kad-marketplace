@@ -1,53 +1,218 @@
-.action-buttons{
+/* ==========================================
+   ADVERTISEMENT ACTION BUTTONS
+========================================== */
 
-    display:flex;
+.action-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
 
-    flex-wrap:wrap;
+    flex-wrap: wrap;
 
-    gap:8px;
+    gap: 7px;
 
+    width: 100%;
+    min-width: 0;
 }
 
-.action-buttons button{
+/* ==========================================
+   ALL ACTION BUTTONS
+========================================== */
 
-    border:none;
+.action-buttons button {
+    min-height: 36px;
 
-    padding:8px 14px;
+    padding: 8px 13px;
 
-    border-radius:6px;
+    border: none;
+    border-radius: 7px;
 
-    cursor:pointer;
+    color: #ffffff;
 
-    color:white;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
 
+    line-height: 1.2;
+
+    cursor: pointer;
+
+    white-space: nowrap;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        opacity 0.2s ease;
 }
 
-.approve-btn{
+.action-buttons button:hover {
+    transform: translateY(-1px);
 
-    background:#16a34a;
-
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
 }
 
-.reject-btn{
-
-    background:#dc2626;
-
+.action-buttons button:active {
+    transform: translateY(0);
 }
 
-.pause-btn{
-
-    background:#f59e0b;
-
+.action-buttons button:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.25);
+    outline-offset: 2px;
 }
 
-.resume-btn{
+/* ==========================================
+   APPROVE
+========================================== */
 
-    background:#2563eb;
-
+.approve-btn {
+    background: #16a34a;
 }
 
-.delete-btn{
+.approve-btn:hover {
+    background: #15803d;
+}
 
-    background:#7f1d1d;
+/* ==========================================
+   REJECT
+========================================== */
 
+.reject-btn {
+    background: #dc2626;
+}
+
+.reject-btn:hover {
+    background: #b91c1c;
+}
+
+/* ==========================================
+   PAUSE
+========================================== */
+
+.pause-btn {
+    background: #f59e0b;
+}
+
+.pause-btn:hover {
+    background: #d97706;
+}
+
+/* ==========================================
+   RESUME
+========================================== */
+
+.resume-btn {
+    background: #2563eb;
+}
+
+.resume-btn:hover {
+    background: #1d4ed8;
+}
+
+/* ==========================================
+   DELETE
+========================================== */
+
+.delete-btn {
+    background: #7f1d1d;
+}
+
+.delete-btn:hover {
+    background: #991b1b;
+}
+
+/* ==========================================
+   TABLET
+========================================== */
+
+@media (max-width: 900px) {
+
+    .action-buttons {
+        gap: 6px;
+    }
+
+    .action-buttons button {
+        min-height: 35px;
+
+        padding: 7px 11px;
+
+        font-size: 12px;
+    }
+}
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media (max-width: 600px) {
+
+    .action-buttons {
+        display: grid;
+
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+
+        width: 100%;
+
+        gap: 6px;
+    }
+
+    .action-buttons button {
+        width: 100%;
+
+        min-height: 38px;
+
+        padding: 8px 6px;
+
+        font-size: 12px;
+
+        white-space: normal;
+    }
+}
+
+/* ==========================================
+   SMALL PHONES
+========================================== */
+
+@media (max-width: 400px) {
+
+    .action-buttons {
+        grid-template-columns: 1fr;
+    }
+
+    .action-buttons button {
+        min-height: 40px;
+
+        padding: 9px 8px;
+
+        font-size: 12px;
+    }
+}
+
+/* ==========================================
+   VERY SMALL PHONES
+========================================== */
+
+@media (max-width: 330px) {
+
+    .action-buttons {
+        gap: 5px;
+    }
+
+    .action-buttons button {
+        min-height: 38px;
+
+        padding: 8px 6px;
+
+        font-size: 11px;
+    }
+}
+
+/* ==========================================
+   REDUCED MOTION
+========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .action-buttons button {
+        transition: none;
+    }
 }

@@ -1,305 +1,561 @@
-/* ==========================================
+/* =========================================================
    PAYMENT DETAILS PAGE
-========================================== */
+========================================================= */
 
-.payment-details{
+.payment-details {
+    width: 100%;
+    min-width: 0;
+    min-height: 100vh;
 
-    padding:40px;
+    padding: 40px;
 
-    background:#f8fafc;
+    box-sizing: border-box;
 
-    min-height:100vh;
+    background: #f8fafc;
 
-    animation:fadeIn .4s ease;
+    overflow-x: hidden;
 
+    animation: paymentFadeIn 0.4s ease;
 }
 
-/* ==========================================
+/* =========================================================
    PAGE TITLE
-========================================== */
+========================================================= */
 
-.payment-details h1{
+.payment-details h1 {
+    margin: 0 0 30px;
 
-    font-size:34px;
+    color: #1e293b;
 
-    color:#1e293b;
+    font-size: 34px;
+    font-weight: 800;
 
-    margin-bottom:30px;
+    line-height: 1.2;
 
-    font-weight:700;
-
+    overflow-wrap: anywhere;
 }
 
-/* ==========================================
+/* =========================================================
    DETAILS CARD
-========================================== */
+========================================================= */
 
-.details-card{
+.details-card {
+    width: 100%;
+    max-width: 900px;
 
-    background:#fff;
+    margin: 0 auto;
 
-    max-width:900px;
+    padding: 35px;
 
-    margin:auto;
+    box-sizing: border-box;
 
-    padding:35px;
+    background: #ffffff;
 
-    border-radius:18px;
+    border: 1px solid #e2e8f0;
 
-    box-shadow:0 12px 35px rgba(0,0,0,.08);
+    border-radius: 18px;
 
+    box-shadow:
+        0 12px 35px rgba(15, 23, 42, 0.08);
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
 }
 
-/* ==========================================
-   ROWS
-========================================== */
+.details-card:hover {
+    transform: translateY(-2px);
 
-.details-card p{
-
-    display:flex;
-
-    justify-content:space-between;
-
-    align-items:center;
-
-    padding:18px 0;
-
-    margin:0;
-
-    border-bottom:1px solid #edf2f7;
-
-    font-size:16px;
-
+    box-shadow:
+        0 16px 40px rgba(15, 23, 42, 0.10);
 }
 
-.details-card p:last-child{
+/* =========================================================
+   PAYMENT INFORMATION ROWS
+========================================================= */
 
-    border-bottom:none;
+.details-card p {
+    display: grid;
 
+    grid-template-columns: 220px minmax(0, 1fr);
+
+    align-items: center;
+
+    gap: 20px;
+
+    width: 100%;
+
+    min-width: 0;
+
+    margin: 0;
+
+    padding: 18px 0;
+
+    box-sizing: border-box;
+
+    border-bottom: 1px solid #edf2f7;
+
+    color: #475569;
+
+    font-size: 15px;
+
+    line-height: 1.5;
+
+    overflow-wrap: anywhere;
 }
 
-.details-card strong{
-
-    color:#334155;
-
-    font-size:15px;
-
-    width:220px;
-
+.details-card p:last-child {
+    border-bottom: none;
 }
 
-/* ==========================================
+.details-card strong {
+    display: block;
+
+    width: auto;
+
+    color: #334155;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    line-height: 1.4;
+}
+
+/* =========================================================
+   PAYMENT VALUES
+========================================================= */
+
+.details-card p > *:last-child {
+    min-width: 0;
+
+    overflow-wrap: anywhere;
+}
+
+.details-card p:not(:has(.status)) {
+    color: #475569;
+}
+
+/* =========================================================
    STATUS BADGES
-========================================== */
+========================================================= */
 
-.status{
+.status {
+    display: inline-flex;
 
-    padding:8px 18px;
+    align-items: center;
+    justify-content: center;
 
-    border-radius:30px;
+    width: fit-content;
 
-    font-size:13px;
+    min-height: 30px;
 
-    font-weight:700;
+    padding: 5px 13px;
 
-    color:white;
+    box-sizing: border-box;
 
+    border-radius: 999px;
+
+    color: #ffffff;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    line-height: 1.2;
+
+    white-space: nowrap;
 }
 
-.successful{
-
-    background:#16a34a;
-
+.successful {
+    background: #16a34a;
 }
 
-.pending{
-
-    background:#f59e0b;
-
+.pending {
+    background: #f59e0b;
 }
 
-.failed{
-
-    background:#ef4444;
-
+.failed {
+    background: #ef4444;
 }
 
-.refunded{
-
-    background:#6366f1;
-
+.refunded {
+    background: #6366f1;
 }
 
-/* ==========================================
+/* =========================================================
    ACTION BUTTONS
-========================================== */
+========================================================= */
 
-.payment-actions{
+.payment-actions {
+    display: flex;
 
-    display:flex;
+    align-items: center;
 
-    gap:15px;
+    gap: 12px;
 
-    margin-top:35px;
+    width: 100%;
 
-    flex-wrap:wrap;
+    margin-top: 30px;
 
+    flex-wrap: wrap;
 }
 
-.payment-actions button{
+.payment-actions button {
+    display: inline-flex;
 
-    border:none;
+    align-items: center;
+    justify-content: center;
 
-    padding:13px 24px;
+    min-height: 44px;
 
-    border-radius:10px;
+    padding: 11px 22px;
 
-    cursor:pointer;
+    border: none;
 
-    font-weight:600;
+    border-radius: 9px;
 
-    transition:.3s;
+    font-family: inherit;
 
+    font-size: 14px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    white-space: nowrap;
+
+    transition:
+        background-color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-/* View Invoice */
-
-.invoice-btn{
-
-    background:#2563eb;
-
-    color:white;
-
+.payment-actions button:hover {
+    transform: translateY(-1px);
 }
 
-.invoice-btn:hover{
-
-    background:#1d4ed8;
-
+.payment-actions button:active {
+    transform: translateY(0);
 }
 
-/* Download */
+.payment-actions button:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.20);
 
-.download-btn{
-
-    background:#14b8a6;
-
-    color:white;
-
+    outline-offset: 2px;
 }
 
-.download-btn:hover{
+/* =========================================================
+   VIEW INVOICE
+========================================================= */
 
-    background:#0f766e;
+.invoice-btn {
+    background: #2563eb;
 
+    color: #ffffff;
 }
 
-/* Refund */
+.invoice-btn:hover {
+    background: #1d4ed8;
 
-.refund-btn{
-
-    background:#f59e0b;
-
-    color:white;
-
+    box-shadow:
+        0 5px 14px rgba(37, 99, 235, 0.20);
 }
 
-.refund-btn:hover{
+/* =========================================================
+   DOWNLOAD
+========================================================= */
 
-    background:#d97706;
+.download-btn {
+    background: #14b8a6;
 
+    color: #ffffff;
 }
 
-/* Delete */
+.download-btn:hover {
+    background: #0f766e;
 
-.delete-btn{
-
-    background:#ef4444;
-
-    color:white;
-
+    box-shadow:
+        0 5px 14px rgba(20, 184, 166, 0.20);
 }
 
-.delete-btn:hover{
+/* =========================================================
+   REFUND
+========================================================= */
 
-    background:#dc2626;
+.refund-btn {
+    background: #f59e0b;
 
+    color: #ffffff;
 }
 
-/* ==========================================
-   HOVER EFFECT
-========================================== */
+.refund-btn:hover {
+    background: #d97706;
 
-.details-card:hover{
-
-    transform:translateY(-2px);
-
-    transition:.3s;
-
+    box-shadow:
+        0 5px 14px rgba(245, 158, 11, 0.20);
 }
 
-/* ==========================================
+/* =========================================================
+   DELETE
+========================================================= */
+
+.delete-btn {
+    background: #ef4444;
+
+    color: #ffffff;
+}
+
+.delete-btn:hover {
+    background: #dc2626;
+
+    box-shadow:
+        0 5px 14px rgba(239, 68, 68, 0.20);
+}
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.payment-details > h2 {
+    margin: 0;
+
+    color: #475569;
+
+    font-size: 20px;
+
+    font-weight: 700;
+}
+
+/* =========================================================
    ANIMATION
-========================================== */
+========================================================= */
 
-@keyframes fadeIn{
+@keyframes paymentFadeIn {
+    from {
+        opacity: 0;
 
-    from{
-
-        opacity:0;
-
-        transform:translateY(20px);
-
+        transform: translateY(15px);
     }
 
-    to{
+    to {
+        opacity: 1;
 
-        opacity:1;
-
-        transform:translateY(0);
-
+        transform: translateY(0);
     }
-
 }
 
-/* ==========================================
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .payment-details {
+        padding: 30px 24px;
+    }
+
+    .payment-details h1 {
+        font-size: 30px;
+
+        margin-bottom: 25px;
+    }
+
+    .details-card {
+        padding: 28px;
+    }
+
+    .details-card p {
+        grid-template-columns: 180px minmax(0, 1fr);
+
+        gap: 16px;
+
+        padding: 16px 0;
+    }
+
+    .payment-actions {
+        gap: 10px;
+    }
+
+    .payment-actions button {
+        padding: 10px 18px;
+    }
+}
+
+/* =========================================================
    MOBILE
-========================================== */
+========================================================= */
 
-@media(max-width:768px){
+@media (max-width: 700px) {
 
-.details-card{
+    .payment-details {
+        width: 100%;
 
-padding:20px;
+        padding: 20px 12px;
 
+        overflow-x: hidden;
+    }
+
+    .payment-details h1 {
+        margin-bottom: 20px;
+
+        font-size: 26px;
+    }
+
+    .details-card {
+        width: 100%;
+
+        padding: 20px 16px;
+
+        border-radius: 14px;
+    }
+
+    .details-card p {
+        display: flex;
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 6px;
+
+        padding: 15px 0;
+
+        font-size: 14px;
+    }
+
+    .details-card strong {
+        width: 100%;
+
+        font-size: 13px;
+    }
+
+    .details-card p > *:last-child {
+        width: 100%;
+    }
+
+    .status {
+        min-height: 28px;
+
+        padding: 5px 11px;
+
+        font-size: 11px;
+    }
+
+    .payment-actions {
+        flex-direction: column;
+
+        align-items: stretch;
+
+        gap: 9px;
+
+        margin-top: 22px;
+    }
+
+    .payment-actions button {
+        width: 100%;
+
+        min-height: 46px;
+
+        padding: 11px 15px;
+
+        font-size: 13px;
+    }
 }
 
-.details-card p{
+/* =========================================================
+   SMALL PHONES
+========================================================= */
 
-display:block;
+@media (max-width: 400px) {
 
+    .payment-details {
+        padding: 15px 9px;
+    }
+
+    .payment-details h1 {
+        font-size: 23px;
+
+        margin-bottom: 17px;
+    }
+
+    .details-card {
+        padding: 16px 13px;
+
+        border-radius: 12px;
+    }
+
+    .details-card p {
+        padding: 13px 0;
+
+        font-size: 13px;
+    }
+
+    .details-card strong {
+        font-size: 12px;
+    }
+
+    .status {
+        font-size: 10px;
+
+        padding: 5px 10px;
+    }
+
+    .payment-actions {
+        margin-top: 18px;
+    }
+
+    .payment-actions button {
+        min-height: 44px;
+
+        font-size: 12px;
+    }
 }
 
-.details-card strong{
+/* =========================================================
+   VERY SMALL PHONES
+========================================================= */
 
-display:block;
+@media (max-width: 330px) {
 
-margin-bottom:8px;
+    .payment-details {
+        padding: 12px 7px;
+    }
 
-width:100%;
+    .payment-details h1 {
+        font-size: 21px;
+    }
 
+    .details-card {
+        padding: 14px 11px;
+    }
+
+    .details-card p {
+        padding: 12px 0;
+
+        font-size: 12px;
+    }
+
+    .details-card strong {
+        font-size: 11px;
+    }
+
+    .payment-actions button {
+        min-height: 42px;
+
+        font-size: 11px;
+    }
 }
 
-.payment-actions{
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
 
-flex-direction:column;
+@media (prefers-reduced-motion: reduce) {
 
-}
+    .payment-details,
+    .details-card,
+    .payment-actions button {
+        animation: none;
 
-.payment-actions button{
-
-width:100%;
-
-}
-
+        transition: none;
+    }
 }

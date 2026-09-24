@@ -1,191 +1,673 @@
-.contact-messages{
+/* ==========================================
+   CONTACT MESSAGES PAGE
+========================================== */
 
-    padding:30px;
+.contact-messages {
+    width: 100%;
+    min-width: 0;
+    min-height: 100vh;
 
+    padding: 30px;
+
+    box-sizing: border-box;
+
+    background: #f8fafc;
 }
 
-.contact-messages h2{
+/* ==========================================
+   PAGE TITLE
+========================================== */
 
-    margin-bottom:25px;
+.contact-messages h2 {
+    margin: 0 0 25px;
 
-    color:#222;
+    color: #1e293b;
 
+    font-size: 28px;
+    font-weight: 800;
+
+    line-height: 1.3;
 }
 
-.contact-messages table{
+/* ==========================================
+   TABLE CONTAINER
+========================================== */
 
-    width:100%;
-
-    border-collapse:collapse;
-
-    background:#fff;
-
-    border-radius:10px;
-
-    overflow:hidden;
-
-    box-shadow:0 5px 20px rgba(0,0,0,.08);
-
+.contact-messages {
+    overflow-x: hidden;
 }
 
-.contact-messages thead{
+/*
+   The table itself gets horizontal scrolling
+   on smaller screens instead of making the
+   entire admin page scroll sideways.
+*/
 
-    background:#0d6efd;
+.contact-messages table {
+    width: 100%;
+    min-width: 850px;
 
-    color:white;
+    border-collapse: collapse;
 
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 14px;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 6px 20px rgba(15, 23, 42, 0.06);
 }
 
-.contact-messages th,
+/* ==========================================
+   TABLE HEADER
+========================================== */
 
-.contact-messages td{
+.contact-messages thead {
+    background: #0d6efd;
 
-    padding:15px;
-
-    border-bottom:1px solid #eee;
-
-    text-align:left;
-
+    color: #ffffff;
 }
 
-.contact-messages tbody tr:hover{
+.contact-messages th {
+    padding: 15px;
 
-    background:#f8f9fa;
+    text-align: left;
 
+    font-size: 13px;
+    font-weight: 700;
+
+    line-height: 1.4;
+
+    white-space: nowrap;
 }
 
-.read-btn{
+.contact-messages td {
+    padding: 15px;
 
-    background:#198754;
+    border-bottom: 1px solid #edf2f7;
 
-    color:white;
+    color: #374151;
 
-    border:none;
+    font-size: 13px;
 
-    padding:8px 14px;
+    line-height: 1.5;
 
-    border-radius:6px;
-
-    cursor:pointer;
-
-    margin-right:8px;
-
+    vertical-align: middle;
 }
 
-.read-btn:hover{
-
-    background:#157347;
-
+.contact-messages tbody tr {
+    transition: background-color 0.2s ease;
 }
 
-.delete-btn{
-
-    background:#dc3545;
-
-    color:white;
-
-    border:none;
-
-    padding:8px 14px;
-
-    border-radius:6px;
-
-    cursor:pointer;
-
+.contact-messages tbody tr:hover {
+    background: #f8fafc;
 }
 
-.delete-btn:hover{
-
-    background:#bb2d3b;
-
+.contact-messages tbody tr:last-child td {
+    border-bottom: none;
 }
 
-.status-unread{
+/* ==========================================
+   TABLE SCROLLING
+========================================== */
 
-    color:#dc3545;
+/*
+   Because the JSX contains the table directly,
+   this creates a scrollable table area without
+   requiring JSX changes.
+*/
 
-    font-weight:bold;
+@media (max-width: 900px) {
 
+    .contact-messages {
+        overflow-x: auto;
+
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .contact-messages h2 {
+        white-space: nowrap;
+    }
+
+    .contact-messages table {
+        min-width: 850px;
+    }
 }
 
-.status-read{
+/* ==========================================
+   STATUS
+========================================== */
 
-    color:#198754;
+.status-unread {
+    display: inline-block;
 
-    font-weight:bold;
+    padding: 5px 10px;
 
+    border-radius: 20px;
+
+    background: #fee2e2;
+
+    color: #dc3545;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    white-space: nowrap;
 }
 
-@media(max-width:900px){
+.status-read {
+    display: inline-block;
 
-.contact-messages{
+    padding: 5px 10px;
 
-overflow-x:auto;
+    border-radius: 20px;
 
+    background: #dcfce7;
+
+    color: #198754;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    white-space: nowrap;
 }
 
-table{
+/* ==========================================
+   ACTION BUTTONS
+========================================== */
 
-min-width:700px;
-
+.contact-messages td:last-child {
+    white-space: nowrap;
 }
 
-}.message-modal{
+.read-btn,
+.delete-btn {
+    min-height: 38px;
 
-    position:fixed;
+    padding: 8px 14px;
 
-    inset:0;
+    border: none;
 
-    background:rgba(0,0,0,.6);
+    border-radius: 7px;
 
-    display:flex;
+    color: #ffffff;
 
-    justify-content:center;
+    font-family: inherit;
 
-    align-items:center;
+    font-size: 13px;
+    font-weight: 600;
 
-    z-index:999;
+    cursor: pointer;
 
+    transition:
+        background-color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-.message-content{
+.read-btn {
+    margin-right: 7px;
 
-    background:white;
-
-    width:700px;
-
-    max-width:90%;
-
-    padding:30px;
-
-    border-radius:12px;
-
-    max-height:80vh;
-
-    overflow-y:auto;
-
+    background: #198754;
 }
 
-.message-content h2{
+.read-btn:hover {
+    background: #157347;
 
-    margin-bottom:20px;
+    transform: translateY(-1px);
 
+    box-shadow:
+        0 4px 10px rgba(25, 135, 84, 0.2);
 }
 
-.message-content button{
+.delete-btn {
+    background: #dc3545;
+}
 
-    margin-top:20px;
+.delete-btn:hover {
+    background: #bb2d3b;
 
-    background:#0d6efd;
+    transform: translateY(-1px);
 
-    color:white;
+    box-shadow:
+        0 4px 10px rgba(220, 53, 69, 0.2);
+}
 
-    border:none;
+.read-btn:active,
+.delete-btn:active {
+    transform: translateY(0);
+}
 
-    padding:10px 20px;
+.read-btn:focus-visible,
+.delete-btn:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.25);
 
-    border-radius:6px;
+    outline-offset: 2px;
+}
 
-    cursor:pointer;
+/* ==========================================
+   EMPTY TABLE STATE
+========================================== */
 
+.contact-messages td[colspan] {
+    text-align: center;
+
+    padding: 40px 20px !important;
+
+    color: #94a3b8;
+
+    font-size: 15px;
+}
+
+/* ==========================================
+   MESSAGE MODAL
+========================================== */
+
+.message-modal {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 9999;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    box-sizing: border-box;
+
+    background: rgba(15, 23, 42, 0.65);
+
+    backdrop-filter: blur(3px);
+}
+
+/* ==========================================
+   MESSAGE CONTENT
+========================================== */
+
+.message-content {
+    width: 700px;
+
+    max-width: 100%;
+    max-height: 85vh;
+
+    padding: 30px;
+
+    box-sizing: border-box;
+
+    overflow-y: auto;
+
+    background: #ffffff;
+
+    border-radius: 16px;
+
+    box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.20);
+
+    animation: messageModalIn 0.2s ease;
+}
+
+.message-content h2 {
+    margin: 0 0 22px;
+
+    color: #1e293b;
+
+    font-size: 24px;
+    font-weight: 800;
+
+    line-height: 1.35;
+
+    overflow-wrap: anywhere;
+}
+
+.message-content p {
+    margin: 0 0 12px;
+
+    color: #475569;
+
+    font-size: 14px;
+
+    line-height: 1.65;
+
+    overflow-wrap: anywhere;
+}
+
+.message-content strong {
+    color: #111827;
+
+    font-weight: 700;
+}
+
+.message-content hr {
+    margin: 20px 0;
+
+    border: 0;
+
+    border-top: 1px solid #e5e7eb;
+}
+
+/* ==========================================
+   MESSAGE BODY
+========================================== */
+
+.message-content .message-body {
+    padding: 16px;
+
+    margin-bottom: 20px;
+
+    background: #f8fafc;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 10px;
+
+    color: #334155;
+
+    font-size: 15px;
+
+    line-height: 1.75;
+
+    white-space: pre-wrap;
+
+    overflow-wrap: anywhere;
+}
+
+/* ==========================================
+   MODAL CLOSE BUTTON
+========================================== */
+
+.message-content button {
+    display: block;
+
+    width: 100%;
+
+    min-height: 45px;
+
+    margin-top: 20px;
+
+    padding: 11px 20px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background: #0d6efd;
+
+    color: #ffffff;
+
+    font-family: inherit;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.message-content button:hover {
+    background: #0b5ed7;
+
+    transform: translateY(-1px);
+}
+
+.message-content button:active {
+    transform: translateY(0);
+}
+
+/* ==========================================
+   TABLET
+========================================== */
+
+@media (max-width: 900px) {
+
+    .contact-messages {
+        padding: 24px;
+    }
+
+    .contact-messages h2 {
+        font-size: 26px;
+    }
+
+    .message-content {
+        width: 650px;
+
+        padding: 25px;
+    }
+}
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media (max-width: 600px) {
+
+    .contact-messages {
+        width: 100%;
+
+        min-height: 100vh;
+
+        padding: 18px 12px;
+
+        box-sizing: border-box;
+
+        overflow-x: hidden;
+    }
+
+    .contact-messages h2 {
+        margin-bottom: 18px;
+
+        font-size: 23px;
+    }
+
+    /*
+       Scroll only the table.
+       Since the JSX has no wrapper around
+       the table, we use the page container
+       itself on mobile.
+    */
+
+    .contact-messages table {
+        min-width: 800px;
+    }
+
+    .contact-messages th,
+    .contact-messages td {
+        padding: 11px 10px;
+    }
+
+    .contact-messages th {
+        font-size: 12px;
+    }
+
+    .contact-messages td {
+        font-size: 12px;
+    }
+
+    .read-btn,
+    .delete-btn {
+        min-height: 38px;
+
+        padding: 8px 11px;
+
+        font-size: 12px;
+    }
+
+    /* Modal */
+
+    .message-modal {
+        align-items: center;
+
+        padding: 12px;
+    }
+
+    .message-content {
+        width: 100%;
+        max-width: 100%;
+
+        max-height: 90vh;
+
+        padding: 20px 16px;
+
+        border-radius: 14px;
+    }
+
+    .message-content h2 {
+        font-size: 20px;
+
+        margin-bottom: 18px;
+    }
+
+    .message-content p {
+        font-size: 13px;
+    }
+
+    .message-content .message-body {
+        padding: 13px;
+
+        font-size: 13px;
+
+        line-height: 1.65;
+    }
+
+    .message-content button {
+        min-height: 46px;
+
+        margin-top: 16px;
+    }
+}
+
+/* ==========================================
+   SMALL PHONES
+========================================== */
+
+@media (max-width: 400px) {
+
+    .contact-messages {
+        padding: 14px 9px;
+    }
+
+    .contact-messages h2 {
+        font-size: 21px;
+    }
+
+    .contact-messages table {
+        min-width: 760px;
+    }
+
+    .contact-messages th,
+    .contact-messages td {
+        padding: 9px 8px;
+    }
+
+    .contact-messages td {
+        font-size: 11px;
+    }
+
+    .status-unread,
+    .status-read {
+        padding: 4px 8px;
+
+        font-size: 10px;
+    }
+
+    .read-btn,
+    .delete-btn {
+        min-height: 36px;
+
+        padding: 7px 9px;
+
+        font-size: 11px;
+    }
+
+    .message-modal {
+        padding: 8px;
+    }
+
+    .message-content {
+        padding: 18px 13px;
+
+        border-radius: 12px;
+    }
+
+    .message-content h2 {
+        font-size: 18px;
+    }
+
+    .message-content p {
+        font-size: 12px;
+    }
+
+    .message-content .message-body {
+        font-size: 12px;
+    }
+}
+
+/* ==========================================
+   VERY SMALL PHONES
+========================================== */
+
+@media (max-width: 330px) {
+
+    .contact-messages {
+        padding: 12px 7px;
+    }
+
+    .contact-messages h2 {
+        font-size: 19px;
+    }
+
+    .contact-messages table {
+        min-width: 720px;
+    }
+
+    .message-content {
+        padding: 16px 11px;
+    }
+
+    .message-content h2 {
+        font-size: 17px;
+    }
+}
+
+/* ==========================================
+   MODAL ANIMATION
+========================================== */
+
+@keyframes messageModalIn {
+
+    from {
+        opacity: 0;
+
+        transform: translateY(12px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ==========================================
+   REDUCED MOTION
+========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .message-content,
+    .read-btn,
+    .delete-btn,
+    .message-content button {
+        animation: none;
+        transition: none;
+    }
 }

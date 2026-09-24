@@ -1,215 +1,381 @@
-/* ==========================================
+/* =========================================================
    SUPPORT PAGE
-========================================== */
+   ========================================================= */
 
-.support-container{
+.support-container {
+    width: 100%;
+    min-height: 100vh;
 
-    min-height:100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
 
-    background:#f5f7fb;
+    padding: 40px 30px;
 
-    display:flex;
+    box-sizing: border-box;
 
-    justify-content:center;
+    background: #f5f7fb;
 
-    align-items:flex-start;
-
-    padding:40px;
-
+    overflow-x: hidden;
 }
 
-.support-card{
+/* =========================================================
+   SUPPORT CARD
+   ========================================================= */
 
-    width:100%;
+.support-card {
+    width: 100%;
+    max-width: 750px;
 
-    max-width:750px;
+    padding: 35px;
 
-    background:#fff;
+    box-sizing: border-box;
 
-    border-radius:18px;
+    background: #ffffff;
 
-    padding:35px;
+    border-radius: 18px;
 
-    box-shadow:0 15px 40px rgba(0,0,0,.08);
-
+    box-shadow:
+        0 15px 40px rgba(0, 0, 0, 0.08);
 }
 
-.support-card h1{
+.support-card h1 {
+    margin: 0 0 10px;
 
-    font-size:32px;
+    color: #1e293b;
 
-    color:#1e293b;
-
-    margin-bottom:10px;
-
+    font-size: 32px;
+    line-height: 1.2;
+    font-weight: 700;
 }
 
-.support-card p{
+.support-card > p {
+    margin: 0 0 30px;
 
-    color:#64748b;
+    color: #64748b;
 
-    margin-bottom:30px;
-
-    font-size:15px;
-
+    font-size: 15px;
+    line-height: 1.6;
 }
 
-/* ==========================================
+/* =========================================================
    FORM
-========================================== */
+   ========================================================= */
 
-.support-card form{
+.support-card form {
+    width: 100%;
 
-    display:flex;
+    display: flex;
+    flex-direction: column;
 
-    flex-direction:column;
-
-    gap:18px;
-
+    gap: 18px;
 }
 
 .support-card input,
-
 .support-card select,
+.support-card textarea {
+    width: 100%;
 
-.support-card textarea{
+    padding: 14px 16px;
 
-    width:100%;
+    box-sizing: border-box;
 
-    padding:14px 18px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
 
-    border:1px solid #d1d5db;
+    outline: none;
 
-    border-radius:10px;
+    background: #ffffff;
+    color: #1f2937;
 
-    outline:none;
+    font-family: inherit;
+    font-size: 15px;
 
-    font-size:15px;
-
-    transition:.3s;
-
-    font-family:inherit;
-
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
 }
 
-.support-card textarea{
+.support-card input {
+    min-height: 48px;
+}
 
-    min-height:180px;
+.support-card select {
+    min-height: 48px;
 
-    resize:vertical;
+    cursor: pointer;
+}
 
+.support-card textarea {
+    min-height: 180px;
+
+    resize: vertical;
+
+    line-height: 1.6;
+}
+
+.support-card input::placeholder,
+.support-card textarea::placeholder {
+    color: #94a3b8;
 }
 
 .support-card input:focus,
-
 .support-card select:focus,
+.support-card textarea:focus {
+    border-color: #2563eb;
 
-.support-card textarea:focus{
-
-    border-color:#2563eb;
-
-    box-shadow:0 0 0 3px rgba(37,99,235,.15);
-
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
-/* ==========================================
-   BUTTON
-========================================== */
-
-.support-card button{
-
-    background:#2563eb;
-
-    color:#fff;
-
-    border:none;
-
-    padding:15px;
-
-    border-radius:10px;
-
-    cursor:pointer;
-
-    font-size:16px;
-
-    font-weight:600;
-
-    transition:.3s;
-
+.support-card input:hover,
+.support-card select:hover,
+.support-card textarea:hover {
+    border-color: #b8c2d1;
 }
 
-.support-card button:hover{
+/* =========================================================
+   SUBMIT BUTTON
+   ========================================================= */
 
-    background:#1d4ed8;
+.support-card button {
+    width: 100%;
 
-    transform:translateY(-2px);
+    min-height: 50px;
 
+    padding: 14px 18px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: #2563eb;
+    color: #ffffff;
+
+    cursor: pointer;
+
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-.support-card button:active{
+.support-card button:hover {
+    background: #1d4ed8;
 
-    transform:scale(.98);
+    transform: translateY(-1px);
 
+    box-shadow:
+        0 6px 15px rgba(37, 99, 235, 0.2);
 }
 
-/* ==========================================
-   LABELS
-========================================== */
-
-.support-card label{
-
-    font-weight:600;
-
-    color:#334155;
-
-    margin-bottom:6px;
-
+.support-card button:active {
+    transform: translateY(0);
 }
 
-/* ==========================================
-   RESPONSIVE
-========================================== */
-
-@media(max-width:768px){
-
-.support-container{
-
-padding:20px;
-
+.support-card button:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.25);
+    outline-offset: 2px;
 }
 
-.support-card{
+/* =========================================================
+   LABEL SUPPORT
+   ========================================================= */
 
-padding:25px;
+.support-card label {
+    display: block;
 
+    margin-bottom: 6px;
+
+    color: #334155;
+
+    font-size: 14px;
+    font-weight: 600;
 }
 
-.support-card h1{
+/* =========================================================
+   TABLET
+   ========================================================= */
 
-font-size:26px;
+@media (max-width: 768px) {
 
+    .support-container {
+        min-height: 100vh;
+
+        padding: 25px 18px;
+    }
+
+    .support-card {
+        max-width: 100%;
+
+        padding: 28px;
+
+        border-radius: 16px;
+    }
+
+    .support-card h1 {
+        font-size: 27px;
+    }
+
+    .support-card > p {
+        margin-bottom: 24px;
+
+        font-size: 14px;
+    }
+
+    .support-card form {
+        gap: 15px;
+    }
+
+    .support-card input,
+    .support-card select,
+    .support-card textarea {
+        font-size: 14px;
+    }
+
+    .support-card textarea {
+        min-height: 160px;
+    }
 }
 
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 500px) {
+
+    .support-container {
+        padding: 15px 10px;
+
+        align-items: flex-start;
+    }
+
+    .support-card {
+        padding: 20px 16px;
+
+        border-radius: 14px;
+
+        box-shadow:
+            0 8px 25px rgba(0, 0, 0, 0.07);
+    }
+
+    .support-card h1 {
+        font-size: 23px;
+    }
+
+    .support-card > p {
+        margin-bottom: 20px;
+
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .support-card form {
+        gap: 13px;
+    }
+
+    .support-card input,
+    .support-card select {
+        min-height: 45px;
+
+        padding: 12px 13px;
+
+        font-size: 14px;
+    }
+
+    .support-card textarea {
+        min-height: 150px;
+
+        padding: 12px 13px;
+
+        font-size: 14px;
+    }
+
+    .support-card button {
+        min-height: 47px;
+
+        padding: 12px;
+
+        font-size: 15px;
+    }
 }
 
-@media(max-width:500px){
+/* =========================================================
+   SMALL PHONES
+   ========================================================= */
 
-.support-card{
+@media (max-width: 360px) {
 
-padding:18px;
+    .support-container {
+        padding: 10px 8px;
+    }
 
+    .support-card {
+        padding: 18px 13px;
+
+        border-radius: 12px;
+    }
+
+    .support-card h1 {
+        font-size: 21px;
+    }
+
+    .support-card > p {
+        font-size: 12px;
+    }
+
+    .support-card input,
+    .support-card select,
+    .support-card textarea {
+        font-size: 13px;
+    }
+
+    .support-card textarea {
+        min-height: 140px;
+    }
+
+    .support-card button {
+        font-size: 14px;
+    }
 }
 
-.support-card h1{
+/* =========================================================
+   VERY SMALL PHONES
+   ========================================================= */
 
-font-size:22px;
+@media (max-width: 320px) {
 
+    .support-container {
+        padding: 8px 6px;
+    }
+
+    .support-card {
+        padding: 15px 11px;
+    }
+
+    .support-card h1 {
+        font-size: 20px;
+    }
+
+    .support-card form {
+        gap: 11px;
+    }
 }
 
-.support-card button{
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
 
-font-size:15px;
+@media (prefers-reduced-motion: reduce) {
 
-}
-
+    .support-card input,
+    .support-card select,
+    .support-card textarea,
+    .support-card button {
+        transition: none;
+    }
 }

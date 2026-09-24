@@ -1,126 +1,561 @@
-.homepage-builder{
+/* =========================================================
+   HOMEPAGE BUILDER
+========================================================= */
 
-    padding:30px;
+.homepage-builder {
+    width: 100%;
+    min-width: 0;
+    min-height: 100vh;
 
+    padding: 30px;
+
+    box-sizing: border-box;
+
+    background: #f8fafc;
+
+    overflow-x: hidden;
 }
 
-.builder-header{
+/* =========================================================
+   HEADER
+========================================================= */
 
-    margin-bottom:30px;
+.builder-header {
+    width: 100%;
+    min-width: 0;
 
+    margin-bottom: 28px;
 }
 
-.builder-header h1{
+.builder-header h1 {
+    margin: 0 0 8px;
 
-    margin-bottom:8px;
+    color: #0f172a;
 
+    font-size: 30px;
+    font-weight: 800;
+
+    line-height: 1.25;
+
+    overflow-wrap: anywhere;
 }
 
-.builder-tabs{
+.builder-header p {
+    margin: 0;
 
-    display:flex;
+    color: #64748b;
 
-    gap:15px;
+    font-size: 14px;
 
-    margin-bottom:30px;
+    line-height: 1.6;
 
-    flex-wrap:wrap;
-
+    overflow-wrap: anywhere;
 }
 
-.builder-tabs button{
+/* =========================================================
+   BUILDER TABS
+========================================================= */
 
-    padding:12px 25px;
+.builder-tabs {
+    display: flex;
+    align-items: stretch;
 
-    border:none;
+    width: 100%;
 
-    cursor:pointer;
+    gap: 10px;
 
-    border-radius:8px;
+    margin-bottom: 25px;
 
-    background:#ececec;
-
-    font-weight:600;
-
-    transition:.3s;
-
+    flex-wrap: wrap;
 }
 
-.builder-tabs button:hover{
+.builder-tabs button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
-    background:#0A66C2;
+    min-height: 46px;
 
-    color:white;
+    padding: 11px 20px;
 
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+
+    background: #ffffff;
+
+    color: #475569;
+
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-.builder-tabs .active{
+.builder-tabs button:hover {
+    border-color: #2563eb;
 
-    background:#0A66C2;
+    background: #eff6ff;
 
-    color:white;
+    color: #2563eb;
 
+    transform: translateY(-1px);
 }
 
-.builder-content{
+.builder-tabs button.active {
+    border-color: #2563eb;
 
-    background:white;
+    background: #2563eb;
 
-    border-radius:12px;
+    color: #ffffff;
 
-    padding:25px;
+    box-shadow:
+        0 5px 14px rgba(37, 99, 235, 0.20);
+}
 
-    box-shadow:0 5px 20px rgba(0,0,0,.08);
+.builder-tabs button:active {
+    transform: translateY(0);
+}
 
-}/* ==========================================
+.builder-tabs button:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.20);
+
+    outline-offset: 2px;
+}
+
+.tab-icon {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    margin-right: 7px;
+
+    font-size: 17px;
+
+    line-height: 1;
+}
+
+/* =========================================================
+   BUILDER CONTENT
+========================================================= */
+
+.builder-content {
+    width: 100%;
+    min-width: 0;
+
+    padding: 25px;
+
+    box-sizing: border-box;
+
+    background: #ffffff;
+
+    border: 1px solid #e2e8f0;
+
+    border-radius: 16px;
+
+    box-shadow:
+        0 5px 20px rgba(15, 23, 42, 0.06);
+
+    overflow: hidden;
+}
+
+/* =========================================================
    BANNER FORM
-========================================== */
+========================================================= */
 
-.banner-form{
+.banner-form {
+    width: 100%;
+    max-width: 900px;
 
-    background:#fff;
-    padding:25px;
-    border-radius:15px;
-    box-shadow:0 5px 20px rgba(0,0,0,.08);
-    margin-bottom:30px;
+    margin: 0 auto 30px;
 
+    padding: 25px;
+
+    box-sizing: border-box;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 15px;
+
+    box-shadow:
+        0 5px 20px rgba(15, 23, 42, 0.06);
 }
 
 .banner-form input,
 .banner-form textarea,
-.banner-form select{
+.banner-form select {
+    display: block;
 
-    width:100%;
-    padding:12px 15px;
-    margin-bottom:15px;
-    border:1px solid #ddd;
-    border-radius:8px;
-    font-size:15px;
+    width: 100%;
+    max-width: 100%;
 
+    margin: 0 0 15px;
+
+    padding: 12px 15px;
+
+    box-sizing: border-box;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 8px;
+
+    background: #ffffff;
+
+    color: #1e293b;
+
+    font-family: inherit;
+
+    font-size: 15px;
+
+    line-height: 1.5;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-.banner-form textarea{
-
-    resize:none;
-    min-height:120px;
-
+.banner-form input::placeholder,
+.banner-form textarea::placeholder {
+    color: #94a3b8;
 }
 
-.banner-form button{
+.banner-form input:focus,
+.banner-form textarea:focus,
+.banner-form select:focus {
+    border-color: #2563eb;
 
-    background:#ff9800;
-    color:white;
-    border:none;
-    padding:12px 25px;
-    border-radius:8px;
-    cursor:pointer;
-    font-size:16px;
-    transition:.3s;
-
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.13);
 }
 
-.banner-form button:hover{
+.banner-form textarea {
+    min-height: 120px;
 
-    background:#f57c00;
+    resize: vertical;
+}
 
+/* =========================================================
+   BANNER FORM BUTTON
+========================================================= */
+
+.banner-form button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 44px;
+
+    padding: 11px 24px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background: #ff9800;
+
+    color: #ffffff;
+
+    font-family: inherit;
+
+    font-size: 15px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.banner-form button:hover {
+    background: #f57c00;
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 5px 14px rgba(245, 124, 0, 0.20);
+}
+
+.banner-form button:active {
+    transform: translateY(0);
+}
+
+.banner-form button:disabled {
+    opacity: 0.65;
+
+    cursor: not-allowed;
+
+    transform: none;
+
+    box-shadow: none;
+}
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .homepage-builder {
+        padding: 24px;
+    }
+
+    .builder-header h1 {
+        font-size: 28px;
+    }
+
+    .builder-tabs {
+        gap: 8px;
+    }
+
+    .builder-tabs button {
+        padding: 10px 16px;
+    }
+
+    .builder-content {
+        padding: 20px;
+    }
+
+    .banner-form {
+        padding: 22px;
+    }
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .homepage-builder {
+        width: 100%;
+
+        padding: 18px 12px;
+
+        overflow-x: hidden;
+    }
+
+    .builder-header {
+        margin-bottom: 20px;
+    }
+
+    .builder-header h1 {
+        font-size: 24px;
+
+        line-height: 1.25;
+    }
+
+    .builder-header p {
+        font-size: 13px;
+
+        line-height: 1.55;
+    }
+
+    /* Tabs */
+
+    .builder-tabs {
+        display: grid;
+
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+
+        width: 100%;
+
+        gap: 8px;
+
+        margin-bottom: 18px;
+    }
+
+    .builder-tabs button {
+        width: 100%;
+
+        min-height: 46px;
+
+        padding: 10px 7px;
+
+        font-size: 12px;
+
+        border-radius: 9px;
+    }
+
+    .tab-icon {
+        margin-right: 5px;
+
+        font-size: 15px;
+    }
+
+    /* Content */
+
+    .builder-content {
+        width: 100%;
+
+        padding: 15px;
+
+        border-radius: 13px;
+    }
+
+    /* Banner form */
+
+    .banner-form {
+        width: 100%;
+
+        margin-bottom: 20px;
+
+        padding: 17px 13px;
+
+        border-radius: 12px;
+    }
+
+    .banner-form input,
+    .banner-form textarea,
+    .banner-form select {
+        padding: 12px;
+
+        font-size: 14px;
+    }
+
+    .banner-form textarea {
+        min-height: 130px;
+    }
+
+    .banner-form button {
+        width: 100%;
+
+        min-height: 46px;
+
+        padding: 12px 15px;
+
+        font-size: 14px;
+    }
+}
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media (max-width: 400px) {
+
+    .homepage-builder {
+        padding: 14px 9px;
+    }
+
+    .builder-header h1 {
+        font-size: 21px;
+    }
+
+    .builder-header p {
+        font-size: 12px;
+    }
+
+    .builder-tabs {
+        gap: 7px;
+    }
+
+    .builder-tabs button {
+        min-height: 44px;
+
+        padding: 9px 5px;
+
+        font-size: 11px;
+    }
+
+    .tab-icon {
+        font-size: 14px;
+    }
+
+    .builder-content {
+        padding: 12px;
+
+        border-radius: 11px;
+    }
+
+    .banner-form {
+        padding: 15px 11px;
+    }
+
+    .banner-form input,
+    .banner-form textarea,
+    .banner-form select {
+        padding: 11px;
+
+        font-size: 13px;
+    }
+
+    .banner-form button {
+        font-size: 13px;
+    }
+}
+
+/* =========================================================
+   VERY SMALL PHONES
+========================================================= */
+
+@media (max-width: 330px) {
+
+    .homepage-builder {
+        padding: 12px 7px;
+    }
+
+    .builder-header h1 {
+        font-size: 19px;
+    }
+
+    .builder-tabs {
+        grid-template-columns: 1fr;
+
+        gap: 6px;
+    }
+
+    .builder-tabs button {
+        min-height: 42px;
+
+        font-size: 12px;
+    }
+
+    .builder-content {
+        padding: 10px;
+    }
+
+    .banner-form {
+        padding: 13px 9px;
+    }
+
+    .banner-form input,
+    .banner-form textarea,
+    .banner-form select {
+        font-size: 12px;
+    }
+
+    .banner-form button {
+        min-height: 44px;
+
+        font-size: 12px;
+    }
+}
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .builder-tabs button,
+    .banner-form input,
+    .banner-form textarea,
+    .banner-form select,
+    .banner-form button {
+        transition: none;
+    }
 }

@@ -1,91 +1,340 @@
-.user-role-page{
+/* =========================================================
+   USER ROLE MANAGEMENT
+   ========================================================= */
 
-    padding:30px;
+.user-role-page {
+    width: 100%;
+    min-height: 100vh;
 
+    padding: 30px;
+
+    box-sizing: border-box;
+
+    background: #f5f7fb;
+
+    overflow-x: hidden;
 }
 
-.user-role-page h1{
+/* =========================================================
+   PAGE HEADER
+   ========================================================= */
 
-    margin-bottom:25px;
+.user-role-page h1 {
+    margin: 0 0 25px;
 
-    color:#1e293b;
+    color: #1e293b;
 
+    font-size: 32px;
+    line-height: 1.2;
+    font-weight: 700;
 }
 
-.user-role-page table{
+/* =========================================================
+   TABLE
+   ========================================================= */
 
-    width:100%;
+.user-role-page table {
+    width: 100%;
 
-    border-collapse:collapse;
+    min-width: 760px;
 
-    background:#fff;
+    border-collapse: separate;
+    border-spacing: 0;
 
-    border-radius:12px;
+    background: #ffffff;
 
-    overflow:hidden;
+    border-radius: 14px;
 
-    box-shadow:0 5px 20px rgba(0,0,0,.08);
+    box-shadow:
+        0 8px 25px rgba(0, 0, 0, 0.07);
 
+    overflow: hidden;
 }
 
-.user-role-page th{
+/* =========================================================
+   TABLE HEADER
+   ========================================================= */
 
-    background:#2563eb;
+.user-role-page th {
+    padding: 15px;
 
-    color:white;
+    background: #2563eb;
 
-    padding:15px;
+    color: #ffffff;
 
-    text-align:left;
+    text-align: left;
 
+    font-size: 14px;
+    font-weight: 600;
+
+    white-space: nowrap;
 }
 
-.user-role-page td{
+/* =========================================================
+   TABLE CELLS
+   ========================================================= */
 
-    padding:15px;
+.user-role-page td {
+    padding: 15px;
 
-    border-bottom:1px solid #eee;
+    color: #475569;
 
+    font-size: 14px;
+
+    border-bottom: 1px solid #e5e7eb;
+
+    vertical-align: middle;
+
+    white-space: nowrap;
 }
 
-.user-role-page tr:hover{
+.user-role-page tbody tr {
+    background: #ffffff;
 
-    background:#f8fafc;
-
+    transition: background 0.2s ease;
 }
 
-.user-role-page select{
-
-    width:100%;
-
-    padding:10px;
-
-    border:1px solid #ddd;
-
-    border-radius:8px;
-
-    outline:none;
-
-    cursor:pointer;
-
-    background:white;
-
+.user-role-page tbody tr:hover {
+    background: #f8fafc;
 }
 
-.user-role-page select:focus{
-
-    border-color:#2563eb;
-
+.user-role-page tbody tr:last-child td {
+    border-bottom: none;
 }
 
-.user-role-page button{
+/* =========================================================
+   ROLE SELECT
+   ========================================================= */
 
-    padding:10px 18px;
+.user-role-page select {
+    width: 100%;
 
-    border:none;
+    min-width: 170px;
 
-    border-radius:8px;
+    min-height: 42px;
 
-    cursor:pointer;
+    padding: 9px 12px;
 
+    box-sizing: border-box;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 8px;
+
+    outline: none;
+
+    background: #ffffff;
+
+    color: #1e293b;
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    cursor: pointer;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.user-role-page select:hover {
+    border-color: #94a3b8;
+}
+
+.user-role-page select:focus {
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* =========================================================
+   BUTTON
+   ========================================================= */
+
+.user-role-page button {
+    min-height: 42px;
+
+    padding: 10px 18px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background: #2563eb;
+
+    color: #ffffff;
+
+    cursor: pointer;
+
+    font-family: inherit;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.user-role-page button:hover {
+    background: #1d4ed8;
+
+    transform: translateY(-1px);
+}
+
+.user-role-page button:active {
+    transform: translateY(0);
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 992px) {
+
+    .user-role-page {
+        padding: 25px 20px;
+
+        overflow-x: auto;
+    }
+
+    .user-role-page h1 {
+        font-size: 28px;
+    }
+
+    .user-role-page table {
+        min-width: 720px;
+    }
+
+    .user-role-page th,
+    .user-role-page td {
+        padding: 13px;
+    }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+    .user-role-page {
+        padding: 20px 15px;
+    }
+
+    .user-role-page h1 {
+        margin-bottom: 20px;
+
+        font-size: 24px;
+    }
+
+    .user-role-page table {
+        min-width: 700px;
+
+        border-radius: 12px;
+    }
+
+    .user-role-page th {
+        padding: 12px;
+
+        font-size: 13px;
+    }
+
+    .user-role-page td {
+        padding: 12px;
+
+        font-size: 13px;
+    }
+
+    .user-role-page select {
+        min-width: 155px;
+
+        min-height: 40px;
+
+        padding: 8px 10px;
+
+        font-size: 13px;
+    }
+}
+
+/* =========================================================
+   SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 500px) {
+
+    .user-role-page {
+        padding: 15px 10px;
+    }
+
+    .user-role-page h1 {
+        font-size: 22px;
+    }
+
+    .user-role-page table {
+        min-width: 680px;
+    }
+
+    .user-role-page th,
+    .user-role-page td {
+        padding: 10px;
+    }
+
+    .user-role-page th {
+        font-size: 12px;
+    }
+
+    .user-role-page td {
+        font-size: 12px;
+    }
+
+    .user-role-page select {
+        min-width: 145px;
+
+        font-size: 12px;
+    }
+}
+
+/* =========================================================
+   VERY SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 360px) {
+
+    .user-role-page {
+        padding: 12px 8px;
+    }
+
+    .user-role-page h1 {
+        font-size: 20px;
+    }
+
+    .user-role-page table {
+        min-width: 650px;
+    }
+
+    .user-role-page th,
+    .user-role-page td {
+        padding: 9px 8px;
+    }
+
+    .user-role-page select {
+        min-width: 135px;
+    }
+}
+
+/* =========================================================
+   ACCESSIBILITY / REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .user-role-page tbody tr,
+    .user-role-page select,
+    .user-role-page button {
+        transition: none;
+    }
 }
