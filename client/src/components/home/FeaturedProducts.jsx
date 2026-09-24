@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-
 import api from "../../config/axios";
-
 import { Link } from "react-router-dom";
-
+import getImageUrl from "../../utils/imageUrl";
 import "./FeaturedProducts.css";
 
 function FeaturedProducts() {
@@ -16,16 +14,6 @@ function FeaturedProducts() {
      * =====================================================
      * LOAD FEATURED PRODUCTS
      * =====================================================
-     *
-     * The backend already controls which promotions are
-     * allowed to appear on the public homepage.
-     *
-     * Expected:
-     *
-     * paymentStatus  = PAID
-     * status         = APPROVED
-     * promotionType  = FEATURED
-     * showOnHomepage = true
      */
 
     const loadProducts = useCallback(async () => {
@@ -41,21 +29,20 @@ function FeaturedProducts() {
                 response.data
             );
 
-            const promotions =
-                Array.isArray(response.data?.products)
-                    ? response.data.products
-                    : [];
+            const promotions = Array.isArray(
+                response.data?.products
+            )
+                ? response.data.products
+                : [];
 
             /*
-             * =================================================
-             * CONVERT PROMOTIONS INTO PRODUCTS
-             * =================================================
+             * Convert promotion objects into
+             * normal product objects.
              */
 
             const productsData = [];
 
-            const seenProductIds =
-                new Set();
+            const seenProductIds = new Set();
 
             promotions.forEach((promotion) => {
                 if (
@@ -65,8 +52,7 @@ function FeaturedProducts() {
                     return;
                 }
 
-                const product =
-                    promotion.product;
+                const product = promotion.product;
 
                 const productId =
                     product.id ||
@@ -113,9 +99,7 @@ function FeaturedProducts() {
             });
 
             /*
-             * =================================================
-             * HOMEPAGE ORDER
-             * =================================================
+             * Sort according to homepage order.
              */
 
             productsData.sort(
@@ -134,13 +118,18 @@ function FeaturedProducts() {
                 }
             );
 
+            console.log(
+                "FINAL FEATURED PRODUCTS:",
+                productsData
+            );
+
             setProducts(productsData);
         } catch (error) {
             console.error(
                 "LOAD FEATURED PRODUCTS ERROR:",
                 error.response?.data ||
-                error.message ||
-                error
+                    error.message ||
+                    error
             );
 
             setProducts([]);
@@ -197,13 +186,25 @@ function FeaturedProducts() {
      * =====================================================
      * GET PRODUCT IMAGE
      * =====================================================
+     *
+     * IMPORTANT:
+     *
+     * Do NOT manually create:
+     *
+     * /uploads/image.jpg
+     *
+     * Product images are now stored in Cloudflare R2.
+     *
+     * We use the application's shared getImageUrl()
+     * utility so that R2 URLs and legacy images are
+     * handled correctly.
      */
 
-    const getImageUrl = (product) => {
+    const getProductImage = (product) => {
         let images = [];
 
         /*
-         * Images already parsed as array.
+         * Images already returned as an array.
          */
 
         if (Array.isArray(product?.images)) {
@@ -218,12 +219,27 @@ function FeaturedProducts() {
             typeof product?.images === "string"
         ) {
             try {
-                images =
+                const parsed =
                     JSON.parse(
                         product.images
                     );
+
+                if (Array.isArray(parsed)) {
+                    images = parsed;
+                } else if (
+                    typeof parsed === "string"
+                ) {
+                    images = [parsed];
+                }
             } catch {
-                images = [];
+                /*
+                 * It may simply be a single
+                 * filename/key.
+                 */
+
+                images = [
+                    product.images
+                ];
             }
         }
 
@@ -238,45 +254,58 @@ function FeaturedProducts() {
             return "/no-image.png";
         }
 
-        const image = images[0];
+        const firstImage =
+            images[0];
 
-        /*
-         * Full external URL.
-         */
-
-        if (
-            typeof image === "string" &&
-            (
-                image.startsWith("http://") ||
-                image.startsWith("https://")
-            )
-        ) {
-            return image;
+        if (!firstImage) {
+            return "/no-image.png";
         }
 
         /*
-         * Build backend upload URL.
+         * Let the application's shared
+         * image utility resolve:
+         *
+         * - R2 public URLs
+         * - R2 keys
+         * - old image paths
+         * - full HTTP/HTTPS URLs
          */
 
-        const apiUrl =
-            import.meta.env.VITE_API_URL ||
-            "/api";
+        return getImageUrl(
+            firstImage
+        );
+    };
 
-        const backendUrl =
-            apiUrl
-                .replace(/\/api\/?$/, "")
-                .replace(/\/$/, "");
+    /*
+     * =====================================================
+     * IMAGE ERROR HANDLER
+     * =====================================================
+     */
+
+    const handleImageError = (
+        event
+    ) => {
+        const image =
+            event.currentTarget;
 
         /*
-         * Remove an accidental leading slash
-         * to prevent //uploads.
+         * Prevent infinite fallback loop.
          */
 
-        const cleanImage =
-            String(image)
-                .replace(/^\/+/, "");
+        if (
+            image.dataset
+                .fallbackApplied ===
+            "true"
+        ) {
+            return;
+        }
 
-        return `${backendUrl}/uploads/${cleanImage}`;
+        image.dataset
+            .fallbackApplied =
+            "true";
+
+        image.src =
+            "/no-image.png";
     };
 
     /*
@@ -288,26 +317,25 @@ function FeaturedProducts() {
     if (loading) {
         return (
             <section className="featured-products">
-
                 <div className="section-header">
-
                     <div>
                         <h2>
                             ⭐ Featured Products
                         </h2>
 
                         <p>
-                            Discover amazing featured
-                            products from trusted sellers.
+                            Discover amazing
+                            featured products
+                            from trusted
+                            sellers.
                         </p>
                     </div>
-
                 </div>
 
                 <div className="no-products">
-                    Loading featured products...
+                    Loading featured
+                    products...
                 </div>
-
             </section>
         );
     }
@@ -326,18 +354,17 @@ function FeaturedProducts() {
             ================================================= */}
 
             <div className="section-header">
-
                 <div>
-
                     <h2>
                         ⭐ Featured Products
                     </h2>
 
                     <p>
-                        Discover amazing featured
-                        products from trusted sellers.
+                        Discover amazing
+                        featured products
+                        from trusted
+                        sellers.
                     </p>
-
                 </div>
 
                 <Link
@@ -346,7 +373,6 @@ function FeaturedProducts() {
                 >
                     VIEW ALL →
                 </Link>
-
             </div>
 
             {/* =================================================
@@ -374,141 +400,134 @@ function FeaturedProducts() {
                     className="featured-slider"
                     ref={sliderRef}
                 >
-
                     {products.length === 0 ? (
-
                         <div className="no-products">
                             <h3>
-                                No featured products
+                                No featured
+                                products
                                 available.
                             </h3>
 
                             <p>
-                                Check back soon for
-                                products featured by
+                                Check back soon
+                                for products
+                                featured by
                                 our sellers.
                             </p>
                         </div>
-
                     ) : (
+                        products.map(
+                            (product) => {
+                                const productId =
+                                    product.id ||
+                                    product._id;
 
-                        products.map((product) => {
+                                const imageUrl =
+                                    getProductImage(
+                                        product
+                                    );
 
-                            const productId =
-                                product.id ||
-                                product._id;
+                                console.log(
+                                    "FEATURED PRODUCT:",
+                                    product.title
+                                );
 
-                            return (
-                                <div
-                                    className="featured-card"
-                                    key={productId}
-                                >
+                                console.log(
+                                    "FEATURED PRODUCT IMAGES:",
+                                    product.images
+                                );
 
-                                    {/* =================================================
-                                        PRODUCT IMAGE
-                                    ================================================= */}
+                                console.log(
+                                    "FEATURED PRODUCT IMAGE URL:",
+                                    imageUrl
+                                );
 
-                                    <Link
-                                        to={`/product/${productId}`}
-                                        className="featured-image-link"
+                                return (
+                                    <div
+                                        className="featured-card"
+                                        key={
+                                            productId
+                                        }
                                     >
 
-                                        <img
-                                            src={
-                                                getImageUrl(
-                                                    product
-                                                )
-                                            }
-                                            alt={
-                                                product.title ||
-                                                "Featured product"
-                                            }
-                                            loading="lazy"
-                                            onError={(event) => {
-                                                if (
-                                                    event
-                                                        .currentTarget
-                                                        .dataset
-                                                        .fallbackApplied
-                                                ) {
-                                                    return;
-                                                }
-
-                                                event
-                                                    .currentTarget
-                                                    .dataset
-                                                    .fallbackApplied =
-                                                    "true";
-
-                                                event
-                                                    .currentTarget
-                                                    .src =
-                                                    "/no-image.png";
-                                            }}
-                                        />
-
-                                        {/* FEATURED BADGE */}
-
-                                        <span className="featured-badge">
-                                            ⭐ FEATURED
-                                        </span>
-
-                                    </Link>
-
-                                    {/* =================================================
-                                        PRODUCT INFORMATION
-                                    ================================================= */}
-
-                                    <div className="featured-info">
-
-                                        <h3
-                                            title={
-                                                product.title ||
-                                                "Product"
-                                            }
-                                        >
-                                            {
-                                                product.title ||
-                                                "Untitled Product"
-                                            }
-                                        </h3>
-
-                                        <h2>
-                                            GH₵{" "}
-                                            {Number(
-                                                product.price ||
-                                                0
-                                            ).toLocaleString(
-                                                "en-GH"
-                                            )}
-                                        </h2>
-
-                                        <p>
-                                            📍{" "}
-                                            {
-                                                product.city ||
-                                                product.location ||
-                                                "Ghana"
-                                            }
-                                        </p>
-
-                                        {/* VIEW DETAILS */}
+                                        {/* =================================================
+                                            PRODUCT IMAGE
+                                        ================================================= */}
 
                                         <Link
                                             to={`/product/${productId}`}
-                                            className="details-btn"
+                                            className="featured-image-link"
                                         >
-                                            View Details
+                                            <img
+                                                src={
+                                                    imageUrl
+                                                }
+                                                alt={
+                                                    product.title ||
+                                                    "Featured product"
+                                                }
+                                                loading="lazy"
+                                                onError={
+                                                    handleImageError
+                                                }
+                                            />
+
+                                            <span className="featured-badge">
+                                                ⭐ FEATURED
+                                            </span>
                                         </Link>
 
+                                        {/* =================================================
+                                            PRODUCT INFORMATION
+                                        ================================================= */}
+
+                                        <div className="featured-info">
+
+                                            <h3
+                                                title={
+                                                    product.title ||
+                                                    "Product"
+                                                }
+                                            >
+                                                {
+                                                    product.title ||
+                                                    "Untitled Product"
+                                                }
+                                            </h3>
+
+                                            <h2>
+                                                GH₵{" "}
+                                                {Number(
+                                                    product.price ||
+                                                    0
+                                                ).toLocaleString(
+                                                    "en-GH"
+                                                )}
+                                            </h2>
+
+                                            <p>
+                                                📍{" "}
+                                                {
+                                                    product.city ||
+                                                    product.location ||
+                                                    "Ghana"
+                                                }
+                                            </p>
+
+                                            <Link
+                                                to={`/product/${productId}`}
+                                                className="details-btn"
+                                            >
+                                                View Details
+                                            </Link>
+
+                                        </div>
+
                                     </div>
-
-                                </div>
-                            );
-                        })
-
+                                );
+                            }
+                        )
                     )}
-
                 </div>
 
                 {/* RIGHT BUTTON */}
@@ -523,7 +542,6 @@ function FeaturedProducts() {
                 </button>
 
             </div>
-
         </section>
     );
 }
