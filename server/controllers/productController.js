@@ -1404,132 +1404,129 @@ exports.getProducts =
         }
     };
 
-
 /* ===========================================================
    GET PRODUCT BY ID
 =========================================================== */
 
-exports.getProductById =
-    async (req, res) => {
+exports.getProductById = async (req, res) => {
 
-        try {
+    try {
 
-            const product =
-                await Product.findOne({
+        const product = await Product.findOne({
 
-                    where: {
-                        id:
-                            req.params.id,
-
-                        status:
-                            "Approved",
-
-                        deleted:
-                            false
-                    }
-
-                });
-
-            if (!product) {
-
-                return res.status(404).json({
-                    success: false,
-                    message:
-                        "Product not found."
-                });
+            where: {
+                id: req.params.id,
+                status: "Approved",
+                deleted: false
             }
 
-            product.views =
-                Number(
-                    product.views || 0
-                ) + 1;
+        });
 
-            await product.save();
+        if (!product) {
 
-            const item =
-                formatProduct(
-                    product
-                );
+            return res.status(404).json({
+                success: false,
+                message: "Product not found."
+            });
 
-            const relatedProducts =
-                await Product.findAll({
+        }
 
-                    where: {
+        /*
+        |--------------------------------------------------------------------------
+        | IMPORTANT
+        |--------------------------------------------------------------------------
+        | Do NOT increase product.views here.
+        |
+        | Product views are recorded separately through:
+        | POST /products/:id/view
+        |
+        | This prevents one page refresh from counting twice.
+        |--------------------------------------------------------------------------
+        */
 
-                        id: {
-                            [Op.ne]:
-                                product.id
-                        },
+        const item = formatProduct(product);
 
-                        category:
-                            product.category,
+        const relatedProducts =
+            await Product.findAll({
 
-                        status:
-                            "Approved",
+                where: {
 
-                        deleted:
-                            false
+                    id: {
+                        [Op.ne]: product.id
                     },
 
-                    limit:
-                        8,
+                    category: product.category,
 
-                    order: [
+                    status: "Approved",
 
-                        [
-                            "homepagePriority",
-                            "DESC"
-                        ],
+                    deleted: false
 
-                        [
-                            "featured",
-                            "DESC"
-                        ],
+                },
 
-                        [
-                            "express",
-                            "DESC"
-                        ],
+                limit: 8,
 
-                        [
-                            "listingPriority",
-                            "DESC"
-                        ],
+                order: [
 
-                        [
-                            "listingScore",
-                            "DESC"
-                        ]
+                    [
+                        "homepagePriority",
+                        "DESC"
+                    ],
+
+                    [
+                        "featured",
+                        "DESC"
+                    ],
+
+                    [
+                        "express",
+                        "DESC"
+                    ],
+
+                    [
+                        "listingPriority",
+                        "DESC"
+                    ],
+
+                    [
+                        "listingScore",
+                        "DESC"
                     ]
-                });
 
-            return res.json({
-                success: true,
+                ]
 
-                product:
-                    item,
-
-                relatedProducts:
-                    formatProducts(
-                        relatedProducts
-                    )
             });
 
-        } catch (error) {
+        return res.json({
 
-            console.error(
-                "GET PRODUCT BY ID ERROR:",
-                error
-            );
+            success: true,
 
-            return res.status(500).json({
-                success: false,
-                message:
-                    error.message
-            });
-        }
-    };
+            product: item,
 
+            relatedProducts:
+                formatProducts(
+                    relatedProducts
+                )
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "GET PRODUCT BY ID ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+
+            success: false,
+
+            message: error.message
+
+        });
+
+    }
+
+};
 
 /* ===========================================================
    SEARCH PRODUCTS
@@ -2777,86 +2774,154 @@ exports.getWishlist =
         }
     };
 
-
 /* ===========================================================
    RECORD PRODUCT VIEW
 =========================================================== */
 
-exports.recordProductView =
-    async (req, res) => {
+exports.recordProductView = async (req, res) => {
 
-        try {
+    try {
 
-            const product =
-                await Product.findByPk(
-                    req.params.id
-                );
+        const product = await Product.findOne({
 
-            if (!product) {
-
-                return res.status(404).json({
-                    success: false,
-                    message:
-                        "Product not found."
-                });
+            where: {
+                id: req.params.id,
+                status: "Approved",
+                deleted: false
             }
 
-            if (req.user) {
+        });
 
-                const viewed =
-                    await ProductView.findOne({
-                        where: {
-                            userId:
-                                req.user.id,
+        if (!product) {
 
-                            productId:
-                                product.id
-                        }
-                    });
-
-                if (!viewed) {
-
-                    await ProductView.create({
-                        userId:
-                            req.user.id,
-
-                        productId:
-                            product.id
-                    });
-                }
-            }
-
-            product.views =
-                Number(
-                    product.views || 0
-                ) + 1;
-
-            product.listingScore =
-                Number(
-                    product.listingScore || 0
-                ) + 1;
-
-            await product.save();
-
-            return res.json({
-                success: true
-            });
-
-        } catch (error) {
-
-            console.error(
-                "RECORD PRODUCT VIEW ERROR:",
-                error
-            );
-
-            return res.status(500).json({
+            return res.status(404).json({
                 success: false,
-                message:
-                    error.message
+                message: "Product not found."
             });
-        }
-    };
 
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | LOGGED-IN USERS
+        |--------------------------------------------------------------------------
+        | A logged-in user should only create one ProductView record
+        | for the same product.
+        |--------------------------------------------------------------------------
+        */
+
+        if (req.user) {
+
+            const viewed =
+                await ProductView.findOne({
+
+                    where: {
+
+                        userId: req.user.id,
+
+                        productId: product.id
+
+                    }
+
+                });
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | USER ALREADY VIEWED THIS PRODUCT
+            |--------------------------------------------------------------------------
+            | Do not increase the counter again.
+            |--------------------------------------------------------------------------
+            */
+
+            if (viewed) {
+
+                return res.json({
+
+                    success: true,
+
+                    counted: false,
+
+                    message:
+                        "Product view already recorded."
+
+                });
+
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | FIRST VIEW FROM THIS LOGGED-IN USER
+            |--------------------------------------------------------------------------
+            */
+
+            await ProductView.create({
+
+                userId: req.user.id,
+
+                productId: product.id
+
+            });
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | INCREASE PRODUCT VIEW COUNT
+        |--------------------------------------------------------------------------
+        */
+
+        product.views =
+            Number(
+                product.views || 0
+            ) + 1;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | UPDATE LISTING SCORE
+        |--------------------------------------------------------------------------
+        */
+
+        product.listingScore =
+            Number(
+                product.listingScore || 0
+            ) + 1;
+
+
+        await product.save();
+
+
+        return res.json({
+
+            success: true,
+
+            counted: true
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "RECORD PRODUCT VIEW ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+
+            success: false,
+
+            message:
+                "Unable to record product view."
+
+        });
+
+    }
+
+};
 
 /* ===========================================================
    RECENTLY VIEWED
