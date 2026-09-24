@@ -1,434 +1,1078 @@
-/* ==========================================
-   NAVBAR
-========================================== */
+/* =========================================================
+   KAD MARKETPLACE NAVBAR
+   ========================================================= */
 
 .navbar {
     position: sticky;
     top: 0;
     z-index: 1000;
+
     width: 100%;
-    min-height: 80px;
+
+    background: rgba(255, 255, 255, 0.96);
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+
+    border-bottom: 1px solid #e5e7eb;
+
+    box-shadow:
+        0 4px 18px rgba(15, 23, 42, 0.06);
+}
+
+
+/* =========================================================
+   INNER
+   ========================================================= */
+
+.navbar-inner {
+    width: min(1400px, 100%);
+
+    min-height: 76px;
+
+    margin: 0 auto;
+
+    padding:
+        0 24px;
+
     display: flex;
+
+    align-items: center;
+
     justify-content: space-between;
-    align-items: center;
-    gap: 20px;
-    padding: 10px clamp(14px, 4vw, 6%);
-    background: rgba(191, 168, 196, 0.95);
-    backdrop-filter: blur(12px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, .08);
+
+    gap: 24px;
 }
 
-.logo {
-    flex: 0 0 auto;
-    min-width: 0;
+
+/* =========================================================
+   BRAND
+   ========================================================= */
+
+.navbar-brand {
+    flex-shrink: 0;
 }
 
-.logo a {
+.brand-link {
     display: flex;
+
     align-items: center;
-    gap: 10px;
+
+    gap: 11px;
+
     text-decoration: none;
-    min-width: 0;
+
+    color: #111827;
 }
 
 .navbar-logo {
-    width: 58px;
-    height: 58px;
-    flex: 0 0 58px;
+    width: 48px;
+    height: 48px;
+
     object-fit: contain;
-    border-radius: 50%;
-    border: 3px solid #111110;
+
+    display: block;
 }
 
-.logo span {
-    font-size: clamp(20px, 2.6vw, 34px);
-    font-weight: 700;
-    color: #111111;
+.brand-text {
+    display: flex;
+
+    flex-direction: column;
+
+    line-height: 1.1;
+}
+
+.brand-name {
+    font-size: 18px;
+
+    font-weight: 800;
+
+    letter-spacing: -0.4px;
+
+    color: #111827;
+
     white-space: nowrap;
 }
 
-/* ==========================================
+.brand-tagline {
+    margin-top: 4px;
+
+    font-size: 10px;
+
+    font-weight: 600;
+
+    letter-spacing: 0.8px;
+
+    text-transform: uppercase;
+
+    color: #6b7280;
+}
+
+
+/* =========================================================
    NAVIGATION
-========================================== */
+   ========================================================= */
 
 .nav-links {
     display: flex;
+
     align-items: center;
+
     justify-content: center;
-    gap: clamp(14px, 2vw, 28px);
-    min-width: 0;
+
+    gap: 5px;
+
+    flex: 1;
 }
 
-.nav-links a {
-    text-decoration: none;
-    color: #333;
-    font-weight: 600;
-    transition: .3s;
+.nav-link,
+.sell-btn {
     position: relative;
-    white-space: nowrap;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 7px;
+
+    min-height: 42px;
+
+    padding:
+        0 13px;
+
+    border-radius: 10px;
+
+    text-decoration: none;
+
+    font-size: 14px;
+
+    font-weight: 650;
+
+    color: #4b5563;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
 }
 
-.nav-links a:hover,
-.nav-links a.active {
-    color: #ff6b00;
+.nav-link:hover {
+    color: #111827;
+
+    background: #f3f4f6;
 }
 
-.nav-links a:not(.sell-btn)::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: -6px;
-    width: 0;
-    height: 3px;
-    background: #ff6b00;
-    border-radius: 5px;
-    transition: .3s;
+.nav-link.active {
+    color: #111827;
+
+    background: #f3f4f6;
 }
 
-.nav-links a:not(.sell-btn):hover::after,
-.nav-links a:not(.sell-btn).active::after {
-    width: 100%;
+.nav-link svg {
+    font-size: 14px;
 }
+
+
+/* =========================================================
+   SELL BUTTON
+   ========================================================= */
 
 .sell-btn {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 11px 18px;
-    border-radius: 50px;
-    background: linear-gradient(135deg, #ff6b00, #ff9800);
-    color: #fff !important;
-    box-shadow: 0 8px 20px rgba(255, 107, 0, .35);
+    color: #ffffff;
+
+    background:
+        linear-gradient(
+            135deg,
+            #111827,
+            #374151
+        );
+
+    box-shadow:
+        0 5px 14px rgba(
+            17,
+            24,
+            39,
+            0.18
+        );
 }
 
 .sell-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 25px rgba(255, 107, 0, .45);
+    color: #ffffff;
+
+    background:
+        linear-gradient(
+            135deg,
+            #1f2937,
+            #111827
+        );
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 7px 18px rgba(
+            17,
+            24,
+            39,
+            0.23
+        );
 }
 
-.sell-btn::after {
-    display: none !important;
+.sell-btn svg {
+    font-size: 15px;
 }
 
-/* ==========================================
-   USER AREA
-========================================== */
 
-.user-area {
+/* =========================================================
+   RIGHT ACTIONS
+   ========================================================= */
+
+.navbar-actions {
     display: flex;
+
     align-items: center;
-    gap: 12px;
-    flex: 0 0 auto;
+
+    gap: 10px;
+
+    flex-shrink: 0;
 }
+
+
+/* =========================================================
+   NOTIFICATION
+   ========================================================= */
 
 .notification-btn {
-    width: 44px;
-    height: 44px;
-    flex: 0 0 44px;
-    border-radius: 50%;
-    background: #f7f7f7;
+    position: relative;
+
+    width: 42px;
+    height: 42px;
+
     display: flex;
-    justify-content: center;
+
     align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    color: #374151;
+
+    background: #f3f4f6;
+
     text-decoration: none;
-    color: #444;
-    font-size: 19px;
-    transition: .3s;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
 }
 
 .notification-btn:hover {
-    background: #ff6b00;
-    color: white;
+    color: #111827;
+
+    background: #e5e7eb;
+
+    transform: translateY(-1px);
 }
 
-.dropdown {
+.notification-btn svg {
+    font-size: 17px;
+}
+
+.notification-dot {
+    position: absolute;
+
+    top: 8px;
+    right: 8px;
+
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: #ef4444;
+
+    border: 2px solid #ffffff;
+}
+
+
+/* =========================================================
+   PROFILE DROPDOWN
+   ========================================================= */
+
+.profile-dropdown {
     position: relative;
 }
 
-.profile-btn {
-    width: 48px;
-    height: 48px;
-    padding: 0;
-    border: none;
-    background: none;
-    cursor: pointer;
-}
-
-.profile-image {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid #ff9800;
-    display: block;
-    transition: .3s;
-}
-
-.profile-image:hover {
-    transform: scale(1.05);
-}
-
-/* ==========================================
-   DROPDOWN
-========================================== */
-
-.dropdown-content {
-    position: absolute;
-    top: 58px;
-    right: 0;
-    width: min(280px, calc(100vw - 28px));
-    background: white;
-    border-radius: 18px;
-    box-shadow: 0 20px 45px rgba(0, 0, 0, .15);
-    overflow: hidden;
-    animation: dropdown .25s ease;
-}
-
-@keyframes dropdown {
-    from { opacity: 0; transform: translateY(15px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.dropdown-header {
-    text-align: center;
-    padding: 22px;
-    background: linear-gradient(135deg, #ff6b00, #ff9800);
-    color: white;
-}
-
-.dropdown-avatar {
-    width: 76px;
-    height: 76px;
-    border-radius: 50%;
-    border: 4px solid white;
-    object-fit: cover;
-    margin-bottom: 10px;
-}
-
-.dropdown-header h3 {
-    margin-bottom: 5px;
-    overflow-wrap: anywhere;
-}
-
-.dropdown-header p {
-    font-size: 14px;
-    opacity: .9;
-    overflow-wrap: anywhere;
-}
-
-.dropdown-content a,
-.dropdown-content button {
-    display: block;
-    width: 100%;
-    padding: 14px 20px;
-    text-decoration: none;
-    border: none;
-    background: white;
-    text-align: left;
-    cursor: pointer;
-    font-size: 15px;
-    transition: .3s;
-    color: #333;
-}
-
-.dropdown-content a:hover,
-.dropdown-content button:hover {
-    background: #fff4eb;
-    color: #ff6b00;
-}
-
-/* ==========================================
-   GUEST
-========================================== */
-
-.guest-links {
+.profile-trigger {
     display: flex;
+
     align-items: center;
-    gap: 12px;
+
+    gap: 9px;
+
+    height: 48px;
+
+    padding:
+        4px 9px 4px 4px;
+
+    border: 1px solid transparent;
+
+    border-radius: 14px;
+
+    background: transparent;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
 }
 
-.guest-links a {
-    text-decoration: none;
-    color: #333;
-    font-weight: 600;
+.profile-trigger:hover,
+.profile-trigger.open {
+    background: #f8fafc;
+
+    border-color: #e5e7eb;
+}
+
+.profile-avatar-wrapper {
+    position: relative;
+
+    width: 38px;
+    height: 38px;
+
+    flex-shrink: 0;
+}
+
+.profile-avatar {
+    width: 38px;
+    height: 38px;
+
+    object-fit: cover;
+
+    border-radius: 50%;
+
+    display: block;
+
+    border: 2px solid #ffffff;
+
+    box-shadow:
+        0 2px 8px rgba(
+            15,
+            23,
+            42,
+            0.15
+        );
+}
+
+.online-indicator {
+    position: absolute;
+
+    right: 0;
+    bottom: 1px;
+
+    width: 10px;
+    height: 10px;
+
+    border-radius: 50%;
+
+    background: #22c55e;
+
+    border: 2px solid #ffffff;
+}
+
+.profile-name {
+    max-width: 130px;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
     white-space: nowrap;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    color: #1f2937;
+}
+
+.profile-chevron {
+    font-size: 10px;
+
+    color: #6b7280;
+
+    transition:
+        transform 0.2s ease;
+}
+
+.profile-trigger.open
+.profile-chevron {
+    transform: rotate(180deg);
+}
+
+
+/* =========================================================
+   PROFILE MENU
+   ========================================================= */
+
+.profile-menu {
+    position: absolute;
+
+    top: calc(100% + 12px);
+
+    right: 0;
+
+    width: 310px;
+
+    overflow: hidden;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 18px 50px
+        rgba(
+            15,
+            23,
+            42,
+            0.16
+        );
+
+    animation:
+        profileMenuIn
+        0.18s ease-out;
+}
+
+@keyframes profileMenuIn {
+
+    from {
+        opacity: 0;
+
+        transform:
+            translateY(-6px)
+            scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+
+        transform:
+            translateY(0)
+            scale(1);
+    }
+
+}
+
+
+/* =========================================================
+   PROFILE MENU HEADER
+   ========================================================= */
+
+.profile-menu-header {
+    display: flex;
+
+    align-items: center;
+
+    gap: 13px;
+
+    padding: 18px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #f8fafc,
+            #ffffff
+        );
+
+    border-bottom: 1px solid #eef0f3;
+}
+
+.profile-menu-avatar {
+    width: 50px;
+    height: 50px;
+
+    flex-shrink: 0;
+}
+
+.profile-menu-avatar img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    border-radius: 50%;
+
+    border: 2px solid #ffffff;
+
+    box-shadow:
+        0 3px 12px
+        rgba(
+            15,
+            23,
+            42,
+            0.14
+        );
+}
+
+.profile-menu-user {
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+}
+
+.profile-menu-user strong {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    font-size: 15px;
+
+    color: #111827;
+}
+
+.profile-menu-user span {
+    margin-top: 3px;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    font-size: 12px;
+
+    color: #6b7280;
+}
+
+.profile-menu-user small {
+    width: fit-content;
+
+    margin-top: 6px;
+
+    padding:
+        3px 8px;
+
+    border-radius: 999px;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    color: #374151;
+
+    background: #e5e7eb;
+
+    text-transform: uppercase;
+}
+
+
+/* =========================================================
+   PROFILE MENU LINKS
+   ========================================================= */
+
+.profile-menu-links {
+    padding: 8px;
+}
+
+.profile-menu-links a {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    min-height: 44px;
+
+    padding:
+        0 11px;
+
+    border-radius: 10px;
+
+    text-decoration: none;
+
+    color: #374151;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    transition:
+        background 0.18s ease,
+        color 0.18s ease;
+}
+
+.profile-menu-links a:hover {
+    background: #f3f4f6;
+
+    color: #111827;
+}
+
+.profile-menu-links a svg {
+    width: 16px;
+
+    color: #6b7280;
+}
+
+
+/* =========================================================
+   PROFILE MENU FOOTER
+   ========================================================= */
+
+.profile-menu-footer {
+    padding: 8px;
+
+    border-top: 1px solid #eef0f3;
+}
+
+.profile-menu-footer button {
+    width: 100%;
+
+    min-height: 44px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding:
+        0 11px;
+
+    border: 0;
+
+    border-radius: 10px;
+
+    background: transparent;
+
+    color: #dc2626;
+
+    font-family: inherit;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    text-align: left;
+
+    transition:
+        background 0.18s ease;
+}
+
+.profile-menu-footer button:hover {
+    background: #fef2f2;
+}
+
+.profile-menu-footer button svg {
+    width: 16px;
+}
+
+
+/* =========================================================
+   GUEST ACTIONS
+   ========================================================= */
+
+.guest-actions {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+}
+
+.login-link {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-height: 40px;
+
+    padding:
+        0 13px;
+
+    color: #374151;
+
+    text-decoration: none;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    border-radius: 9px;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+.login-link:hover {
+    background: #f3f4f6;
+
+    color: #111827;
 }
 
 .register-btn {
-    background: #ff6b00;
-    color: white !important;
-    padding: 10px 18px;
-    border-radius: 50px;
-    transition: .3s;
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-height: 40px;
+
+    padding:
+        0 16px;
+
+    border-radius: 9px;
+
+    color: #ffffff;
+
+    background: #111827;
+
+    text-decoration: none;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
 }
 
 .register-btn:hover {
-    background: #ff8c1a;
+    color: #ffffff;
+
+    background: #1f2937;
+
+    transform: translateY(-1px);
 }
 
-/* ==========================================
-   MOBILE MENU BUTTON
-========================================== */
+
+/* =========================================================
+   MOBILE MENU HEADER
+   ========================================================= */
+
+.mobile-menu-header {
+    display: none;
+}
+
+
+/* =========================================================
+   MOBILE BUTTON
+   ========================================================= */
 
 .menu-btn1 {
     display: none;
-    width: 44px;
-    height: 44px;
-    flex: 0 0 44px;
-    border: none;
-    border-radius: 10px;
-    background: rgba(255,255,255,.75);
-    font-size: 23px;
-    cursor: pointer;
-    color: #333;
+
+    width: 42px;
+    height: 42px;
+
     align-items: center;
+
     justify-content: center;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 10px;
+
+    background: #ffffff;
+
+    color: #111827;
+
+    font-size: 18px;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
 }
 
-/* ==========================================
-   TABLET / MOBILE
-========================================== */
+.menu-btn1:hover {
+    background: #f3f4f6;
+
+    border-color: #d1d5db;
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
 
 @media (max-width: 1100px) {
-    .navbar {
-        min-height: 72px;
-        padding: 9px 18px;
+
+    .navbar-inner {
+        padding:
+            0 18px;
+    }
+
+    .brand-tagline {
+        display: none;
+    }
+
+    .brand-name {
+        font-size: 16px;
+    }
+
+    .nav-links {
+        gap: 2px;
+    }
+
+    .nav-link,
+    .sell-btn {
+        padding:
+            0 9px;
+
+        font-size: 13px;
+    }
+
+    .profile-name {
+        max-width: 95px;
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE / TABLET MENU
+   ========================================================= */
+
+@media (max-width: 850px) {
+
+    .navbar-inner {
+        min-height: 68px;
+
+        padding:
+            0 15px;
     }
 
     .navbar-logo {
-        width: 52px;
-        height: 52px;
-        flex-basis: 52px;
+        width: 42px;
+        height: 42px;
     }
 
-    .logo span {
-        font-size: 23px;
+    .brand-name {
+        font-size: 15px;
+    }
+
+    .navbar-actions {
+        margin-left: auto;
+    }
+
+    .profile-name,
+    .profile-chevron {
+        display: none;
+    }
+
+    .menu-btn1 {
+        display: flex;
     }
 
     .nav-links {
         position: fixed;
-        top: 72px;
-        right: -100%;
-        width: min(330px, 88vw);
-        height: calc(100dvh - 72px);
-        overflow-y: auto;
-        background: #fff;
-        display: flex;
+
+        top: 0;
+        left: 0;
+
+        width: min(
+            340px,
+            88vw
+        );
+
+        height: 100vh;
+
+        padding:
+            20px 15px;
+
         flex-direction: column;
+
         align-items: stretch;
+
         justify-content: flex-start;
-        gap: 8px;
-        padding: 24px 20px 35px;
-        box-shadow: -12px 0 35px rgba(0,0,0,.14);
-        transition: right .3s ease;
+
+        gap: 6px;
+
+        background: #ffffff;
+
+        border-right: 1px solid #e5e7eb;
+
+        box-shadow:
+            10px 0 40px
+            rgba(
+                15,
+                23,
+                42,
+                0.12
+            );
+
+        transform:
+            translateX(-105%);
+
+        transition:
+            transform 0.25s
+            cubic-bezier(
+                0.4,
+                0,
+                0.2,
+                1
+            );
+
+        overflow-y: auto;
     }
 
     .nav-links.active {
-        right: 0;
+        transform:
+            translateX(0);
     }
 
-    .nav-links a {
-        width: 100%;
-        padding: 13px 10px;
-        font-size: 16px;
-        border-radius: 10px;
-    }
-
-    .nav-links a:not(.sell-btn):hover {
-        background: #fff4eb;
-    }
-
-    .nav-links a:not(.sell-btn)::after {
-        display: none;
-    }
-
-    .sell-btn {
-        margin-bottom: 8px;
-        padding: 13px 16px !important;
-    }
-
-    .menu-btn1 {
+    .mobile-menu-header {
         display: flex;
-    }
-}
 
-@media (max-width: 600px) {
-    .navbar {
-        gap: 8px;
-        padding: 9px 12px;
-    }
+        align-items: center;
 
-    .navbar-logo {
-        width: 44px;
-        height: 44px;
-        flex-basis: 44px;
-    }
+        justify-content: space-between;
 
-    .logo span {
-        display: none;
-    }
+        padding:
+            5px 5px 18px;
 
-    .user-area {
-        margin-left: auto;
-        gap: 7px;
+        margin-bottom: 5px;
+
+        border-bottom:
+            1px solid #eef0f3;
+
+        font-size: 16px;
+
+        font-weight: 800;
+
+        color: #111827;
     }
 
-    .notification-btn,
-    .profile-btn,
-    .profile-image,
-    .menu-btn1 {
-        width: 40px;
-        height: 40px;
-        flex-basis: 40px;
+    .mobile-menu-header button {
+        width: 38px;
+        height: 38px;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        border: 0;
+
+        border-radius: 9px;
+
+        background: #f3f4f6;
+
+        color: #374151;
+
+        cursor: pointer;
     }
 
-    .notification-btn {
-        font-size: 17px;
-    }
+    .nav-link,
+    .sell-btn {
+        width: 100%;
 
-    .guest-links {
-        gap: 7px;
-    }
+        justify-content: flex-start;
 
-    .guest-links > a:first-child {
-        display: none;
-    }
+        min-height: 48px;
 
-    .register-btn {
-        padding: 9px 13px;
+        padding:
+            0 14px;
+
+        border-radius: 10px;
+
         font-size: 14px;
     }
 
-    .nav-links {
-        top: 62px;
-        height: calc(100dvh - 62px);
-        width: min(310px, 90vw);
+    .sell-btn {
+        margin-bottom: 4px;
     }
 
-    .dropdown-content {
-        position: fixed;
-        top: 58px;
-        right: 10px;
-        width: min(280px, calc(100vw - 20px));
-    }
 }
 
-@media (max-width: 360px) {
-    .navbar {
-        padding-inline: 9px;
+
+/* =========================================================
+   SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 520px) {
+
+    .navbar-inner {
+        gap: 8px;
+
+        padding:
+            0 11px;
     }
 
-    .notification-btn,
-    .profile-btn,
-    .profile-image,
-    .menu-btn1 {
-        width: 37px;
-        height: 37px;
-        flex-basis: 37px;
+    .navbar-logo {
+        width: 39px;
+        height: 39px;
+    }
+
+    .brand-name {
+        font-size: 14px;
+    }
+
+    .notification-btn {
+        width: 38px;
+        height: 38px;
+    }
+
+    .profile-trigger {
+        width: 42px;
+        height: 42px;
+
+        padding: 2px;
+    }
+
+    .profile-avatar-wrapper,
+    .profile-avatar {
+        width: 36px;
+        height: 36px;
+    }
+
+    .guest-actions {
+        gap: 4px;
+    }
+
+    .login-link {
+        display: none;
     }
 
     .register-btn {
-        padding: 8px 10px;
+        min-height: 38px;
+
+        padding:
+            0 11px;
+
+        font-size: 12px;
     }
+
+    .profile-menu {
+        position: fixed;
+
+        top: 68px;
+        right: 10px;
+
+        width:
+            calc(100vw - 20px);
+
+        max-width: 340px;
+    }
+
 }
