@@ -46,74 +46,28 @@ exports.getSettings = async (req, res) => {
 
 
     } catch (error) {
+    console.error("=================================================");
+    console.error("[ADMIN SETTINGS] GET ERROR");
+    console.error("=================================================");
+    console.error("Name:", error?.name);
+    console.error("Message:", error?.message);
+    console.error("Code:", error?.code);
+    console.error("SQL:", error?.sql);
+    console.error("SQL Message:", error?.original?.message);
+    console.error("Stack:", error?.stack);
+    console.error("=================================================");
 
-        console.error(
-            "================================================="
-        );
-
-        console.error(
-            "[ADMIN SETTINGS] GET ERROR"
-        );
-
-        console.error(
-            "================================================="
-        );
-
-        console.error(
-            "Name:",
-            error?.name
-        );
-
-        console.error(
-            "Message:",
-            error?.message
-        );
-
-        console.error(
-            "Code:",
-            error?.code
-        );
-
-        console.error(
-            "SQL:",
-            error?.sql
-        );
-
-        console.error(
-            "SQL Message:",
-            error?.original?.message
-        );
-
-        console.error(
-            "Stack:",
-            error?.stack
-        );
-
-        console.error(
-            "================================================="
-        );
-
-
-        return res.status(500).json({
-
-            success: false,
-
-            message:
-                "Unable to load marketplace settings.",
-
-            /*
-             * Temporary diagnostic information.
-             * Remove after the production issue is identified.
-             */
-
-            error:
-                process.env.NODE_ENV !== "production"
-                    ? error.message
-                    : undefined
-
-        });
-
-    }
+    return res.status(500).json({
+        success: false,
+        message: "Unable to load marketplace settings.",
+        debug: {
+            name: error?.name,
+            message: error?.message,
+            code: error?.code,
+            sqlMessage: error?.original?.message || null
+        }
+    });
+}
 
 };
 
