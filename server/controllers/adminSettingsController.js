@@ -4,114 +4,232 @@ const {
 } = require("../services/marketplaceSettingsService");
 
 
-/*
-=====================================================
- GET ADMIN MARKETPLACE SETTINGS
-=====================================================
- GET /api/admin/settings
-=====================================================
-*/
+/* =========================================================
+   GET MARKETPLACE SETTINGS
+========================================================= */
 
-exports.getSettings =
-    async (req, res) => {
+exports.getSettings = async (req, res) => {
 
-        try {
+    try {
 
-            const settings =
-                await getMarketplaceSettings();
+        console.log(
+            "[ADMIN SETTINGS] GET /api/admin/settings"
+        );
+
+        console.log(
+            "[ADMIN SETTINGS] User:",
+            req.user
+                ? {
+                    id: req.user.id,
+                    role: req.user.role
+                }
+                : null
+        );
 
 
-            return res.status(200).json({
+        const settings =
+            await getMarketplaceSettings();
 
-                success:
-                    true,
 
-                settings
+        console.log(
+            "[ADMIN SETTINGS] Settings loaded successfully"
+        );
+
+
+        return res.status(200).json({
+
+            success: true,
+
+            settings
+
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "================================================="
+        );
+
+        console.error(
+            "[ADMIN SETTINGS] GET ERROR"
+        );
+
+        console.error(
+            "================================================="
+        );
+
+        console.error(
+            "Name:",
+            error?.name
+        );
+
+        console.error(
+            "Message:",
+            error?.message
+        );
+
+        console.error(
+            "Code:",
+            error?.code
+        );
+
+        console.error(
+            "SQL:",
+            error?.sql
+        );
+
+        console.error(
+            "SQL Message:",
+            error?.original?.message
+        );
+
+        console.error(
+            "Stack:",
+            error?.stack
+        );
+
+        console.error(
+            "================================================="
+        );
+
+
+        return res.status(500).json({
+
+            success: false,
+
+            message:
+                "Unable to load marketplace settings.",
+
+            /*
+             * Temporary diagnostic information.
+             * Remove after the production issue is identified.
+             */
+
+            error:
+                process.env.NODE_ENV !== "production"
+                    ? error.message
+                    : undefined
+
+        });
+
+    }
+
+};
+
+
+/* =========================================================
+   SAVE MARKETPLACE SETTINGS
+========================================================= */
+
+exports.saveSettings = async (req, res) => {
+
+    try {
+
+        console.log(
+            "[ADMIN SETTINGS] PUT /api/admin/settings"
+        );
+
+
+        if (
+            !req.body ||
+            typeof req.body !== "object" ||
+            Array.isArray(req.body)
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Invalid settings data."
 
             });
 
         }
 
-        catch (error) {
 
-            console.error(
-                "GET ADMIN SETTINGS ERROR:",
-                error
+        const settings =
+            await updateMarketplaceSettings(
+                req.body
             );
 
 
-            return res.status(500).json({
-
-                success:
-                    false,
-
-                message:
-                    "Unable to load marketplace settings.",
-
-                error:
-                    error.message
-
-            });
-
-        }
-
-    };
+        console.log(
+            "[ADMIN SETTINGS] Settings saved successfully"
+        );
 
 
-/*
-=====================================================
- SAVE ADMIN MARKETPLACE SETTINGS
-=====================================================
- PUT /api/admin/settings
-=====================================================
-*/
+        return res.status(200).json({
 
-exports.saveSettings =
-    async (req, res) => {
+            success: true,
 
-        try {
+            message:
+                "Marketplace settings saved successfully.",
 
-            const settings =
-                await updateMarketplaceSettings(
-                    req.body
-                );
+            settings
+
+        });
 
 
-            return res.status(200).json({
+    } catch (error) {
 
-                success:
-                    true,
+        console.error(
+            "================================================="
+        );
 
-                message:
-                    "Marketplace settings saved successfully.",
+        console.error(
+            "[ADMIN SETTINGS] SAVE ERROR"
+        );
 
-                settings
+        console.error(
+            "================================================="
+        );
 
-            });
+        console.error(
+            "Name:",
+            error?.name
+        );
 
-        }
+        console.error(
+            "Message:",
+            error?.message
+        );
 
-        catch (error) {
+        console.error(
+            "Code:",
+            error?.code
+        );
 
-            console.error(
-                "SAVE ADMIN SETTINGS ERROR:",
-                error
-            );
+        console.error(
+            "SQL:",
+            error?.sql
+        );
+
+        console.error(
+            "SQL Message:",
+            error?.original?.message
+        );
+
+        console.error(
+            "Stack:",
+            error?.stack
+        );
+
+        console.error(
+            "================================================="
+        );
 
 
-            return res.status(500).json({
+        return res.status(500).json({
 
-                success:
-                    false,
+            success: false,
 
-                message:
-                    "Unable to save marketplace settings.",
+            message:
+                "Unable to save marketplace settings."
 
-                error:
-                    error.message
+        });
 
-            });
+    }
 
-        }
-
-    };
+};
