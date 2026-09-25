@@ -16,86 +16,228 @@ import {
 
 import "./Inbox.css";
 
+/* =========================================================
+   IMAGE CONFIGURATION
+========================================================= */
 
-const SERVER_URL =
-    import.meta.env.VITE_SERVER_URL ||
-    "https://kad-marketplace-production.up.railway.app";
+const CDN_URL = (
+    import.meta.env.VITE_R2_PUBLIC_URL ||
+    "https://cdn.kadmarket.com"
+).replace(/\/+$/, "");
 
+const FALLBACK_IMAGE = "/images/product-placeholder.png";
+
+/* =========================================================
+   INBOX
+========================================================= */
 
 function Inbox() {
-
     const navigate = useNavigate();
 
     const [conversations, setConversations] = useState([]);
-
     const [search, setSearch] = useState("");
 
     const [loading, setLoading] = useState(true);
-
     const [error, setError] = useState("");
 
-
     /* =====================================================
-       GET IMAGE URL
+       RESOLVE PRODUCT IMAGE URL
     ===================================================== */
 
     const getImageUrl = useCallback((imagePath) => {
-
         if (
             !imagePath ||
             typeof imagePath !== "string"
         ) {
-            return "/images/product-placeholder.png";
+            return FALLBACK_IMAGE;
         }
 
-
-        const cleanPath =
-            imagePath.trim();
-
+        let cleanPath = imagePath.trim();
 
         if (!cleanPath) {
-            return "/images/product-placeholder.png";
+            return FALLBACK_IMAGE;
         }
 
+        /*
+         * Some database values may contain escaped
+         * backslashes or quotes.
+         */
+        cleanPath = cleanPath
+            .replace(/\\/g, "/")
+            .replace(/^["']|["']$/g, "")
+            .trim();
 
-        // Already a complete URL
-        if (
-            cleanPath.startsWith("http://") ||
-            cleanPath.startsWith("https://")
-        ) {
+        if (!cleanPath) {
+            return FALLBACK_IMAGE;
+        }
+
+        /*
+         * Already a complete public URL.
+         *
+         * Example:
+         * https://cdn.kadmarket.com/uploads/image.jpg
+         */
+        if (/^https?:\/\//i.test(cleanPath)) {
             return cleanPath;
         }
 
+        /*
+         * Remove leading slash.
+         *
+         * /uploads/image.jpg
+         * becomes:
+         * uploads/image.jpg
+         */
+        const normalizedPath =
+            cleanPath.replace(/^\/+/, "");
 
-        // /uploads/image.jpg
+        /*
+         * R2 key already contains uploads/.
+         */
         if (
-            cleanPath.startsWith("/uploads/")
+            normalizedPath
+                .toLowerCase()
+                .startsWith("uploads/")
         ) {
-            return `${SERVER_URL}${cleanPath}`;
+            return `${CDN_URL}/${normalizedPath}`;
         }
 
-
-        // uploads/image.jpg
+        /*
+         * Handle values such as:
+         *
+         * product/image.jpg
+         * products/image.jpg
+         * images/image.jpg
+         *
+         * If the database already contains a folder,
+         * preserve it rather than adding another folder.
+         */
         if (
-            cleanPath.startsWith("uploads/")
+            normalizedPath.includes("/") &&
+            !normalizedPath.startsWith(".")
         ) {
-            return `${SERVER_URL}/${cleanPath}`;
+            return `${CDN_URL}/${normalizedPath}`;
         }
 
-
-        // Any other absolute path
-        if (
-            cleanPath.startsWith("/")
-        ) {
-            return `${SERVER_URL}${cleanPath}`;
-        }
-
-
-        // Plain filename
-        return `${SERVER_URL}/uploads/${cleanPath}`;
-
+        /*
+         * Plain filename.
+         *
+         * image.jpg
+         *
+         * becomes:
+         *
+         * https://cdn.kadmarket.com/uploads/image.jpg
+         */
+        return `${CDN_URL}/uploads/${normalizedPath}`;
     }, []);
 
+    /* =====================================================
+       PARSE PRODUCT IMAGES
+    ===================================================== */
+
+    const parseProductImages = useCallback(
+        (productImages) => {
+            if (!productImages) {
+                return [];
+            }
+
+            /*
+             * Already an array.
+             */
+            if (Array.isArray(productImages)) {
+                return productImages
+                    .filter(
+                        (image) =>
+                            typeof image === "string" &&
+                            image.trim()
+                    )
+                    .map((image) => image.trim());
+            }
+
+            /*
+             * String value.
+             */
+            if (typeof productImages === "string") {
+                const cleanValue =
+                    productImages.trim();
+
+                if (!cleanValue) {
+                    return [];
+                }
+
+                /*
+                 * Try JSON first.
+                 *
+                 * Example:
+                 * ["image1.jpg","image2.jpg"]
+                 */
+                try {
+                    const parsed =
+                        JSON.parse(cleanValue);
+
+                    if (Array.isArray(parsed)) {
+                        return parsed
+                            .filter(
+                                (image) =>
+                                    typeof image ===
+                                        "string" &&
+                                    image.trim()
+                            )
+                            .map((image) =>
+                                image.trim()
+                            );
+                    }
+
+                    /*
+                     * JSON string containing
+                     * one image.
+                     */
+                    if (
+                        typeof parsed ===
+                            "string" &&
+                        parsed.trim()
+                    ) {
+                        return [
+                            parsed.trim()
+                        ];
+                    }
+                } catch {
+                    /*
+                     * Not JSON.
+                     *
+                     * Treat it as a normal
+                     * filename/key.
+                     */
+                }
+
+                /*
+                 * Support comma-separated legacy
+                 * values as well.
+                 */
+                if (
+                    cleanValue.includes(",") &&
+                    !cleanValue.includes("http")
+                ) {
+                    const commaImages =
+                        cleanValue
+                            .split(",")
+                            .map((image) =>
+                                image.trim()
+                            )
+                            .filter(Boolean);
+
+                    if (commaImages.length > 0) {
+                        return commaImages;
+                    }
+                }
+
+                return [cleanValue];
+            }
+
+            return [];
+        },
+        []
+    );
 
     /* =====================================================
        GET PRODUCT IMAGE
@@ -103,87 +245,111 @@ function Inbox() {
 
     const getProductImage = useCallback(
         (conversation) => {
+            /*
+             * Product can come from:
+             *
+             * conversation.product
+             */
+            const product =
+                conversation?.product;
 
-            const productImages =
-                conversation?.product?.images;
+            if (!product) {
+                return FALLBACK_IMAGE;
+            }
 
+            /*
+             * Normal product image field.
+             */
+            let productImages =
+                product.images;
 
+            /*
+             * Some backend responses may expose
+             * a single image through imageUrl.
+             */
             if (!productImages) {
-
-                return "/images/product-placeholder.png";
-
+                productImages =
+                    product.imageUrl;
             }
 
+            /*
+             * Some older records may use `image`.
+             */
+            if (!productImages) {
+                productImages =
+                    product.image;
+            }
 
-            let images = [];
-
-
-            try {
-
-                if (
-                    Array.isArray(productImages)
-                ) {
-
-                    images = productImages;
-
-                } else if (
-                    typeof productImages === "string"
-                ) {
-
-                    images =
-                        JSON.parse(productImages);
-
-                }
-
-            } catch (parseError) {
-
-                console.error(
-                    "PRODUCT IMAGE PARSE ERROR:",
-                    parseError
+            const images =
+                parseProductImages(
+                    productImages
                 );
-
-                images = [];
-
-            }
-
 
             if (
                 !Array.isArray(images) ||
                 images.length === 0
             ) {
-
-                return "/images/product-placeholder.png";
-
+                return FALLBACK_IMAGE;
             }
 
+            /*
+             * Find the first valid image.
+             */
+            const firstImage =
+                images.find(
+                    (image) =>
+                        typeof image ===
+                            "string" &&
+                        image.trim()
+                );
 
-            return getImageUrl(images[0]);
+            if (!firstImage) {
+                return FALLBACK_IMAGE;
+            }
 
+            const resolvedUrl =
+                getImageUrl(firstImage);
+
+            console.log(
+                "INBOX PRODUCT IMAGE:",
+                {
+                    productId:
+                        product?.id,
+                    rawImages:
+                        productImages,
+                    parsedImages:
+                        images,
+                    firstImage,
+                    resolvedUrl
+                }
+            );
+
+            return resolvedUrl;
         },
-        [getImageUrl]
+        [
+            getImageUrl,
+            parseProductImages
+        ]
     );
-
 
     /* =====================================================
        LOAD CONVERSATIONS
     ===================================================== */
 
-    const loadConversations = useCallback(
-        async () => {
-
+    const loadConversations =
+        useCallback(async () => {
             try {
+                setError("");
 
                 const response =
                     await api.get(
                         "/messages/conversations"
                     );
 
-
                 console.log(
                     "CONVERSATIONS RESPONSE:",
                     response.data
                 );
-
 
                 /*
                  * Backend may return:
@@ -193,14 +359,14 @@ function Inbox() {
                  *   conversations: [...]
                  * }
                  *
-                 * OR
+                 * OR:
                  *
                  * {
                  *   success: true,
                  *   messages: [...]
                  * }
                  *
-                 * OR
+                 * OR:
                  *
                  * {
                  *   success: true,
@@ -208,106 +374,74 @@ function Inbox() {
                  * }
                  */
 
-
                 const data =
                     response.data?.conversations ??
                     response.data?.messages ??
                     response.data?.data ??
                     [];
 
-
                 const conversationArray =
                     Array.isArray(data)
                         ? data
                         : [];
-
 
                 console.log(
                     "CONVERSATIONS ARRAY:",
                     conversationArray
                 );
 
-
                 setConversations(
                     conversationArray
                 );
 
-
                 setError("");
-
             } catch (requestError) {
-
                 console.error(
                     "LOAD CONVERSATIONS ERROR:",
                     requestError.response?.data ||
-                    requestError.message
+                        requestError.message
                 );
-
 
                 setError(
-                    requestError.response?.data?.message ||
-                    "Unable to load conversations."
+                    requestError.response?.data
+                        ?.message ||
+                        "Unable to load conversations."
                 );
-
             } finally {
-
                 setLoading(false);
-
             }
-
-        },
-        []
-    );
-
+        }, []);
 
     /* =====================================================
-       AUTH + INITIAL LOAD + REFRESH
+       AUTH + INITIAL LOAD + AUTO REFRESH
     ===================================================== */
 
     useEffect(() => {
-
         const storedUser =
             localStorage.getItem("user");
 
-
         if (!storedUser) {
-
             navigate("/login");
-
             return;
-
         }
-
 
         loadConversations();
 
-
         /*
-         * Refresh every 30 seconds.
-         *
-         * We use 30 seconds instead of 10 seconds
-         * to reduce unnecessary API requests.
+         * Refresh conversations every 30 seconds.
          */
-
         const interval =
             setInterval(() => {
-
                 loadConversations();
-
             }, 30000);
 
-
         return () => {
-
             clearInterval(interval);
-
         };
-
     }, [
         navigate,
         loadConversations
     ]);
-
 
     /* =====================================================
        SEARCH
@@ -315,37 +449,31 @@ function Inbox() {
 
     const filtered =
         useMemo(() => {
-
             const searchText =
                 search
                     .trim()
                     .toLowerCase();
 
-
             if (!searchText) {
-
                 return conversations;
-
             }
-
 
             return conversations.filter(
                 (item) => {
-
                     const productTitle =
                         item?.product?.title
-                            ?.toLowerCase() || "";
-
+                            ?.toLowerCase() ||
+                        "";
 
                     const lastMessage =
                         item?.lastMessage
-                            ?.toLowerCase() || "";
-
+                            ?.toLowerCase() ||
+                        "";
 
                     const messageText =
                         item?.message
-                            ?.toLowerCase() || "";
-
+                            ?.toLowerCase() ||
+                        "";
 
                     return (
                         productTitle.includes(
@@ -358,15 +486,12 @@ function Inbox() {
                             searchText
                         )
                     );
-
                 }
             );
-
         }, [
             conversations,
             search
         ]);
-
 
     /* =====================================================
        OPEN CHAT
@@ -375,83 +500,100 @@ function Inbox() {
     const openConversation = (
         conversation
     ) => {
-
         const conversationId =
             conversation?.id ||
             conversation?._id;
 
-
         if (!conversationId) {
-
             console.error(
                 "CONVERSATION HAS NO ID:",
                 conversation
             );
 
             return;
-
         }
-
 
         navigate(
             `/chat/${conversationId}`
         );
-
     };
 
+    /* =====================================================
+       IMAGE ERROR HANDLER
+    ===================================================== */
+
+    const handleImageError = (
+        event,
+        conversation
+    ) => {
+        const image =
+            event.currentTarget;
+
+        console.error(
+            "INBOX PRODUCT IMAGE FAILED:",
+            {
+                productId:
+                    conversation?.product?.id,
+                attemptedUrl:
+                    image?.src
+            }
+        );
+
+        /*
+         * Prevent an infinite fallback loop.
+         */
+        if (
+            image.dataset.fallback ===
+            "true"
+        ) {
+            return;
+        }
+
+        image.dataset.fallback =
+            "true";
+
+        image.src = FALLBACK_IMAGE;
+    };
 
     /* =====================================================
        LOADING
     ===================================================== */
 
     if (loading) {
-
         return (
-
             <div className="inbox-page">
-
                 <div className="empty-chat">
-
                     <p>
                         Loading conversations...
                     </p>
-
                 </div>
-
             </div>
-
         );
-
     }
-
 
     /* =====================================================
        UI
     ===================================================== */
 
     return (
-
         <div className="inbox-page">
 
-            {/* HEADER */}
+            {/* =================================================
+                HEADER
+            ================================================= */}
 
             <div className="inbox-header">
-
                 <h1>
-
                     <FaComments />
-
                     Messages
-
                 </h1>
-
             </div>
 
-
-            {/* SEARCH */}
+            {/* =================================================
+                SEARCH
+            ================================================= */}
 
             <div className="search-bar">
-
                 <FaSearch />
 
                 <input
@@ -464,16 +606,14 @@ function Inbox() {
                         )
                     }
                 />
-
             </div>
 
-
-            {/* ERROR */}
+            {/* =================================================
+                ERROR
+            ================================================= */}
 
             {error && (
-
                 <div className="empty-chat">
-
                     <FaComments />
 
                     <h2>
@@ -487,28 +627,22 @@ function Inbox() {
                     <button
                         type="button"
                         onClick={() => {
-
                             setLoading(true);
-
                             loadConversations();
-
                         }}
                     >
                         Try Again
                     </button>
-
                 </div>
-
             )}
 
-
-            {/* EMPTY */}
+            {/* =================================================
+                EMPTY
+            ================================================= */}
 
             {!error &&
                 filtered.length === 0 && (
-
                     <div className="empty-chat">
-
                         <FaComments />
 
                         <h2>
@@ -516,49 +650,51 @@ function Inbox() {
                         </h2>
 
                         <p>
-                            Conversations will appear here.
+                            Conversations will
+                            appear here.
                         </p>
-
                     </div>
-
                 )}
 
-
-            {/* CONVERSATIONS */}
+            {/* =================================================
+                CONVERSATIONS
+            ================================================= */}
 
             {!error &&
                 filtered.length > 0 &&
                 filtered.map(
                     (conversation) => {
-
                         const conversationId =
                             conversation?.id ||
                             conversation?._id;
 
+                        const product =
+                            conversation?.product;
 
                         const productTitle =
-                            conversation?.product?.title ||
+                            product?.title ||
+                            product?.name ||
                             "Product Conversation";
-
 
                         const lastMessage =
                             conversation?.lastMessage ||
                             conversation?.message ||
                             "Start chatting...";
 
-
                         const productPrice =
-                            conversation?.product?.price;
+                            product?.price;
 
-
+                        /*
+                         * IMPORTANT:
+                         * Product image now comes
+                         * from R2/CDN.
+                         */
                         const productImage =
                             getProductImage(
                                 conversation
                             );
 
-
                         return (
-
                             <div
                                 key={
                                     conversationId
@@ -571,57 +707,35 @@ function Inbox() {
                                 }
                             >
 
-                                {/* PRODUCT IMAGE */}
+                                {/* =================================
+                                    PRODUCT IMAGE
+                                ================================= */}
 
-                                <img
-                                    src={
-                                        productImage
-                                    }
-                                    alt={
-                                        productTitle
-                                    }
-                                    loading="lazy"
-                                    onError={(
-                                        event
-                                    ) => {
+                                <div className="conversation-image-wrapper">
 
-                                        console.error(
-                                            "INBOX PRODUCT IMAGE FAILED:",
-                                            event
-                                                .currentTarget
-                                                .src
-                                        );
-
-
-                                        if (
-                                            event
-                                                .currentTarget
-                                                .dataset
-                                                .fallback
-                                        ) {
-
-                                            return;
-
+                                    <img
+                                        src={
+                                            productImage
                                         }
+                                        alt={
+                                            productTitle
+                                        }
+                                        loading="lazy"
+                                        onError={(
+                                            event
+                                        ) =>
+                                            handleImageError(
+                                                event,
+                                                conversation
+                                            )
+                                        }
+                                    />
 
+                                </div>
 
-                                        event
-                                            .currentTarget
-                                            .dataset
-                                            .fallback =
-                                            "true";
-
-
-                                        event
-                                            .currentTarget
-                                            .src =
-                                            "/images/product-placeholder.png";
-
-                                    }}
-                                />
-
-
-                                {/* CONVERSATION INFO */}
+                                {/* =================================
+                                    CONVERSATION INFO
+                                ================================= */}
 
                                 <div className="conversation-info">
 
@@ -631,34 +745,29 @@ function Inbox() {
                                         }
                                     </h2>
 
-
                                     <p>
                                         {
                                             lastMessage
                                         }
                                     </p>
 
-
                                     <small>
-
                                         GH₵{" "}
-
                                         {
                                             productPrice ??
                                             "0"
                                         }
-
                                     </small>
 
                                 </div>
 
-
-                                {/* RIGHT SIDE */}
+                                {/* =================================
+                                    RIGHT SIDE
+                                ================================= */}
 
                                 <div className="conversation-right">
 
                                     <span>
-
                                         {
                                             conversation?.updatedAt
                                                 ? new Date(
@@ -666,41 +775,30 @@ function Inbox() {
                                                 ).toLocaleDateString()
                                                 : ""
                                         }
-
                                     </span>
-
 
                                     {
                                         Number(
                                             conversation?.unreadCount ||
                                             0
                                         ) > 0 && (
-
                                             <div className="badge">
-
                                                 {
                                                     conversation.unreadCount
                                                 }
-
                                             </div>
-
                                         )
                                     }
 
                                 </div>
 
                             </div>
-
                         );
-
                     }
                 )}
 
         </div>
-
     );
-
 }
-
 
 export default Inbox;
