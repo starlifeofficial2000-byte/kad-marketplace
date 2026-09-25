@@ -1646,13 +1646,26 @@ exports.getProductById = async (req, res) => {
 
     try {
 
+        const { id } = req.params;
+
+        // Validate product ID
+        if (!id || isNaN(Number(id))) {
+
+            return res.status(400).json({
+                success: false,
+                message: "Invalid product ID."
+            });
+
+        }
+
         const product = await Product.findOne({
 
             where: {
-    status: "Approved",
-    sellerStatus: "Active",
-    deleted: false
-}
+                id: Number(id),
+                status: "Approved",
+                sellerStatus: "Active",
+                deleted: false
+            }
 
         });
 
@@ -1666,16 +1679,16 @@ exports.getProductById = async (req, res) => {
         }
 
         /*
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         | IMPORTANT
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         | Do NOT increase product.views here.
         |
         | Product views are recorded separately through:
         | POST /products/:id/view
         |
         | This prevents one page refresh from counting twice.
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------------
         */
 
         const item = formatProduct(product);
@@ -1692,6 +1705,8 @@ exports.getProductById = async (req, res) => {
                     category: product.category,
 
                     status: "Approved",
+
+                    sellerStatus: "Active",
 
                     deleted: false
 
