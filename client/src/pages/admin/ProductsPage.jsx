@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import api from "../../config/axios";
@@ -6,31 +6,44 @@ import api from "../../config/axios";
 import "./ProductsPage.css";
 
 
+/* =========================================================
+   CONSTANTS
+========================================================= */
+
+const CDN_URL =
+    (
+        import.meta.env.VITE_R2_PUBLIC_URL ||
+        "https://cdn.kadmarket.com"
+    ).replace(/\/+$/, "");
+
+const FALLBACK_IMAGE = "/default-product.png";
+
+
+/* =========================================================
+   PRODUCTS PAGE
+========================================================= */
+
 function ProductsPage() {
 
-    const [products, setProducts] = useState([]);
+    const [products, setProducts] =
+        useState([]);
 
-    const [filteredProducts, setFilteredProducts] = useState([]);
+    const [search, setSearch] =
+        useState("");
 
-    const [search, setSearch] = useState("");
+    const [status, setStatus] =
+        useState("All");
 
-    const [status, setStatus] = useState("All");
+    const [loading, setLoading] =
+        useState(true);
 
-    const [loading, setLoading] = useState(true);
-
-
-    /* =========================================
-       API BASE URL
-    ========================================= */
-
-    const API_BASE_URL =
-        import.meta.env.VITE_API_BASE_URL ||
-        "";
+    const [actionLoading, setActionLoading] =
+        useState({});
 
 
-    /* =========================================
+    /* =====================================================
        LOAD PRODUCTS
-    ========================================= */
+    ===================================================== */
 
     const loadProducts = async () => {
 
@@ -38,62 +51,50 @@ function ProductsPage() {
 
             setLoading(true);
 
-            const response = await api.get(
-                "/admin/products"
-            );
-
+            const response =
+                await api.get(
+                    "/admin/products"
+                );
 
             console.log(
-                "PRODUCT RESPONSE:",
+                "ADMIN PRODUCTS RESPONSE:",
                 response.data
             );
 
-
             const productData =
-
                 response.data?.products ||
-
                 response.data?.data ||
-
                 response.data?.results ||
-
-                [];
-
+                (
+                    Array.isArray(
+                        response.data
+                    )
+                        ? response.data
+                        : []
+                );
 
             setProducts(
-
                 Array.isArray(productData)
-
                     ? productData
-
                     : []
-
             );
 
-        }
-
-        catch (error) {
+        } catch (error) {
 
             console.error(
                 "LOAD PRODUCTS ERROR:",
                 error
             );
 
-
             setProducts([]);
 
-
             alert(
-
-                error.response?.data?.message ||
-
+                error.response?.data
+                    ?.message ||
                 "Failed to load products."
-
             );
 
-        }
-
-        finally {
+        } finally {
 
             setLoading(false);
 
@@ -109,120 +110,545 @@ function ProductsPage() {
     }, []);
 
 
-    /* =========================================
-       FILTER PRODUCTS
-    ========================================= */
+    /* =====================================================
+       IMAGE PARSING
+    ===================================================== */
 
-    useEffect(() => {
+    const parseProductImages = (
+        product
+    ) => {
 
-        let data = Array.isArray(products)
+        if (!product) {
+            return [];
+        }
 
-            ? [...products]
+        /*
+         * Some APIs may return:
+         *
+         * product.images
+         * product.image
+         * product.imageUrl
+         * product.images[]
+         */
 
-            : [];
+        let rawImages =
+            product.images;
 
+        /*
+         * If images doesn't exist, check
+         * the other possible fields.
+         */
 
-        if (status !== "All") {
+        if (
+            rawImages === undefined ||
+            rawImages === null
+        ) {
 
-            data = data.filter(
+            if (
+                product.imageUrl
+            ) {
 
-                (product) =>
+                rawImages =
+                    product.imageUrl;
 
-                    String(
-                        product.status || ""
-                    ).toLowerCase() ===
+            } else if (
+                product.image
+            ) {
 
-                    status.toLowerCase()
+                rawImages =
+                    product.image;
 
-            );
+            } else {
+
+                rawImages = [];
+
+            }
 
         }
 
 
-        if (search.trim()) {
+        /*
+         * Already an array.
+         */
 
-            const keyword =
-                search.toLowerCase();
+        if (
+            Array.isArray(
+                rawImages
+            )
+        ) {
+
+            return rawImages
+                .filter(Boolean)
+                .map((image) =>
+                    String(image).trim()
+                )
+                .filter(Boolean);
+
+        }
 
 
-            data = data.filter(
+        /*
+         * String value.
+         */
 
-                (product) =>
+        if (
+            typeof rawImages ===
+            "string"
+        ) {
 
-                    String(
-                        product.title || ""
+            const value =
+                rawImages.trim();
+
+            if (!value) {
+                return [];
+            }
+
+
+            /*
+             * Try JSON.
+             */
+
+            try {
+
+                const parsed =
+                    JSON.parse(value);
+
+
+                if (
+                    Array.isArray(
+                        parsed
                     )
-                        .toLowerCase()
-                        .includes(keyword)
+                ) {
 
-            );
+                    return parsed
+                        .filter(Boolean)
+                        .map(
+                            (image) =>
+                                String(
+                                    image
+                                ).trim()
+                        )
+                        .filter(Boolean);
+
+                }
+
+
+                if (
+                    typeof parsed ===
+                        "string" &&
+                    parsed.trim()
+                ) {
+
+                    return [
+                        parsed.trim()
+                    ];
+
+                }
+
+            } catch {
+                /*
+                 * Legacy filename format.
+                 */
+            }
+
+
+            /*
+             * Some old records may contain
+             * comma-separated image names.
+             */
+
+            if (
+                value.includes(",")
+            ) {
+
+                return value
+                    .split(",")
+                    .map((image) =>
+                        image.trim()
+                    )
+                    .filter(Boolean);
+
+            }
+
+
+            return [value];
 
         }
 
 
-        setFilteredProducts(data);
+        return [];
 
-    }, [
-
-        products,
-
-        search,
-
-        status
-
-    ]);
+    };
 
 
-    /* =========================================
-       APPROVE PRODUCT
-    ========================================= */
+    /* =====================================================
+       RESOLVE PRODUCT IMAGE URL
+    ===================================================== */
 
-    const approveProduct = async (id) => {
+    const resolveProductImage = (
+        image
+    ) => {
 
-        const confirmed = window.confirm(
-            "Approve this product?"
-        );
+        if (!image) {
+            return null;
+        }
+
+        const cleanImage =
+            String(image).trim();
+
+        if (!cleanImage) {
+            return null;
+        }
 
 
-        if (!confirmed) {
+        /*
+         * Already a complete URL.
+         */
+
+        if (
+            cleanImage.startsWith(
+                "http://"
+            ) ||
+            cleanImage.startsWith(
+                "https://"
+            )
+        ) {
+
+            return cleanImage;
+
+        }
+
+
+        /*
+         * Normalize slashes.
+         */
+
+        let normalized =
+            cleanImage
+                .replace(
+                    /\\/g,
+                    "/"
+                )
+                .replace(
+                    /^\/+/,
+                    ""
+                );
+
+
+        /*
+         * If the value is accidentally
+         * prefixed with the CDN domain
+         * without a protocol, normalize it.
+         */
+
+        normalized =
+            normalized.replace(
+                /^cdn\.kadmarket\.com\//i,
+                ""
+            );
+
+
+        /*
+         * R2 object key.
+         *
+         * Examples:
+         *
+         * uploads/products/a.jpg
+         * uploads/a.jpg
+         */
+
+        if (
+            normalized.startsWith(
+                "uploads/"
+            )
+        ) {
+
+            return `${CDN_URL}/${normalized}`;
+
+        }
+
+
+        /*
+         * Legacy records containing only:
+         *
+         * image.jpg
+         */
+
+        return `${CDN_URL}/uploads/${normalized}`;
+
+    };
+
+
+    /* =====================================================
+       GET FIRST PRODUCT IMAGE
+    ===================================================== */
+
+    const getProductImage = (
+        product
+    ) => {
+
+        const images =
+            parseProductImages(
+                product
+            );
+
+
+        if (
+            images.length === 0
+        ) {
+
+            return FALLBACK_IMAGE;
+
+        }
+
+
+        /*
+         * Use the first valid image.
+         */
+
+        for (
+            const image of images
+        ) {
+
+            const url =
+                resolveProductImage(
+                    image
+                );
+
+            if (url) {
+                return url;
+            }
+
+        }
+
+
+        return FALLBACK_IMAGE;
+
+    };
+
+
+    /* =====================================================
+       IMAGE ERROR HANDLER
+    ===================================================== */
+
+    const handleImageError = (
+        event
+    ) => {
+
+        const image =
+            event.currentTarget;
+
+        /*
+         * Prevent an infinite
+         * onError loop.
+         */
+
+        if (
+            image.dataset.fallback ===
+            "true"
+        ) {
 
             return;
 
         }
 
 
-        try {
+        image.dataset.fallback =
+            "true";
 
-            await api.put(
+        image.src =
+            FALLBACK_IMAGE;
 
-                `/admin/products/${id}/approve`
+    };
 
+
+    /* =====================================================
+       FILTER PRODUCTS
+    ===================================================== */
+
+    const filteredProducts =
+        useMemo(() => {
+
+            let data =
+                Array.isArray(
+                    products
+                )
+                    ? [...products]
+                    : [];
+
+
+            /*
+             * Status filter.
+             */
+
+            if (
+                status !== "All"
+            ) {
+
+                data =
+                    data.filter(
+                        (product) =>
+                            String(
+                                product.status ||
+                                ""
+                            )
+                                .toLowerCase() ===
+                            status.toLowerCase()
+                    );
+
+            }
+
+
+            /*
+             * Search filter.
+             */
+
+            const keyword =
+                search.trim()
+                    .toLowerCase();
+
+
+            if (keyword) {
+
+                data =
+                    data.filter(
+                        (product) => {
+
+                            const title =
+                                String(
+                                    product.title ||
+                                    product.name ||
+                                    ""
+                                )
+                                    .toLowerCase();
+
+
+                            const category =
+                                String(
+                                    product.category ||
+                                    ""
+                                )
+                                    .toLowerCase();
+
+
+                            const seller =
+                                String(
+                                    product.User?.name ||
+                                    product.user?.name ||
+                                    product.seller?.name ||
+                                    ""
+                                )
+                                    .toLowerCase();
+
+
+                            return (
+                                title.includes(
+                                    keyword
+                                ) ||
+                                category.includes(
+                                    keyword
+                                ) ||
+                                seller.includes(
+                                    keyword
+                                )
+                            );
+
+                        }
+                    );
+
+            }
+
+
+            return data;
+
+        }, [
+            products,
+            search,
+            status
+        ]);
+
+
+    /* =====================================================
+       ACTION LOADING
+    ===================================================== */
+
+    const setActionState = (
+        id,
+        action,
+        value
+    ) => {
+
+        setActionLoading(
+            (previous) => ({
+                ...previous,
+
+                [id]: {
+                    ...(previous[id] ||
+                        {}),
+                    [action]:
+                        value,
+                },
+
+            })
+        );
+
+    };
+
+
+    /* =====================================================
+       APPROVE PRODUCT
+    ===================================================== */
+
+    const approveProduct = async (
+        id
+    ) => {
+
+        const confirmed =
+            window.confirm(
+                "Approve this product?"
             );
 
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+
+            setActionState(
+                id,
+                "approve",
+                true
+            );
+
+            await api.put(
+                `/admin/products/${id}/approve`
+            );
 
             alert(
                 "Product approved successfully."
             );
 
+            await loadProducts();
 
-            loadProducts();
-
-        }
-
-        catch (error) {
+        } catch (error) {
 
             console.error(
                 "APPROVE PRODUCT ERROR:",
                 error
             );
 
-
             alert(
-
-                error.response?.data?.message ||
-
+                error.response?.data
+                    ?.message ||
                 "Unable to approve product."
+            );
 
+        } finally {
+
+            setActionState(
+                id,
+                "approve",
+                false
             );
 
         }
@@ -230,20 +656,23 @@ function ProductsPage() {
     };
 
 
-    /* =========================================
+    /* =====================================================
        REJECT PRODUCT
-    ========================================= */
+    ===================================================== */
 
-    const rejectProduct = async (id) => {
+    const rejectProduct = async (
+        id
+    ) => {
 
-        const reason = window.prompt(
+        const reason =
+            window.prompt(
+                "Enter reason for rejecting this product:"
+            );
 
-            "Enter reason for rejecting this product:"
-
-        );
-
-
-        if (!reason || !reason.trim()) {
+        if (
+            !reason ||
+            !reason.trim()
+        ) {
 
             return;
 
@@ -252,43 +681,45 @@ function ProductsPage() {
 
         try {
 
-            await api.put(
-
-                `/admin/products/${id}/reject`,
-
-                {
-
-                    reason:
-                        reason.trim()
-
-                }
-
+            setActionState(
+                id,
+                "reject",
+                true
             );
 
+            await api.put(
+                `/admin/products/${id}/reject`,
+                {
+                    reason:
+                        reason.trim(),
+                }
+            );
 
             alert(
                 "Product rejected successfully."
             );
 
+            await loadProducts();
 
-            loadProducts();
-
-        }
-
-        catch (error) {
+        } catch (error) {
 
             console.error(
                 "REJECT PRODUCT ERROR:",
                 error
             );
 
-
             alert(
-
-                error.response?.data?.message ||
-
+                error.response?.data
+                    ?.message ||
                 "Unable to reject product."
+            );
 
+        } finally {
+
+            setActionState(
+                id,
+                "reject",
+                false
             );
 
         }
@@ -296,44 +727,51 @@ function ProductsPage() {
     };
 
 
-    /* =========================================
+    /* =====================================================
        FEATURE PRODUCT
-    ========================================= */
+    ===================================================== */
 
-    const featureProduct = async (id) => {
+    const featureProduct = async (
+        id
+    ) => {
 
         try {
 
-            await api.put(
-
-                `/admin/products/${id}/feature`
-
+            setActionState(
+                id,
+                "feature",
+                true
             );
 
+            await api.put(
+                `/admin/products/${id}/feature`
+            );
 
             alert(
                 "Product featured successfully."
             );
 
+            await loadProducts();
 
-            loadProducts();
-
-        }
-
-        catch (error) {
+        } catch (error) {
 
             console.error(
                 "FEATURE PRODUCT ERROR:",
                 error
             );
 
-
             alert(
-
-                error.response?.data?.message ||
-
+                error.response?.data
+                    ?.message ||
                 "Unable to feature product."
+            );
 
+        } finally {
+
+            setActionState(
+                id,
+                "feature",
+                false
             );
 
         }
@@ -341,44 +779,51 @@ function ProductsPage() {
     };
 
 
-    /* =========================================
+    /* =====================================================
        EXPRESS PROMOTION
-    ========================================= */
+    ===================================================== */
 
-    const expressPromotion = async (id) => {
+    const expressPromotion = async (
+        id
+    ) => {
 
         try {
 
-            await api.put(
-
-                `/admin/products/${id}/express`
-
+            setActionState(
+                id,
+                "express",
+                true
             );
 
+            await api.put(
+                `/admin/products/${id}/express`
+            );
 
             alert(
                 "Product added to express promotion."
             );
 
+            await loadProducts();
 
-            loadProducts();
-
-        }
-
-        catch (error) {
+        } catch (error) {
 
             console.error(
                 "EXPRESS PROMOTION ERROR:",
                 error
             );
 
-
             alert(
-
-                error.response?.data?.message ||
-
+                error.response?.data
+                    ?.message ||
                 "Unable to promote product."
+            );
 
+        } finally {
+
+            setActionState(
+                id,
+                "express",
+                false
             );
 
         }
@@ -386,58 +831,60 @@ function ProductsPage() {
     };
 
 
-    /* =========================================
+    /* =====================================================
        DELETE PRODUCT
-    ========================================= */
+    ===================================================== */
 
-    const deleteProduct = async (id) => {
+    const deleteProduct = async (
+        id
+    ) => {
 
-        const confirmed = window.confirm(
-
-            "Delete this product permanently?"
-
-        );
-
+        const confirmed =
+            window.confirm(
+                "Delete this product permanently?"
+            );
 
         if (!confirmed) {
-
             return;
-
         }
-
 
         try {
 
-            await api.delete(
-
-                `/admin/products/${id}`
-
+            setActionState(
+                id,
+                "delete",
+                true
             );
 
+            await api.delete(
+                `/admin/products/${id}`
+            );
 
             alert(
                 "Product deleted successfully."
             );
 
+            await loadProducts();
 
-            loadProducts();
-
-        }
-
-        catch (error) {
+        } catch (error) {
 
             console.error(
                 "DELETE PRODUCT ERROR:",
                 error
             );
 
-
             alert(
-
-                error.response?.data?.message ||
-
+                error.response?.data
+                    ?.message ||
                 "Unable to delete product."
+            );
 
+        } finally {
+
+            setActionState(
+                id,
+                "delete",
+                false
             );
 
         }
@@ -445,134 +892,47 @@ function ProductsPage() {
     };
 
 
-    /* =========================================
-       PRODUCT IMAGE HELPER
-    ========================================= */
-
-    const getProductImage = (product) => {
-
-        let images = [];
-
-
-        if (Array.isArray(product.images)) {
-
-            images = product.images;
-
-        }
-
-        else if (typeof product.images === "string") {
-
-            try {
-
-                images = JSON.parse(
-                    product.images
-                );
-
-            }
-
-            catch {
-
-                images = [
-
-                    product.images
-
-                ];
-
-            }
-
-        }
-
-
-        if (
-
-            Array.isArray(images) &&
-
-            images.length > 0 &&
-
-            images[0]
-
-        ) {
-
-            const image = images[0];
-
-
-            /* Already a complete URL */
-
-            if (
-
-                image.startsWith("http://") ||
-
-                image.startsWith("https://")
-
-            ) {
-
-                return image;
-
-            }
-
-
-            /* Remove leading slash */
-
-            const cleanImage = image.replace(
-                /^\/+/,
-                ""
-            );
-
-
-            return `${API_BASE_URL}/uploads/${cleanImage}`;
-
-        }
-
-
-        return "https://via.placeholder.com/300x250?text=No+Image";
-
-    };
-
-
-    /* =========================================
+    /* =====================================================
        STATISTICS
-    ========================================= */
+    ===================================================== */
 
     const totalProducts =
         products.length;
 
+    const pendingProducts =
+        products.filter(
+            (product) =>
+                String(
+                    product.status ||
+                    ""
+                ).toLowerCase() ===
+                "pending"
+        ).length;
 
-    const pendingProducts = products.filter(
+    const approvedProducts =
+        products.filter(
+            (product) =>
+                String(
+                    product.status ||
+                    ""
+                ).toLowerCase() ===
+                "approved"
+        ).length;
 
-        (product) =>
-
-            String(
-                product.status || ""
-            ).toLowerCase() === "pending"
-
-    ).length;
-
-
-    const approvedProducts = products.filter(
-
-        (product) =>
-
-            String(
-                product.status || ""
-            ).toLowerCase() === "approved"
-
-    ).length;
-
-
-    const rejectedProducts = products.filter(
-
-        (product) =>
-
-            String(
-                product.status || ""
-            ).toLowerCase() === "rejected"
-
-    ).length;
+    const rejectedProducts =
+        products.filter(
+            (product) =>
+                String(
+                    product.status ||
+                    ""
+                ).toLowerCase() ===
+                "rejected"
+        ).length;
 
 
-    /* =========================================
+    /* =====================================================
        LOADING
-    ========================================= */
+    ===================================================== */
 
     if (loading) {
 
@@ -580,9 +940,15 @@ function ProductsPage() {
 
             <div className="products-page">
 
-                <h2>
-                    Loading Products...
-                </h2>
+                <div className="products-loading">
+
+                    <div className="loading-spinner" />
+
+                    <h2>
+                        Loading Products...
+                    </h2>
+
+                </div>
 
             </div>
 
@@ -591,12 +957,18 @@ function ProductsPage() {
     }
 
 
+    /* =====================================================
+       RENDER
+    ===================================================== */
+
     return (
 
         <div className="products-page">
 
 
-            {/* HEADER */}
+            {/* =================================================
+               HEADER
+            ================================================= */}
 
             <div className="products-header">
 
@@ -614,27 +986,22 @@ function ProductsPage() {
 
 
                 <input
-
                     type="text"
-
                     placeholder="Search products..."
-
                     value={search}
-
-                    onChange={(e) =>
-
+                    onChange={(event) =>
                         setSearch(
-                            e.target.value
+                            event.target.value
                         )
-
                     }
-
                 />
 
             </div>
 
 
-            {/* STATISTICS */}
+            {/* =================================================
+               STATISTICS
+            ================================================= */}
 
             <div className="product-stats">
 
@@ -694,134 +1061,131 @@ function ProductsPage() {
             </div>
 
 
-            {/* FILTERS */}
+            {/* =================================================
+               FILTERS
+            ================================================= */}
 
             <div className="filter-bar">
-
 
                 {[
                     "All",
                     "Pending",
                     "Approved",
-                    "Rejected"
-                ].map((filter) => (
+                    "Rejected",
+                ].map(
+                    (filter) => (
 
-                    <button
+                        <button
+                            key={filter}
+                            className={
+                                status ===
+                                filter
+                                    ? "active-filter"
+                                    : ""
+                            }
+                            onClick={() =>
+                                setStatus(
+                                    filter
+                                )
+                            }
+                        >
 
-                        key={filter}
+                            {filter}
 
-                        className={
+                        </button>
 
-                            status === filter
-
-                                ? "active-filter"
-
-                                : ""
-
-                        }
-
-                        onClick={() =>
-                            setStatus(filter)
-                        }
-
-                    >
-
-                        {filter}
-
-                    </button>
-
-                ))}
-
+                    )
+                )}
 
             </div>
 
 
-            {/* PRODUCTS */}
+            {/* =================================================
+               PRODUCTS
+            ================================================= */}
 
             <div className="products-grid">
 
 
-                {
+                {filteredProducts.length ===
+                0 ? (
 
-                    filteredProducts.length === 0
+                    <div className="no-products">
 
-                        ?
+                        <h2>
+                            No Products Found
+                        </h2>
 
-                        <div className="no-products">
+                        <p>
+                            No products match your current search or filter.
+                        </p>
 
-                            <h2>
-                                No Products Found
-                            </h2>
+                    </div>
 
-                        </div>
+                ) : (
 
-                        :
+                    filteredProducts.map(
+                        (product) => {
 
-                        filteredProducts.map(
+                            const productId =
+                                product.id;
 
-                            (product) => (
+                            const imageUrl =
+                                getProductImage(
+                                    product
+                                );
+
+                            const productStatus =
+                                String(
+                                    product.status ||
+                                    "Unknown"
+                                ).toLowerCase();
+
+                            const seller =
+                                product.User ||
+                                product.user ||
+                                product.seller ||
+                                {};
+
+
+                            return (
 
                                 <div
-
                                     className="product-card"
-
-                                    key={product.id}
-
+                                    key={
+                                        productId
+                                    }
                                 >
 
 
-                                    {/* IMAGE */}
+                                    {/* =================================
+                                       IMAGE
+                                    ================================= */}
 
                                     <div className="product-image">
 
                                         <img
-
                                             src={
-
-                                                getProductImage(
-                                                    product
-                                                )
-
+                                                imageUrl
                                             }
-
                                             alt={
-
                                                 product.title ||
-
                                                 "Product"
-
                                             }
-
-                                            onError={(e) => {
-
-                                                e.currentTarget.src =
-                                                    "https://via.placeholder.com/300x250?text=No+Image";
-
-                                            }}
-
+                                            loading="lazy"
+                                            onError={
+                                                handleImageError
+                                            }
                                         />
 
 
                                         <span
-
-                                            className={`status-badge ${
-
-                                                String(
-
-                                                    product.status || ""
-
-                                                ).toLowerCase()
-
-                                            }`}
-
+                                            className={`status-badge ${productStatus}`}
                                         >
 
                                             {
-
                                                 product.status ||
-
                                                 "Unknown"
-
                                             }
 
                                         </span>
@@ -829,7 +1193,9 @@ function ProductsPage() {
                                     </div>
 
 
-                                    {/* CONTENT */}
+                                    {/* =================================
+                                       CONTENT
+                                    ================================= */}
 
                                     <div className="product-content">
 
@@ -837,11 +1203,9 @@ function ProductsPage() {
                                         <h2>
 
                                             {
-
                                                 product.title ||
-
+                                                product.name ||
                                                 "Untitled Product"
-
                                             }
 
                                         </h2>
@@ -851,15 +1215,18 @@ function ProductsPage() {
 
                                             GH₵{" "}
 
-                                            {
-
-                                                Number(
-
-                                                    product.price || 0
-
-                                                ).toLocaleString()
-
-                                            }
+                                            {Number(
+                                                product.price ||
+                                                0
+                                            ).toLocaleString(
+                                                "en-GH",
+                                                {
+                                                    minimumFractionDigits:
+                                                        2,
+                                                    maximumFractionDigits:
+                                                        2,
+                                                }
+                                            )}
 
                                         </h3>
 
@@ -874,11 +1241,8 @@ function ProductsPage() {
                                                 </strong>{" "}
 
                                                 {
-
                                                     product.category ||
-
                                                     "-"
-
                                                 }
 
                                             </p>
@@ -891,11 +1255,8 @@ function ProductsPage() {
                                                 </strong>{" "}
 
                                                 {
-
                                                     product.condition ||
-
                                                     "-"
-
                                                 }
 
                                             </p>
@@ -908,11 +1269,8 @@ function ProductsPage() {
                                                 </strong>{" "}
 
                                                 {
-
                                                     product.location ||
-
                                                     "-"
-
                                                 }
 
                                             </p>
@@ -925,15 +1283,8 @@ function ProductsPage() {
                                                 </strong>{" "}
 
                                                 {
-
-                                                    product.User?.name ||
-
-                                                    product.user?.name ||
-
-                                                    product.seller?.name ||
-
+                                                    seller.name ||
                                                     "Unknown"
-
                                                 }
 
                                             </p>
@@ -946,15 +1297,8 @@ function ProductsPage() {
                                                 </strong>{" "}
 
                                                 {
-
-                                                    product.User?.phone ||
-
-                                                    product.user?.phone ||
-
-                                                    product.seller?.phone ||
-
+                                                    seller.phone ||
                                                     "-"
-
                                                 }
 
                                             </p>
@@ -967,21 +1311,13 @@ function ProductsPage() {
                                                 </strong>{" "}
 
                                                 {
-
                                                     product.createdAt
-
-                                                        ?
-
-                                                        new Date(
-
-                                                            product.createdAt
-
-                                                        ).toLocaleDateString()
-
-                                                        :
-
-                                                        "-"
-
+                                                        ? new Date(
+                                                              product.createdAt
+                                                          ).toLocaleDateString(
+                                                              "en-GH"
+                                                          )
+                                                        : "-"
                                                 }
 
                                             </p>
@@ -990,18 +1326,21 @@ function ProductsPage() {
                                         </div>
 
 
-                                        {/* ACTIONS */}
+                                        {/* =================================
+                                           ACTIONS
+                                        ================================= */}
 
                                         <div className="product-actions">
 
 
                                             <Link
-
-                                                to={`/admin/product/${product.id}`}
-
+                                                to={`/admin/product/${productId}`}
                                             >
 
-                                                <button className="view-btn">
+                                                <button
+                                                    className="view-btn"
+                                                    type="button"
+                                                >
 
                                                     👁 View
 
@@ -1011,134 +1350,145 @@ function ProductsPage() {
 
 
                                             {
-
-                                                String(
-
-                                                    product.status || ""
-
-                                                ).toLowerCase() !==
-
-                                                "approved" && (
+                                                productStatus !==
+                                                    "approved" && (
 
                                                     <button
-
                                                         className="approve-btn"
-
-                                                        onClick={() =>
-
-                                                            approveProduct(
-
-                                                                product.id
-
-                                                            )
-
+                                                        type="button"
+                                                        disabled={
+                                                            actionLoading[
+                                                                productId
+                                                            ]?.approve
                                                         }
-
+                                                        onClick={() =>
+                                                            approveProduct(
+                                                                productId
+                                                            )
+                                                        }
                                                     >
 
-                                                        ✔ Approve
+                                                        {
+                                                            actionLoading[
+                                                                productId
+                                                            ]?.approve
+                                                                ? "Approving..."
+                                                                : "✔ Approve"
+                                                        }
 
                                                     </button>
 
                                                 )
-
                                             }
 
 
                                             {
-
-                                                String(
-
-                                                    product.status || ""
-
-                                                ).toLowerCase() !==
-
-                                                "rejected" && (
+                                                productStatus !==
+                                                    "rejected" && (
 
                                                     <button
-
                                                         className="reject-btn"
-
-                                                        onClick={() =>
-
-                                                            rejectProduct(
-
-                                                                product.id
-
-                                                            )
-
+                                                        type="button"
+                                                        disabled={
+                                                            actionLoading[
+                                                                productId
+                                                            ]?.reject
                                                         }
-
+                                                        onClick={() =>
+                                                            rejectProduct(
+                                                                productId
+                                                            )
+                                                        }
                                                     >
 
-                                                        ✖ Reject
+                                                        {
+                                                            actionLoading[
+                                                                productId
+                                                            ]?.reject
+                                                                ? "Rejecting..."
+                                                                : "✖ Reject"
+                                                        }
 
                                                     </button>
 
                                                 )
-
                                             }
 
 
                                             <button
-
                                                 className="feature-btn"
-
+                                                type="button"
+                                                disabled={
+                                                    actionLoading[
+                                                        productId
+                                                    ]?.feature
+                                                }
                                                 onClick={() =>
-
                                                     featureProduct(
-
-                                                        product.id
-
+                                                        productId
                                                     )
-
                                                 }
-
                                             >
 
-                                                ⭐ Feature
+                                                {
+                                                    actionLoading[
+                                                        productId
+                                                    ]?.feature
+                                                        ? "Featuring..."
+                                                        : "⭐ Feature"
+                                                }
 
                                             </button>
 
 
                                             <button
-
                                                 className="express-btn"
-
-                                                onClick={() =>
-
-                                                    expressPromotion(
-
-                                                        product.id
-
-                                                    )
-
+                                                type="button"
+                                                disabled={
+                                                    actionLoading[
+                                                        productId
+                                                    ]?.express
                                                 }
-
+                                                onClick={() =>
+                                                    expressPromotion(
+                                                        productId
+                                                    )
+                                                }
                                             >
 
-                                                🚀 Express
+                                                {
+                                                    actionLoading[
+                                                        productId
+                                                    ]?.express
+                                                        ? "Processing..."
+                                                        : "🚀 Express"
+                                                }
 
                                             </button>
 
 
                                             <button
-
                                                 className="delete-btn"
-
-                                                onClick={() =>
-
-                                                    deleteProduct(
-
-                                                        product.id
-
-                                                    )
-
+                                                type="button"
+                                                disabled={
+                                                    actionLoading[
+                                                        productId
+                                                    ]?.delete
                                                 }
-
+                                                onClick={() =>
+                                                    deleteProduct(
+                                                        productId
+                                                    )
+                                                }
                                             >
 
-                                                🗑 Delete
+                                                {
+                                                    actionLoading[
+                                                        productId
+                                                    ]?.delete
+                                                        ? "Deleting..."
+                                                        : "🗑 Delete"
+                                                }
 
                                             </button>
 
@@ -1151,11 +1501,12 @@ function ProductsPage() {
 
                                 </div>
 
-                            )
+                            );
 
-                        )
+                        }
+                    )
 
-                }
+                )}
 
 
             </div>

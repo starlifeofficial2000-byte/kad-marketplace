@@ -5,15 +5,34 @@ import api from "../../config/axios";
 
 import "./Products.css";
 
+/*
+|--------------------------------------------------------------------------
+| IMAGE CONFIGURATION
+|--------------------------------------------------------------------------
+|
+| Production:
+| https://cdn.kadmarket.com
+|
+| Make sure your R2 public domain points to your Cloudflare R2 bucket.
+|
+*/
+
+const CDN_URL = (
+    import.meta.env.VITE_R2_PUBLIC_URL ||
+    "https://cdn.kadmarket.com"
+).replace(/\/+$/, "");
+
+const FALLBACK_IMAGE = "/default-product.png";
+
 
 function Products() {
 
     const navigate = useNavigate();
 
 
-    /* ==========================================
+    /* =========================================================
        STATE
-    ========================================== */
+    ========================================================= */
 
     const [products, setProducts] = useState([]);
 
@@ -24,9 +43,9 @@ function Products() {
     const [actionLoading, setActionLoading] = useState(null);
 
 
-    /* ==========================================
+    /* =========================================================
        LOAD PRODUCTS
-    ========================================== */
+    ========================================================= */
 
     useEffect(() => {
 
@@ -42,22 +61,9 @@ function Products() {
             setLoading(true);
 
 
-            /*
-            IMPORTANT:
-
-            Change "/products" if your backend
-            admin route uses another endpoint.
-
-            Expected:
-            GET /api/products
-            or
-            GET /api/admin/products
-            */
-
-
-           const response = await api.get(
-    "/admin/products"
-);
+            const response = await api.get(
+                "/admin/products"
+            );
 
 
             console.log(
@@ -67,41 +73,41 @@ function Products() {
 
 
             /*
-            Support multiple backend structures:
+             * Support:
+             *
+             * {
+             *   products: []
+             * }
+             *
+             * {
+             *   data: []
+             * }
+             *
+             * []
+             */
 
-            {
-                products: []
-            }
-
-            {
-                data: []
-            }
-
-            []
-            */
-
-
-            const productsData =
-
-                response.data?.products ||
-
-                response.data?.data ||
-
-                response.data ||
-
+            let productsData =
+                response.data?.products ??
+                response.data?.data ??
+                response.data?.results ??
+                response.data ??
                 [];
 
 
-            setProducts(
+            if (!Array.isArray(productsData)) {
 
-                Array.isArray(productsData)
+                productsData = [];
 
-                    ? productsData
+            }
 
-                    : []
 
+            console.log(
+                "NORMALIZED PRODUCTS:",
+                productsData
             );
 
+
+            setProducts(productsData);
 
         }
 
@@ -117,11 +123,8 @@ function Products() {
 
 
             alert(
-
                 error.response?.data?.message ||
-
                 "Unable to load products."
-
             );
 
         }
@@ -135,16 +138,14 @@ function Products() {
     };
 
 
-    /* ==========================================
+    /* =========================================================
        APPROVE PRODUCT
-    ========================================== */
+    ========================================================= */
 
     const approveProduct = async (id) => {
 
         const confirmed = window.confirm(
-
             "Approve this product?"
-
         );
 
 
@@ -157,43 +158,31 @@ function Products() {
 
 
             await api.put(
-
                 `/admin/products/${id}/approve`,
-
                 {}
-
             );
 
 
             alert(
-
                 "Product approved successfully."
-
             );
 
 
             await loadProducts();
-
 
         }
 
         catch (error) {
 
             console.error(
-
                 "APPROVE PRODUCT ERROR:",
-
                 error
-
             );
 
 
             alert(
-
                 error.response?.data?.message ||
-
                 "Unable to approve product."
-
             );
 
         }
@@ -207,16 +196,14 @@ function Products() {
     };
 
 
-    /* ==========================================
+    /* =========================================================
        REJECT PRODUCT
-    ========================================== */
+    ========================================================= */
 
     const rejectProduct = async (id) => {
 
         const confirmed = window.confirm(
-
             "Reject this product?"
-
         );
 
 
@@ -229,43 +216,31 @@ function Products() {
 
 
             await api.put(
-
                 `/admin/products/${id}/reject`,
-
                 {}
-
             );
 
 
             alert(
-
                 "Product rejected successfully."
-
             );
 
 
             await loadProducts();
-
 
         }
 
         catch (error) {
 
             console.error(
-
                 "REJECT PRODUCT ERROR:",
-
                 error
-
             );
 
 
             alert(
-
                 error.response?.data?.message ||
-
                 "Unable to reject product."
-
             );
 
         }
@@ -279,16 +254,14 @@ function Products() {
     };
 
 
-    /* ==========================================
+    /* =========================================================
        DELETE PRODUCT
-    ========================================== */
+    ========================================================= */
 
     const deleteProduct = async (id) => {
 
         const confirmed = window.confirm(
-
             "Delete this product permanently?"
-
         );
 
 
@@ -301,41 +274,30 @@ function Products() {
 
 
             await api.delete(
-
                 `/admin/products/${id}`
-
             );
 
 
             alert(
-
                 "Product deleted successfully."
-
             );
 
 
             await loadProducts();
-
 
         }
 
         catch (error) {
 
             console.error(
-
                 "DELETE PRODUCT ERROR:",
-
                 error
-
             );
 
 
             alert(
-
                 error.response?.data?.message ||
-
                 "Unable to delete product."
-
             );
 
         }
@@ -349,159 +311,511 @@ function Products() {
     };
 
 
-    /* ==========================================
+    /* =========================================================
        SEARCH PRODUCTS
-    ========================================== */
+    ========================================================= */
 
     const filteredProducts = (
-
         Array.isArray(products)
-
             ? products
-
             : []
-
     ).filter((product) => {
 
         const searchText =
+            search.trim().toLowerCase();
 
-            search.toLowerCase();
+
+        if (!searchText) {
+
+            return true;
+
+        }
+
+
+        const title =
+            String(
+                product?.title ||
+                ""
+            ).toLowerCase();
+
+
+        const name =
+            String(
+                product?.name ||
+                ""
+            ).toLowerCase();
+
+
+        const category =
+            typeof product?.category === "object"
+                ? String(
+                    product?.category?.name ||
+                    ""
+                ).toLowerCase()
+                : String(
+                    product?.category ||
+                    ""
+                ).toLowerCase();
+
+
+        const seller =
+            String(
+                product?.seller?.name ||
+                product?.user?.name ||
+                product?.User?.name ||
+                ""
+            ).toLowerCase();
 
 
         return (
-
-            product.title
-                ?.toLowerCase()
-                .includes(searchText)
-
-            ||
-
-            product.name
-                ?.toLowerCase()
-                .includes(searchText)
-
-            ||
-
-            product.category
-                ?.toLowerCase()
-                .includes(searchText)
-
-            ||
-
-            product.seller?.name
-                ?.toLowerCase()
-                .includes(searchText)
-
+            title.includes(searchText) ||
+            name.includes(searchText) ||
+            category.includes(searchText) ||
+            seller.includes(searchText)
         );
 
     });
 
 
-    /* ==========================================
-       GET PRODUCT IMAGE
-    ========================================== */
+    /* =========================================================
+       PARSE PRODUCT IMAGES
+    ========================================================= */
 
-    const getProductImage = (product) => {
+    const parseProductImages = (product) => {
 
-        if (
+        if (!product) {
 
-            !product.images ||
-
-            !Array.isArray(product.images) ||
-
-            product.images.length === 0
-
-        ) {
-
-            return "https://via.placeholder.com/60";
+            return [];
 
         }
 
 
-        const image = product.images[0];
+        /*
+         * Different possible backend fields.
+         */
+
+        let images =
+            product.images ??
+            product.imageUrls ??
+            product.imageUrl ??
+            product.image ??
+            [];
 
 
         /*
-        If image is an object
-        */
+         * Already an array
+         */
+
+        if (Array.isArray(images)) {
+
+            return images.filter(Boolean);
+
+        }
 
 
-        if (
+        /*
+         * JSON string
+         *
+         * Example:
+         *
+         * "[\"iphone.jpg\",\"iphone2.jpg\"]"
+         */
 
-            typeof image === "object"
+        if (typeof images === "string") {
 
-        ) {
+            const value =
+                images.trim();
 
-            if (image.url) {
 
-                return image.url;
+            if (!value) {
+
+                return [];
 
             }
 
 
-            if (image.filename) {
+            try {
 
-                return `${
+                const parsed =
+                    JSON.parse(value);
 
-                    import.meta.env.VITE_API_BASE_URL ||
 
-                    ""
+                if (Array.isArray(parsed)) {
 
-                }/uploads/${image.filename}`;
+                    return parsed.filter(Boolean);
+
+                }
+
+
+                if (parsed) {
+
+                    return [parsed];
+
+                }
 
             }
 
+            catch (error) {
+
+                /*
+                 * Not JSON.
+                 *
+                 * Continue below.
+                 */
+
+            }
+
+
+            /*
+             * Comma-separated values
+             */
+
+            if (value.includes(",")) {
+
+                return value
+                    .split(",")
+                    .map(
+                        (item) =>
+                            item.trim()
+                    )
+                    .filter(Boolean);
+
+            }
+
+
+            /*
+             * Single filename
+             */
+
+            return [value];
+
         }
 
 
         /*
-        If image is already a complete URL
-        */
-
+         * Object
+         */
 
         if (
-
-            typeof image === "string" &&
-
-            image.startsWith("http")
-
+            typeof images === "object" &&
+            images !== null
         ) {
 
-            return image;
+            return [images];
 
         }
 
 
-        /*
-        Normal uploaded filename
-        */
-
-
-        return `${
-
-            import.meta.env.VITE_API_BASE_URL ||
-
-            ""
-
-        }/uploads/${image}`;
+        return [];
 
     };
 
 
-    /* ==========================================
+    /* =========================================================
+       RESOLVE IMAGE OBJECT
+    ========================================================= */
+
+    const resolveImageObject = (image) => {
+
+        if (!image) {
+
+            return null;
+
+        }
+
+
+        /*
+         * Image stored as object.
+         *
+         * Possible structures:
+         *
+         * {
+         *   url: "..."
+         * }
+         *
+         * {
+         *   filename: "..."
+         * }
+         *
+         * {
+         *   key: "uploads/..."
+         * }
+         */
+
+        if (
+            typeof image === "object" &&
+            image !== null
+        ) {
+
+            return (
+                image.url ||
+                image.imageUrl ||
+                image.src ||
+                image.path ||
+                image.location ||
+                image.filename ||
+                image.key ||
+                image.fileName ||
+                null
+            );
+
+        }
+
+
+        return image;
+
+    };
+
+
+    /* =========================================================
+       RESOLVE PRODUCT IMAGE URL
+    ========================================================= */
+
+    const resolveProductImage = (image) => {
+
+        image =
+            resolveImageObject(image);
+
+
+        if (!image) {
+
+            return null;
+
+        }
+
+
+        if (
+            typeof image !== "string"
+        ) {
+
+            return null;
+
+        }
+
+
+        let value =
+            image.trim();
+
+
+        if (!value) {
+
+            return null;
+
+        }
+
+
+        /*
+         * Already a complete URL.
+         *
+         * Example:
+         *
+         * https://cdn.kadmarket.com/uploads/a.jpg
+         */
+
+        if (
+            /^https?:\/\//i.test(value)
+        ) {
+
+            return value;
+
+        }
+
+
+        /*
+         * Remove leading slash.
+         */
+
+        value =
+            value.replace(
+                /^\/+/,
+                ""
+            );
+
+
+        /*
+         * Remove duplicate uploads prefix.
+         *
+         * uploads/uploads/a.jpg
+         *
+         * becomes:
+         *
+         * uploads/a.jpg
+         */
+
+        while (
+            value.startsWith(
+                "uploads/uploads/"
+            )
+        ) {
+
+            value =
+                value.replace(
+                    /^uploads\//,
+                    ""
+                );
+
+        }
+
+
+        /*
+         * If the database contains:
+         *
+         * uploads/product.jpg
+         */
+
+        if (
+            value.startsWith(
+                "uploads/"
+            )
+        ) {
+
+            return `${CDN_URL}/${value}`;
+
+        }
+
+
+        /*
+         * Normal filename:
+         *
+         * product.jpg
+         *
+         * becomes:
+         *
+         * https://cdn.kadmarket.com/uploads/product.jpg
+         */
+
+        return `${CDN_URL}/uploads/${value}`;
+
+    };
+
+
+    /* =========================================================
+       GET PRODUCT IMAGE
+    ========================================================= */
+
+    const getProductImage = (product) => {
+
+        const images =
+            parseProductImages(product);
+
+
+        /*
+         * Debugging information.
+         *
+         * Check browser console if an image
+         * still fails.
+         */
+
+        console.log(
+            "PRODUCT IMAGE:",
+            {
+                productId: product?.id,
+                rawImages: product?.images,
+                parsedImages: images,
+                firstImage: images[0],
+                resolvedImage:
+                    resolveProductImage(
+                        images[0]
+                    )
+            }
+        );
+
+
+        /*
+         * Try every image until we find
+         * a valid image URL.
+         */
+
+        for (
+            const image of images
+        ) {
+
+            const resolved =
+                resolveProductImage(
+                    image
+                );
+
+
+            if (resolved) {
+
+                return resolved;
+
+            }
+
+        }
+
+
+        /*
+         * No image.
+         */
+
+        return FALLBACK_IMAGE;
+
+    };
+
+
+    /* =========================================================
+       IMAGE ERROR HANDLER
+    ========================================================= */
+
+    const handleImageError = (event, product) => {
+
+        const currentSrc =
+            event.currentTarget.src;
+
+
+        console.error(
+            "PRODUCT IMAGE FAILED:",
+            {
+                productId: product?.id,
+                productName:
+                    product?.title ||
+                    product?.name,
+                attemptedURL:
+                    currentSrc,
+                rawImages:
+                    product?.images
+            }
+        );
+
+
+        /*
+         * Prevent infinite error loop.
+         */
+
+        if (
+            !event.currentTarget.dataset.fallback
+        ) {
+
+            event.currentTarget.dataset.fallback =
+                "true";
+
+
+            event.currentTarget.src =
+                FALLBACK_IMAGE;
+
+        }
+
+    };
+
+
+    /* =========================================================
        PRODUCT STATUS
-    ========================================== */
+    ========================================================= */
 
     const renderStatus = (status) => {
 
         const normalizedStatus =
+            String(
+                status ||
+                "pending"
+            ).toLowerCase();
 
-            status?.toLowerCase() ||
 
-            "pending";
-
-
-        if (normalizedStatus === "approved") {
+        if (
+            normalizedStatus ===
+            "approved"
+        ) {
 
             return (
 
@@ -516,7 +830,10 @@ function Products() {
         }
 
 
-        if (normalizedStatus === "rejected") {
+        if (
+            normalizedStatus ===
+            "rejected"
+        ) {
 
             return (
 
@@ -544,9 +861,9 @@ function Products() {
     };
 
 
-    /* ==========================================
+    /* =========================================================
        LOADING
-    ========================================== */
+    ========================================================= */
 
     if (loading) {
 
@@ -567,18 +884,18 @@ function Products() {
     }
 
 
-    /* ==========================================
+    /* =========================================================
        PAGE
-    ========================================== */
+    ========================================================= */
 
     return (
 
         <div className="products-page">
 
 
-            {/* ==================================
+            {/* =================================================
                 HEADER
-            ================================== */}
+            ================================================= */}
 
             <div className="products-header">
 
@@ -592,7 +909,8 @@ function Products() {
 
                     <p>
 
-                        Manage marketplace products and approvals.
+                        Manage marketplace products
+                        and approvals.
 
                     </p>
 
@@ -600,27 +918,22 @@ function Products() {
 
 
                 <input
-
                     type="text"
-
                     placeholder="Search products..."
-
                     value={search}
-
                     onChange={(e) =>
-
-                        setSearch(e.target.value)
-
+                        setSearch(
+                            e.target.value
+                        )
                     }
-
                 />
 
             </div>
 
 
-            {/* ==================================
-                PRODUCT COUNT
-            ================================== */}
+            {/* =================================================
+                SUMMARY
+            ================================================= */}
 
             <div className="products-summary">
 
@@ -630,7 +943,8 @@ function Products() {
 
                     <strong>
 
-                        {" "}{products.length}
+                        {" "}
+                        {products.length}
 
                     </strong>
 
@@ -643,7 +957,8 @@ function Products() {
 
                     <strong>
 
-                        {" "}{filteredProducts.length}
+                        {" "}
+                        {filteredProducts.length}
 
                     </strong>
 
@@ -652,32 +967,45 @@ function Products() {
             </div>
 
 
-            {/* ==================================
+            {/* =================================================
                 PRODUCTS TABLE
-            ================================== */}
+            ================================================= */}
 
             <div className="table-wrapper">
 
                 <table className="products-table">
 
-
                     <thead>
 
                         <tr>
 
-                            <th>Image</th>
+                            <th>
+                                Image
+                            </th>
 
-                            <th>Title</th>
+                            <th>
+                                Title
+                            </th>
 
-                            <th>Seller</th>
+                            <th>
+                                Seller
+                            </th>
 
-                            <th>Category</th>
+                            <th>
+                                Category
+                            </th>
 
-                            <th>Price</th>
+                            <th>
+                                Price
+                            </th>
 
-                            <th>Status</th>
+                            <th>
+                                Status
+                            </th>
 
-                            <th>Actions</th>
+                            <th>
+                                Actions
+                            </th>
 
                         </tr>
 
@@ -686,400 +1014,363 @@ function Products() {
 
                     <tbody>
 
-
                         {
 
                             filteredProducts.length === 0
 
                                 ?
 
-                                <tr>
+                                (
 
-                                    <td
+                                    <tr>
 
-                                        colSpan="7"
+                                        <td
+                                            colSpan="7"
+                                            style={{
+                                                textAlign:
+                                                    "center",
+                                                padding:
+                                                    "30px"
+                                            }}
+                                        >
 
-                                        style={{
+                                            No products found.
 
-                                            textAlign: "center",
+                                        </td>
 
-                                            padding: "30px"
+                                    </tr>
 
-                                        }}
-
-                                    >
-
-                                        No products found.
-
-                                    </td>
-
-                                </tr>
+                                )
 
                                 :
 
-                                filteredProducts.map(
+                                (
 
-                                    (product) => {
+                                    filteredProducts.map(
+                                        (product) => {
 
-                                        const status =
-
-                                            product.status
-
-                                                ?.toLowerCase() ||
-
-                                            "pending";
-
-
-                                        const isProcessing =
-
-                                            actionLoading === product.id;
+                                            const status =
+                                                String(
+                                                    product?.status ||
+                                                    "pending"
+                                                ).toLowerCase();
 
 
-                                        return (
-
-                                            <tr
-
-                                                key={product.id}
-
-                                            >
+                                            const isProcessing =
+                                                actionLoading ===
+                                                product.id;
 
 
-                                                {/* IMAGE */}
+                                            return (
 
-                                                <td>
+                                                <tr
+                                                    key={
+                                                        product.id
+                                                    }
+                                                >
 
-                                                    <img
 
-                                                        src={
+                                                    {/* =========================
+                                                        IMAGE
+                                                    ========================= */}
 
-                                                            getProductImage(product)
+                                                    <td>
 
-                                                        }
+                                                        <div
+                                                            className="product-image-wrapper"
+                                                        >
 
-                                                        className="product-thumb"
+                                                            <img
+                                                                src={
+                                                                    getProductImage(
+                                                                        product
+                                                                    )
+                                                                }
+                                                                className="product-thumb"
+                                                                alt={
+                                                                    product.title ||
+                                                                    product.name ||
+                                                                    "Product"
+                                                                }
+                                                                loading="lazy"
+                                                                onError={(
+                                                                    event
+                                                                ) =>
+                                                                    handleImageError(
+                                                                        event,
+                                                                        product
+                                                                    )
+                                                                }
+                                                            />
 
-                                                        alt={
+                                                        </div>
 
+                                                    </td>
+
+
+                                                    {/* =========================
+                                                        TITLE
+                                                    ========================= */}
+
+                                                    <td>
+
+                                                        {
                                                             product.title ||
-
                                                             product.name ||
-
-                                                            "Product"
-
+                                                            "Untitled Product"
                                                         }
 
-                                                        onError={(e) => {
+                                                    </td>
 
-                                                            e.currentTarget.src =
 
-                                                                "https://via.placeholder.com/60";
+                                                    {/* =========================
+                                                        SELLER
+                                                    ========================= */}
 
-                                                        }}
+                                                    <td>
 
-                                                    />
+                                                        {
+                                                            product.seller?.name ||
+                                                            product.user?.name ||
+                                                            product.User?.name ||
+                                                            "Unknown Seller"
+                                                        }
 
-                                                </td>
+                                                    </td>
 
 
-                                                {/* TITLE */}
+                                                    {/* =========================
+                                                        CATEGORY
+                                                    ========================= */}
 
-                                                <td>
+                                                    <td>
 
-                                                    {
+                                                        {
+                                                            typeof product.category ===
+                                                            "object"
 
-                                                        product.title ||
+                                                                ?
 
-                                                        product.name ||
+                                                                product.category?.name
 
-                                                        "Untitled Product"
+                                                                :
 
-                                                    }
+                                                                product.category ||
+                                                                "-"
+                                                        }
 
-                                                </td>
+                                                    </td>
 
 
-                                                {/* SELLER */}
+                                                    {/* =========================
+                                                        PRICE
+                                                    ========================= */}
 
-                                                <td>
+                                                    <td>
 
-                                                    {
+                                                        GH₵{" "}
 
-                                                        product.seller?.name ||
-
-                                                        product.user?.name ||
-
-                                                        product.User?.name ||
-
-                                                        "Unknown Seller"
-
-                                                    }
-
-                                                </td>
-
-
-                                                {/* CATEGORY */}
-
-                                                <td>
-
-                                                    {
-
-                                                        typeof product.category === "object"
-
-                                                            ?
-
-                                                            product.category?.name
-
-                                                            :
-
-                                                            product.category ||
-
-                                                            "-"
-
-                                                    }
-
-                                                </td>
-
-
-                                                {/* PRICE */}
-
-                                                <td>
-
-                                                    GH₵ {
-
-                                                        Number(
-
-                                                            product.price || 0
-
-                                                        ).toLocaleString()
-
-                                                    }
-
-                                                </td>
-
-
-                                                {/* STATUS */}
-
-                                                <td>
-
-                                                    {
-
-                                                        renderStatus(
-
-                                                            product.status
-
-                                                        )
-
-                                                    }
-
-                                                </td>
-
-
-                                                {/* ACTIONS */}
-
-                                                <td className="actions">
-
-
-                                                    {/* VIEW */}
-
-                                                    <button
-
-                                                        className="view-btn"
-
-                                                        onClick={() =>
-
-                                                            navigate(
-
-                                                                `/admin/product/${product.id}`
-
+                                                        {
+                                                            Number(
+                                                                product.price ||
+                                                                0
+                                                            ).toLocaleString(
+                                                                "en-GH"
                                                             )
-
                                                         }
 
+                                                    </td>
+
+
+                                                    {/* =========================
+                                                        STATUS
+                                                    ========================= */}
+
+                                                    <td>
+
+                                                        {
+                                                            renderStatus(
+                                                                product.status
+                                                            )
+                                                        }
+
+                                                    </td>
+
+
+                                                    {/* =========================
+                                                        ACTIONS
+                                                    ========================= */}
+
+                                                    <td
+                                                        className="actions"
                                                     >
 
-                                                        View
+                                                        {/* VIEW */}
 
-                                                    </button>
+                                                        <button
+                                                            className="view-btn"
+                                                            onClick={() =>
+                                                                navigate(
+                                                                    `/admin/product/${product.id}`
+                                                                )
+                                                            }
+                                                        >
+
+                                                            View
+
+                                                        </button>
 
 
-                                                    {/* PENDING */}
+                                                        {/* =====================
+                                                            PENDING
+                                                        ===================== */}
 
-                                                    {
+                                                        {
+                                                            status ===
+                                                            "pending" &&
 
-                                                        status === "pending" &&
+                                                            <>
 
-                                                        <>
+                                                                <button
+                                                                    className="approve-btn"
+                                                                    disabled={
+                                                                        isProcessing
+                                                                    }
+                                                                    onClick={() =>
+                                                                        approveProduct(
+                                                                            product.id
+                                                                        )
+                                                                    }
+                                                                >
+
+                                                                    {
+                                                                        isProcessing
+
+                                                                            ?
+
+                                                                            "Processing..."
+
+                                                                            :
+
+                                                                            "Approve"
+                                                                    }
+
+                                                                </button>
+
+
+                                                                <button
+                                                                    className="reject-btn"
+                                                                    disabled={
+                                                                        isProcessing
+                                                                    }
+                                                                    onClick={() =>
+                                                                        rejectProduct(
+                                                                            product.id
+                                                                        )
+                                                                    }
+                                                                >
+
+                                                                    Reject
+
+                                                                </button>
+
+                                                            </>
+
+                                                        }
+
+
+                                                        {/* =====================
+                                                            APPROVED
+                                                        ===================== */}
+
+                                                        {
+                                                            status ===
+                                                            "approved" &&
 
                                                             <button
-
-                                                                className="approve-btn"
-
-                                                                disabled={isProcessing}
-
-                                                                onClick={() =>
-
-                                                                    approveProduct(
-
-                                                                        product.id
-
-                                                                    )
-
-                                                                }
-
-                                                            >
-
-                                                                {
-
-                                                                    isProcessing
-
-                                                                        ?
-
-                                                                        "Processing..."
-
-                                                                        :
-
-                                                                        "Approve"
-
-                                                                }
-
-                                                            </button>
-
-
-                                                            <button
-
                                                                 className="reject-btn"
-
-                                                                disabled={isProcessing}
-
-                                                                onClick={() =>
-
-                                                                    rejectProduct(
-
-                                                                        product.id
-
-                                                                    )
-
+                                                                disabled={
+                                                                    isProcessing
                                                                 }
-
+                                                                onClick={() =>
+                                                                    rejectProduct(
+                                                                        product.id
+                                                                    )
+                                                                }
                                                             >
 
                                                                 Reject
 
                                                             </button>
 
-                                                        </>
-
-                                                    }
+                                                        }
 
 
-                                                    {/* APPROVED */}
+                                                        {/* =====================
+                                                            REJECTED
+                                                        ===================== */}
 
-                                                    {
+                                                        {
+                                                            status ===
+                                                            "rejected" &&
 
-                                                        status === "approved" &&
+                                                            <button
+                                                                className="approve-btn"
+                                                                disabled={
+                                                                    isProcessing
+                                                                }
+                                                                onClick={() =>
+                                                                    approveProduct(
+                                                                        product.id
+                                                                    )
+                                                                }
+                                                            >
 
-                                                        <button
+                                                                Approve
 
-                                                            className="reject-btn"
-
-                                                            disabled={isProcessing}
-
-                                                            onClick={() =>
-
-                                                                rejectProduct(
-
-                                                                    product.id
-
-                                                                )
-
-                                                            }
-
-                                                        >
-
-                                                            Reject
-
-                                                        </button>
-
-                                                    }
-
-
-                                                    {/* REJECTED */}
-
-                                                    {
-
-                                                        status === "rejected" &&
-
-                                                        <button
-
-                                                            className="approve-btn"
-
-                                                            disabled={isProcessing}
-
-                                                            onClick={() =>
-
-                                                                approveProduct(
-
-                                                                    product.id
-
-                                                                )
-
-                                                            }
-
-                                                        >
-
-                                                            Approve
-
-                                                        </button>
-
-                                                    }
-
-
-                                                    {/* DELETE */}
-
-                                                    <button
-
-                                                        className="delete-btn"
-
-                                                        disabled={isProcessing}
-
-                                                        onClick={() =>
-
-                                                            deleteProduct(
-
-                                                                product.id
-
-                                                            )
+                                                            </button>
 
                                                         }
 
-                                                    >
 
-                                                        Delete
+                                                        {/* =====================
+                                                            DELETE
+                                                        ===================== */}
 
-                                                    </button>
+                                                        <button
+                                                            className="delete-btn"
+                                                            disabled={
+                                                                isProcessing
+                                                            }
+                                                            onClick={() =>
+                                                                deleteProduct(
+                                                                    product.id
+                                                                )
+                                                            }
+                                                        >
 
+                                                            Delete
 
-                                                </td>
+                                                        </button>
 
+                                                    </td>
 
-                                            </tr>
+                                                </tr>
 
-                                        );
+                                            );
 
-                                    }
+                                        }
+                                    )
 
                                 )
 
                         }
 
-
                     </tbody>
-
 
                 </table>
 
             </div>
-
 
         </div>
 
