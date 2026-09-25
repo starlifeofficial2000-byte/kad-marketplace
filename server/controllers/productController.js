@@ -2369,36 +2369,51 @@ exports.updateProduct =
             // UPDATE TITLE
             // -------------------------------------------------
 
-            if (
-                title !== undefined &&
-                String(title).trim()
-            ) {
+           if (
+    title !== undefined &&
+    String(title).trim()
+) {
+    product.title = sanitize(title);
 
-                product.title =
-                    sanitize(title);
+    const baseSlug = generateSlug(product.title);
 
+    if (!baseSlug) {
+        await rollbackTransaction(
+            transaction,
+            req.files
+        );
 
-                product.slug =
-                    generateSlug(
-                        product.title
-                    );
+        return res.status(400).json({
+            success: false,
+            message:
+                "A valid product title is required."
+        });
+    }
 
+    let uniqueSlug = baseSlug;
+    let counter = 2;
 
-                if (!product.slug) {
-
-                    await rollbackTransaction(
-                        transaction,
-                        req.files
-                    );
-
-                    return res.status(400).json({
-                        success: false,
-                        message:
-                            "A valid product title is required."
-                    });
+    while (true) {
+        const existingProduct = await Product.findOne({
+            where: {
+                slug: uniqueSlug,
+                id: {
+                    [Op.ne]: product.id
                 }
-            }
+            },
+            transaction
+        });
 
+        if (!existingProduct) {
+            break;
+        }
+
+        uniqueSlug = `${baseSlug}-${counter}`;
+        counter++;
+    }
+
+    product.slug = uniqueSlug;
+}
 
             // -------------------------------------------------
             // UPDATE DESCRIPTION
