@@ -25,6 +25,7 @@ import {
 
 import "./Chat.css";
 
+
 /* =========================================================
    CONFIGURATION
 ========================================================= */
@@ -32,12 +33,15 @@ import "./Chat.css";
 const IS_PRODUCTION = import.meta.env.PROD;
 
 const normalizeUrl = (value) => {
-    if (!value) return "";
+    if (!value) {
+        return "";
+    }
 
     return String(value)
         .trim()
         .replace(/\/+$/, "");
 };
+
 
 const API_SERVER = normalizeUrl(
     import.meta.env.VITE_API_SERVER ||
@@ -49,19 +53,39 @@ const API_SERVER = normalizeUrl(
     )
 );
 
+
 const SOCKET_URL = normalizeUrl(
     import.meta.env.VITE_SOCKET_URL ||
     API_SERVER
 );
 
+
+/*
+ * IMPORTANT:
+ *
+ * Your production R2 public URL is:
+ *
+ * https://cdn.kadmarket.com
+ *
+ * We keep the environment variable first,
+ * but also provide the production fallback.
+ */
 const R2_PUBLIC_URL = normalizeUrl(
-    import.meta.env.VITE_R2_PUBLIC_URL
+    import.meta.env.VITE_R2_PUBLIC_URL ||
+    "https://cdn.kadmarket.com"
 );
+
 
 const SOCKET_PATH = "/socket.io";
 
-const FALLBACK_IMAGE =
+
+const FALLBACK_PRODUCT_IMAGE =
     "/images/product-placeholder.png";
+
+
+const FALLBACK_PROFILE_IMAGE =
+    "/images/default-avatar.png";
+
 
 /* =========================================================
    SOCKET
@@ -71,7 +95,10 @@ const socket = io(
     SOCKET_URL,
     {
         path: SOCKET_PATH,
-        transports: ["websocket", "polling"],
+        transports: [
+            "websocket",
+            "polling"
+        ],
         withCredentials: true,
         autoConnect: false,
         reconnection: true,
@@ -82,38 +109,23 @@ const socket = io(
     }
 );
 
+
 /* =========================================================
    MEDIA URL HELPERS
 ========================================================= */
 
-/**
- * Converts an R2 object key into a public R2 URL.
- *
- * Examples:
- *
- * uploads/chat/images/file.jpg
- * ->
- * https://media.kadmarket.com/uploads/chat/images/file.jpg
- *
- * https://media.kadmarket.com/uploads/chat/images/file.jpg
- * ->
- * unchanged
- *
- * Old:
- * /uploads/chat/images/file.jpg
- * ->
- * Railway/API URL temporarily
- */
 const resolveMediaUrl = (
     value,
     legacyFolder = ""
 ) => {
+
     if (!value) {
         return "";
     }
 
+
     /*
-     * Handle objects returned by the backend.
+     * Backend may return an object.
      */
     if (
         typeof value === "object" &&
@@ -130,18 +142,23 @@ const resolveMediaUrl = (
             "";
     }
 
+
     if (!value) {
         return "";
     }
 
-    const raw = String(value).trim();
+
+    const raw =
+        String(value).trim();
+
 
     if (!raw) {
         return "";
     }
 
+
     /*
-     * Already a complete URL.
+     * Already a URL.
      */
     if (
         raw.startsWith("http://") ||
@@ -152,8 +169,9 @@ const resolveMediaUrl = (
         return raw;
     }
 
+
     /*
-     * Frontend/static assets.
+     * Frontend static assets.
      */
     if (
         raw.startsWith("/images/") ||
@@ -163,13 +181,21 @@ const resolveMediaUrl = (
         return raw;
     }
 
-    /*
-     * Remove leading slash for object-key processing.
-     */
-    const normalized = raw.replace(/^\/+/, "");
+
+    const normalized =
+        raw
+            .replace(/\\/g, "/")
+            .replace(/^\/+/, "");
+
 
     /*
-     * R2 object key.
+     * R2 object keys.
+     *
+     * Current upload middleware creates keys such as:
+     *
+     * uploads/123456-image.jpg
+     *
+     * Therefore uploads/ must go through R2.
      */
     if (
         R2_PUBLIC_URL &&
@@ -184,10 +210,9 @@ const resolveMediaUrl = (
         return `${R2_PUBLIC_URL}/${normalized}`;
     }
 
+
     /*
-     * Legacy Railway/local uploads.
-     *
-     * This is intentionally kept only for old files.
+     * Legacy /uploads/... path.
      */
     if (
         raw.startsWith("/uploads/")
@@ -195,114 +220,348 @@ const resolveMediaUrl = (
         return `${API_SERVER}${raw}`;
     }
 
-    if (
-        raw.startsWith("uploads/")
-    ) {
-        return `${API_SERVER}/${raw}`;
-    }
 
     /*
-     * Legacy bare filename.
-     *
-     * Used only when old database records contain
-     * a filename instead of an R2 key.
+     * Legacy uploads/... path when R2 is unavailable.
+     */
+    if (
+        normalized.startsWith("uploads/")
+    ) {
+        return `${API_SERVER}/${normalized}`;
+    }
+
+
+    /*
+     * Very old database records may contain
+     * only a filename.
      */
     if (
         legacyFolder &&
-        !raw.includes("/")
+        !normalized.includes("/")
     ) {
-        return `${API_SERVER}/uploads/${legacyFolder}/${raw}`;
+        return (
+            `${API_SERVER}/uploads/` +
+            `${legacyFolder}/${normalized}`
+        );
     }
+
 
     return raw;
 };
+
 
 /* =========================================================
    PRODUCT IMAGE
 ========================================================= */
 
-const getImageUrl = (image) => {
-    const url = resolveMediaUrl(image);
+const getProductImageUrl = (
+    image
+) => {
 
-    return url || FALLBACK_IMAGE;
+    const url =
+        resolveMediaUrl(image);
+
+    return (
+        url ||
+        FALLBACK_PRODUCT_IMAGE
+    );
 };
+
+
+/* =========================================================
+   PROFILE IMAGE
+========================================================= */
+
+const getProfileImageUrl = (
+    image
+) => {
+
+    if (!image) {
+        return FALLBACK_PROFILE_IMAGE;
+    }
+
+
+    /*
+     * Some APIs may return:
+     *
+     * {
+     *   url: "...",
+     *   key: "uploads/..."
+     * }
+     */
+    if (
+        typeof image === "object"
+    ) {
+
+        image =
+            image.url ||
+            image.location ||
+            image.src ||
+            image.path ||
+            image.key ||
+            image.r2Key ||
+            image.filename ||
+            "";
+    }
+
+
+    if (!image) {
+        return FALLBACK_PROFILE_IMAGE;
+    }
+
+
+    const raw =
+        String(image).trim();
+
+
+    if (!raw) {
+        return FALLBACK_PROFILE_IMAGE;
+    }
+
+
+    /*
+     * Full URL.
+     */
+    if (
+        raw.startsWith("http://") ||
+        raw.startsWith("https://") ||
+        raw.startsWith("data:") ||
+        raw.startsWith("blob:")
+    ) {
+        return raw;
+    }
+
+
+    /*
+     * Static frontend image.
+     */
+    if (
+        raw.startsWith("/images/") ||
+        raw.startsWith("/assets/")
+    ) {
+        return raw;
+    }
+
+
+    const normalized =
+        raw
+            .replace(/\\/g, "/")
+            .replace(/^\/+/, "");
+
+
+    /*
+     * Current R2 profile images.
+     *
+     * Your profile upload middleware stores
+     * new images under uploads/...
+     */
+    if (
+        R2_PUBLIC_URL &&
+        normalized.startsWith("uploads/")
+    ) {
+        return (
+            `${R2_PUBLIC_URL}/` +
+            normalized
+        );
+    }
+
+
+    /*
+     * Also support uploads/profiles/...
+     */
+    if (
+        R2_PUBLIC_URL &&
+        normalized.startsWith(
+            "profiles/"
+        )
+    ) {
+        return (
+            `${R2_PUBLIC_URL}/` +
+            normalized
+        );
+    }
+
+
+    /*
+     * Legacy Railway profile image.
+     */
+    if (
+        raw.startsWith("/uploads/")
+    ) {
+        return (
+            `${API_SERVER}${raw}`
+        );
+    }
+
+
+    /*
+     * Old database record containing
+     * only the filename.
+     */
+    if (
+        !normalized.includes("/")
+    ) {
+        return (
+            `${API_SERVER}/uploads/` +
+            normalized
+        );
+    }
+
+
+    return raw;
+};
+
 
 /* =========================================================
    CHAT IMAGE
 ========================================================= */
 
-const getChatImageUrl = (image) => {
-    const url = resolveMediaUrl(
-        image,
-        "chat/images"
-    );
+const getChatImageUrl = (
+    image
+) => {
 
-    return url || FALLBACK_IMAGE;
+    const url =
+        resolveMediaUrl(
+            image,
+            "chat/images"
+        );
+
+    return (
+        url ||
+        FALLBACK_PRODUCT_IMAGE
+    );
 };
+
 
 /* =========================================================
    CHAT AUDIO
 ========================================================= */
 
-const getChatAudioUrl = (audio) => {
+const getChatAudioUrl = (
+    audio
+) => {
+
     return resolveMediaUrl(
         audio,
         "chat/audio"
     );
 };
 
+
 /* =========================================================
    PARSE PRODUCT IMAGES
 ========================================================= */
 
-const parseImages = (images) => {
+const parseImages = (
+    images
+) => {
+
     if (!images) {
         return [];
     }
 
-    if (Array.isArray(images)) {
-        return images;
+
+    if (
+        Array.isArray(images)
+    ) {
+        return images.filter(Boolean);
     }
 
-    if (typeof images === "string") {
-        try {
-            const parsed = JSON.parse(images);
 
-            if (Array.isArray(parsed)) {
-                return parsed;
+    if (
+        typeof images === "string"
+    ) {
+
+        const value =
+            images.trim();
+
+
+        if (!value) {
+            return [];
+        }
+
+
+        /*
+         * JSON array.
+         */
+        try {
+
+            const parsed =
+                JSON.parse(value);
+
+
+            if (
+                Array.isArray(parsed)
+            ) {
+                return parsed.filter(
+                    Boolean
+                );
             }
+
 
             if (parsed) {
                 return [parsed];
             }
 
-            return [];
         } catch {
-            return [images];
+            /*
+             * Continue below.
+             */
         }
+
+
+        /*
+         * Comma-separated fallback.
+         */
+        if (
+            value.includes(",")
+        ) {
+
+            return value
+                .split(",")
+                .map(
+                    item => item.trim()
+                )
+                .filter(Boolean);
+        }
+
+
+        return [value];
     }
+
 
     return [];
 };
+
 
 /* =========================================================
    STORED USER
 ========================================================= */
 
 const getStoredUser = () => {
-    try {
-        const value =
-            localStorage.getItem("user");
 
-        if (!value) {
+    try {
+
+        const stored =
+            localStorage.getItem(
+                "user"
+            );
+
+
+        if (!stored) {
             return null;
         }
 
-        return JSON.parse(value);
+
+        return JSON.parse(
+            stored
+        );
+
     } catch {
         return null;
     }
 };
+
 
 /* =========================================================
    SAFE RESPONSE
@@ -311,10 +570,12 @@ const getStoredUser = () => {
 const parseFetchResponse = async (
     response
 ) => {
+
     const contentType =
         response.headers.get(
             "content-type"
         ) || "";
+
 
     if (
         contentType.includes(
@@ -324,8 +585,10 @@ const parseFetchResponse = async (
         return response.json();
     }
 
+
     const text =
         await response.text();
+
 
     return {
         success: response.ok,
@@ -333,24 +596,31 @@ const parseFetchResponse = async (
     };
 };
 
+
 /* =========================================================
    COMPONENT
 ========================================================= */
 
 function Chat() {
+
     const {
         conversationId
     } = useParams();
 
+
     const navigate =
         useNavigate();
+
 
     /* =====================================================
        AUTH
     ===================================================== */
 
     const token =
-        localStorage.getItem("token");
+        localStorage.getItem(
+            "token"
+        );
+
 
     const storedUser =
         useMemo(
@@ -358,10 +628,12 @@ function Chat() {
             []
         );
 
+
     const userId =
         storedUser?.id != null
             ? String(storedUser.id)
             : null;
+
 
     /* =====================================================
        STATE
@@ -372,60 +644,81 @@ function Chat() {
         setMessages
     ] = useState([]);
 
+
     const [
         message,
         setMessage
     ] = useState("");
+
 
     const [
         product,
         setProduct
     ] = useState(null);
 
+
+    /*
+     * Seller AND buyer are now stored.
+     */
     const [
         seller,
         setSeller
     ] = useState(null);
+
+
+    const [
+        buyer,
+        setBuyer
+    ] = useState(null);
+
 
     const [
         loading,
         setLoading
     ] = useState(true);
 
+
     const [
         sending,
         setSending
     ] = useState(false);
+
 
     const [
         uploadingImage,
         setUploadingImage
     ] = useState(false);
 
+
     const [
         recording,
         setRecording
     ] = useState(false);
+
 
     const [
         audioBlob,
         setAudioBlob
     ] = useState(null);
 
+
     const [
         audioPreviewUrl,
         setAudioPreviewUrl
     ] = useState("");
+
 
     const [
         error,
         setError
     ] = useState("");
 
+
     const [
         mediaRecorder,
         setMediaRecorder
     ] = useState(null);
+
 
     const [
         socketConnected,
@@ -434,6 +727,7 @@ function Chat() {
         socket.connected
     );
 
+
     /* =====================================================
        REFS
     ===================================================== */
@@ -441,27 +735,35 @@ function Chat() {
     const messagesEndRef =
         useRef(null);
 
+
     const imageInputRef =
         useRef(null);
+
 
     const streamRef =
         useRef(null);
 
+
     const chunksRef =
         useRef([]);
+
 
     const loadedConversationRef =
         useRef(null);
 
+
     const currentConversationRef =
         useRef(null);
+
 
     /* =====================================================
        AUTH GUARD
     ===================================================== */
 
     useEffect(() => {
+
         if (!token) {
+
             navigate(
                 "/login",
                 {
@@ -469,10 +771,12 @@ function Chat() {
                 }
             );
         }
+
     }, [
         token,
         navigate
     ]);
+
 
     /* =====================================================
        LOAD CONVERSATION
@@ -481,6 +785,7 @@ function Chat() {
     const loadConversation =
         useCallback(
             async () => {
+
                 if (
                     !conversationId ||
                     !token
@@ -488,14 +793,18 @@ function Chat() {
                     return;
                 }
 
+
                 try {
+
                     const response =
                         await api.get(
                             `/messages/conversation/${conversationId}`
                         );
 
+
                     const data =
                         response.data || {};
+
 
                     if (
                         data.success === false
@@ -506,26 +815,63 @@ function Chat() {
                         );
                     }
 
+
+                    /*
+                     * Product
+                     */
                     setProduct(
                         data.product ||
                         null
                     );
 
+
+                    /*
+                     * Seller
+                     */
                     setSeller(
                         data.seller ||
                         null
                     );
+
+
+                    /*
+                     * BUYER
+                     *
+                     * This was missing from
+                     * the old Chat.jsx.
+                     */
+                    setBuyer(
+                        data.buyer ||
+                        null
+                    );
+
+
+                    console.log(
+                        "CHAT PARTICIPANTS:",
+                        {
+                            currentUserId:
+                                userId,
+                            seller:
+                                data.seller,
+                            buyer:
+                                data.buyer
+                        }
+                    );
+
                 } catch (err) {
+
                     console.error(
                         "LOAD CONVERSATION ERROR:",
                         err.response?.data ||
                         err.message
                     );
 
+
                     if (
                         err.response?.status ===
                         401
                     ) {
+
                         setError(
                             "Your session has expired. Please log in again."
                         );
@@ -533,18 +879,22 @@ function Chat() {
                         return;
                     }
 
+
                     setError(
                         err.response?.data?.message ||
                         err.message ||
                         "Unable to load conversation."
                     );
                 }
+
             },
             [
                 conversationId,
-                token
+                token,
+                userId
             ]
         );
+
 
     /* =====================================================
        LOAD MESSAGES
@@ -553,6 +903,7 @@ function Chat() {
     const loadMessages =
         useCallback(
             async () => {
+
                 if (
                     !conversationId ||
                     !token
@@ -560,14 +911,18 @@ function Chat() {
                     return;
                 }
 
+
                 try {
+
                     const response =
                         await api.get(
                             `/messages/${conversationId}`
                         );
 
+
                     const data =
                         response.data || {};
+
 
                     const loadedMessages =
                         Array.isArray(
@@ -584,50 +939,67 @@ function Chat() {
                                     ? data
                                     : [];
 
+
                     setMessages(
                         loadedMessages
                     );
 
+
                     /*
-                     * Mark delivered.
+                     * Delivered.
                      */
                     try {
+
                         await api.put(
                             `/messages/${conversationId}/delivered`
                         );
-                    } catch (err) {
+
+                    } catch (
+                        deliveryError
+                    ) {
+
                         console.warn(
                             "MARK DELIVERED ERROR:",
-                            err.response?.data ||
-                            err.message
+                            deliveryError.response?.data ||
+                            deliveryError.message
                         );
                     }
 
+
                     /*
-                     * Mark read.
+                     * Read.
                      */
                     try {
+
                         await api.put(
                             `/messages/${conversationId}/read`
                         );
-                    } catch (err) {
+
+                    } catch (
+                        readError
+                    ) {
+
                         console.warn(
                             "MARK READ ERROR:",
-                            err.response?.data ||
-                            err.message
+                            readError.response?.data ||
+                            readError.message
                         );
                     }
+
                 } catch (err) {
+
                     console.error(
                         "LOAD MESSAGES ERROR:",
                         err.response?.data ||
                         err.message
                     );
 
+
                     if (
                         err.response?.status ===
                         401
                     ) {
+
                         setError(
                             "Your session has expired. Please log in again."
                         );
@@ -635,14 +1007,18 @@ function Chat() {
                         return;
                     }
 
+
                     setError(
                         err.response?.data?.message ||
                         err.message ||
                         "Unable to load messages."
                     );
+
                 } finally {
+
                     setLoading(false);
                 }
+
             },
             [
                 conversationId,
@@ -650,11 +1026,13 @@ function Chat() {
             ]
         );
 
+
     /* =====================================================
        INITIAL LOAD
     ===================================================== */
 
     useEffect(() => {
+
         if (
             !conversationId ||
             !token
@@ -662,12 +1040,11 @@ function Chat() {
             return;
         }
 
+
         const id =
             String(conversationId);
 
-        /*
-         * Prevent duplicate loading.
-         */
+
         if (
             loadedConversationRef.current ===
             id
@@ -675,20 +1052,30 @@ function Chat() {
             return;
         }
 
+
         loadedConversationRef.current =
             id;
+
 
         setLoading(true);
         setError("");
         setMessages([]);
+        setSeller(null);
+        setBuyer(null);
+        setProduct(null);
+
 
         const loadChat =
             async () => {
+
                 await loadConversation();
+
                 await loadMessages();
             };
 
+
         loadChat();
+
     }, [
         conversationId,
         token,
@@ -696,11 +1083,13 @@ function Chat() {
         loadMessages
     ]);
 
+
     /* =====================================================
        SOCKET CONNECTION
     ===================================================== */
 
     useEffect(() => {
+
         if (
             !conversationId ||
             !token
@@ -708,14 +1097,18 @@ function Chat() {
             return;
         }
 
+
         const id =
             String(conversationId);
+
 
         currentConversationRef.current =
             id;
 
+
         const joinConversation =
             () => {
+
                 if (
                     currentConversationRef.current !==
                     id
@@ -723,9 +1116,11 @@ function Chat() {
                     return;
                 }
 
+
                 setSocketConnected(
                     true
                 );
+
 
                 socket.emit(
                     "join_conversation",
@@ -733,42 +1128,52 @@ function Chat() {
                 );
             };
 
+
         const handleConnectError =
             (socketError) => {
+
                 console.error(
                     "SOCKET CONNECTION ERROR:",
                     socketError?.message ||
                     socketError
                 );
 
+
                 setSocketConnected(
                     false
                 );
             };
 
+
         const handleDisconnect =
             (reason) => {
+
                 console.warn(
                     "SOCKET DISCONNECTED:",
                     reason
                 );
 
+
                 setSocketConnected(
                     false
                 );
             };
 
+
         const handleReceiveMessage =
             (incomingMessage) => {
+
                 if (
                     !incomingMessage
                 ) {
                     return;
                 }
 
+
                 const incomingConversationId =
                     incomingMessage.conversationId ??
                     incomingMessage.conversation_id;
+
 
                 if (
                     incomingConversationId &&
@@ -779,11 +1184,10 @@ function Chat() {
                     return;
                 }
 
+
                 setMessages(
                     previousMessages => {
-                        /*
-                         * Prevent duplicate messages.
-                         */
+
                         if (
                             incomingMessage.id &&
                             previousMessages.some(
@@ -799,6 +1203,7 @@ function Chat() {
                             return previousMessages;
                         }
 
+
                         return [
                             ...previousMessages,
                             incomingMessage
@@ -807,95 +1212,118 @@ function Chat() {
                 );
             };
 
+
         socket.on(
             "connect",
             joinConversation
         );
+
 
         socket.on(
             "connect_error",
             handleConnectError
         );
 
+
         socket.on(
             "disconnect",
             handleDisconnect
         );
+
 
         socket.on(
             "receive_message",
             handleReceiveMessage
         );
 
+
         if (
             !socket.connected
         ) {
+
             socket.connect();
+
         } else {
+
             joinConversation();
         }
 
+
         return () => {
+
             socket.off(
                 "connect",
                 joinConversation
             );
+
 
             socket.off(
                 "connect_error",
                 handleConnectError
             );
 
+
             socket.off(
                 "disconnect",
                 handleDisconnect
             );
+
 
             socket.off(
                 "receive_message",
                 handleReceiveMessage
             );
 
+
             socket.emit(
                 "leave_conversation",
                 id
             );
 
+
             currentConversationRef.current =
                 null;
         };
+
     }, [
         conversationId,
         token
     ]);
+
 
     /* =====================================================
        AUTO SCROLL
     ===================================================== */
 
     useEffect(() => {
+
         messagesEndRef.current?.scrollIntoView(
             {
                 behavior: "smooth"
             }
         );
+
     }, [
         messages
     ]);
 
+
     /* =====================================================
-       ADD MESSAGE WITHOUT DUPLICATES
+       ADD MESSAGE
     ===================================================== */
 
     const addMessage =
         useCallback(
             (newMessage) => {
+
                 if (!newMessage) {
                     return;
                 }
 
+
                 setMessages(
                     previousMessages => {
+
                         if (
                             newMessage.id &&
                             previousMessages.some(
@@ -911,6 +1339,7 @@ function Chat() {
                             return previousMessages;
                         }
 
+
                         return [
                             ...previousMessages,
                             newMessage
@@ -921,14 +1350,17 @@ function Chat() {
             []
         );
 
+
     /* =====================================================
-       SEND TEXT
+       SEND TEXT MESSAGE
     ===================================================== */
 
     const sendMessage =
         async () => {
+
             const text =
                 message.trim();
+
 
             if (
                 !text ||
@@ -938,9 +1370,12 @@ function Chat() {
                 return;
             }
 
+
             try {
+
                 setSending(true);
                 setError("");
+
 
                 const response =
                     await api.post(
@@ -950,44 +1385,43 @@ function Chat() {
                         }
                     );
 
+
                 const newMessage =
                     response.data?.newMessage ||
                     response.data?.message;
 
+
                 if (newMessage) {
+
                     addMessage(
                         newMessage
                     );
                 }
 
+
                 setMessage("");
+
             } catch (err) {
+
                 console.error(
                     "SEND MESSAGE ERROR:",
                     err.response?.data ||
                     err.message
                 );
 
-                if (
-                    err.response?.status ===
-                    401
-                ) {
-                    setError(
-                        "Your session has expired. Please log in again."
-                    );
-
-                    return;
-                }
 
                 setError(
                     err.response?.data?.message ||
                     err.message ||
                     "Failed to send message."
                 );
+
             } finally {
+
                 setSending(false);
             }
         };
+
 
     /* =====================================================
        IMAGE UPLOAD
@@ -995,20 +1429,25 @@ function Chat() {
 
     const uploadImage =
         async (event) => {
+
             const file =
                 event.target.files?.[0];
 
+
             event.target.value = "";
+
 
             if (!file) {
                 return;
             }
+
 
             if (
                 !file.type.startsWith(
                     "image/"
                 )
             ) {
+
                 setError(
                     "Please select a valid image."
                 );
@@ -1016,16 +1455,12 @@ function Chat() {
                 return;
             }
 
-            /*
-             * Frontend limit.
-             *
-             * Backend chatUpload currently
-             * allows up to 10MB.
-             */
+
             if (
                 file.size >
                 10 * 1024 * 1024
             ) {
+
                 setError(
                     "Image must be smaller than 10MB."
                 );
@@ -1033,7 +1468,9 @@ function Chat() {
                 return;
             }
 
+
             if (!conversationId) {
+
                 setError(
                     "Conversation not found."
                 );
@@ -1041,8 +1478,10 @@ function Chat() {
                 return;
             }
 
+
             const formData =
                 new FormData();
+
 
             formData.append(
                 "image",
@@ -1050,12 +1489,15 @@ function Chat() {
                 file.name
             );
 
+
             try {
+
                 setUploadingImage(
                     true
                 );
 
                 setError("");
+
 
                 const response =
                     await fetch(
@@ -1072,18 +1514,22 @@ function Chat() {
                         }
                     );
 
+
                 const data =
                     await parseFetchResponse(
                         response
                     );
 
+
                 if (
                     !response.ok
                 ) {
+
                     if (
                         response.status ===
                         401
                     ) {
+
                         setError(
                             "Your session has expired. Please log in again."
                         );
@@ -1091,37 +1537,47 @@ function Chat() {
                         return;
                     }
 
+
                     throw new Error(
                         data?.message ||
                         `Image upload failed (${response.status}).`
                     );
                 }
 
+
                 const newMessage =
                     data?.newMessage ||
                     data?.message;
 
+
                 if (newMessage) {
+
                     addMessage(
                         newMessage
                     );
                 }
+
             } catch (err) {
+
                 console.error(
                     "IMAGE UPLOAD ERROR:",
                     err
                 );
 
+
                 setError(
                     err.message ||
                     "Failed to send image."
                 );
+
             } finally {
+
                 setUploadingImage(
                     false
                 );
             }
         };
+
 
     /* =====================================================
        AUDIO MIME TYPE
@@ -1129,12 +1585,14 @@ function Chat() {
 
     const getAudioMimeType =
         () => {
+
             if (
                 typeof MediaRecorder ===
                 "undefined"
             ) {
                 return "";
             }
+
 
             const types = [
                 "audio/webm;codecs=opus",
@@ -1144,9 +1602,11 @@ function Chat() {
                 "audio/mp4"
             ];
 
+
             for (
                 const type of types
             ) {
+
                 if (
                     MediaRecorder.isTypeSupported(
                         type
@@ -1156,8 +1616,10 @@ function Chat() {
                 }
             }
 
+
             return "";
         };
+
 
     /* =====================================================
        START RECORDING
@@ -1165,31 +1627,39 @@ function Chat() {
 
     const startRecording =
         async () => {
+
             if (recording) {
                 return;
             }
 
+
             try {
+
                 setError("");
+
 
                 if (
                     !navigator.mediaDevices ||
                     !navigator.mediaDevices
                         .getUserMedia
                 ) {
+
                     throw new Error(
                         "Your browser does not support microphone recording."
                     );
                 }
 
+
                 if (
                     typeof MediaRecorder ===
                     "undefined"
                 ) {
+
                     throw new Error(
                         "Your browser does not support voice recording."
                     );
                 }
+
 
                 const stream =
                     await navigator
@@ -1200,14 +1670,18 @@ function Chat() {
                             }
                         );
 
+
                 streamRef.current =
                     stream;
+
 
                 chunksRef.current =
                     [];
 
+
                 const mimeType =
                     getAudioMimeType();
+
 
                 const recorder =
                     mimeType
@@ -1221,24 +1695,30 @@ function Chat() {
                             stream
                         );
 
+
                 recorder.ondataavailable =
                     event => {
+
                         if (
                             event.data &&
                             event.data.size > 0
                         ) {
+
                             chunksRef.current.push(
                                 event.data
                             );
                         }
                     };
 
+
                 recorder.onstop =
                     () => {
+
                         const actualType =
                             recorder.mimeType ||
                             mimeType ||
                             "audio/webm";
+
 
                         const blob =
                             new Blob(
@@ -1249,26 +1729,32 @@ function Chat() {
                                 }
                             );
 
+
                         if (
                             blob.size > 0
                         ) {
+
                             setAudioBlob(
                                 blob
                             );
+
 
                             const previewUrl =
                                 URL.createObjectURL(
                                     blob
                                 );
 
+
                             setAudioPreviewUrl(
                                 previewUrl
                             );
                         }
 
+
                         if (
                             streamRef.current
                         ) {
+
                             streamRef.current
                                 .getTracks()
                                 .forEach(
@@ -1276,45 +1762,54 @@ function Chat() {
                                         track.stop()
                                 );
 
+
                             streamRef.current =
                                 null;
                         }
                     };
 
+
                 recorder.onerror =
                     event => {
+
                         console.error(
                             "RECORDER ERROR:",
                             event
                         );
+
 
                         setError(
                             "Voice recording failed."
                         );
                     };
 
+
                 recorder.start(250);
+
 
                 setMediaRecorder(
                     recorder
                 );
 
+
                 setRecording(
                     true
                 );
+
             } catch (err) {
+
                 console.error(
                     "START RECORDING ERROR:",
                     err
                 );
 
-                setRecording(
-                    false
-                );
+
+                setRecording(false);
 
                 setMediaRecorder(
                     null
                 );
+
 
                 setError(
                     err.message ||
@@ -1323,33 +1818,37 @@ function Chat() {
             }
         };
 
+
     /* =====================================================
        STOP RECORDING
     ===================================================== */
 
     const stopRecording =
         () => {
+
             if (
                 !mediaRecorder
             ) {
                 return;
             }
 
+
             if (
                 mediaRecorder.state ===
                 "recording"
             ) {
+
                 mediaRecorder.stop();
             }
 
-            setRecording(
-                false
-            );
+
+            setRecording(false);
 
             setMediaRecorder(
                 null
             );
         };
+
 
     /* =====================================================
        CANCEL AUDIO
@@ -1357,17 +1856,21 @@ function Chat() {
 
     const cancelAudio =
         () => {
+
             if (
                 mediaRecorder &&
                 mediaRecorder.state ===
                 "recording"
             ) {
+
                 mediaRecorder.stop();
             }
+
 
             if (
                 streamRef.current
             ) {
+
                 streamRef.current
                     .getTracks()
                     .forEach(
@@ -1375,24 +1878,27 @@ function Chat() {
                             track.stop()
                     );
 
+
                 streamRef.current =
                     null;
             }
 
+
             if (
                 audioPreviewUrl
             ) {
+
                 URL.revokeObjectURL(
                     audioPreviewUrl
                 );
             }
 
+
             chunksRef.current =
                 [];
 
-            setRecording(
-                false
-            );
+
+            setRecording(false);
 
             setMediaRecorder(
                 null
@@ -1407,12 +1913,14 @@ function Chat() {
             );
         };
 
+
     /* =====================================================
        SEND AUDIO
     ===================================================== */
 
     const sendAudio =
         async () => {
+
             if (
                 !audioBlob ||
                 !conversationId
@@ -1420,34 +1928,43 @@ function Chat() {
                 return;
             }
 
+
             const formData =
                 new FormData();
 
+
             let extension =
                 "webm";
+
 
             if (
                 audioBlob.type.includes(
                     "ogg"
                 )
             ) {
+
                 extension =
                     "ogg";
+
             } else if (
                 audioBlob.type.includes(
                     "mp4"
                 )
             ) {
+
                 extension =
                     "mp4";
+
             } else if (
                 audioBlob.type.includes(
                     "mpeg"
                 )
             ) {
+
                 extension =
                     "mp3";
             }
+
 
             formData.append(
                 "audio",
@@ -1455,8 +1972,11 @@ function Chat() {
                 `voice-${Date.now()}.${extension}`
             );
 
+
             try {
+
                 setError("");
+
 
                 const response =
                     await fetch(
@@ -1473,18 +1993,22 @@ function Chat() {
                         }
                     );
 
+
                 const data =
                     await parseFetchResponse(
                         response
                     );
 
+
                 if (
                     !response.ok
                 ) {
+
                     if (
                         response.status ===
                         401
                     ) {
+
                         setError(
                             "Your session has expired. Please log in again."
                         );
@@ -1492,45 +2016,57 @@ function Chat() {
                         return;
                     }
 
+
                     throw new Error(
                         data?.message ||
                         `Audio upload failed (${response.status}).`
                     );
                 }
 
+
                 const newMessage =
                     data?.newMessage ||
                     data?.message;
 
+
                 if (newMessage) {
+
                     addMessage(
                         newMessage
                     );
                 }
 
+
                 if (
                     audioPreviewUrl
                 ) {
+
                     URL.revokeObjectURL(
                         audioPreviewUrl
                     );
                 }
 
+
                 chunksRef.current =
                     [];
+
 
                 setAudioBlob(
                     null
                 );
 
+
                 setAudioPreviewUrl(
                     ""
                 );
+
             } catch (err) {
+
                 console.error(
                     "AUDIO UPLOAD ERROR:",
                     err
                 );
+
 
                 setError(
                     err.message ||
@@ -1539,15 +2075,19 @@ function Chat() {
             }
         };
 
+
     /* =====================================================
        CLEANUP MEDIA
     ===================================================== */
 
     useEffect(() => {
+
         return () => {
+
             if (
                 streamRef.current
             ) {
+
                 streamRef.current
                     .getTracks()
                     .forEach(
@@ -1555,31 +2095,39 @@ function Chat() {
                             track.stop()
                     );
 
+
                 streamRef.current =
                     null;
             }
 
+
             if (
                 audioPreviewUrl
             ) {
+
                 URL.revokeObjectURL(
                     audioPreviewUrl
                 );
             }
         };
+
     }, [
         audioPreviewUrl
     ]);
+
 
     /* =====================================================
        SOCKET CLEANUP
     ===================================================== */
 
     useEffect(() => {
+
         return () => {
             socket.disconnect();
         };
+
     }, []);
+
 
     /* =====================================================
        FORMAT TIME
@@ -1587,12 +2135,15 @@ function Chat() {
 
     const formatMessageTime =
         (value) => {
+
             if (!value) {
                 return "";
             }
 
+
             const date =
                 new Date(value);
+
 
             if (
                 Number.isNaN(
@@ -1601,6 +2152,7 @@ function Chat() {
             ) {
                 return "";
             }
+
 
             return date.toLocaleTimeString(
                 [],
@@ -1611,17 +2163,20 @@ function Chat() {
             );
         };
 
+
     /* =====================================================
        MESSAGE TYPE
     ===================================================== */
 
     const getMessageType =
         (msg) => {
+
             if (
                 msg?.type
             ) {
                 return msg.type;
             }
+
 
             if (
                 msg?.image
@@ -1629,14 +2184,17 @@ function Chat() {
                 return "image";
             }
 
+
             if (
                 msg?.audio
             ) {
                 return "audio";
             }
 
+
             return "text";
         };
+
 
     /* =====================================================
        MY MESSAGE
@@ -1644,9 +2202,11 @@ function Chat() {
 
     const isMyMessage =
         (msg) => {
+
             if (!userId) {
                 return false;
             }
+
 
             return (
                 String(
@@ -1657,6 +2217,61 @@ function Chat() {
             );
         };
 
+
+    /* =====================================================
+       DETERMINE OTHER PARTICIPANT
+    ===================================================== */
+
+    const currentUserId =
+        userId
+            ? Number(userId)
+            : null;
+
+
+    const sellerId =
+        seller?.id != null
+            ? Number(seller.id)
+            : null;
+
+
+    const buyerId =
+        buyer?.id != null
+            ? Number(buyer.id)
+            : null;
+
+
+    /*
+     * THIS IS THE CORE FIX.
+     *
+     * If logged-in user is seller:
+     *     show buyer.
+     *
+     * Otherwise:
+     *     show seller.
+     */
+    const otherUser =
+        currentUserId != null &&
+        sellerId != null &&
+        currentUserId === sellerId
+            ? buyer
+            : seller;
+
+
+    const otherUserName =
+        otherUser?.name ||
+        otherUser?.username ||
+        "Marketplace User";
+
+
+    const otherUserImage =
+        getProfileImageUrl(
+            otherUser?.profileImage ||
+            otherUser?.profileImageUrl ||
+            otherUser?.avatar ||
+            otherUser?.image
+        );
+
+
     /* =====================================================
        PRODUCT IMAGE
     ===================================================== */
@@ -1666,12 +2281,52 @@ function Chat() {
             product?.images
         );
 
+
     const productImage =
         productImages.length > 0
-            ? getImageUrl(
+            ? getProductImageUrl(
                 productImages[0]
             )
-            : FALLBACK_IMAGE;
+            : FALLBACK_PRODUCT_IMAGE;
+
+
+    /* =====================================================
+       PROFILE DEBUG
+    ===================================================== */
+
+    useEffect(() => {
+
+        if (
+            seller ||
+            buyer
+        ) {
+
+            console.log(
+                "CHAT PROFILE DEBUG:",
+                {
+                    currentUserId,
+                    sellerId,
+                    buyerId,
+                    seller,
+                    buyer,
+                    otherUser,
+                    otherUserName,
+                    otherUserImage
+                }
+            );
+        }
+
+    }, [
+        currentUserId,
+        sellerId,
+        buyerId,
+        seller,
+        buyer,
+        otherUser,
+        otherUserName,
+        otherUserImage
+    ]);
+
 
     /* =====================================================
        AUTH RENDER GUARD
@@ -1681,6 +2336,7 @@ function Chat() {
         return null;
     }
 
+
     /* =====================================================
        RENDER
     ===================================================== */
@@ -1688,33 +2344,44 @@ function Chat() {
     return (
         <div className="chat-page">
 
+
             {/* =================================================
                 HEADER
             ================================================= */}
 
             <div className="chat-header">
 
+
+                {/* BACK */}
                 <button
                     type="button"
                     className="chat-back-btn"
                     onClick={() =>
-                        navigate("/inbox")
+                        navigate(
+                            "/inbox"
+                        )
                     }
                     aria-label="Back to inbox"
                 >
                     ←
                 </button>
 
+
+                {/* PARTICIPANT */}
                 <div className="chat-user">
 
+
                     <img
-                        src={productImage}
-                        alt={
-                            product?.title ||
-                            "Product"
+                        src={
+                            otherUserImage
                         }
+                        alt={
+                            otherUserName
+                        }
+                        className="chat-profile-image"
                         onError={
                             event => {
+
                                 if (
                                     event.currentTarget
                                         .dataset
@@ -1723,32 +2390,34 @@ function Chat() {
                                     return;
                                 }
 
+
                                 event.currentTarget
                                     .dataset
                                     .fallback =
                                     "true";
 
+
                                 event.currentTarget
                                     .src =
-                                    FALLBACK_IMAGE;
+                                    FALLBACK_PROFILE_IMAGE;
                             }
                         }
                     />
 
-                    <div>
+
+                    <div className="chat-user-details">
 
                         <h2>
                             {
-                                product?.title ||
-                                "Conversation"
+                                otherUserName
                             }
                         </h2>
 
+
                         <p>
                             {
-                                seller?.name ||
-                                seller?.username ||
-                                "Marketplace User"
+                                product?.title ||
+                                "Marketplace Conversation"
                             }
                         </p>
 
@@ -1756,6 +2425,8 @@ function Chat() {
 
                 </div>
 
+
+                {/* CONNECTION STATUS */}
                 <div
                     className={
                         socketConnected
@@ -1768,29 +2439,108 @@ function Chat() {
                             : "Reconnecting..."
                     }
                 >
+
                     <span />
+
 
                     {
                         socketConnected
                             ? "Online"
                             : "Connecting..."
                     }
+
                 </div>
 
             </div>
+
+
+            {/* =================================================
+                PRODUCT BAR
+            ================================================= */}
+
+            {product && (
+
+                <div className="chat-product-bar">
+
+                    <img
+                        src={
+                            productImage
+                        }
+                        alt={
+                            product.title ||
+                            "Product"
+                        }
+                        onError={
+                            event => {
+
+                                if (
+                                    event.currentTarget
+                                        .dataset
+                                        .fallback
+                                ) {
+                                    return;
+                                }
+
+
+                                event.currentTarget
+                                    .dataset
+                                    .fallback =
+                                    "true";
+
+
+                                event.currentTarget
+                                    .src =
+                                    FALLBACK_PRODUCT_IMAGE;
+                            }
+                        }
+                    />
+
+
+                    <div className="chat-product-info">
+
+                        <strong>
+                            {
+                                product.title ||
+                                "Product"
+                            }
+                        </strong>
+
+
+                        {product.price != null && (
+
+                            <span>
+                                ₵
+                                {
+                                    Number(
+                                        product.price
+                                    ).toLocaleString()
+                                }
+                            </span>
+
+                        )}
+
+                    </div>
+
+                </div>
+
+            )}
+
 
             {/* =================================================
                 ERROR
             ================================================= */}
 
             {error && (
+
                 <div
                     className="chat-error"
                     role="alert"
                 >
+
                     <span>
                         {error}
                     </span>
+
 
                     <button
                         type="button"
@@ -1801,14 +2551,18 @@ function Chat() {
                     >
                         <FaTimes />
                     </button>
+
                 </div>
+
             )}
+
 
             {/* =================================================
                 MESSAGES
             ================================================= */}
 
             <div className="chat-messages">
+
 
                 {loading ? (
 
@@ -1824,9 +2578,11 @@ function Chat() {
                             💬
                         </div>
 
+
                         <h3>
                             Start a conversation
                         </h3>
+
 
                         <p>
                             Send a message to begin chatting.
@@ -1847,16 +2603,20 @@ function Chat() {
                                     msg
                                 );
 
+
                             const mine =
                                 isMyMessage(
                                     msg
                                 );
 
+
                             const messageId =
                                 msg.id ||
                                 `${msg.createdAt || msg.created_at || "message"}-${index}`;
 
+
                             return (
+
                                 <div
                                     key={
                                         messageId
@@ -1870,22 +2630,29 @@ function Chat() {
 
                                     <div className="bubble">
 
+
                                         {/* TEXT */}
 
                                         {type ===
                                             "text" && (
+
                                             <p className="text-message">
+
                                                 {
                                                     msg.message ||
                                                     ""
                                                 }
+
                                             </p>
+
                                         )}
+
 
                                         {/* IMAGE */}
 
                                         {type ===
                                             "image" && (
+
                                             <img
                                                 src={
                                                     getChatImageUrl(
@@ -1897,6 +2664,7 @@ function Chat() {
                                                 loading="lazy"
                                                 onError={
                                                     event => {
+
                                                         if (
                                                             event.currentTarget
                                                                 .dataset
@@ -1905,29 +2673,35 @@ function Chat() {
                                                             return;
                                                         }
 
+
                                                         event.currentTarget
                                                             .dataset
                                                             .fallback =
                                                             "true";
 
+
                                                         event.currentTarget
                                                             .src =
-                                                            FALLBACK_IMAGE;
+                                                            FALLBACK_PRODUCT_IMAGE;
                                                     }
                                                 }
                                             />
+
                                         )}
+
 
                                         {/* AUDIO */}
 
                                         {type ===
                                             "audio" && (
+
                                             <div className="chat-audio">
 
                                                 <audio
                                                     controls
                                                     preload="metadata"
                                                 >
+
                                                     <source
                                                         src={
                                                             getChatAudioUrl(
@@ -1937,10 +2711,13 @@ function Chat() {
                                                     />
 
                                                     Your browser does not support audio playback.
+
                                                 </audio>
 
                                             </div>
+
                                         )}
+
 
                                         {/* FOOTER */}
 
@@ -1955,8 +2732,11 @@ function Chat() {
                                                 }
                                             </small>
 
+
                                             {mine && (
+
                                                 <span className="message-status">
+
                                                     {
                                                         msg.status ===
                                                         "read"
@@ -1966,7 +2746,9 @@ function Chat() {
                                                                 ? "✓✓"
                                                                 : "✓"
                                                     }
+
                                                 </span>
+
                                             )}
 
                                         </div>
@@ -1974,11 +2756,13 @@ function Chat() {
                                     </div>
 
                                 </div>
+
                             );
                         }
                     )
 
                 )}
+
 
                 <div
                     ref={
@@ -1988,20 +2772,24 @@ function Chat() {
 
             </div>
 
+
             {/* =================================================
                 AUDIO PREVIEW
             ================================================= */}
 
             {audioBlob && (
+
                 <div className="audio-preview">
 
                     <div className="audio-preview-content">
 
                         <FaMicrophone />
 
+
                         <span>
                             Voice message ready
                         </span>
+
 
                         <audio
                             controls
@@ -2011,6 +2799,7 @@ function Chat() {
                         />
 
                     </div>
+
 
                     <div className="audio-preview-actions">
 
@@ -2023,6 +2812,7 @@ function Chat() {
                         >
                             Cancel
                         </button>
+
 
                         <button
                             type="button"
@@ -2037,13 +2827,16 @@ function Chat() {
                     </div>
 
                 </div>
+
             )}
 
+
             {/* =================================================
-                FOOTER
+                CHAT FOOTER
             ================================================= */}
 
             <div className="chat-footer">
+
 
                 {/* IMAGE INPUT */}
 
@@ -2058,6 +2851,7 @@ function Chat() {
                         uploadImage
                     }
                 />
+
 
                 {/* IMAGE BUTTON */}
 
@@ -2075,12 +2869,15 @@ function Chat() {
                     title="Send image"
                     aria-label="Send image"
                 >
+
                     {
                         uploadingImage
                             ? "..."
                             : <FaImage />
                     }
+
                 </button>
+
 
                 {/* AUDIO BUTTON */}
 
@@ -2117,6 +2914,7 @@ function Chat() {
 
                 )}
 
+
                 {/* TEXT INPUT */}
 
                 <input
@@ -2138,11 +2936,13 @@ function Chat() {
                     }
                     onKeyDown={
                         event => {
+
                             if (
                                 event.key ===
                                     "Enter" &&
                                 !event.shiftKey
                             ) {
+
                                 event.preventDefault();
 
                                 sendMessage();
@@ -2154,7 +2954,8 @@ function Chat() {
                     }
                 />
 
-                {/* SEND BUTTON */}
+
+                {/* SEND */}
 
                 <button
                     type="button"
@@ -2170,11 +2971,13 @@ function Chat() {
                     title="Send message"
                     aria-label="Send message"
                 >
+
                     {
                         sending
                             ? "..."
                             : <FaPaperPlane />
                     }
+
                 </button>
 
             </div>
@@ -2182,5 +2985,6 @@ function Chat() {
         </div>
     );
 }
+
 
 export default Chat;
