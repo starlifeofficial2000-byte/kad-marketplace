@@ -121,6 +121,9 @@ const wishlistRoutes =
 
 const leadRoutes =
     require("./routes/leadRoutes");
+    const brandingRoutes = require(
+    "./routes/brandingRoutes"
+);
 
 /* =====================================================
    HOME BUILDER ROUTES
@@ -580,7 +583,10 @@ app.get(
 ===================================================== */
 
 /* ---------------- AUTH ---------------- */
-
+app.use(
+    "/api/admin/settings/branding",
+    brandingRoutes
+);
 app.use(
     "/api/auth",
     authRoutes
@@ -607,6 +613,7 @@ app.use(
 app.use(
     maintenanceMode
 );
+
 
 /* =====================================================
    MARKETPLACE ROUTES

@@ -2,48 +2,37 @@ const express = require("express");
 
 const router = express.Router();
 
-router.get("/", (req, res) => {
+const auth = require("../middleware/auth");
+const admin = require("../middleware/admin");
 
-    res.json({
+const controller = require("../controllers/marketplaceSettingsController");
 
-        marketplaceName: "Kad Marketplace",
+/*
+|--------------------------------------------------------------------------
+| Marketplace Settings
+|--------------------------------------------------------------------------
+| These endpoints use the MarketplaceSetting database record.
+|--------------------------------------------------------------------------
+*/
 
-        marketplaceDescription: "",
+/**
+ * GET /api/admin/settings
+ */
+router.get(
+    "/",
+    auth,
+    admin,
+    controller.getSettings
+);
 
-        supportEmail: "",
-
-        supportPhone: "",
-
-        address: "",
-
-        primaryColor: "#0A66C2",
-
-        secondaryColor: "#198754",
-
-        maintenanceMode: false,
-
-        registrationEnabled: true,
-
-        storeApprovalRequired: true,
-
-        productApprovalRequired: true,
-
-        defaultCurrency: "GHS"
-
-    });
-
-});
-
-router.put("/", (req, res) => {
-
-    res.json({
-
-        success: true,
-
-        message: "Settings saved."
-
-    });
-
-});
+/**
+ * PUT /api/admin/settings
+ */
+router.put(
+    "/",
+    auth,
+    admin,
+    controller.updateSettings
+);
 
 module.exports = router;

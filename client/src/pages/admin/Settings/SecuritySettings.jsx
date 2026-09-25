@@ -1,55 +1,65 @@
-function SecuritySettings({
-    settings,
-    handleChange
-}) {
+function SecuritySettings({ settings, handleChange }) {
+    const isEnabled = (key, fallback = false) => {
+        const value = settings?.[key];
+
+        if (value === undefined || value === null || value === "") {
+            return fallback;
+        }
+
+        return value === true || value === "true";
+    };
+
+    const numberValue = (key, fallback) => {
+        const value = settings?.[key];
+
+        if (value === undefined || value === null || value === "") {
+            return fallback;
+        }
+
+        return value;
+    };
+
+    const toggle = (key) => {
+        handleChange(key, (!isEnabled(key)).toString());
+    };
 
     return (
-
         <div className="settings-section">
-
             <div className="section-header">
-
                 <div>
-
                     <h2>Security Settings</h2>
-
                     <p>
                         Configure account security, login protection,
-                        password policies, and administrator security.
+                        password policies, IP monitoring, and
+                        administrator security.
                     </p>
-
                 </div>
-
             </div>
-
 
             <div className="settings-card">
 
-
-                {/* ================= LOGIN SECURITY ================= */}
+                {/* =====================================================
+                    LOGIN SECURITY
+                ====================================================== */}
 
                 <h3 className="settings-subtitle">
-
                     Login Security
-
                 </h3>
 
-
                 <div className="form-group">
-
-                    <label>
+                    <label htmlFor="max_failed_login_attempts">
                         Maximum Failed Login Attempts
                     </label>
 
                     <input
+                        id="max_failed_login_attempts"
                         type="number"
                         min="1"
                         max="20"
-
-                        value={
-                            settings.max_failed_login_attempts || 5
-                        }
-
+                        value={numberValue(
+                            "max_failed_login_attempts",
+                            5
+                        )}
                         onChange={(e) =>
                             handleChange(
                                 "max_failed_login_attempts",
@@ -62,24 +72,21 @@ function SecuritySettings({
                         Number of failed login attempts allowed before
                         an account is temporarily locked.
                     </small>
-
                 </div>
 
-
                 <div className="form-group">
-
-                    <label>
+                    <label htmlFor="account_lock_duration">
                         Account Lock Duration (Minutes)
                     </label>
 
                     <input
+                        id="account_lock_duration"
                         type="number"
                         min="1"
-
-                        value={
-                            settings.account_lock_duration || 30
-                        }
-
+                        value={numberValue(
+                            "account_lock_duration",
+                            30
+                        )}
                         onChange={(e) =>
                             handleChange(
                                 "account_lock_duration",
@@ -89,27 +96,24 @@ function SecuritySettings({
                     />
 
                     <small>
-                        How long a user account remains locked after
-                        too many failed login attempts.
+                        How long an account remains locked after too
+                        many failed login attempts.
                     </small>
-
                 </div>
 
-
                 <div className="form-group">
-
-                    <label>
+                    <label htmlFor="session_timeout">
                         Session Timeout (Minutes)
                     </label>
 
                     <input
+                        id="session_timeout"
                         type="number"
                         min="5"
-
-                        value={
-                            settings.session_timeout || 60
-                        }
-
+                        value={numberValue(
+                            "session_timeout",
+                            60
+                        )}
                         onChange={(e) =>
                             handleChange(
                                 "session_timeout",
@@ -119,27 +123,21 @@ function SecuritySettings({
                     />
 
                     <small>
-                        Automatically log users out after this period
-                        of inactivity.
+                        Automatically expire inactive user sessions
+                        after this period.
                     </small>
-
                 </div>
 
-
-
-                {/* ================= TWO FACTOR AUTHENTICATION ================= */}
+                {/* =====================================================
+                    TWO FACTOR AUTHENTICATION
+                ====================================================== */}
 
                 <h3 className="settings-subtitle">
-
                     Two-Factor Authentication
-
                 </h3>
 
-
                 <div className="toggle-setting">
-
                     <div>
-
                         <strong>
                             Enable Two-Factor Authentication
                         </strong>
@@ -148,85 +146,72 @@ function SecuritySettings({
                             Allow users to secure their accounts using
                             an additional verification step.
                         </p>
-
                     </div>
 
                     <input
                         type="checkbox"
-
-                        checked={
-                            settings.enable_two_factor_auth === "true"
-                        }
-
-                        onChange={(e) =>
-                            handleChange(
-                                "enable_two_factor_auth",
-                                e.target.checked.toString()
-                            )
+                        checked={isEnabled(
+                            "two_factor_enabled",
+                            false
+                        )}
+                        onChange={() =>
+                            toggle("two_factor_enabled")
                         }
                     />
-
                 </div>
 
-
                 <div className="toggle-setting">
-
                     <div>
-
                         <strong>
                             Require Two-Factor Authentication for Admins
                         </strong>
 
                         <p>
-                            Administrators must use two-factor
+                            Require administrators to use two-factor
                             authentication when accessing the admin panel.
                         </p>
-
                     </div>
 
                     <input
                         type="checkbox"
-
-                        checked={
-                            settings.require_admin_two_factor === "true"
+                        checked={isEnabled(
+                            "require_admin_two_factor",
+                            false
+                        )}
+                        onChange={() =>
+                            toggle("require_admin_two_factor")
                         }
-
-                        onChange={(e) =>
-                            handleChange(
-                                "require_admin_two_factor",
-                                e.target.checked.toString()
+                        disabled={
+                            !isEnabled(
+                                "two_factor_enabled",
+                                false
                             )
                         }
                     />
-
                 </div>
 
-
-
-                {/* ================= PASSWORD SECURITY ================= */}
+                {/* =====================================================
+                    PASSWORD POLICY
+                ====================================================== */}
 
                 <h3 className="settings-subtitle">
-
                     Password Policy
-
                 </h3>
 
-
                 <div className="form-group">
-
-                    <label>
+                    <label htmlFor="minimum_password_length">
                         Minimum Password Length
                     </label>
 
                     <input
+                        id="minimum_password_length"
                         type="number"
                         min="6"
                         max="50"
-
-                        value={
-                            settings.minimum_password_length || 8
-                        }
-
+                        value={numberValue(
+                            "minimum_password_length",
+                            8
+                        )}
                         onChange={(e) =>
                             handleChange(
                                 "minimum_password_length",
@@ -235,13 +220,38 @@ function SecuritySettings({
                         }
                     />
 
+                    <small>
+                        Minimum number of characters required for
+                        user passwords.
+                    </small>
                 </div>
 
+                <div className="toggle-setting">
+                    <div>
+                        <strong>
+                            Require Strong Passwords
+                        </strong>
+
+                        <p>
+                            Require users to follow the configured
+                            password security requirements.
+                        </p>
+                    </div>
+
+                    <input
+                        type="checkbox"
+                        checked={isEnabled(
+                            "require_strong_passwords",
+                            true
+                        )}
+                        onChange={() =>
+                            toggle("require_strong_passwords")
+                        }
+                    />
+                </div>
 
                 <div className="toggle-setting">
-
                     <div>
-
                         <strong>
                             Require Uppercase Letter
                         </strong>
@@ -250,31 +260,28 @@ function SecuritySettings({
                             Passwords must contain at least one
                             uppercase letter.
                         </p>
-
                     </div>
 
                     <input
                         type="checkbox"
-
-                        checked={
-                            settings.require_uppercase_password === "true"
+                        checked={isEnabled(
+                            "require_uppercase_password",
+                            true
+                        )}
+                        onChange={() =>
+                            toggle("require_uppercase_password")
                         }
-
-                        onChange={(e) =>
-                            handleChange(
-                                "require_uppercase_password",
-                                e.target.checked.toString()
+                        disabled={
+                            !isEnabled(
+                                "require_strong_passwords",
+                                true
                             )
                         }
                     />
-
                 </div>
 
-
                 <div className="toggle-setting">
-
                     <div>
-
                         <strong>
                             Require Number
                         </strong>
@@ -282,74 +289,66 @@ function SecuritySettings({
                         <p>
                             Passwords must contain at least one number.
                         </p>
-
                     </div>
 
                     <input
                         type="checkbox"
-
-                        checked={
-                            settings.require_number_password === "true"
+                        checked={isEnabled(
+                            "require_number_password",
+                            true
+                        )}
+                        onChange={() =>
+                            toggle("require_number_password")
                         }
-
-                        onChange={(e) =>
-                            handleChange(
-                                "require_number_password",
-                                e.target.checked.toString()
+                        disabled={
+                            !isEnabled(
+                                "require_strong_passwords",
+                                true
                             )
                         }
                     />
-
                 </div>
 
-
                 <div className="toggle-setting">
-
                     <div>
-
                         <strong>
                             Require Special Character
                         </strong>
 
                         <p>
-                            Passwords must contain at least one special
-                            character.
+                            Passwords must contain at least one
+                            special character.
                         </p>
-
                     </div>
 
                     <input
                         type="checkbox"
-
-                        checked={
-                            settings.require_special_character === "true"
+                        checked={isEnabled(
+                            "require_special_character",
+                            true
+                        )}
+                        onChange={() =>
+                            toggle("require_special_character")
                         }
-
-                        onChange={(e) =>
-                            handleChange(
-                                "require_special_character",
-                                e.target.checked.toString()
+                        disabled={
+                            !isEnabled(
+                                "require_strong_passwords",
+                                true
                             )
                         }
                     />
-
                 </div>
 
-
-
-                {/* ================= PASSWORD EXPIRY ================= */}
+                {/* =====================================================
+                    PASSWORD EXPIRY
+                ====================================================== */}
 
                 <h3 className="settings-subtitle">
-
                     Password Expiry
-
                 </h3>
 
-
                 <div className="toggle-setting">
-
                     <div>
-
                         <strong>
                             Enable Password Expiry
                         </strong>
@@ -358,66 +357,63 @@ function SecuritySettings({
                             Require users to change their password
                             periodically.
                         </p>
-
                     </div>
 
                     <input
                         type="checkbox"
-
-                        checked={
-                            settings.enable_password_expiry === "true"
-                        }
-
-                        onChange={(e) =>
-                            handleChange(
-                                "enable_password_expiry",
-                                e.target.checked.toString()
-                            )
+                        checked={isEnabled(
+                            "password_expiry_enabled",
+                            false
+                        )}
+                        onChange={() =>
+                            toggle("password_expiry_enabled")
                         }
                     />
-
                 </div>
 
-
                 <div className="form-group">
-
-                    <label>
+                    <label htmlFor="password_expiry_days">
                         Password Expiry Period (Days)
                     </label>
 
                     <input
+                        id="password_expiry_days"
                         type="number"
                         min="1"
-
-                        value={
-                            settings.password_expiry_days || 90
-                        }
-
+                        value={numberValue(
+                            "password_expiry_days",
+                            90
+                        )}
                         onChange={(e) =>
                             handleChange(
                                 "password_expiry_days",
                                 e.target.value
                             )
                         }
+                        disabled={
+                            !isEnabled(
+                                "password_expiry_enabled",
+                                false
+                            )
+                        }
                     />
 
+                    <small>
+                        Number of days before users are required to
+                        change their password.
+                    </small>
                 </div>
 
-
-
-                {/* ================= IP SECURITY ================= */}
+                {/* =====================================================
+                    IP & ACCESS SECURITY
+                ====================================================== */}
 
                 <h3 className="settings-subtitle">
-
                     IP & Access Security
-
                 </h3>
 
-
                 <div className="toggle-setting">
-
                     <div>
-
                         <strong>
                             Enable IP Monitoring
                         </strong>
@@ -426,31 +422,22 @@ function SecuritySettings({
                             Monitor user IP addresses for suspicious
                             login activity.
                         </p>
-
                     </div>
 
                     <input
                         type="checkbox"
-
-                        checked={
-                            settings.enable_ip_monitoring === "true"
-                        }
-
-                        onChange={(e) =>
-                            handleChange(
-                                "enable_ip_monitoring",
-                                e.target.checked.toString()
-                            )
+                        checked={isEnabled(
+                            "ip_monitoring",
+                            false
+                        )}
+                        onChange={() =>
+                            toggle("ip_monitoring")
                         }
                     />
-
                 </div>
 
-
                 <div className="toggle-setting">
-
                     <div>
-
                         <strong>
                             Block Suspicious IP Addresses
                         </strong>
@@ -459,109 +446,140 @@ function SecuritySettings({
                             Automatically block IP addresses detected
                             as potentially malicious.
                         </p>
-
                     </div>
 
                     <input
                         type="checkbox"
-
-                        checked={
-                            settings.block_suspicious_ips === "true"
+                        checked={isEnabled(
+                            "suspicious_ip_blocking",
+                            false
+                        )}
+                        onChange={() =>
+                            toggle("suspicious_ip_blocking")
                         }
-
-                        onChange={(e) =>
-                            handleChange(
-                                "block_suspicious_ips",
-                                e.target.checked.toString()
+                        disabled={
+                            !isEnabled(
+                                "ip_monitoring",
+                                false
                             )
                         }
                     />
-
                 </div>
 
-
-
-                {/* ================= ADMIN SECURITY ================= */}
+                {/* =====================================================
+                    AUDIT & ADMIN SECURITY
+                ====================================================== */}
 
                 <h3 className="settings-subtitle">
-
                     Administrator Security
-
                 </h3>
 
-
                 <div className="toggle-setting">
-
                     <div>
-
                         <strong>
-                            Log Administrator Activities
+                            Enable Audit Logging
                         </strong>
 
                         <p>
-                            Record administrator actions in the
-                            audit log system.
+                            Record important administrator actions
+                            in the audit log system.
                         </p>
-
                     </div>
 
                     <input
                         type="checkbox"
-
-                        checked={
-                            settings.enable_audit_logging === "true"
-                        }
-
-                        onChange={(e) =>
-                            handleChange(
-                                "enable_audit_logging",
-                                e.target.checked.toString()
-                            )
+                        checked={isEnabled(
+                            "audit_logging",
+                            true
+                        )}
+                        onChange={() =>
+                            toggle("audit_logging")
                         }
                     />
-
                 </div>
 
-
                 <div className="toggle-setting">
-
                     <div>
-
                         <strong>
-                            Notify Admins of Suspicious Activity
+                            Security Administrator Alerts
                         </strong>
 
                         <p>
-                            Send alerts when suspicious activity
-                            is detected in the marketplace.
+                            Notify administrators when suspicious
+                            security activity is detected.
                         </p>
-
                     </div>
 
                     <input
                         type="checkbox"
-
-                        checked={
-                            settings.security_admin_alerts === "true"
-                        }
-
-                        onChange={(e) =>
-                            handleChange(
-                                "security_admin_alerts",
-                                e.target.checked.toString()
-                            )
+                        checked={isEnabled(
+                            "security_admin_alerts",
+                            true
+                        )}
+                        onChange={() =>
+                            toggle("security_admin_alerts")
                         }
                     />
-
                 </div>
 
+                {/* =====================================================
+                    SECURITY STATUS
+                ====================================================== */}
 
+                <div
+                    className="settings-info"
+                    style={{
+                        marginTop: "24px",
+                        padding: "16px",
+                        borderRadius: "8px",
+                        background: "#f5f7fa"
+                    }}
+                >
+                    <strong>Security Status</strong>
+
+                    <p style={{ marginTop: "8px" }}>
+                        Two-Factor Authentication:{" "}
+                        {isEnabled(
+                            "two_factor_enabled",
+                            false
+                        )
+                            ? "Enabled"
+                            : "Disabled"}
+                    </p>
+
+                    <p>
+                        Strong Passwords:{" "}
+                        {isEnabled(
+                            "require_strong_passwords",
+                            true
+                        )
+                            ? "Enabled"
+                            : "Disabled"}
+                    </p>
+
+                    <p>
+                        IP Monitoring:{" "}
+                        {isEnabled(
+                            "ip_monitoring",
+                            false
+                        )
+                            ? "Enabled"
+                            : "Disabled"}
+                    </p>
+
+                    <p>
+                        Audit Logging:{" "}
+                        {isEnabled(
+                            "audit_logging",
+                            true
+                        )
+                            ? "Enabled"
+                            : "Disabled"}
+                    </p>
+                </div>
             </div>
-
         </div>
-
     );
-
 }
 
 export default SecuritySettings;

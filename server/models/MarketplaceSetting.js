@@ -1,132 +1,312 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/database");
 
-const MarketplaceSetting = sequelize.define("MarketplaceSetting", {
+const sequelize =
+    require("../config/database");
 
-    marketplaceName: {
 
-        type: DataTypes.STRING,
+const MarketplaceSetting =
+    sequelize.define(
 
-        defaultValue: "KAD Marketplace"
+        "MarketplaceSetting",
 
-    },
+        {
 
-    logo: {
+            /*
+            =========================================
+             BASIC MARKETPLACE INFORMATION
+            =========================================
+            */
 
-        type: DataTypes.STRING
+            marketplaceName: {
+                type:
+                    DataTypes.STRING,
 
-    },
+                allowNull:
+                    false,
 
-    favicon: {
+                defaultValue:
+                    "KAD Marketplace"
+            },
 
-        type: DataTypes.STRING
 
-    },
+            logo: {
+                type:
+                    DataTypes.STRING,
 
-    supportEmail: {
+                allowNull:
+                    true
+            },
 
-        type: DataTypes.STRING
 
-    },
+            adminLogo: {
+                type:
+                    DataTypes.STRING,
 
-    supportPhone: {
+                allowNull:
+                    true
+            },
 
-        type: DataTypes.STRING
 
-    },
+            favicon: {
+                type:
+                    DataTypes.STRING,
 
-    address: {
+                allowNull:
+                    true
+            },
 
-        type: DataTypes.TEXT
 
-    },
+            /*
+            =========================================
+             CONTACT INFORMATION
+            =========================================
+            */
 
-    currency: {
+            supportEmail: {
+                type:
+                    DataTypes.STRING,
 
-        type: DataTypes.STRING,
+                allowNull:
+                    true
+            },
 
-        defaultValue: "GH₵"
 
-    },
+            supportPhone: {
+                type:
+                    DataTypes.STRING,
 
-    language: {
+                allowNull:
+                    true
+            },
 
-        type: DataTypes.STRING,
 
-        defaultValue: "English"
+            address: {
+                type:
+                    DataTypes.TEXT,
 
-    },
+                allowNull:
+                    true
+            },
 
-    maintenanceMode: {
 
-        type: DataTypes.BOOLEAN,
+            /*
+            =========================================
+             LOCALIZATION
+            =========================================
+            */
 
-        defaultValue: false
+            currency: {
+                type:
+                    DataTypes.STRING,
 
-    },
+                allowNull:
+                    false,
 
-    registrationEnabled: {
+                defaultValue:
+                    "GH₵"
+            },
 
-        type: DataTypes.BOOLEAN,
 
-        defaultValue: true
+            language: {
+                type:
+                    DataTypes.STRING,
 
-    },
+                allowNull:
+                    false,
 
-    storeRegistrationEnabled: {
+                defaultValue:
+                    "English"
+            },
 
-        type: DataTypes.BOOLEAN,
 
-        defaultValue: true
+            timezone: {
+                type:
+                    DataTypes.STRING,
 
-    },
+                allowNull:
+                    false,
 
-    facebook: {
+                defaultValue:
+                    "Africa/Accra"
+            },
 
-        type: DataTypes.STRING
 
-    },
+            /*
+            =========================================
+             MARKETPLACE ACCESS
+            =========================================
+            */
 
-    instagram: {
+            maintenanceMode: {
+                type:
+                    DataTypes.BOOLEAN,
 
-        type: DataTypes.STRING
+                allowNull:
+                    false,
 
-    },
+                defaultValue:
+                    false
+            },
 
-    tiktok: {
 
-        type: DataTypes.STRING
+            registrationEnabled: {
+                type:
+                    DataTypes.BOOLEAN,
 
-    },
+                allowNull:
+                    false,
 
-    x: {
+                defaultValue:
+                    true
+            },
 
-        type: DataTypes.STRING
 
-    },
+            storeRegistrationEnabled: {
+                type:
+                    DataTypes.BOOLEAN,
 
-    whatsapp: {
+                allowNull:
+                    false,
 
-        type: DataTypes.STRING
+                defaultValue:
+                    true
+            },
 
-    },
 
-    seoTitle: {
+            /*
+            =========================================
+             SOCIAL MEDIA
+            =========================================
+            */
 
-        type: DataTypes.STRING
+            facebook: {
+                type:
+                    DataTypes.STRING,
 
-    },
+                allowNull:
+                    true
+            },
 
-    seoDescription: {
 
-        type: DataTypes.TEXT
+            instagram: {
+                type:
+                    DataTypes.STRING,
 
-    }
+                allowNull:
+                    true
+            },
 
-}, {
 
-    timestamps: true
+            tiktok: {
+                type:
+                    DataTypes.STRING,
 
-});
+                allowNull:
+                    true
+            },
 
-module.exports = MarketplaceSetting;
+
+            x: {
+                type:
+                    DataTypes.STRING,
+
+                allowNull:
+                    true
+            },
+
+
+            whatsapp: {
+                type:
+                    DataTypes.STRING,
+
+                allowNull:
+                    true
+            },
+
+
+            /*
+            =========================================
+             SEO
+            =========================================
+            */
+
+            seoTitle: {
+                type:
+                    DataTypes.STRING,
+
+                allowNull:
+                    true
+            },
+
+
+            seoDescription: {
+                type:
+                    DataTypes.TEXT,
+
+                allowNull:
+                    true
+            },
+
+
+            /*
+            =========================================
+             ADVANCED CONFIGURATION
+             
+             Stores:
+             Payment
+             Email
+             Notifications
+             Security
+             Analytics
+             SEO advanced
+             Backup
+             Marketplace advanced options
+            =========================================
+            */
+
+            configuration: {
+                type:
+                    DataTypes.JSON,
+
+                allowNull:
+                    false,
+
+                defaultValue:
+                    {}
+            },
+
+
+            /*
+            =========================================
+             SETTINGS STATUS
+            =========================================
+            */
+
+            isActive: {
+                type:
+                    DataTypes.BOOLEAN,
+
+                allowNull:
+                    false,
+
+                defaultValue:
+                    true
+            }
+
+        },
+
+        {
+
+            tableName:
+                "MarketplaceSettings",
+
+            timestamps:
+                true
+
+        }
+
+    );
+
+
+module.exports =
+    MarketplaceSetting;

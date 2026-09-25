@@ -1,89 +1,245 @@
 import { useState } from "react";
+
 import api from "../../../config/axios";
+
 
 function EmailSettings({
     settings,
     handleChange
 }) {
 
-    const token = localStorage.getItem("token");
+    /* =====================================================
+       STATE
+    ===================================================== */
 
-    const [testing, setTesting] = useState(false);
-    const [message, setMessage] = useState("");
-
-    const handleTestEmail = async () => {
-
-        try {
-
-            setTesting(true);
-            setMessage("");
-
-            const response = await axios.post(
-
-                "/api/settings/test-email",
-
-                {
-                    email:
-                        settings.test_email ||
-                        settings.smtp_from_email
-                },
-
-                {
-                    headers: {
-
-                        Authorization:
-                            `Bearer ${token}`
-
-                    }
-
-                }
-
-            );
+    const [
+        testing,
+        setTesting
+    ] = useState(false);
 
 
-            setMessage(
+    const [
+        message,
+        setMessage
+    ] = useState("");
 
-                response.data.message ||
-                "Test email sent successfully."
 
-            );
+    /* =====================================================
+       SAFE SETTINGS
+    ===================================================== */
 
-        }
+    const emailEnabled =
+        settings?.email_enabled === "true";
 
-        catch (error) {
 
-            console.error(error);
+    const smtpHost =
+        settings?.smtp_host || "";
 
-            setMessage(
 
-                error.response?.data?.message ||
-                "Failed to send test email."
+    const smtpPort =
+        settings?.smtp_port || "587";
 
-            );
 
-        }
+    const smtpUsername =
+        settings?.smtp_username || "";
 
-        finally {
 
-            setTesting(false);
+    const smtpPassword =
+        settings?.smtp_password || "";
 
-        }
+
+    const smtpEncryption =
+        settings?.smtp_encryption || "tls";
+
+
+    const smtpFromName =
+        settings?.smtp_from_name ||
+        settings?.marketplace_name ||
+        "KAD Marketplace";
+
+
+    const smtpFromEmail =
+        settings?.smtp_from_email ||
+        settings?.support_email ||
+        "";
+
+
+    const registrationEmail =
+        settings?.registration_email === "true";
+
+
+    const passwordResetEmail =
+        settings?.password_reset_email === "true";
+
+
+    const orderEmail =
+        settings?.order_email === "true";
+
+
+    const paymentEmail =
+        settings?.payment_email === "true";
+
+
+    const testEmail =
+        settings?.test_email || "";
+
+
+    /* =====================================================
+       BOOLEAN HANDLER
+    ===================================================== */
+
+    const updateBoolean = (
+        key,
+        value
+    ) => {
+
+        handleChange(
+            key,
+            value
+                ? "true"
+                : "false"
+        );
 
     };
 
+
+    /* =====================================================
+       TEST EMAIL
+    ===================================================== */
+
+    const handleTestEmail =
+        async () => {
+
+            try {
+
+                setTesting(true);
+
+                setMessage("");
+
+
+                /*
+                =================================================
+                VALIDATE TEST EMAIL
+                =================================================
+                */
+
+                const recipient =
+                    testEmail ||
+                    smtpFromEmail;
+
+
+                if (!recipient) {
+
+                    setMessage(
+                        "Please enter a test email address or sender email address."
+                    );
+
+                    return;
+
+                }
+
+
+                /*
+                =================================================
+                SEND TEST EMAIL
+                =================================================
+
+                Use the existing authenticated Axios
+                instance instead of an undefined axios
+                variable.
+                */
+
+                const response =
+                    await api.post(
+                        "/settings/test-email",
+                        {
+                            email: recipient,
+
+                            smtp: {
+
+                                host:
+                                    smtpHost,
+
+                                port:
+                                    Number(
+                                        smtpPort
+                                    ) || 587,
+
+                                username:
+                                    smtpUsername,
+
+                                password:
+                                    smtpPassword,
+
+                                encryption:
+                                    smtpEncryption,
+
+                                fromName:
+                                    smtpFromName,
+
+                                fromEmail:
+                                    smtpFromEmail
+
+                            }
+
+                        }
+                    );
+
+
+                setMessage(
+                    response.data?.message ||
+                    "Test email sent successfully."
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "TEST EMAIL ERROR:",
+                    error
+                );
+
+
+                setMessage(
+                    error.response?.data?.message ||
+                    error.message ||
+                    "Failed to send test email."
+                );
+
+
+            } finally {
+
+                setTesting(false);
+
+            }
+
+        };
+
+
+    /* =====================================================
+       COMPONENT
+    ===================================================== */
 
     return (
 
         <div className="settings-section">
 
+
+            {/* =================================================
+                HEADER
+            ================================================= */}
+
             <div className="section-header">
 
                 <div>
 
-                    <h2>Email Settings</h2>
+                    <h2>
+                        Email Settings
+                    </h2>
 
                     <p>
-                        Configure SMTP and marketplace email settings.
+                        Configure SMTP and marketplace
+                        email settings.
                     </p>
 
                 </div>
@@ -91,10 +247,52 @@ function EmailSettings({
             </div>
 
 
+            {/* =================================================
+                MAIN CARD
+            ================================================= */}
+
             <div className="settings-card">
 
 
-                {/* SMTP HOST */}
+                {/* =================================================
+                    EMAIL SYSTEM
+                ================================================= */}
+
+                <div className="toggle-setting">
+
+                    <div>
+
+                        <strong>
+                            Enable Email System
+                        </strong>
+
+                        <p>
+                            Allow the marketplace to
+                            send system emails.
+                        </p>
+
+                    </div>
+
+
+                    <input
+                        type="checkbox"
+                        checked={
+                            emailEnabled
+                        }
+                        onChange={(e) =>
+                            updateBoolean(
+                                "email_enabled",
+                                e.target.checked
+                            )
+                        }
+                    />
+
+                </div>
+
+
+                {/* =================================================
+                    SMTP HOST
+                ================================================= */}
 
                 <div className="form-group">
 
@@ -102,29 +300,30 @@ function EmailSettings({
                         SMTP Host
                     </label>
 
+
                     <input
-
                         type="text"
-
                         value={
-                            settings.smtp_host || ""
+                            smtpHost
                         }
-
+                        disabled={
+                            !emailEnabled
+                        }
                         onChange={(e) =>
                             handleChange(
                                 "smtp_host",
                                 e.target.value
                             )
                         }
-
                         placeholder="smtp.gmail.com"
-
                     />
 
                 </div>
 
 
-                {/* SMTP PORT */}
+                {/* =================================================
+                    SMTP PORT
+                ================================================= */}
 
                 <div className="form-group">
 
@@ -132,33 +331,38 @@ function EmailSettings({
                         SMTP Port
                     </label>
 
+
                     <input
-
                         type="number"
-
+                        min="1"
+                        max="65535"
                         value={
-                            settings.smtp_port || ""
+                            smtpPort
                         }
-
+                        disabled={
+                            !emailEnabled
+                        }
                         onChange={(e) =>
                             handleChange(
                                 "smtp_port",
                                 e.target.value
                             )
                         }
-
                         placeholder="587"
-
                     />
 
+
                     <small>
-                        Common ports: 587 for TLS or 465 for SSL.
+                        Common ports: 587 for TLS
+                        or 465 for SSL.
                     </small>
 
                 </div>
 
 
-                {/* SMTP USERNAME */}
+                {/* =================================================
+                    SMTP USERNAME
+                ================================================= */}
 
                 <div className="form-group">
 
@@ -166,29 +370,31 @@ function EmailSettings({
                         SMTP Username
                     </label>
 
+
                     <input
-
                         type="text"
-
                         value={
-                            settings.smtp_username || ""
+                            smtpUsername
                         }
-
+                        disabled={
+                            !emailEnabled
+                        }
                         onChange={(e) =>
                             handleChange(
                                 "smtp_username",
                                 e.target.value
                             )
                         }
-
                         placeholder="your@email.com"
-
+                        autoComplete="username"
                     />
 
                 </div>
 
 
-                {/* SMTP PASSWORD */}
+                {/* =================================================
+                    SMTP PASSWORD
+                ================================================= */}
 
                 <div className="form-group">
 
@@ -196,33 +402,38 @@ function EmailSettings({
                         SMTP Password
                     </label>
 
+
                     <input
-
                         type="password"
-
                         value={
-                            settings.smtp_password || ""
+                            smtpPassword
                         }
-
+                        disabled={
+                            !emailEnabled
+                        }
                         onChange={(e) =>
                             handleChange(
                                 "smtp_password",
                                 e.target.value
                             )
                         }
-
                         placeholder="Enter SMTP password"
-
+                        autoComplete="new-password"
                     />
 
+
                     <small>
-                        For Gmail, use an App Password instead of your normal password.
+                        For Gmail, use an App Password
+                        instead of your normal account
+                        password.
                     </small>
 
                 </div>
 
 
-                {/* SMTP ENCRYPTION */}
+                {/* =================================================
+                    SMTP ENCRYPTION
+                ================================================= */}
 
                 <div className="form-group">
 
@@ -230,19 +441,20 @@ function EmailSettings({
                         Encryption
                     </label>
 
+
                     <select
-
                         value={
-                            settings.smtp_encryption || "tls"
+                            smtpEncryption
                         }
-
+                        disabled={
+                            !emailEnabled
+                        }
                         onChange={(e) =>
                             handleChange(
                                 "smtp_encryption",
                                 e.target.value
                             )
                         }
-
                     >
 
                         <option value="tls">
@@ -262,7 +474,9 @@ function EmailSettings({
                 </div>
 
 
-                {/* FROM NAME */}
+                {/* =================================================
+                    SENDER NAME
+                ================================================= */}
 
                 <div className="form-group">
 
@@ -270,29 +484,30 @@ function EmailSettings({
                         Sender Name
                     </label>
 
+
                     <input
-
                         type="text"
-
                         value={
-                            settings.smtp_from_name || ""
+                            smtpFromName
                         }
-
+                        disabled={
+                            !emailEnabled
+                        }
                         onChange={(e) =>
                             handleChange(
                                 "smtp_from_name",
                                 e.target.value
                             )
                         }
-
-                        placeholder="Marketplace Name"
-
+                        placeholder="KAD Marketplace"
                     />
 
                 </div>
 
 
-                {/* FROM EMAIL */}
+                {/* =================================================
+                    SENDER EMAIL
+                ================================================= */}
 
                 <div className="form-group">
 
@@ -300,66 +515,31 @@ function EmailSettings({
                         Sender Email
                     </label>
 
+
                     <input
-
                         type="email"
-
                         value={
-                            settings.smtp_from_email || ""
+                            smtpFromEmail
                         }
-
+                        disabled={
+                            !emailEnabled
+                        }
                         onChange={(e) =>
                             handleChange(
                                 "smtp_from_email",
                                 e.target.value
                             )
                         }
-
-                        placeholder="noreply@example.com"
-
+                        placeholder="noreply@kadmarket.com"
+                        autoComplete="email"
                     />
 
                 </div>
 
 
-                {/* EMAIL ENABLE */}
-
-                <div className="toggle-setting">
-
-                    <div>
-
-                        <strong>
-                            Enable Email System
-                        </strong>
-
-                        <p>
-                            Allow the marketplace to send system emails.
-                        </p>
-
-                    </div>
-
-
-                    <input
-
-                        type="checkbox"
-
-                        checked={
-                            settings.email_enabled === "true"
-                        }
-
-                        onChange={(e) =>
-                            handleChange(
-                                "email_enabled",
-                                e.target.checked.toString()
-                            )
-                        }
-
-                    />
-
-                </div>
-
-
-                {/* REGISTRATION EMAIL */}
+                {/* =================================================
+                    REGISTRATION EMAIL
+                ================================================= */}
 
                 <div className="toggle-setting">
 
@@ -370,33 +550,35 @@ function EmailSettings({
                         </strong>
 
                         <p>
-                            Send welcome emails when new users register.
+                            Send welcome emails when
+                            new users register.
                         </p>
 
                     </div>
 
 
                     <input
-
                         type="checkbox"
-
                         checked={
-                            settings.registration_email === "true"
+                            registrationEmail
                         }
-
+                        disabled={
+                            !emailEnabled
+                        }
                         onChange={(e) =>
-                            handleChange(
+                            updateBoolean(
                                 "registration_email",
-                                e.target.checked.toString()
+                                e.target.checked
                             )
                         }
-
                     />
 
                 </div>
 
 
-                {/* PASSWORD RESET */}
+                {/* =================================================
+                    PASSWORD RESET EMAIL
+                ================================================= */}
 
                 <div className="toggle-setting">
 
@@ -407,33 +589,113 @@ function EmailSettings({
                         </strong>
 
                         <p>
-                            Allow users to receive password reset emails.
+                            Allow users to receive
+                            password reset emails.
                         </p>
 
                     </div>
 
 
                     <input
-
                         type="checkbox"
-
                         checked={
-                            settings.password_reset_email === "true"
+                            passwordResetEmail
                         }
-
+                        disabled={
+                            !emailEnabled
+                        }
                         onChange={(e) =>
-                            handleChange(
+                            updateBoolean(
                                 "password_reset_email",
-                                e.target.checked.toString()
+                                e.target.checked
                             )
                         }
-
                     />
 
                 </div>
 
 
-                {/* TEST EMAIL */}
+                {/* =================================================
+                    ORDER EMAIL
+                ================================================= */}
+
+                <div className="toggle-setting">
+
+                    <div>
+
+                        <strong>
+                            Order Emails
+                        </strong>
+
+                        <p>
+                            Send email notifications
+                            related to marketplace orders.
+                        </p>
+
+                    </div>
+
+
+                    <input
+                        type="checkbox"
+                        checked={
+                            orderEmail
+                        }
+                        disabled={
+                            !emailEnabled
+                        }
+                        onChange={(e) =>
+                            updateBoolean(
+                                "order_email",
+                                e.target.checked
+                            )
+                        }
+                    />
+
+                </div>
+
+
+                {/* =================================================
+                    PAYMENT EMAIL
+                ================================================= */}
+
+                <div className="toggle-setting">
+
+                    <div>
+
+                        <strong>
+                            Payment Emails
+                        </strong>
+
+                        <p>
+                            Send email notifications
+                            when payments are completed.
+                        </p>
+
+                    </div>
+
+
+                    <input
+                        type="checkbox"
+                        checked={
+                            paymentEmail
+                        }
+                        disabled={
+                            !emailEnabled
+                        }
+                        onChange={(e) =>
+                            updateBoolean(
+                                "payment_email",
+                                e.target.checked
+                            )
+                        }
+                    />
+
+                </div>
+
+
+                {/* =================================================
+                    TEST EMAIL
+                ================================================= */}
 
                 <div className="form-group">
 
@@ -441,50 +703,54 @@ function EmailSettings({
                         Test Email Address
                     </label>
 
+
                     <input
-
                         type="email"
-
                         value={
-                            settings.test_email || ""
+                            testEmail
                         }
-
+                        disabled={
+                            !emailEnabled
+                        }
                         onChange={(e) =>
                             handleChange(
                                 "test_email",
                                 e.target.value
                             )
                         }
-
                         placeholder="test@example.com"
-
                     />
+
+
+                    <small>
+                        Enter an email address where
+                        you want to receive a test message.
+                    </small>
 
                 </div>
 
 
-                {/* TEST BUTTON */}
+                {/* =================================================
+                    TEST BUTTON
+                ================================================= */}
 
                 <div className="email-test-section">
 
                     <button
-
                         type="button"
-
                         className="test-email-btn"
-
-                        onClick={handleTestEmail}
-
-                        disabled={testing}
-
+                        onClick={
+                            handleTestEmail
+                        }
+                        disabled={
+                            testing ||
+                            !emailEnabled
+                        }
                     >
 
                         {testing
-
                             ? "Sending Test Email..."
-
                             : "Send Test Email"
-
                         }
 
                     </button>
@@ -492,10 +758,10 @@ function EmailSettings({
 
                     {message && (
 
-                        <p className="email-test-message">
-
+                        <p
+                            className="email-test-message"
+                        >
                             {message}
-
                         </p>
 
                     )}
@@ -505,10 +771,52 @@ function EmailSettings({
 
             </div>
 
+
+            {/* =================================================
+                EMAIL STATUS
+            ================================================= */}
+
+            <div className="settings-info-card">
+
+                <div className="settings-info-icon">
+                    ✉️
+                </div>
+
+
+                <div>
+
+                    <strong>
+                        Email Configuration
+                    </strong>
+
+
+                    <p>
+
+                        The email system is{" "}
+
+                        <strong>
+                            {emailEnabled
+                                ? "enabled"
+                                : "disabled"}
+                        </strong>
+
+                        {smtpHost
+                            ? ` and configured to use ${smtpHost}.`
+                            : "."
+                        }
+
+                    </p>
+
+                </div>
+
+            </div>
+
+
         </div>
 
     );
 
 }
+
 
 export default EmailSettings;

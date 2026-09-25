@@ -1,113 +1,117 @@
-const MarketplaceSetting = require("../models/MarketplaceSetting");
+const {
+    getMarketplaceSettings,
+    updateMarketplaceSettings
+} = require("../services/marketplaceSettingsService");
 
-/* ==========================================
-   GET ALL SETTINGS
-========================================== */
 
-exports.getSettings = async (req, res) => {
+/*
+=====================================================
+ GET ADMIN MARKETPLACE SETTINGS
+=====================================================
+ GET /api/admin/settings
+=====================================================
+*/
 
-    try {
+exports.getSettings =
+    async (req, res) => {
 
-        const settings = await MarketplaceSetting.findAll({
+        try {
 
-            order: [
+            const settings =
+                await getMarketplaceSettings();
 
-                ["category", "ASC"],
 
-                ["settingKey", "ASC"]
+            return res.status(200).json({
 
-            ]
+                success:
+                    true,
 
-        });
-
-        res.json(settings);
-
-    }
-
-    catch (error) {
-
-        res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
-
-/* ==========================================
-   SAVE SETTINGS
-========================================== */
-
-exports.saveSettings = async (req, res) => {
-
-    try {
-
-        const settings = req.body;
-
-        for (const item of settings) {
-
-            const existing = await MarketplaceSetting.findOne({
-
-                where: {
-
-                    settingKey: item.settingKey
-
-                }
+                settings
 
             });
 
-            if (existing) {
+        }
 
-                existing.settingValue = item.settingValue;
+        catch (error) {
 
-                existing.category = item.category;
+            console.error(
+                "GET ADMIN SETTINGS ERROR:",
+                error
+            );
 
-                existing.description = item.description;
 
-                await existing.save();
+            return res.status(500).json({
 
-            } else {
+                success:
+                    false,
 
-                await MarketplaceSetting.create({
+                message:
+                    "Unable to load marketplace settings.",
 
-                    settingKey: item.settingKey,
+                error:
+                    error.message
 
-                    settingValue: item.settingValue,
-
-                    category: item.category,
-
-                    description: item.description
-
-                });
-
-            }
+            });
 
         }
 
-        res.json({
+    };
 
-            success: true,
 
-            message: "Marketplace settings saved successfully."
+/*
+=====================================================
+ SAVE ADMIN MARKETPLACE SETTINGS
+=====================================================
+ PUT /api/admin/settings
+=====================================================
+*/
 
-        });
+exports.saveSettings =
+    async (req, res) => {
 
-    }
+        try {
 
-    catch (error) {
+            const settings =
+                await updateMarketplaceSettings(
+                    req.body
+                );
 
-        res.status(500).json({
 
-            success: false,
+            return res.status(200).json({
 
-            message: error.message
+                success:
+                    true,
 
-        });
+                message:
+                    "Marketplace settings saved successfully.",
 
-    }
+                settings
 
-};
+            });
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "SAVE ADMIN SETTINGS ERROR:",
+                error
+            );
+
+
+            return res.status(500).json({
+
+                success:
+                    false,
+
+                message:
+                    "Unable to save marketplace settings.",
+
+                error:
+                    error.message
+
+            });
+
+        }
+
+    };

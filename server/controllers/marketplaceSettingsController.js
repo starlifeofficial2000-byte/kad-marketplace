@@ -1,220 +1,223 @@
 const MarketplaceSetting = require("../models/MarketplaceSetting");
 
-/* ==========================================
-   GET ALL SETTINGS
-========================================== */
+/*
+|--------------------------------------------------------------------------
+| GET MARKETPLACE SETTINGS
+|--------------------------------------------------------------------------
+*/
 
 exports.getSettings = async (req, res) => {
-
     try {
 
-        const settings = await MarketplaceSetting.findAll({
-
-            order: [
-
-                ["category", "ASC"],
-                ["settingKey", "ASC"]
-
-            ]
-
-        });
-
-        res.json(settings);
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
-
-/* ==========================================
-   GET SETTINGS BY CATEGORY
-========================================== */
-
-exports.getCategorySettings = async (req, res) => {
-
-    try {
-
-        const settings = await MarketplaceSetting.findAll({
-
-            where: {
-
-                category: req.params.category
-
-            },
-
-            order: [
-
-                ["settingKey", "ASC"]
-
-            ]
-
-        });
-
-        res.json(settings);
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
-
-/* ==========================================
-   CREATE SETTING
-========================================== */
-
-exports.createSetting = async (req, res) => {
-
-    try {
-
-        const setting = await MarketplaceSetting.create(req.body);
-
-        res.status(201).json({
-
-            success: true,
-
-            setting
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
-
-/* ==========================================
-   UPDATE SETTING
-========================================== */
-
-exports.updateSetting = async (req, res) => {
-
-    try {
-
-        const setting = await MarketplaceSetting.findByPk(req.params.id);
-
-        if (!setting) {
-
-            return res.status(404).json({
-
-                success: false,
-
-                message: "Setting not found."
-
+        let settings =
+            await MarketplaceSetting.findOne({
+                where: {
+                    isActive: true
+                }
             });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Create default settings if none exists
+        |--------------------------------------------------------------------------
+        */
+
+        if (!settings) {
+
+            settings =
+                await MarketplaceSetting.create({
+                    marketplaceName: "KAD Marketplace",
+                    currency: "GH₵",
+                    language: "English",
+                    timezone: "Africa/Accra",
+
+                    maintenanceMode: false,
+
+                    registrationEnabled: true,
+
+                    storeRegistrationEnabled: true,
+
+                    isActive: true
+                });
 
         }
 
-        await setting.update(req.body);
-
-        res.json({
-
+        return res.status(200).json({
             success: true,
-
-            setting
-
+            settings
         });
 
-    }
+    } catch (error) {
 
-    catch (error) {
+        console.error(
+            "GET MARKETPLACE SETTINGS ERROR:",
+            error
+        );
 
-        console.log(error);
-
-        res.status(500).json({
-
+        return res.status(500).json({
             success: false,
-
-            message: error.message
-
+            message: "Failed to load marketplace settings."
         });
-
     }
-
 };
 
-/* ==========================================
-   DELETE SETTING
-========================================== */
 
-exports.deleteSetting = async (req, res) => {
+/*
+|--------------------------------------------------------------------------
+| UPDATE MARKETPLACE SETTINGS
+|--------------------------------------------------------------------------
+*/
+
+exports.updateSettings = async (req, res) => {
 
     try {
 
-        const setting = await MarketplaceSetting.findByPk(req.params.id);
-
-        if (!setting) {
-
-            return res.status(404).json({
-
-                success: false,
-
-                message: "Setting not found."
-
+        let settings =
+            await MarketplaceSetting.findOne({
+                where: {
+                    isActive: true
+                }
             });
 
+        /*
+        |--------------------------------------------------------------------------
+        | Create settings record if it does not exist
+        |--------------------------------------------------------------------------
+        */
+
+        if (!settings) {
+
+            settings =
+                await MarketplaceSetting.create({
+                    marketplaceName: "KAD Marketplace",
+                    currency: "GH₵",
+                    language: "English",
+                    timezone: "Africa/Accra",
+                    maintenanceMode: false,
+                    registrationEnabled: true,
+                    storeRegistrationEnabled: true,
+                    isActive: true
+                });
         }
 
-        await setting.destroy();
+        /*
+        |--------------------------------------------------------------------------
+        | Allowed settings
+        |--------------------------------------------------------------------------
+        |
+        | Do not blindly update every property supplied by the browser.
+        |
+        */
 
-        res.json({
+        const allowedFields = [
+            "marketplaceName",
+            "logo",
+            "favicon",
+            "supportEmail",
+            "supportPhone",
+            "address",
+            "currency",
+            "language",
+            "timezone",
 
+            "maintenanceMode",
+
+            "registrationEnabled",
+
+            "storeRegistrationEnabled",
+
+            "facebook",
+            "instagram",
+            "tiktok",
+            "x",
+            "whatsapp",
+
+            "seoTitle",
+            "seoDescription"
+        ];
+
+        const updates = {};
+
+        for (const field of allowedFields) {
+
+            if (
+                Object.prototype.hasOwnProperty.call(
+                    req.body,
+                    field
+                )
+            ) {
+
+                updates[field] =
+                    req.body[field];
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate important fields
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            updates.marketplaceName !== undefined &&
+            typeof updates.marketplaceName !== "string"
+        ) {
+
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Marketplace name must be text."
+            });
+        }
+
+
+        if (
+            updates.currency !== undefined &&
+            typeof updates.currency !== "string"
+        ) {
+
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Currency must be text."
+            });
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Update database
+        |--------------------------------------------------------------------------
+        */
+
+        await settings.update(updates);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Reload fresh database record
+        |--------------------------------------------------------------------------
+        */
+
+        await settings.reload();
+
+        return res.status(200).json({
             success: true,
-
-            message: "Setting deleted."
-
+            message:
+                "Marketplace settings saved successfully.",
+            settings
         });
 
-    }
+    } catch (error) {
 
-    catch (error) {
+        console.error(
+            "UPDATE MARKETPLACE SETTINGS ERROR:",
+            error
+        );
 
-        console.log(error);
-
-        res.status(500).json({
-
+        return res.status(500).json({
             success: false,
-
-            message: error.message
-
+            message:
+                "Failed to save marketplace settings."
         });
-
     }
-
 };

@@ -1,225 +1,182 @@
-function NotificationSettings({
-    settings,
-    handleChange
-}) {
+function NotificationSettings({ settings, handleChange }) {
+    const isEnabled = (key, fallback = false) => {
+        const value = settings?.[key];
+
+        if (value === undefined || value === null || value === "") {
+            return fallback;
+        }
+
+        return value === true || value === "true";
+    };
+
+    const toggle = (key) => {
+        handleChange(key, (!isEnabled(key)).toString());
+    };
 
     return (
-
         <div className="settings-section">
-
             <div className="section-header">
-
                 <div>
-
                     <h2>Notification Settings</h2>
-
                     <p>
                         Configure notifications for users,
-                        administrators, and marketplace activities.
+                        administrators, security events, and
+                        marketplace activities.
                     </p>
-
                 </div>
-
             </div>
-
 
             <div className="settings-card">
 
-
-                {/* ================= EMAIL NOTIFICATIONS ================= */}
+                {/* =====================================================
+                    EMAIL NOTIFICATIONS
+                ====================================================== */}
 
                 <h3 className="settings-subtitle">
-
                     Email Notifications
-
                 </h3>
 
-
                 <div className="toggle-setting">
-
                     <div>
-
-                        <strong>
-                            Enable Email Notifications
-                        </strong>
-
+                        <strong>Enable Email Notifications</strong>
                         <p>
-                            Allow the system to send notifications
+                            Allow the marketplace to send notifications
                             through email.
                         </p>
-
                     </div>
 
-
                     <input
-
                         type="checkbox"
-
-                        checked={
-                            settings.enable_email_notifications === "true"
-                        }
-
-                        onChange={(e) =>
-
-                            handleChange(
-                                "enable_email_notifications",
-                                e.target.checked.toString()
-                            )
-
-                        }
-
+                        checked={isEnabled("email_notifications", true)}
+                        onChange={() => toggle("email_notifications")}
                     />
-
                 </div>
-
 
                 <div className="toggle-setting">
-
                     <div>
-
-                        <strong>
-                            Welcome Email
-                        </strong>
-
+                        <strong>Welcome Email</strong>
                         <p>
-                            Send a welcome email when a new user
-                            creates an account.
+                            Send a welcome email when a new user creates
+                            an account.
                         </p>
-
                     </div>
 
-
                     <input
-
                         type="checkbox"
-
-                        checked={
-                            settings.send_welcome_email === "true"
-                        }
-
-                        onChange={(e) =>
-
-                            handleChange(
-                                "send_welcome_email",
-                                e.target.checked.toString()
-                            )
-
-                        }
-
+                        checked={isEnabled("welcome_email", true)}
+                        onChange={() => toggle("welcome_email")}
+                        disabled={!isEnabled("email_notifications", true)}
                     />
-
                 </div>
-
 
                 <div className="toggle-setting">
-
                     <div>
-
-                        <strong>
-                            Payment Email Notifications
-                        </strong>
-
+                        <strong>Product Notifications</strong>
                         <p>
-                            Send email notifications when payments
-                            are completed.
+                            Send notifications related to product
+                            activities and marketplace listings.
                         </p>
-
                     </div>
 
-
                     <input
-
                         type="checkbox"
-
-                        checked={
-                            settings.send_payment_email === "true"
-                        }
-
-                        onChange={(e) =>
-
-                            handleChange(
-                                "send_payment_email",
-                                e.target.checked.toString()
-                            )
-
-                        }
-
+                        checked={isEnabled("product_notifications", true)}
+                        onChange={() => toggle("product_notifications")}
+                        disabled={!isEnabled("email_notifications", true)}
                     />
-
                 </div>
 
+                <div className="toggle-setting">
+                    <div>
+                        <strong>Order Notifications</strong>
+                        <p>
+                            Send email notifications about orders and
+                            order-related activities.
+                        </p>
+                    </div>
 
-                {/* ================= SMS NOTIFICATIONS ================= */}
+                    <input
+                        type="checkbox"
+                        checked={isEnabled("order_notifications", true)}
+                        onChange={() => toggle("order_notifications")}
+                        disabled={!isEnabled("email_notifications", true)}
+                    />
+                </div>
+
+                <div className="toggle-setting">
+                    <div>
+                        <strong>Payment Notifications</strong>
+                        <p>
+                            Send email notifications when payments are
+                            completed or updated.
+                        </p>
+                    </div>
+
+                    <input
+                        type="checkbox"
+                        checked={isEnabled("payment_notifications", true)}
+                        onChange={() => toggle("payment_notifications")}
+                        disabled={!isEnabled("email_notifications", true)}
+                    />
+                </div>
+
+                <div className="toggle-setting">
+                    <div>
+                        <strong>Seller Notifications</strong>
+                        <p>
+                            Notify sellers about important marketplace
+                            activities affecting their accounts.
+                        </p>
+                    </div>
+
+                    <input
+                        type="checkbox"
+                        checked={isEnabled("seller_notifications", true)}
+                        onChange={() => toggle("seller_notifications")}
+                        disabled={!isEnabled("email_notifications", true)}
+                    />
+                </div>
+
+                {/* =====================================================
+                    SMS NOTIFICATIONS
+                ====================================================== */}
 
                 <h3 className="settings-subtitle">
-
                     SMS Notifications
-
                 </h3>
 
-
                 <div className="toggle-setting">
-
                     <div>
-
-                        <strong>
-                            Enable SMS Notifications
-                        </strong>
-
+                        <strong>Enable SMS Notifications</strong>
                         <p>
-                            Allow the system to send important
+                            Allow the marketplace to send important
                             notifications through SMS.
                         </p>
-
                     </div>
 
-
                     <input
-
                         type="checkbox"
-
-                        checked={
-                            settings.enable_sms_notifications === "true"
-                        }
-
-                        onChange={(e) =>
-
-                            handleChange(
-                                "enable_sms_notifications",
-                                e.target.checked.toString()
-                            )
-
-                        }
-
+                        checked={isEnabled("sms_enabled", false)}
+                        onChange={() => toggle("sms_enabled")}
                     />
-
                 </div>
 
-
                 <div className="form-group">
-
-                    <label>
+                    <label htmlFor="sms_provider">
                         SMS Provider
                     </label>
 
-
                     <select
-
-                        value={
-                            settings.sms_provider || "Hubtel"
-                        }
-
+                        id="sms_provider"
+                        value={settings?.sms_provider || "Hubtel"}
                         onChange={(e) =>
-
                             handleChange(
                                 "sms_provider",
                                 e.target.value
                             )
-
                         }
-
+                        disabled={!isEnabled("sms_enabled", false)}
                     >
-
                         <option value="Hubtel">
                             Hubtel
                         </option>
@@ -235,311 +192,216 @@ function NotificationSettings({
                         <option value="Custom">
                             Custom Provider
                         </option>
-
                     </select>
-
                 </div>
 
-
-                {/* ================= ADMIN NOTIFICATIONS ================= */}
+                {/* =====================================================
+                    ADMINISTRATOR NOTIFICATIONS
+                ====================================================== */}
 
                 <h3 className="settings-subtitle">
-
                     Administrator Notifications
-
                 </h3>
 
+                <div className="toggle-setting">
+                    <div>
+                        <strong>Administrator Alerts</strong>
+                        <p>
+                            Enable important notifications for marketplace
+                            administrators.
+                        </p>
+                    </div>
+
+                    <input
+                        type="checkbox"
+                        checked={isEnabled("admin_alerts", true)}
+                        onChange={() => toggle("admin_alerts")}
+                    />
+                </div>
 
                 <div className="toggle-setting">
-
                     <div>
-
-                        <strong>
-                            New User Registration Alert
-                        </strong>
-
+                        <strong>New User Registration Alert</strong>
                         <p>
                             Notify administrators when a new user
                             registers on the marketplace.
                         </p>
-
                     </div>
 
-
                     <input
-
                         type="checkbox"
-
-                        checked={
-                            settings.admin_new_user_alert === "true"
-                        }
-
-                        onChange={(e) =>
-
-                            handleChange(
-                                "admin_new_user_alert",
-                                e.target.checked.toString()
-                            )
-
-                        }
-
+                        checked={isEnabled("admin_alerts", true)}
+                        onChange={() => toggle("admin_alerts")}
                     />
-
                 </div>
-
 
                 <div className="toggle-setting">
-
                     <div>
-
-                        <strong>
-                            New Product Alert
-                        </strong>
-
+                        <strong>New Product Alert</strong>
                         <p>
-                            Notify administrators when a seller
-                            creates a new product.
+                            Notify administrators when a seller creates
+                            a new product.
                         </p>
-
                     </div>
 
-
                     <input
-
                         type="checkbox"
-
-                        checked={
-                            settings.admin_new_product_alert === "true"
-                        }
-
-                        onChange={(e) =>
-
-                            handleChange(
-                                "admin_new_product_alert",
-                                e.target.checked.toString()
-                            )
-
-                        }
-
+                        checked={isEnabled("product_notifications", true)}
+                        onChange={() => toggle("product_notifications")}
                     />
-
                 </div>
-
 
                 <div className="toggle-setting">
-
                     <div>
-
-                        <strong>
-                            New Store Alert
-                        </strong>
-
+                        <strong>New Store Alert</strong>
                         <p>
-                            Notify administrators when a new store
-                            is created.
+                            Notify administrators when a new store is
+                            created.
                         </p>
-
                     </div>
 
-
                     <input
-
                         type="checkbox"
-
-                        checked={
-                            settings.admin_new_store_alert === "true"
-                        }
-
-                        onChange={(e) =>
-
-                            handleChange(
-                                "admin_new_store_alert",
-                                e.target.checked.toString()
-                            )
-
-                        }
-
+                        checked={isEnabled("seller_notifications", true)}
+                        onChange={() => toggle("seller_notifications")}
                     />
-
                 </div>
 
-
-                {/* ================= SECURITY NOTIFICATIONS ================= */}
+                {/* =====================================================
+                    SECURITY NOTIFICATIONS
+                ====================================================== */}
 
                 <h3 className="settings-subtitle">
-
                     Security Notifications
-
                 </h3>
 
-
                 <div className="toggle-setting">
-
                     <div>
-
-                        <strong>
-                            Failed Login Alerts
-                        </strong>
-
+                        <strong>Security Alerts</strong>
                         <p>
-                            Alert administrators when suspicious
-                            failed login attempts are detected.
+                            Send alerts for important security events and
+                            suspicious activities.
                         </p>
-
                     </div>
 
-
                     <input
-
                         type="checkbox"
-
-                        checked={
-                            settings.failed_login_alerts === "true"
-                        }
-
-                        onChange={(e) =>
-
-                            handleChange(
-                                "failed_login_alerts",
-                                e.target.checked.toString()
-                            )
-
-                        }
-
+                        checked={isEnabled("security_alerts", true)}
+                        onChange={() => toggle("security_alerts")}
                     />
-
                 </div>
-
 
                 <div className="toggle-setting">
-
                     <div>
-
-                        <strong>
-                            Security Alerts
-                        </strong>
-
+                        <strong>Failed Login Alerts</strong>
                         <p>
-                            Send alerts for important security
-                            events and suspicious activities.
+                            Alert administrators when suspicious failed
+                            login attempts are detected.
                         </p>
-
                     </div>
 
-
                     <input
-
                         type="checkbox"
-
-                        checked={
-                            settings.enable_security_alerts === "true"
-                        }
-
-                        onChange={(e) =>
-
-                            handleChange(
-                                "enable_security_alerts",
-                                e.target.checked.toString()
-                            )
-
-                        }
-
+                        checked={isEnabled("security_alerts", true)}
+                        onChange={() => toggle("security_alerts")}
                     />
-
                 </div>
 
-
-                {/* ================= SYSTEM NOTIFICATIONS ================= */}
+                {/* =====================================================
+                    SYSTEM NOTIFICATIONS
+                ====================================================== */}
 
                 <h3 className="settings-subtitle">
-
                     System Notifications
-
                 </h3>
 
-
                 <div className="toggle-setting">
-
                     <div>
-
-                        <strong>
-                            System Maintenance Alerts
-                        </strong>
-
+                        <strong>Maintenance Alerts</strong>
                         <p>
-                            Notify users when the system is under
+                            Notify users when the marketplace is under
                             maintenance.
                         </p>
-
                     </div>
 
-
                     <input
-
                         type="checkbox"
-
-                        checked={
-                            settings.system_maintenance_alerts === "true"
-                        }
-
-                        onChange={(e) =>
-
-                            handleChange(
-                                "system_maintenance_alerts",
-                                e.target.checked.toString()
-                            )
-
-                        }
-
+                        checked={isEnabled("maintenance_alerts", true)}
+                        onChange={() => toggle("maintenance_alerts")}
                     />
-
                 </div>
-
 
                 <div className="toggle-setting">
-
                     <div>
-
-                        <strong>
-                            Promotional Notifications
-                        </strong>
-
+                        <strong>Promotional Notifications</strong>
                         <p>
-                            Allow promotional messages and
-                            marketplace announcements.
+                            Allow promotional messages, promotions,
+                            featured products, and marketplace
+                            announcements.
                         </p>
-
                     </div>
 
-
                     <input
-
                         type="checkbox"
-
-                        checked={
-                            settings.promotional_notifications === "true"
+                        checked={isEnabled(
+                            "promotional_notifications",
+                            true
+                        )}
+                        onChange={() =>
+                            toggle("promotional_notifications")
                         }
-
-                        onChange={(e) =>
-
-                            handleChange(
-                                "promotional_notifications",
-                                e.target.checked.toString()
-                            )
-
-                        }
-
                     />
-
                 </div>
 
+                {/* =====================================================
+                    NOTIFICATION STATUS
+                ====================================================== */}
 
+                <div
+                    className="settings-info"
+                    style={{
+                        marginTop: "24px",
+                        padding: "16px",
+                        borderRadius: "8px",
+                        background: "#f5f7fa"
+                    }}
+                >
+                    <strong>Notification Status</strong>
+
+                    <p style={{ marginTop: "8px" }}>
+                        Email:{" "}
+                        {isEnabled("email_notifications", true)
+                            ? "Enabled"
+                            : "Disabled"}
+                    </p>
+
+                    <p>
+                        SMS:{" "}
+                        {isEnabled("sms_enabled", false)
+                            ? "Enabled"
+                            : "Disabled"}
+                    </p>
+
+                    <p>
+                        Security Alerts:{" "}
+                        {isEnabled("security_alerts", true)
+                            ? "Enabled"
+                            : "Disabled"}
+                    </p>
+
+                    <p>
+                        Promotional Notifications:{" "}
+                        {isEnabled(
+                            "promotional_notifications",
+                            true
+                        )
+                            ? "Enabled"
+                            : "Disabled"}
+                    </p>
+                </div>
             </div>
-
         </div>
-
     );
-
 }
 
 export default NotificationSettings;

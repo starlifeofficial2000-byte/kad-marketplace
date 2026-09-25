@@ -3,19 +3,129 @@ function PaymentSettings({
     handleChange
 }) {
 
+    /* =====================================================
+       SAFE SETTINGS
+    ===================================================== */
+
+    const paymentEnabled =
+        settings?.payment_enabled === "true";
+
+    const mobileMoneyEnabled =
+        settings?.mobile_money_enabled === "true";
+
+    const cardEnabled =
+        settings?.card_enabled === "true";
+
+    const bankTransferEnabled =
+        settings?.bank_transfer_enabled === "true";
+
+    const paymentProvider =
+        settings?.payment_provider || "paystack";
+
+    const minimumTransaction =
+        settings?.minimum_transaction || "";
+
+    const maximumTransaction =
+        settings?.maximum_transaction || "";
+
+    const paymentCurrency =
+        settings?.currency_code || "GHS";
+
+    const autoConfirmPayments =
+        settings?.auto_confirm_payments === "true";
+
+    const paymentNotifications =
+        settings?.payment_notifications === "true";
+
+
+    /* =====================================================
+       BOOLEAN HANDLER
+    ===================================================== */
+
+    const updateBoolean = (
+        key,
+        value
+    ) => {
+
+        handleChange(
+            key,
+            value
+                ? "true"
+                : "false"
+        );
+
+    };
+
+
+    /* =====================================================
+       NUMBER HANDLER
+    ===================================================== */
+
+    const updateNumber = (
+        key,
+        value
+    ) => {
+
+        if (value === "") {
+
+            handleChange(
+                key,
+                ""
+            );
+
+            return;
+
+        }
+
+
+        const numericValue =
+            Number(value);
+
+
+        if (
+            Number.isNaN(numericValue) ||
+            numericValue < 0
+        ) {
+
+            return;
+
+        }
+
+
+        handleChange(
+            key,
+            value
+        );
+
+    };
+
+
+    /* =====================================================
+       COMPONENT
+    ===================================================== */
+
     return (
 
         <div className="settings-section">
+
+
+            {/* =================================================
+                HEADER
+            ================================================= */}
 
             <div className="section-header">
 
                 <div>
 
-                    <h2>Payment Settings</h2>
+                    <h2>
+                        Payment Settings
+                    </h2>
 
                     <p>
-                        Configure payment methods and transaction settings
-                        for your marketplace.
+                        Configure payment methods,
+                        payment providers and
+                        transaction settings for
+                        your marketplace.
                     </p>
 
                 </div>
@@ -23,15 +133,60 @@ function PaymentSettings({
             </div>
 
 
+            {/* =================================================
+                MAIN CARD
+            ================================================= */}
+
             <div className="settings-card">
 
 
-                {/* ================= PAYMENT METHODS ================= */}
+                {/* =================================================
+                    PAYMENT SYSTEM
+                ================================================= */}
 
                 <h3 className="settings-subtitle">
+                    Payment System
+                </h3>
 
+
+                <div className="toggle-setting">
+
+                    <div>
+
+                        <strong>
+                            Enable Payments
+                        </strong>
+
+                        <p>
+                            Enable or disable payments
+                            across the marketplace.
+                        </p>
+
+                    </div>
+
+
+                    <input
+                        type="checkbox"
+                        checked={
+                            paymentEnabled
+                        }
+                        onChange={(e) =>
+                            updateBoolean(
+                                "payment_enabled",
+                                e.target.checked
+                            )
+                        }
+                    />
+
+                </div>
+
+
+                {/* =================================================
+                    PAYMENT METHODS
+                ================================================= */}
+
+                <h3 className="settings-subtitle">
                     Payment Methods
-
                 </h3>
 
 
@@ -42,82 +197,71 @@ function PaymentSettings({
                     <div>
 
                         <strong>
-
                             Enable Mobile Money
-
                         </strong>
 
                         <p>
-
-                            Allow customers to make payments using
-                            MTN Mobile Money, Telecel Cash, and AirtelTigo Money.
-
+                            Allow customers to pay
+                            using MTN Mobile Money,
+                            Telecel Cash and
+                            AirtelTigo Money.
                         </p>
 
                     </div>
 
 
                     <input
-
                         type="checkbox"
-
                         checked={
-                            settings.enable_mobile_money === "true"
+                            mobileMoneyEnabled
                         }
-
+                        disabled={
+                            !paymentEnabled
+                        }
                         onChange={(e) =>
-
-                            handleChange(
-                                "enable_mobile_money",
-                                e.target.checked.toString()
+                            updateBoolean(
+                                "mobile_money_enabled",
+                                e.target.checked
                             )
-
                         }
-
                     />
 
                 </div>
 
 
-                {/* CARD PAYMENT */}
+                {/* CARD */}
 
                 <div className="toggle-setting">
 
                     <div>
 
                         <strong>
-
                             Enable Card Payments
-
                         </strong>
 
                         <p>
-
-                            Allow Visa, Mastercard, and other
-                            international card payments.
-
+                            Allow Visa, Mastercard
+                            and other supported
+                            international cards.
                         </p>
 
                     </div>
 
 
                     <input
-
                         type="checkbox"
-
                         checked={
-                            settings.enable_card_payment === "true"
+                            cardEnabled
                         }
-
+                        disabled={
+                            !paymentEnabled
+                        }
                         onChange={(e) =>
-
-                            handleChange(
-                                "enable_card_payment",
-                                e.target.checked.toString()
+                            updateBoolean(
+                                "card_enabled",
+                                e.target.checked
                             )
-
                         }
-
                     />
 
                 </div>
@@ -130,364 +274,345 @@ function PaymentSettings({
                     <div>
 
                         <strong>
-
                             Enable Bank Transfer
-
                         </strong>
 
                         <p>
-
-                            Allow customers to make payments
+                            Allow customers to pay
                             through bank transfers.
-
                         </p>
 
                     </div>
 
 
                     <input
-
                         type="checkbox"
-
                         checked={
-                            settings.enable_bank_transfer === "true"
+                            bankTransferEnabled
                         }
-
+                        disabled={
+                            !paymentEnabled
+                        }
                         onChange={(e) =>
-
-                            handleChange(
-                                "enable_bank_transfer",
-                                e.target.checked.toString()
+                            updateBoolean(
+                                "bank_transfer_enabled",
+                                e.target.checked
                             )
-
                         }
-
                     />
 
                 </div>
 
 
-
-                {/* ================= PAYMENT PROVIDER ================= */}
+                {/* =================================================
+                    PAYMENT PROVIDER
+                ================================================= */}
 
                 <h3 className="settings-subtitle">
-
                     Payment Provider
-
                 </h3>
 
 
                 <div className="form-group">
 
                     <label>
-
                         Payment Gateway
-
                     </label>
 
 
                     <select
-
                         value={
-                            settings.payment_gateway ||
-                            "Paystack"
+                            paymentProvider
                         }
-
+                        disabled={
+                            !paymentEnabled
+                        }
                         onChange={(e) =>
-
                             handleChange(
-                                "payment_gateway",
+                                "payment_provider",
                                 e.target.value
                             )
-
                         }
-
                     >
 
-                        <option value="Paystack">
-
+                        <option value="paystack">
                             Paystack
-
                         </option>
 
-
-                        <option value="Flutterwave">
-
+                        <option value="flutterwave">
                             Flutterwave
-
                         </option>
 
-
-                        <option value="Hubtel">
-
+                        <option value="hubtel">
                             Hubtel
-
                         </option>
 
-
-                        <option value="Custom">
-
+                        <option value="custom">
                             Custom Gateway
-
                         </option>
 
                     </select>
 
 
                     <small>
-
-                        Select the primary payment provider
-                        for your marketplace.
-
+                        Select the primary payment
+                        provider used by the marketplace.
                     </small>
 
                 </div>
 
 
-
-                {/* ================= TRANSACTION SETTINGS ================= */}
+                {/* =================================================
+                    TRANSACTION SETTINGS
+                ================================================= */}
 
                 <h3 className="settings-subtitle">
-
                     Transaction Settings
-
                 </h3>
 
+
+                {/* MINIMUM */}
 
                 <div className="form-group">
 
                     <label>
-
                         Minimum Transaction Amount
-
                     </label>
 
 
                     <input
-
                         type="number"
-
                         min="0"
-
+                        step="0.01"
                         value={
-                            settings.minimum_transaction_amount ||
-                            ""
+                            minimumTransaction
                         }
-
+                        disabled={
+                            !paymentEnabled
+                        }
                         onChange={(e) =>
-
-                            handleChange(
-                                "minimum_transaction_amount",
+                            updateNumber(
+                                "minimum_transaction",
                                 e.target.value
                             )
-
                         }
-
                         placeholder="0"
-
                     />
 
 
                     <small>
-
-                        Minimum amount allowed for transactions.
-
+                        Minimum amount allowed
+                        for a transaction.
                     </small>
 
                 </div>
 
 
+                {/* MAXIMUM */}
 
                 <div className="form-group">
 
                     <label>
-
                         Maximum Transaction Amount
-
                     </label>
 
 
                     <input
-
                         type="number"
-
                         min="0"
-
+                        step="0.01"
                         value={
-                            settings.maximum_transaction_amount ||
-                            ""
+                            maximumTransaction
                         }
-
+                        disabled={
+                            !paymentEnabled
+                        }
                         onChange={(e) =>
-
-                            handleChange(
-                                "maximum_transaction_amount",
+                            updateNumber(
+                                "maximum_transaction",
                                 e.target.value
                             )
-
                         }
-
                         placeholder="Leave empty for unlimited"
-
                     />
+
+
+                    <small>
+                        Maximum amount allowed
+                        for a transaction.
+                    </small>
 
                 </div>
 
 
+                {/* TRANSACTION FEE */}
 
-                {/* ================= CURRENCY ================= */}
+                <div className="form-group">
+
+                    <label>
+                        Transaction Fee
+                    </label>
+
+
+                    <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={
+                            settings?.transaction_fee || ""
+                        }
+                        disabled={
+                            !paymentEnabled
+                        }
+                        onChange={(e) =>
+                            updateNumber(
+                                "transaction_fee",
+                                e.target.value
+                            )
+                        }
+                        placeholder="0"
+                    />
+
+
+                    <small>
+                        Default marketplace
+                        transaction fee.
+                    </small>
+
+                </div>
+
+
+                {/* =================================================
+                    PAYMENT CURRENCY
+                ================================================= */}
 
                 <h3 className="settings-subtitle">
-
                     Payment Currency
-
                 </h3>
 
 
                 <div className="form-group">
 
                     <label>
-
                         Default Transaction Currency
-
                     </label>
 
 
                     <select
-
                         value={
-                            settings.payment_currency ||
-                            "GHS"
+                            paymentCurrency
                         }
-
+                        disabled={
+                            !paymentEnabled
+                        }
                         onChange={(e) =>
-
                             handleChange(
-                                "payment_currency",
+                                "currency_code",
                                 e.target.value
                             )
-
                         }
-
                     >
 
                         <option value="GHS">
-
                             Ghana Cedi (GHS)
-
                         </option>
-
 
                         <option value="USD">
-
                             US Dollar (USD)
-
                         </option>
-
 
                         <option value="GBP">
-
                             British Pound (GBP)
-
                         </option>
 
-
                         <option value="EUR">
-
                             Euro (EUR)
-
                         </option>
 
                     </select>
 
+
+                    <small>
+                        Currency used when processing
+                        marketplace payments.
+                    </small>
+
                 </div>
 
 
-
-                {/* ================= AUTOMATIC PAYMENT ================= */}
+                {/* =================================================
+                    AUTOMATIC PAYMENT CONFIRMATION
+                ================================================= */}
 
                 <div className="toggle-setting">
 
                     <div>
 
                         <strong>
-
                             Automatic Payment Confirmation
-
                         </strong>
 
                         <p>
-
-                            Automatically confirm transactions
-                            when the payment provider reports
-                            a successful payment.
-
+                            Automatically confirm a
+                            transaction when the payment
+                            provider reports a successful
+                            payment.
                         </p>
 
                     </div>
 
 
                     <input
-
                         type="checkbox"
-
                         checked={
-                            settings.auto_confirm_payment === "true"
+                            autoConfirmPayments
                         }
-
+                        disabled={
+                            !paymentEnabled
+                        }
                         onChange={(e) =>
-
-                            handleChange(
-                                "auto_confirm_payment",
-                                e.target.checked.toString()
+                            updateBoolean(
+                                "auto_confirm_payments",
+                                e.target.checked
                             )
-
                         }
-
                     />
 
                 </div>
 
 
-                {/* PAYMENT NOTIFICATIONS */}
+                {/* =================================================
+                    PAYMENT NOTIFICATIONS
+                ================================================= */}
 
                 <div className="toggle-setting">
 
                     <div>
 
                         <strong>
-
                             Payment Notifications
-
                         </strong>
 
                         <p>
-
-                            Send notifications when payments
-                            are successfully completed.
-
+                            Send notifications when
+                            payments are successfully
+                            completed.
                         </p>
 
                     </div>
 
 
                     <input
-
                         type="checkbox"
-
                         checked={
-                            settings.payment_notifications === "true"
+                            paymentNotifications
                         }
-
                         onChange={(e) =>
-
-                            handleChange(
+                            updateBoolean(
                                 "payment_notifications",
-                                e.target.checked.toString()
+                                e.target.checked
                             )
-
                         }
-
                     />
 
                 </div>
@@ -495,10 +620,61 @@ function PaymentSettings({
 
             </div>
 
+
+            {/* =================================================
+                PAYMENT STATUS
+            ================================================= */}
+
+            <div className="settings-info-card">
+
+                <div className="settings-info-icon">
+                    💳
+                </div>
+
+
+                <div>
+
+                    <strong>
+                        Payment Configuration
+                    </strong>
+
+
+                    <p>
+
+                        Payments are{" "}
+
+                        <strong>
+                            {paymentEnabled
+                                ? "enabled"
+                                : "disabled"}
+                        </strong>
+
+                        {" "}with{" "}
+
+                        <strong>
+                            {paymentProvider}
+                        </strong>
+
+                        {" "}as the primary gateway and{" "}
+
+                        <strong>
+                            {paymentCurrency}
+                        </strong>
+
+                        {" "}as the transaction currency.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+
         </div>
 
     );
 
 }
+
 
 export default PaymentSettings;
