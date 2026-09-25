@@ -676,15 +676,8 @@ exports.getProductById = async (req, res) => {
 
         const product = await Product.findOne({
 
-            where: {
-
-                id: req.params.id,
-
-                status: "Approved",
-
-                deleted: false
-
-            },
+          where: {     status: "Approved", 
+                deleted: false }  ,
 
             include: [
 
