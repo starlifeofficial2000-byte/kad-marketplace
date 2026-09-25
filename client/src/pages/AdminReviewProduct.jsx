@@ -3,6 +3,32 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "../config/axios";
 import "./AdminReviewProduct.css";
 
+/*
+|--------------------------------------------------------------------------
+| R2 / CDN CONFIGURATION
+|--------------------------------------------------------------------------
+| Product images stored in the database are usually filenames such as:
+|
+| 1789905008592-194091026.jpg
+|
+| They should be served from:
+|
+| https://cdn.kadmarket.com/uploads/1789905008592-194091026.jpg
+|
+| instead of:
+|
+| /uploads/1789905008592-194091026.jpg
+|
+*/
+
+const CDN_URL = (
+    import.meta.env.VITE_R2_PUBLIC_URL ||
+    "https://cdn.kadmarket.com"
+).replace(/\/+$/, "");
+
+const FALLBACK_IMAGE = "/images/product-placeholder.png";
+
+
 function AdminReviewProduct() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -10,22 +36,30 @@ function AdminReviewProduct() {
     const [product, setProduct] = useState(null);
     const [images, setImages] = useState([]);
     const [selectedImage, setSelectedImage] = useState(null);
+
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
 
-    /* ==========================================
+
+    /* ========================================================================
        LOAD PRODUCT
-    ========================================== */
+    ======================================================================== */
 
     useEffect(() => {
-        loadProduct();
+        if (id) {
+            loadProduct();
+        }
     }, [id]);
+
 
     const loadProduct = async () => {
         try {
             setLoading(true);
 
-            console.log("Loading product ID:", id);
+            console.log("=================================");
+            console.log("LOADING ADMIN PRODUCT");
+            console.log("PRODUCT ID:", id);
+            console.log("=================================");
 
             const response = await api.get(
                 `/admin/products/${id}`
@@ -42,20 +76,44 @@ function AdminReviewProduct() {
                 response.data;
 
             if (!productData || !productData.id) {
+                console.warn(
+                    "Product data was not found."
+                );
+
                 setProduct(null);
+                setImages([]);
+                setSelectedImage(null);
+
                 return;
             }
 
             setProduct(productData);
 
-            // Normalize images
+
+            /* --------------------------------------------------------------
+               NORMALIZE PRODUCT IMAGES
+            -------------------------------------------------------------- */
+
             const normalizedImages =
-                normalizeImages(productData.images);
+                normalizeImages(
+                    productData.images,
+                    productData.imageUrl,
+                    productData.image
+                );
+
+            console.log(
+                "NORMALIZED PRODUCT IMAGES:",
+                normalizedImages
+            );
 
             setImages(normalizedImages);
 
             if (normalizedImages.length > 0) {
-                setSelectedImage(normalizedImages[0]);
+                setSelectedImage(
+                    normalizedImages[0]
+                );
+            } else {
+                setSelectedImage(null);
             }
 
         } catch (error) {
@@ -64,12 +122,24 @@ function AdminReviewProduct() {
                 error
             );
 
+            console.error(
+                "STATUS:",
+                error.response?.status
+            );
+
+            console.error(
+                "RESPONSE:",
+                error.response?.data
+            );
+
             alert(
                 error.response?.data?.message ||
                 "Unable to load product."
             );
 
             setProduct(null);
+            setImages([]);
+            setSelectedImage(null);
 
         } finally {
             setLoading(false);
@@ -77,80 +147,427 @@ function AdminReviewProduct() {
     };
 
 
-    /* ==========================================
+    /* ========================================================================
        NORMALIZE PRODUCT IMAGES
-    ========================================== */
+    ======================================================================== */
 
-    const normalizeImages = (productImages) => {
-        if (!productImages) {
+    const normalizeImages = (
+        productImages,
+        imageUrl,
+        singleImage
+    ) => {
+
+        /*
+         * Collect possible image sources.
+         *
+         * Different versions of the backend may return:
+         *
+         * images: [...]
+         * images: '["image1.jpg","image2.jpg"]'
+         * imageUrl: 'image.jpg'
+         * image: 'image.jpg'
+         */
+
+        let source = productImages;
+
+        if (
+            !source &&
+            imageUrl
+        ) {
+            source = imageUrl;
+        }
+
+        if (
+            !source &&
+            singleImage
+        ) {
+            source = singleImage;
+        }
+
+
+        if (!source) {
             return [];
         }
 
-        // Already an array
-        if (Array.isArray(productImages)) {
-            return productImages.filter(Boolean);
+
+        /* --------------------------------------------------------------
+           ARRAY
+        -------------------------------------------------------------- */
+
+        if (Array.isArray(source)) {
+
+            return source
+                .flatMap((item) => {
+
+                    if (!item) {
+                        return [];
+                    }
+
+                    /*
+                     * Sometimes array items can themselves contain
+                     * JSON strings.
+                     */
+
+                    if (
+                        typeof item === "string"
+                    ) {
+                        const value =
+                            item.trim();
+
+                        if (!value) {
+                            return [];
+                        }
+
+                        try {
+                            const parsed =
+                                JSON.parse(value);
+
+                            if (
+                                Array.isArray(parsed)
+                            ) {
+                                return parsed;
+                            }
+
+                        } catch {
+                            // Normal filename
+                        }
+
+                        return [value];
+                    }
+
+                    /*
+                     * Handle object-style image records.
+                     */
+
+                    if (
+                        typeof item === "object"
+                    ) {
+
+                        const objectImage =
+                            item.url ||
+                            item.imageUrl ||
+                            item.path ||
+                            item.filename ||
+                            item.fileName;
+
+                        return objectImage
+                            ? [objectImage]
+                            : [];
+                    }
+
+                    return [];
+                })
+                .filter(Boolean);
         }
 
-        // JSON string or single filename
-        if (typeof productImages === "string") {
-            try {
-                const parsed = JSON.parse(productImages);
 
-                if (Array.isArray(parsed)) {
-                    return parsed.filter(Boolean);
+        /* --------------------------------------------------------------
+           STRING
+        -------------------------------------------------------------- */
+
+        if (
+            typeof source === "string"
+        ) {
+
+            const value =
+                source.trim();
+
+            if (!value) {
+                return [];
+            }
+
+
+            /*
+             * JSON array:
+             *
+             * ["image1.jpg","image2.jpg"]
+             */
+
+            try {
+
+                const parsed =
+                    JSON.parse(value);
+
+                if (
+                    Array.isArray(parsed)
+                ) {
+
+                    return parsed
+                        .flatMap((item) => {
+
+                            if (!item) {
+                                return [];
+                            }
+
+                            if (
+                                typeof item ===
+                                "object"
+                            ) {
+
+                                return [
+                                    item.url ||
+                                    item.imageUrl ||
+                                    item.path ||
+                                    item.filename ||
+                                    item.fileName
+                                ].filter(Boolean);
+                            }
+
+                            return [String(item)];
+                        })
+                        .filter(Boolean);
                 }
 
-                return [productImages];
+
+                /*
+                 * JSON object
+                 */
+
+                if (
+                    parsed &&
+                    typeof parsed ===
+                    "object"
+                ) {
+
+                    const objectImage =
+                        parsed.url ||
+                        parsed.imageUrl ||
+                        parsed.path ||
+                        parsed.filename ||
+                        parsed.fileName;
+
+                    if (objectImage) {
+                        return [objectImage];
+                    }
+                }
 
             } catch {
-                return [productImages];
+                // Not JSON. Continue.
             }
+
+
+            /*
+             * Comma-separated images
+             */
+
+            if (value.includes(",")) {
+
+                const splitImages =
+                    value
+                        .split(",")
+                        .map((item) =>
+                            item.trim()
+                        )
+                        .filter(Boolean);
+
+                if (
+                    splitImages.length > 0
+                ) {
+                    return splitImages;
+                }
+            }
+
+
+            /*
+             * Single image
+             */
+
+            return [value];
         }
+
 
         return [];
     };
 
 
-    /* ==========================================
-       GET IMAGE URL
-    ========================================== */
+    /* ========================================================================
+       GET PRODUCT IMAGE URL
+    ======================================================================== */
 
     const getImageUrl = (image) => {
+
         if (!image) {
             return null;
         }
 
-        // Already a complete URL
+
+        let value = String(image).trim();
+
+        if (!value) {
+            return null;
+        }
+
+
+        /*
+         * Remove quotes that may exist when an image value
+         * comes from a JSON/string conversion.
+         */
+
+        value = value
+            .replace(/^["']+|["']+$/g, "")
+            .trim();
+
+        if (!value) {
+            return null;
+        }
+
+
+        /*
+         * Already an external URL.
+         *
+         * Examples:
+         *
+         * https://cdn.kadmarket.com/uploads/image.jpg
+         * https://example.com/image.jpg
+         */
+
         if (
-            image.startsWith("http://") ||
-            image.startsWith("https://")
+            /^https?:\/\//i.test(value)
         ) {
-            return image;
+            return value;
         }
 
-        // Remove /uploads/ if already included
-        if (image.startsWith("/uploads/")) {
-            return `${image}`;
+
+        /*
+         * Data URLs.
+         */
+
+        if (
+            /^data:image\//i.test(value)
+        ) {
+            return value;
         }
 
-        return `/uploads/${image}`;
+
+        /*
+         * Remove leading slashes.
+         */
+
+        value = value.replace(
+            /^\/+/,
+            ""
+        );
+
+
+        /*
+         * Remove old localhost/backend URL
+         * if one somehow exists in the database.
+         */
+
+        value = value.replace(
+            /^https?:\/\/[^/]+\/?/i,
+            ""
+        );
+
+
+        /*
+         * If the database already contains:
+         *
+         * uploads/image.jpg
+         *
+         * don't add uploads twice.
+         */
+
+        if (
+            value.startsWith("uploads/")
+        ) {
+            return `${CDN_URL}/${value}`;
+        }
+
+
+        /*
+         * If the database contains:
+         *
+         * /uploads/image.jpg
+         *
+         * this was already normalized above,
+         * but this protects against unusual paths.
+         */
+
+        if (
+            value.startsWith("uploads\\")
+        ) {
+            value =
+                value.replace(
+                    /^uploads[\\/]+/i,
+                    ""
+                );
+        }
+
+
+        /*
+         * Normal database value:
+         *
+         * image.jpg
+         *
+         * becomes:
+         *
+         * https://cdn.kadmarket.com/uploads/image.jpg
+         */
+
+        return `${CDN_URL}/uploads/${value}`;
     };
 
 
-    /* ==========================================
+    /* ========================================================================
+       IMAGE ERROR HANDLER
+    ======================================================================== */
+
+    const handleImageError = (
+        event,
+        image
+    ) => {
+
+        const imageUrl =
+            getImageUrl(image);
+
+        console.error(
+            "PRODUCT IMAGE FAILED:",
+            {
+                image,
+                imageUrl
+            }
+        );
+
+
+        /*
+         * Prevent an infinite onError loop.
+         */
+
+        if (
+            event.currentTarget.dataset.fallbackApplied ===
+            "true"
+        ) {
+            return;
+        }
+
+
+        event.currentTarget.dataset.fallbackApplied =
+            "true";
+
+        event.currentTarget.src =
+            FALLBACK_IMAGE;
+    };
+
+
+    /* ========================================================================
        APPROVE PRODUCT
-    ========================================== */
+    ======================================================================== */
 
     const approveProduct = async () => {
-        const confirmed = window.confirm(
-            "Are you sure you want to approve this product?"
-        );
+
+        const confirmed =
+            window.confirm(
+                "Are you sure you want to approve this product?"
+            );
 
         if (!confirmed) {
             return;
         }
 
+
         try {
+
             setProcessing(true);
 
             await api.put(
@@ -164,6 +581,7 @@ function AdminReviewProduct() {
             await loadProduct();
 
         } catch (error) {
+
             console.error(
                 "APPROVE PRODUCT ERROR:",
                 error
@@ -175,21 +593,29 @@ function AdminReviewProduct() {
             );
 
         } finally {
+
             setProcessing(false);
+
         }
     };
 
 
-    /* ==========================================
+    /* ========================================================================
        REJECT PRODUCT
-    ========================================== */
+    ======================================================================== */
 
     const rejectProduct = async () => {
-        const reason = window.prompt(
-            "Enter the reason for rejecting this product:"
-        );
 
-        if (!reason || !reason.trim()) {
+        const reason =
+            window.prompt(
+                "Enter the reason for rejecting this product:"
+            );
+
+        if (
+            !reason ||
+            !reason.trim()
+        ) {
+
             alert(
                 "A rejection reason is required."
             );
@@ -197,7 +623,9 @@ function AdminReviewProduct() {
             return;
         }
 
+
         try {
+
             setProcessing(true);
 
             await api.put(
@@ -214,6 +642,7 @@ function AdminReviewProduct() {
             await loadProduct();
 
         } catch (error) {
+
             console.error(
                 "REJECT PRODUCT ERROR:",
                 error
@@ -225,25 +654,31 @@ function AdminReviewProduct() {
             );
 
         } finally {
+
             setProcessing(false);
+
         }
     };
 
 
-    /* ==========================================
+    /* ========================================================================
        DELETE PRODUCT
-    ========================================== */
+    ======================================================================== */
 
     const deleteProduct = async () => {
-        const confirmed = window.confirm(
-            "Delete this product permanently? This action cannot be undone."
-        );
+
+        const confirmed =
+            window.confirm(
+                "Delete this product permanently? This action cannot be undone."
+            );
 
         if (!confirmed) {
             return;
         }
 
+
         try {
+
             setProcessing(true);
 
             await api.delete(
@@ -254,9 +689,12 @@ function AdminReviewProduct() {
                 "Product deleted successfully."
             );
 
-            navigate("/admin/products");
+            navigate(
+                "/admin/products"
+            );
 
         } catch (error) {
+
             console.error(
                 "DELETE PRODUCT ERROR:",
                 error
@@ -268,53 +706,147 @@ function AdminReviewProduct() {
             );
 
         } finally {
+
             setProcessing(false);
+
         }
     };
 
 
-    /* ==========================================
-       GET SELLER
-    ========================================== */
+    /* ========================================================================
+       SELLER
+    ======================================================================== */
 
     const seller =
         product?.seller ||
+        product?.Seller ||
         product?.User ||
         product?.user ||
         null;
 
 
-    /* ==========================================
+    /* ========================================================================
+       FORMAT PRICE
+    ======================================================================== */
+
+    const formatPrice = (price) => {
+
+        const numericPrice =
+            Number(price);
+
+        if (
+            Number.isNaN(
+                numericPrice
+            )
+        ) {
+            return "0";
+        }
+
+        return numericPrice.toLocaleString(
+            "en-GH",
+            {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }
+        );
+    };
+
+
+    /* ========================================================================
+       FORMAT DATE
+    ======================================================================== */
+
+    const formatDate = (date) => {
+
+        if (!date) {
+            return "-";
+        }
+
+        const parsedDate =
+            new Date(date);
+
+        if (
+            Number.isNaN(
+                parsedDate.getTime()
+            )
+        ) {
+            return "-";
+        }
+
+        return parsedDate.toLocaleDateString(
+            "en-GH",
+            {
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+            }
+        );
+    };
+
+
+    /* ========================================================================
+       STATUS
+    ======================================================================== */
+
+    const normalizedStatus =
+        String(
+            product?.status || ""
+        ).toLowerCase();
+
+
+    /* ========================================================================
        LOADING
-    ========================================== */
+    ======================================================================== */
 
     if (loading) {
+
         return (
             <div className="review-loading">
-                <h2>Loading Product...</h2>
+
+                <div className="review-loading-content">
+
+                    <div className="review-spinner" />
+
+                    <h2>
+                        Loading Product...
+                    </h2>
+
+                    <p>
+                        Please wait while the
+                        product information is loaded.
+                    </p>
+
+                </div>
+
             </div>
         );
     }
 
 
-    /* ==========================================
+    /* ========================================================================
        PRODUCT NOT FOUND
-    ========================================== */
+    ======================================================================== */
 
     if (!product) {
+
         return (
             <div className="review-not-found">
 
-                <h2>Product Not Found</h2>
+                <h2>
+                    Product Not Found
+                </h2>
 
                 <p>
-                    The product may have been deleted
-                    or does not exist.
+                    The product may have been
+                    deleted or does not exist.
                 </p>
 
                 <button
+                    type="button"
                     onClick={() =>
-                        navigate("/admin/products")
+                        navigate(
+                            "/admin/products"
+                        )
                     }
                 >
                     ← Back to Products
@@ -325,58 +857,68 @@ function AdminReviewProduct() {
     }
 
 
-    /* ==========================================
+    /* ========================================================================
        MAIN PAGE
-    ========================================== */
+    ======================================================================== */
 
     return (
+
         <div className="review-container">
 
-            {/* =====================================
+            {/* ================================================================
                 PAGE HEADER
-            ===================================== */}
+            ================================================================ */}
 
             <div className="review-header">
 
                 <div>
 
                     <button
+                        type="button"
                         className="back-top-btn"
                         onClick={() =>
-                            navigate("/admin/products")
+                            navigate(
+                                "/admin/products"
+                            )
                         }
                     >
                         ← Back to Products
                     </button>
 
+
                     <h1>
                         Review Product
                     </h1>
 
+
                     <p>
-                        Review product information and
-                        manage its marketplace status.
+                        Review product information
+                        and manage its marketplace status.
                     </p>
 
                 </div>
 
+
                 <span
-                    className={`status-badge ${String(
-                        product.status || ""
-                    ).toLowerCase()}`}
+                    className={`status-badge ${normalizedStatus}`}
                 >
-                    {product.status || "Unknown"}
+                    {product.status ||
+                        "Unknown"}
                 </span>
 
             </div>
 
 
+            {/* ================================================================
+                CONTENT
+            ================================================================ */}
+
             <div className="review-content">
 
 
-                {/* =====================================
+                {/* ============================================================
                     PRODUCT GALLERY
-                ===================================== */}
+                ============================================================ */}
 
                 <div className="gallery">
 
@@ -386,17 +928,20 @@ function AdminReviewProduct() {
 
                             <img
                                 className="main-image"
-                                src={getImageUrl(selectedImage)}
-                                alt={product.title || "Product"}
-                                onError={(e) => {
-                                    console.error(
-                                        "IMAGE FAILED:",
+                                src={getImageUrl(
+                                    selectedImage
+                                )}
+                                alt={
+                                    product.title ||
+                                    "Product"
+                                }
+                                loading="eager"
+                                onError={(event) =>
+                                    handleImageError(
+                                        event,
                                         selectedImage
-                                    );
-
-                                    e.currentTarget.style.display =
-                                        "none";
-                                }}
+                                    )
+                                }
                             />
 
                         ) : (
@@ -418,41 +963,85 @@ function AdminReviewProduct() {
                     </div>
 
 
-                    {/* THUMBNAILS */}
+                    {/* ========================================================
+                        THUMBNAILS
+                    ======================================================== */}
 
                     {images.length > 1 && (
 
                         <div className="thumbs">
 
                             {images.map(
-                                (image, index) => (
+                                (image, index) => {
 
-                                    <button
-                                        type="button"
-                                        key={`${image}-${index}`}
-                                        className={
-                                            selectedImage === image
-                                                ? "thumbnail active-thumbnail"
-                                                : "thumbnail"
-                                        }
-                                        onClick={() =>
-                                            setSelectedImage(image)
-                                        }
-                                    >
+                                    const imageUrl =
+                                        getImageUrl(
+                                            image
+                                        );
 
-                                        <img
-                                            src={getImageUrl(image)}
-                                            alt={`Product ${index + 1}`}
-                                            onError={(e) => {
-                                                e.currentTarget.style.display =
-                                                    "none";
-                                            }}
-                                        />
+                                    return (
 
-                                    </button>
+                                        <button
+                                            type="button"
+                                            key={`${image}-${index}`}
+                                            className={
+                                                selectedImage ===
+                                                image
+                                                    ? "thumbnail active-thumbnail"
+                                                    : "thumbnail"
+                                            }
+                                            onClick={() =>
+                                                setSelectedImage(
+                                                    image
+                                                )
+                                            }
+                                            title={`View image ${
+                                                index + 1
+                                            }`}
+                                        >
 
-                                )
+                                            <img
+                                                src={
+                                                    imageUrl
+                                                }
+                                                alt={`Product ${
+                                                    index + 1
+                                                }`}
+                                                loading="lazy"
+                                                onError={(
+                                                    event
+                                                ) =>
+                                                    handleImageError(
+                                                        event,
+                                                        image
+                                                    )
+                                                }
+                                            />
+
+                                        </button>
+
+                                    );
+                                }
                             )}
+
+                        </div>
+
+                    )}
+
+
+                    {/* ========================================================
+                        IMAGE COUNT
+                    ======================================================== */}
+
+                    {images.length > 0 && (
+
+                        <div className="image-count">
+
+                            {images.length}{" "}
+                            {images.length === 1
+                                ? "image"
+                                : "images"}{" "}
+                            available
 
                         </div>
 
@@ -461,35 +1050,45 @@ function AdminReviewProduct() {
                 </div>
 
 
-                {/* =====================================
+                {/* ============================================================
                     PRODUCT INFORMATION
-                ===================================== */}
+                ============================================================ */}
 
                 <div className="review-info">
+
+
+                    {/* ========================================================
+                        TITLE + PRICE
+                    ======================================================== */}
 
                     <div className="product-title-section">
 
                         <h1>
-                            {product.title || "Untitled Product"}
+                            {product.title ||
+                                "Untitled Product"}
                         </h1>
+
 
                         <h2>
                             GH₵{" "}
-                            {Number(
-                                product.price || 0
-                            ).toLocaleString()}
+                            {formatPrice(
+                                product.price
+                            )}
                         </h2>
 
                     </div>
 
 
-                    {/* PRODUCT DETAILS */}
+                    {/* ========================================================
+                        PRODUCT INFORMATION
+                    ======================================================== */}
 
                     <div className="details-card">
 
                         <h3>
                             Product Information
                         </h3>
+
 
                         <div className="details-grid">
 
@@ -500,7 +1099,8 @@ function AdminReviewProduct() {
                                 </span>
 
                                 <strong>
-                                    {product.category || "-"}
+                                    {product.category ||
+                                        "-"}
                                 </strong>
 
                             </div>
@@ -513,7 +1113,8 @@ function AdminReviewProduct() {
                                 </span>
 
                                 <strong>
-                                    {product.condition || "-"}
+                                    {product.condition ||
+                                        "-"}
                                 </strong>
 
                             </div>
@@ -526,7 +1127,8 @@ function AdminReviewProduct() {
                                 </span>
 
                                 <strong>
-                                    {product.location || "-"}
+                                    {product.location ||
+                                        "-"}
                                 </strong>
 
                             </div>
@@ -539,7 +1141,8 @@ function AdminReviewProduct() {
                                 </span>
 
                                 <strong>
-                                    {product.status || "-"}
+                                    {product.status ||
+                                        "-"}
                                 </strong>
 
                             </div>
@@ -552,14 +1155,9 @@ function AdminReviewProduct() {
                                 </span>
 
                                 <strong>
-
-                                    {product.createdAt
-                                        ? new Date(
-                                            product.createdAt
-                                        ).toLocaleDateString()
-                                        : "-"
-                                    }
-
+                                    {formatDate(
+                                        product.createdAt
+                                    )}
                                 </strong>
 
                             </div>
@@ -582,13 +1180,16 @@ function AdminReviewProduct() {
                     </div>
 
 
-                    {/* SELLER INFORMATION */}
+                    {/* ========================================================
+                        SELLER INFORMATION
+                    ======================================================== */}
 
                     <div className="details-card">
 
                         <h3>
                             Seller Information
                         </h3>
+
 
                         <div className="details-grid">
 
@@ -599,7 +1200,10 @@ function AdminReviewProduct() {
                                 </span>
 
                                 <strong>
-                                    {seller?.name || "Unknown"}
+                                    {seller?.name ||
+                                        seller?.fullName ||
+                                        seller?.username ||
+                                        "Unknown"}
                                 </strong>
 
                             </div>
@@ -612,7 +1216,8 @@ function AdminReviewProduct() {
                                 </span>
 
                                 <strong>
-                                    {seller?.email || "-"}
+                                    {seller?.email ||
+                                        "-"}
                                 </strong>
 
                             </div>
@@ -625,7 +1230,9 @@ function AdminReviewProduct() {
                                 </span>
 
                                 <strong>
-                                    {seller?.phone || "-"}
+                                    {seller?.phone ||
+                                        seller?.phoneNumber ||
+                                        "-"}
                                 </strong>
 
                             </div>
@@ -635,7 +1242,9 @@ function AdminReviewProduct() {
                     </div>
 
 
-                    {/* DESCRIPTION */}
+                    {/* ========================================================
+                        DESCRIPTION
+                    ======================================================== */}
 
                     <div className="description-card">
 
@@ -643,92 +1252,126 @@ function AdminReviewProduct() {
                             Description
                         </h3>
 
+
                         <p>
                             {product.description ||
-                                "No description provided."
-                            }
+                                "No description provided."}
                         </p>
 
                     </div>
 
 
-                    {/* REJECTION REASON */}
+                    {/* ========================================================
+                        REJECTION REASON
+                    ======================================================== */}
 
-                    {product.status === "Rejected" &&
+                    {normalizedStatus ===
+                        "rejected" &&
                         product.rejectionReason && (
 
-                        <div className="rejection-card">
+                            <div className="rejection-card">
 
-                            <h3>
-                                Rejection Reason
-                            </h3>
+                                <h3>
+                                    Rejection Reason
+                                </h3>
 
-                            <p>
-                                {product.rejectionReason}
-                            </p>
+                                <p>
+                                    {
+                                        product.rejectionReason
+                                    }
+                                </p>
 
-                        </div>
+                            </div>
 
-                    )}
+                        )}
 
 
-                    {/* =====================================
+                    {/* ========================================================
                         ACTION BUTTONS
-                    ===================================== */}
+                    ======================================================== */}
 
                     <div className="review-buttons">
 
-                        {String(
-                            product.status || ""
-                        ).toLowerCase() !== "approved" && (
 
-                            <button
-                                className="approve"
-                                onClick={approveProduct}
-                                disabled={processing}
-                            >
-                                {processing
-                                    ? "Processing..."
-                                    : "✓ Approve Product"
-                                }
-                            </button>
+                        {/* APPROVE */}
 
-                        )}
+                        {normalizedStatus !==
+                            "approved" && (
+
+                                <button
+                                    type="button"
+                                    className="approve"
+                                    onClick={
+                                        approveProduct
+                                    }
+                                    disabled={
+                                        processing
+                                    }
+                                >
+
+                                    {processing
+                                        ? "Processing..."
+                                        : "✓ Approve Product"}
+
+                                </button>
+
+                            )}
 
 
-                        {String(
-                            product.status || ""
-                        ).toLowerCase() !== "rejected" && (
+                        {/* REJECT */}
 
-                            <button
-                                className="reject"
-                                onClick={rejectProduct}
-                                disabled={processing}
-                            >
-                                {processing
-                                    ? "Processing..."
-                                    : "✕ Reject Product"
-                                }
-                            </button>
+                        {normalizedStatus !==
+                            "rejected" && (
 
-                        )}
+                                <button
+                                    type="button"
+                                    className="reject"
+                                    onClick={
+                                        rejectProduct
+                                    }
+                                    disabled={
+                                        processing
+                                    }
+                                >
 
+                                    {processing
+                                        ? "Processing..."
+                                        : "✕ Reject Product"}
+
+                                </button>
+
+                            )}
+
+
+                        {/* DELETE */}
 
                         <button
+                            type="button"
                             className="delete"
-                            onClick={deleteProduct}
-                            disabled={processing}
+                            onClick={
+                                deleteProduct
+                            }
+                            disabled={
+                                processing
+                            }
                         >
                             🗑 Delete Product
                         </button>
 
 
+                        {/* BACK */}
+
                         <button
+                            type="button"
                             className="back"
                             onClick={() =>
-                                navigate("/admin/products")
+                                navigate(
+                                    "/admin/products"
+                                )
                             }
-                            disabled={processing}
+                            disabled={
+                                processing
+                            }
                         >
                             ← Back
                         </button>
@@ -742,5 +1385,6 @@ function AdminReviewProduct() {
         </div>
     );
 }
+
 
 export default AdminReviewProduct;
