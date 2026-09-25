@@ -195,65 +195,83 @@ function Products() {
 
     };
 
+/* =========================================================
+   REJECT PRODUCT
+========================================================= */
 
-    /* =========================================================
-       REJECT PRODUCT
-    ========================================================= */
+const rejectProduct = async (id) => {
 
-    const rejectProduct = async (id) => {
-
-        const confirmed = window.confirm(
-            "Reject this product?"
+    const rejectionReason =
+        window.prompt(
+            "Enter the reason for rejecting this product:"
         );
 
 
-        if (!confirmed) return;
+    // User cancelled the prompt
+    if (rejectionReason === null) {
+        return;
+    }
 
 
-        try {
-
-            setActionLoading(id);
-
-
-            await api.put(
-                `/admin/products/${id}/reject`,
-                {}
-            );
+    const trimmedReason =
+        rejectionReason.trim();
 
 
-            alert(
-                "Product rejected successfully."
-            );
+    if (!trimmedReason) {
+
+        alert(
+            "A rejection reason is required."
+        );
+
+        return;
+    }
 
 
-            await loadProducts();
+    try {
 
-        }
-
-        catch (error) {
-
-            console.error(
-                "REJECT PRODUCT ERROR:",
-                error
-            );
+        setActionLoading(id);
 
 
-            alert(
-                error.response?.data?.message ||
-                "Unable to reject product."
-            );
-
-        }
-
-        finally {
-
-            setActionLoading(null);
-
-        }
-
-    };
+        await api.put(
+            `/admin/products/${id}/reject`,
+            {
+                rejectionReason:
+                    trimmedReason
+            }
+        );
 
 
+        alert(
+            "Product rejected successfully."
+        );
+
+
+        await loadProducts();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "REJECT PRODUCT ERROR:",
+            error
+        );
+
+
+        alert(
+            error.response?.data?.message ||
+            "Unable to reject product."
+        );
+
+    }
+
+    finally {
+
+        setActionLoading(null);
+
+    }
+
+};
     /* =========================================================
        DELETE PRODUCT
     ========================================================= */

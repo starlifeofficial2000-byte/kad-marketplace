@@ -12,7 +12,10 @@ const slugify = require("slugify");
 const sequelize = require("../config/database");
 const promotionController = require("./promotionController");
 const ProductPromotion = require("../models/ProductPromotion");
-
+const {
+    getSetting,
+    toBoolean
+} = require("../services/marketplaceSettingsService");
 const {
     getR2PublicUrl,
     deleteFromR2
@@ -779,7 +782,7 @@ async function getMonthlyUploads(userId) {
 
 /* ===========================================================
    CREATE PRODUCT
-=========================================================== */
+   =========================================================== */
 
 exports.createProduct =
     async (req, res) => {
@@ -787,6 +790,10 @@ exports.createProduct =
         let transaction = null;
 
         try {
+
+            // -------------------------------------------------
+            // AUTHENTICATION
+            // -------------------------------------------------
 
             if (!req.user) {
 
@@ -800,13 +807,24 @@ exports.createProduct =
                 });
             }
 
+
+            // -------------------------------------------------
+            // START TRANSACTION
+            // -------------------------------------------------
+
             transaction =
                 await sequelize.transaction();
+
+
+            // -------------------------------------------------
+            // VALIDATE PRODUCT DATA
+            // -------------------------------------------------
 
             const validation =
                 validateProduct(
                     req.body
                 );
+
 
             if (!validation.success) {
 
@@ -819,6 +837,11 @@ exports.createProduct =
                     validation
                 );
             }
+
+
+            // -------------------------------------------------
+            // VALIDATE IMAGES
+            // -------------------------------------------------
 
             if (
                 !Array.isArray(req.files) ||
@@ -836,13 +859,69 @@ exports.createProduct =
                 });
             }
 
+
+            // -------------------------------------------------
+            // MARKETPLACE PRODUCT APPROVAL SETTING
+            //
+            // When TRUE:
+            //     Product starts as Pending
+            //
+            // When FALSE:
+            //     Product is published immediately
+            // -------------------------------------------------
+
+            let requireProductApproval = true;
+
+            try {
+
+                requireProductApproval =
+                    toBoolean(
+                        await getSetting(
+                            "require_product_approval",
+                            true
+                        ),
+                        true
+                    );
+
+            } catch (settingsError) {
+
+                console.error(
+                    "PRODUCT APPROVAL SETTING ERROR:",
+                    settingsError
+                );
+
+                // Fail safely:
+                // if settings cannot be read,
+                // require approval by default.
+                requireProductApproval = true;
+            }
+
+
+            const initialProductStatus =
+                requireProductApproval
+                    ? "Pending"
+                    : "Approved";
+
+
+            const initialApprovedAt =
+                requireProductApproval
+                    ? null
+                    : new Date();
+
+
+            // -------------------------------------------------
+            // SUBSCRIPTION VALIDATION
+            // -------------------------------------------------
+
             const subscriptionResult =
                 await validateSubscription(
                     req.user.id
                 );
 
+
             let subscription = null;
             let plan = null;
+
 
             if (subscriptionResult.valid) {
 
@@ -851,27 +930,41 @@ exports.createProduct =
 
                 plan =
                     subscriptionResult.plan;
-const uploadLimit =
-    getUploadLimit(plan);
 
-const uploadsUsed =
-    Number(subscription.uploadsUsed || 0);
 
-if (uploadsUsed >= uploadLimit) {
+                const uploadLimit =
+                    getUploadLimit(plan);
 
-    await rollbackTransaction(
-        transaction,
-        req.files
-    );
 
-    return res.status(403).json({
-        success: false,
-        subscriptionLimitReached: true,
-        message:
-            `Your ${plan.name} plan allows ${uploadLimit} product listings per subscription period. You have used ${uploadsUsed}.`
-    });
-}
+                const uploadsUsed =
+                    Number(
+                        subscription.uploadsUsed || 0
+                    );
+
+
+                if (
+                    uploadsUsed >=
+                    uploadLimit
+                ) {
+
+                    await rollbackTransaction(
+                        transaction,
+                        req.files
+                    );
+
+                    return res.status(403).json({
+                        success: false,
+                        subscriptionLimitReached: true,
+                        message:
+                            `Your ${plan.name} plan allows ${uploadLimit} product listings per subscription period. You have used ${uploadsUsed}.`
+                    });
+                }
+
             } else {
+
+                // -------------------------------------------------
+                // FREE USER UPLOAD LIMIT
+                // -------------------------------------------------
 
                 const user =
                     await User.findByPk(
@@ -880,6 +973,7 @@ if (uploadsUsed >= uploadLimit) {
                             transaction
                         }
                     );
+
 
                 if (!user) {
 
@@ -894,7 +988,9 @@ if (uploadsUsed >= uploadLimit) {
                     });
                 }
 
+
                 const FREE_UPLOAD_LIMIT = 5;
+
 
                 if (
                     Number(
@@ -916,13 +1012,20 @@ if (uploadsUsed >= uploadLimit) {
                 }
             }
 
+
+            // -------------------------------------------------
+            // PLAN FEATURES / PRODUCT SCORE
+            // -------------------------------------------------
+
             let features;
             let score;
+
 
             if (plan) {
 
                 features =
                     getPlanFeatures(plan);
+
 
                 score =
                     calculateScore(plan);
@@ -939,13 +1042,20 @@ if (uploadsUsed >= uploadLimit) {
                     verifiedStore: false
                 };
 
+
                 score = 10;
             }
+
+
+            // -------------------------------------------------
+            // PROCESS IMAGES
+            // -------------------------------------------------
 
             const images =
                 processImages(
                     req.files
                 );
+
 
             if (images.length === 0) {
 
@@ -961,18 +1071,30 @@ if (uploadsUsed >= uploadLimit) {
                 });
             }
 
+
+            // -------------------------------------------------
+            // SANITIZE PRODUCT INFORMATION
+            // -------------------------------------------------
+
             const title =
                 sanitize(
                     req.body.title
                 );
+
 
             const description =
                 sanitize(
                     req.body.description
                 );
 
+
+            // -------------------------------------------------
+            // GENERATE PRODUCT SLUG
+            // -------------------------------------------------
+
             const slug =
                 generateSlug(title);
+
 
             if (!slug) {
 
@@ -988,90 +1110,157 @@ if (uploadsUsed >= uploadLimit) {
                 });
             }
 
+
+            // -------------------------------------------------
+            // CREATE PRODUCT
+            // -------------------------------------------------
+
             const product =
                 await Product.create(
                     {
+
                         userId:
                             req.user.id,
+
 
                         subscriptionPlanId:
                             plan
                                 ? plan.id
                                 : null,
 
+
                         title,
 
+
                         description,
+
 
                         price:
                             Number(
                                 req.body.price
                             ),
 
+
                         category:
                             req.body.category,
+
 
                         condition:
                             req.body.condition,
 
+
                         location:
                             req.body.location,
+
 
                         region:
                             req.body.region,
 
+
                         city:
                             req.body.city,
+
 
                         images:
                             JSON.stringify(
                                 images
                             ),
 
+
                         slug,
 
+
+                        // -----------------------------------------
+                        // IMPORTANT:
+                        // Product approval is now controlled
+                        // from Marketplace Settings.
+                        // -----------------------------------------
+
                         status:
-                            "Pending",
+                            initialProductStatus,
+
+
+                        // -----------------------------------------
+                        // Only automatically approved products
+                        // receive an approval date.
+                        // -----------------------------------------
+
+                        approvedAt:
+                            initialApprovedAt,
+
+
+                        // -----------------------------------------
+                        // No administrator approved an
+                        // automatically published product.
+                        // -----------------------------------------
+
+                        approvedBy:
+                            null,
+
+
+                        // -----------------------------------------
+                        // New products have no rejection reason.
+                        // -----------------------------------------
+
+                        rejectionReason:
+                            null,
+
 
                         promotionType:
                             plan
                                 ? plan.name
                                 : "Free",
 
+
                         listingPriority:
                             features.listingPriority,
+
 
                         homepagePriority:
                             features.homepagePriority,
 
+
                         searchPriority:
                             features.searchPriority,
+
 
                         featured:
                             features.featured,
 
+
                         express:
                             features.express,
+
 
                         aiRecommended:
                             features.aiRecommended,
 
+
                         verifiedStore:
                             features.verifiedStore,
+
 
                         listingScore:
                             score,
 
+
                         qualityScore:
                             score,
 
+
                         displayDate:
                             new Date()
+
                     },
                     {
                         transaction
                     }
                 );
+
+
+            // -------------------------------------------------
+            // UPDATE SUBSCRIPTION USAGE
+            // -------------------------------------------------
 
             if (subscription) {
 
@@ -1080,11 +1269,16 @@ if (uploadsUsed >= uploadLimit) {
                         subscription.uploadsUsed || 0
                     ) + 1;
 
+
                 await subscription.save({
                     transaction
                 });
 
             } else {
+
+                // -------------------------------------------------
+                // UPDATE FREE USER UPLOAD USAGE
+                // -------------------------------------------------
 
                 const user =
                     await User.findByPk(
@@ -1094,21 +1288,30 @@ if (uploadsUsed >= uploadLimit) {
                         }
                     );
 
+
                 if (!user) {
+
                     throw new Error(
                         "User account was not found."
                     );
                 }
+
 
                 user.freeUploadsUsed =
                     Number(
                         user.freeUploadsUsed || 0
                     ) + 1;
 
+
                 await user.save({
                     transaction
                 });
             }
+
+
+            // -------------------------------------------------
+            // CHECK VERIFIED STORE
+            // -------------------------------------------------
 
             const store =
                 await Store.findOne({
@@ -1123,25 +1326,46 @@ if (uploadsUsed >= uploadLimit) {
                     transaction
                 });
 
+
             if (store) {
 
                 product.verifiedStore =
                     true;
+
 
                 await product.save({
                     transaction
                 });
             }
 
+
+            // -------------------------------------------------
+            // COMMIT TRANSACTION
+            // -------------------------------------------------
+
             await transaction.commit();
 
             transaction = null;
 
+
+            // -------------------------------------------------
+            // RESPONSE
+            // -------------------------------------------------
+
             return res.status(201).json({
+
                 success: true,
 
+
                 message:
-                    "Product created successfully. Awaiting admin approval.",
+                    requireProductApproval
+                        ? "Product created successfully. Awaiting admin approval."
+                        : "Product created and published successfully.",
+
+
+                approvalRequired:
+                    requireProductApproval,
+
 
                 product:
                     formatProduct(
@@ -1149,7 +1373,12 @@ if (uploadsUsed >= uploadLimit) {
                     )
             });
 
+
         } catch (error) {
+
+            // -------------------------------------------------
+            // ROLLBACK / CLEANUP
+            // -------------------------------------------------
 
             if (transaction) {
 
@@ -1165,10 +1394,20 @@ if (uploadsUsed >= uploadLimit) {
                 );
             }
 
+
+            // -------------------------------------------------
+            // ERROR LOG
+            // -------------------------------------------------
+
             console.error(
                 "CREATE PRODUCT ERROR:",
                 error
             );
+
+
+            // -------------------------------------------------
+            // ERROR RESPONSE
+            // -------------------------------------------------
 
             return res.status(500).json({
                 success: false,
@@ -1177,7 +1416,6 @@ if (uploadsUsed >= uploadLimit) {
             });
         }
     };
-
 
 /* ===========================================================
    GET ALL APPROVED PRODUCTS
@@ -1191,15 +1429,11 @@ exports.getProducts =
             const products =
                 await Product.findAll({
 
-                    where: {
-
-                        status:
-                            "Approved",
-
-                        deleted:
-                            false
-
-                    },
+                   where: {
+    status: "Approved",
+    sellerStatus: "Active",
+    deleted: false
+},
 
                     include: [
 
@@ -1415,10 +1649,10 @@ exports.getProductById = async (req, res) => {
         const product = await Product.findOne({
 
             where: {
-                id: req.params.id,
-                status: "Approved",
-                deleted: false
-            }
+    status: "Approved",
+    sellerStatus: "Active",
+    deleted: false
+}
 
         });
 
@@ -1546,12 +1780,16 @@ exports.searchProducts =
                 maxPrice
             } = req.query;
 
-            const where = {
+            const
+             where = {
                 status:
                     "Approved",
 
+                sellerStatus: "Active",
+
                 deleted:
                     false
+
             };
 
             if (keyword) {
@@ -1950,66 +2188,47 @@ exports.getNewestProducts =
    MY PRODUCTS
 =========================================================== */
 
-exports.getMyProducts =
-    async (req, res) => {
+exports.getMyProducts = async (req, res) => {
+    try {
 
-        try {
-
-            if (!req.user) {
-
-                return res.status(401).json({
-                    success: false,
-                    message:
-                        "Unauthorized"
-                });
-            }
-
-            const products =
-                await Product.findAll({
-
-                    where: {
-                        userId:
-                            req.user.id
-                    },
-
-                    order: [
-                        [
-                            "createdAt",
-                            "DESC"
-                        ]
-                    ]
-                });
-
-            const data =
-                formatProducts(
-                    products
-                );
-
-            return res.json({
-                success: true,
-
-                total:
-                    data.length,
-
-                products:
-                    data
-            });
-
-        } catch (error) {
-
-            console.error(
-                "GET MY PRODUCTS ERROR:",
-                error
-            );
-
-            return res.status(500).json({
+        if (!req.user) {
+            return res.status(401).json({
                 success: false,
-                message:
-                    error.message
+                message: "Unauthorized"
             });
         }
-    };
 
+        const products = await Product.findAll({
+            where: {
+                userId: req.user.id
+            },
+
+            order: [
+                ["createdAt", "DESC"]
+            ]
+        });
+
+        const data = formatProducts(products);
+
+        return res.json({
+            success: true,
+            total: data.length,
+            products: data
+        });
+
+    } catch (error) {
+
+        console.error(
+            "GET MY PRODUCTS ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
 
 /* ===========================================================
    UPDATE PRODUCT
@@ -2021,6 +2240,10 @@ exports.updateProduct =
         let transaction = null;
 
         try {
+
+            // -------------------------------------------------
+            // AUTHENTICATION
+            // -------------------------------------------------
 
             if (!req.user) {
 
@@ -2035,10 +2258,16 @@ exports.updateProduct =
                 });
             }
 
+
+            // -------------------------------------------------
+            // FIND PRODUCT
+            // -------------------------------------------------
+
             const product =
                 await Product.findByPk(
                     req.params.id
                 );
+
 
             if (!product) {
 
@@ -2052,6 +2281,11 @@ exports.updateProduct =
                         "Product not found."
                 });
             }
+
+
+            // -------------------------------------------------
+            // VERIFY PRODUCT OWNER
+            // -------------------------------------------------
 
             if (
                 Number(product.userId) !==
@@ -2069,8 +2303,55 @@ exports.updateProduct =
                 });
             }
 
+
+            // -------------------------------------------------
+            // START TRANSACTION
+            // -------------------------------------------------
+
             transaction =
                 await sequelize.transaction();
+
+
+            // -------------------------------------------------
+            // GET MARKETPLACE APPROVAL SETTING
+            //
+            // TRUE:
+            // Edited products must be reviewed again.
+            //
+            // FALSE:
+            // Edited products remain approved.
+            // -------------------------------------------------
+
+            let requireProductApproval = true;
+
+            try {
+
+                requireProductApproval =
+                    toBoolean(
+                        await getSetting(
+                            "require_product_approval",
+                            true
+                        ),
+                        true
+                    );
+
+            } catch (settingsError) {
+
+                console.error(
+                    "PRODUCT APPROVAL SETTING ERROR:",
+                    settingsError
+                );
+
+                // Fail safely.
+                // If the setting cannot be read,
+                // require admin approval.
+                requireProductApproval = true;
+            }
+
+
+            // -------------------------------------------------
+            // GET PRODUCT DATA
+            // -------------------------------------------------
 
             const {
                 title,
@@ -2083,6 +2364,11 @@ exports.updateProduct =
                 city
             } = req.body;
 
+
+            // -------------------------------------------------
+            // UPDATE TITLE
+            // -------------------------------------------------
+
             if (
                 title !== undefined &&
                 String(title).trim()
@@ -2091,11 +2377,32 @@ exports.updateProduct =
                 product.title =
                     sanitize(title);
 
+
                 product.slug =
                     generateSlug(
                         product.title
                     );
+
+
+                if (!product.slug) {
+
+                    await rollbackTransaction(
+                        transaction,
+                        req.files
+                    );
+
+                    return res.status(400).json({
+                        success: false,
+                        message:
+                            "A valid product title is required."
+                    });
+                }
             }
+
+
+            // -------------------------------------------------
+            // UPDATE DESCRIPTION
+            // -------------------------------------------------
 
             if (
                 description !== undefined
@@ -2107,6 +2414,11 @@ exports.updateProduct =
                     );
             }
 
+
+            // -------------------------------------------------
+            // UPDATE PRICE
+            // -------------------------------------------------
+
             if (
                 price !== undefined &&
                 price !== ""
@@ -2114,6 +2426,7 @@ exports.updateProduct =
 
                 const numericPrice =
                     Number(price);
+
 
                 if (
                     !Number.isFinite(
@@ -2134,46 +2447,83 @@ exports.updateProduct =
                     });
                 }
 
+
                 product.price =
                     numericPrice;
             }
 
+
+            // -------------------------------------------------
+            // UPDATE CATEGORY
+            // -------------------------------------------------
+
             if (
                 category !== undefined
             ) {
+
                 product.category =
                     category;
             }
 
+
+            // -------------------------------------------------
+            // UPDATE CONDITION
+            // -------------------------------------------------
+
             if (
                 condition !== undefined
             ) {
+
                 product.condition =
                     condition;
             }
 
+
+            // -------------------------------------------------
+            // UPDATE LOCATION
+            // -------------------------------------------------
+
             if (
                 location !== undefined
             ) {
+
                 product.location =
                     location;
             }
 
+
+            // -------------------------------------------------
+            // UPDATE REGION
+            // -------------------------------------------------
+
             if (
                 region !== undefined
             ) {
+
                 product.region =
                     region;
             }
 
+
+            // -------------------------------------------------
+            // UPDATE CITY
+            // -------------------------------------------------
+
             if (
                 city !== undefined
             ) {
+
                 product.city =
                     city;
             }
 
+
+            // -------------------------------------------------
+            // UPDATE IMAGES
+            // -------------------------------------------------
+
             let oldImages = [];
+
 
             if (
                 Array.isArray(req.files) &&
@@ -2185,10 +2535,12 @@ exports.updateProduct =
                         product.images
                     );
 
+
                 const newImages =
                     processImages(
                         req.files
                     );
+
 
                 if (
                     newImages.length === 0
@@ -2206,25 +2558,90 @@ exports.updateProduct =
                     });
                 }
 
+
                 product.images =
                     JSON.stringify(
                         newImages
                     );
             }
 
+
+            // -------------------------------------------------
+            // PRODUCT APPROVAL WORKFLOW
+            //
+            // If approval is enabled, any edited product
+            // must return to Pending.
+            //
+            // If approval is disabled, the product remains
+            // Approved and can continue displaying publicly.
+            // -------------------------------------------------
+
+            if (requireProductApproval) {
+
+                product.status =
+                    "Pending";
+
+
+                product.approvedAt =
+                    null;
+
+
+                product.approvedBy =
+                    null;
+
+
+                product.rejectionReason =
+                    null;
+
+
+                product.displayDate =
+                    new Date();
+
+            } else {
+
+                product.status =
+                    "Approved";
+
+
+                product.approvedAt =
+                    product.approvedAt ||
+                    new Date();
+
+
+                product.approvedBy =
+                    null;
+
+
+                product.rejectionReason =
+                    null;
+
+
+                product.displayDate =
+                    new Date();
+            }
+
+
+            // -------------------------------------------------
+            // SAVE PRODUCT
+            // -------------------------------------------------
+
             await product.save({
                 transaction
             });
+
+
+            // -------------------------------------------------
+            // COMMIT TRANSACTION
+            // -------------------------------------------------
 
             await transaction.commit();
 
             transaction = null;
 
-            /*
-            |--------------------------------------------------------------------------
-            | Remove old R2 images
-            |--------------------------------------------------------------------------
-            */
+
+            // -------------------------------------------------
+            // REMOVE OLD R2 IMAGES
+            // -------------------------------------------------
 
             if (
                 oldImages.length > 0
@@ -2242,6 +2659,7 @@ exports.updateProduct =
                                     return false;
                                 }
 
+
                                 const key =
                                     image
                                         .trim()
@@ -2249,6 +2667,7 @@ exports.updateProduct =
                                             /^\/+/,
                                             ""
                                         );
+
 
                                 return (
                                     key.startsWith(
@@ -2273,6 +2692,7 @@ exports.updateProduct =
                                     )
                         );
 
+
                 await Promise.allSettled(
                     [
                         ...new Set(
@@ -2287,11 +2707,33 @@ exports.updateProduct =
                 );
             }
 
+
+            // -------------------------------------------------
+            // RESPONSE MESSAGE
+            // -------------------------------------------------
+
+            const responseMessage =
+                requireProductApproval
+                    ? "Product updated successfully and submitted for admin approval."
+                    : "Product updated and published successfully.";
+
+
+            // -------------------------------------------------
+            // RETURN UPDATED PRODUCT
+            // -------------------------------------------------
+
             return res.json({
+
                 success: true,
 
                 message:
-                    "Product updated successfully.",
+                    responseMessage,
+
+                approvalRequired:
+                    requireProductApproval,
+
+                status:
+                    product.status,
 
                 product:
                     formatProduct(
@@ -2299,7 +2741,12 @@ exports.updateProduct =
                     )
             });
 
+
         } catch (error) {
+
+            // -------------------------------------------------
+            // ROLLBACK / CLEANUP
+            // -------------------------------------------------
 
             if (transaction) {
 
@@ -2315,10 +2762,20 @@ exports.updateProduct =
                 );
             }
 
+
+            // -------------------------------------------------
+            // ERROR LOG
+            // -------------------------------------------------
+
             console.error(
                 "UPDATE PRODUCT ERROR:",
                 error
             );
+
+
+            // -------------------------------------------------
+            // ERROR RESPONSE
+            // -------------------------------------------------
 
             return res.status(500).json({
                 success: false,
@@ -2400,7 +2857,6 @@ exports.deleteProduct =
         }
     };
 
-
 /* ===========================================================
    CHANGE PRODUCT STATUS
 =========================================================== */
@@ -2410,10 +2866,29 @@ exports.changeProductStatus =
 
         try {
 
+            // -------------------------------------------------
+            // AUTHENTICATION
+            // -------------------------------------------------
+
+            if (!req.user) {
+
+                return res.status(401).json({
+                    success: false,
+                    message:
+                        "Please login first."
+                });
+            }
+
+
+            // -------------------------------------------------
+            // FIND PRODUCT
+            // -------------------------------------------------
+
             const product =
                 await Product.findByPk(
                     req.params.id
                 );
+
 
             if (!product) {
 
@@ -2424,22 +2899,192 @@ exports.changeProductStatus =
                 });
             }
 
-            product.status =
-                req.body.status;
+
+            // -------------------------------------------------
+            // VERIFY PRODUCT OWNER
+            // -------------------------------------------------
+
+            if (
+                Number(product.userId) !==
+                Number(req.user.id)
+            ) {
+
+                return res.status(403).json({
+                    success: false,
+                    message:
+                        "You are not authorized to change this product."
+                });
+            }
+
+
+            // -------------------------------------------------
+            // VALIDATE REQUESTED STATUS
+            // -------------------------------------------------
+
+            const requestedStatus =
+                String(
+                    req.body.status || ""
+                )
+                    .trim();
+
+
+            if (!requestedStatus) {
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Product status is required."
+                });
+            }
+
+
+            // -------------------------------------------------
+            // APPROVAL SETTING
+            //
+            // If administrator approval is enabled,
+            // sellers must never be able to manually
+            // change a product to Approved.
+            // -------------------------------------------------
+
+            let requireProductApproval = true;
+
+            try {
+
+                requireProductApproval =
+                    toBoolean(
+                        await getSetting(
+                            "require_product_approval",
+                            true
+                        ),
+                        true
+                    );
+
+            } catch (settingsError) {
+
+                console.error(
+                    "PRODUCT APPROVAL SETTING ERROR:",
+                    settingsError
+                );
+
+                // Fail safely.
+                requireProductApproval = true;
+            }
+
+
+            // -------------------------------------------------
+            // PROTECTED ADMINISTRATIVE STATUSES
+            //
+            // These statuses must only be controlled by
+            // the administrator approval endpoints.
+            // -------------------------------------------------
+
+            const protectedStatuses = [
+                "Approved",
+                "Rejected",
+                "Pending"
+            ];
+
+
+            // -------------------------------------------------
+            // PREVENT SELLER FROM BYPASSING APPROVAL
+            // -------------------------------------------------
+
+            if (
+                requireProductApproval &&
+                protectedStatuses.includes(
+                    requestedStatus
+                )
+            ) {
+
+                return res.status(403).json({
+                    success: false,
+                    approvalRequired: true,
+                    message:
+                        "Product approval status can only be changed by an administrator."
+                });
+            }
+
+
+            // -------------------------------------------------
+            // VALID STATUS VALUES
+            //
+            // These are seller-controlled availability
+            // statuses. They do NOT control administrator
+            // approval.
+            // -------------------------------------------------
+
+            const allowedSellerStatuses = [
+                "Active",
+                "Inactive",
+                "Sold",
+                "Out of Stock"
+            ];
+
+
+            if (
+                !allowedSellerStatuses.includes(
+                    requestedStatus
+                )
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Invalid product status."
+                });
+            }
+
+
+            // -------------------------------------------------
+            // DO NOT ALLOW SELLER TO MODIFY ADMIN APPROVAL
+            //
+            // If the product is Pending or Rejected,
+            // changing its seller availability status must
+            // not turn it into a publicly approved product.
+            // -------------------------------------------------
+
+            if (
+                product.status === "Pending" ||
+                product.status === "Rejected"
+            ) {
+
+                return res.status(403).json({
+                    success: false,
+                    approvalRequired: true,
+                    message:
+                        "This product must be approved by an administrator before its availability status can be changed."
+                });
+            }
+
+
+            // -------------------------------------------------
+            // CHANGE SELLER AVAILABILITY
+            // -------------------------------------------------
+
+            product.sellerStatus =
+                requestedStatus;
+
 
             await product.save();
 
+
+            // -------------------------------------------------
+            // RESPONSE
+            // -------------------------------------------------
+
             return res.json({
+
                 success: true,
 
                 message:
-                    "Product status updated.",
+                    "Product availability status updated successfully.",
 
                 product:
                     formatProduct(
                         product
                     )
             });
+
 
         } catch (error) {
 
@@ -2451,7 +3096,7 @@ exports.changeProductStatus =
             return res.status(500).json({
                 success: false,
                 message:
-                    error.message
+                    "Unable to update product status."
             });
         }
     };

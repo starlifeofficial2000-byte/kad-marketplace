@@ -2227,7 +2227,6 @@ exports.getPendingProducts = async (req, res) => {
     }
 
 };
-
 /* ===========================================================
    GET PRODUCT STATISTICS (ADMIN)
 =========================================================== */
@@ -2236,87 +2235,142 @@ exports.getProductStatistics = async (req, res) => {
 
     try {
 
-        const totalProducts = await Product.count({
+        // -------------------------------------------------
+        // TOTAL PRODUCTS
+        // -------------------------------------------------
 
-            where: {
+        const totalProducts =
+            await Product.count({
+                where: {
+                    deleted: false
+                }
+            });
 
-                deleted: false
 
-            }
+        // -------------------------------------------------
+        // APPROVED PRODUCTS
+        // -------------------------------------------------
 
-        });
+        const approvedProducts =
+            await Product.count({
+                where: {
+                    status: "Approved",
+                    deleted: false
+                }
+            });
 
-        const approvedProducts = await Product.count({
 
-            where: {
+        // -------------------------------------------------
+        // PENDING PRODUCTS
+        // -------------------------------------------------
 
-                status: "Approved",
+        const pendingProducts =
+            await Product.count({
+                where: {
+                    status: "Pending",
+                    deleted: false
+                }
+            });
 
-                deleted: false
 
-            }
+        // -------------------------------------------------
+        // REJECTED PRODUCTS
+        // -------------------------------------------------
 
-        });
+        const rejectedProducts =
+            await Product.count({
+                where: {
+                    status: "Rejected",
+                    deleted: false
+                }
+            });
 
-        const pendingProducts = await Product.count({
 
-            where: {
+        // -------------------------------------------------
+        // SOLD PRODUCTS
+        //
+        // IMPORTANT:
+        // Sold is now controlled by sellerStatus,
+        // NOT the administrator approval status.
+        // -------------------------------------------------
 
-                status: "Pending",
+        const soldProducts =
+            await Product.count({
+                where: {
+                    sellerStatus: "Sold",
+                    deleted: false
+                }
+            });
 
-                deleted: false
 
-            }
+        // -------------------------------------------------
+        // ACTIVE PRODUCTS
+        // -------------------------------------------------
 
-        });
+        const activeProducts =
+            await Product.count({
+                where: {
+                    sellerStatus: "Active",
+                    deleted: false
+                }
+            });
 
-        const rejectedProducts = await Product.count({
 
-            where: {
+        // -------------------------------------------------
+        // INACTIVE PRODUCTS
+        // -------------------------------------------------
 
-                status: "Rejected",
+        const inactiveProducts =
+            await Product.count({
+                where: {
+                    sellerStatus: "Inactive",
+                    deleted: false
+                }
+            });
 
-                deleted: false
 
-            }
+        // -------------------------------------------------
+        // OUT OF STOCK PRODUCTS
+        // -------------------------------------------------
 
-        });
+        const outOfStockProducts =
+            await Product.count({
+                where: {
+                    sellerStatus: "Out of Stock",
+                    deleted: false
+                }
+            });
 
-        const soldProducts = await Product.count({
 
-            where: {
+        // -------------------------------------------------
+        // FEATURED PRODUCTS
+        // -------------------------------------------------
 
-                status: "Sold",
+        const featuredProducts =
+            await Product.count({
+                where: {
+                    featured: true,
+                    deleted: false
+                }
+            });
 
-                deleted: false
 
-            }
+        // -------------------------------------------------
+        // EXPRESS PRODUCTS
+        // -------------------------------------------------
 
-        });
+        const expressProducts =
+            await Product.count({
+                where: {
+                    express: true,
+                    deleted: false
+                }
+            });
 
-        const featuredProducts = await Product.count({
 
-            where: {
-
-                featured: true,
-
-                deleted: false
-
-            }
-
-        });
-
-        const expressProducts = await Product.count({
-
-            where: {
-
-                express: true,
-
-                deleted: false
-
-            }
-
-        });
+        // -------------------------------------------------
+        // RESPONSE
+        // -------------------------------------------------
 
         return res.json({
 
@@ -2334,6 +2388,12 @@ exports.getProductStatistics = async (req, res) => {
 
                 soldProducts,
 
+                activeProducts,
+
+                inactiveProducts,
+
+                outOfStockProducts,
+
                 featuredProducts,
 
                 expressProducts
@@ -2346,13 +2406,17 @@ exports.getProductStatistics = async (req, res) => {
 
     catch (error) {
 
-        console.log(error);
+        console.error(
+            "GET PRODUCT STATISTICS ERROR:",
+            error
+        );
 
         return res.status(500).json({
 
             success: false,
 
-            message: error.message
+            message:
+                "Unable to load product statistics."
 
         });
 
