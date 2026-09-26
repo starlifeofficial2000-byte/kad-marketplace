@@ -609,33 +609,41 @@ exports.getSellerProfile = async (req, res) => {
 
     try {
 
+        /* ==========================================
+           GET SELLER
+        ========================================== */
+
         const seller = await User.findByPk(
-
             req.params.id,
-
             {
-
                 attributes: {
-
-                    exclude: ["password"]
-
+                    exclude: [
+                        "password",
+                        "loginOTP",
+                        "resetOTP"
+                    ]
                 }
-
             }
-
         );
+
+
+        /* ==========================================
+           SELLER NOT FOUND
+        ========================================== */
 
         if (!seller) {
 
             return res.status(404).json({
-
                 success: false,
-
                 message: "Seller not found."
-
             });
 
         }
+
+
+        /* ==========================================
+           GET SELLER PRODUCTS
+        ========================================== */
 
         const products = await Product.findAll({
 
@@ -643,79 +651,261 @@ exports.getSellerProfile = async (req, res) => {
 
                 userId: seller.id,
 
-                status: "Approved"
+                status: "Approved",
+
+                deleted: false
 
             },
 
-            order: [["createdAt", "DESC"]]
+            order: [
+                ["createdAt", "DESC"]
+            ]
 
         });
 
-        const formattedProducts = products.map(product => {
 
-            const p = product.toJSON();
+        /* ==========================================
+           FORMAT PRODUCTS
+        ========================================== */
 
-            try {
+        const formattedProducts = products.map(
+            (product) => {
 
-                p.images = p.images
+                const p = product.toJSON();
 
-                    ? JSON.parse(p.images)
+                let images = [];
 
-                    : [];
+
+                /* ======================================
+                   PARSE PRODUCT IMAGES
+                ====================================== */
+
+                if (p.images) {
+
+                    try {
+
+                        if (
+                            typeof p.images === "string"
+                        ) {
+
+                            const parsedImages =
+                                JSON.parse(p.images);
+
+
+                            if (
+                                Array.isArray(parsedImages)
+                            ) {
+
+                                images = parsedImages;
+
+                            } else if (
+                                typeof parsedImages === "string"
+                            ) {
+
+                                images = [
+                                    parsedImages
+                                ];
+
+                            }
+
+                        } else if (
+                            Array.isArray(p.images)
+                        ) {
+
+                            images = p.images;
+
+                        }
+
+                    } catch (imageParseError) {
+
+                        console.log(
+                            "PRODUCT IMAGE PARSE ERROR:",
+                            imageParseError.message
+                        );
+
+                        images = [
+                            p.images
+                        ];
+
+                    }
+
+                }
+
+
+                /* ======================================
+                   CONVERT IMAGES TO PUBLIC URL
+                ====================================== */
+
+                images = images
+                    .filter(
+                        (image) =>
+                            image &&
+                            typeof image === "string"
+                    )
+                    .map((image) => {
+
+                        const cleanImage =
+                            image
+                                .trim()
+                                .replace(/^\/+/, "");
+
+
+                        if (!cleanImage) {
+                            return null;
+                        }
+
+
+                        /* Already a URL */
+
+                        if (
+                            cleanImage.startsWith(
+                                "http://"
+                            ) ||
+                            cleanImage.startsWith(
+                                "https://"
+                            )
+                        ) {
+
+                            return cleanImage;
+
+                        }
+
+
+                        /* R2 public URL */
+
+                        try {
+
+                            return getR2PublicUrl(
+                                cleanImage
+                            );
+
+                        } catch (r2Error) {
+
+                            console.log(
+                                "R2 IMAGE URL ERROR:",
+                                r2Error.message
+                            );
+
+                            return `/${cleanImage}`;
+
+                        }
+
+                    })
+                    .filter(Boolean);
+
+
+                p.images = images;
+
+
+                return p;
 
             }
+        );
 
-            catch {
 
-                p.images = [];
+        /* ==========================================
+           GET SELLER REVIEWS
+        ========================================== */
 
-            }
+        const reviews =
+            await Review.findAll({
 
-            return p;
+                where: {
+                    sellerId: seller.id
+                }
 
-        });
+            });
 
-        const reviews = await Review.findAll({
 
-            where: {
-
-                sellerId: seller.id
-
-            }
-
-        });
+        /* ==========================================
+           CALCULATE AVERAGE RATING
+        ========================================== */
 
         let averageRating = 0;
 
+
         if (reviews.length > 0) {
 
-            averageRating = (
-
+            const totalRating =
                 reviews.reduce(
+                    (sum, review) => {
 
-                    (sum, review) => sum + review.rating,
+                        return (
+                            sum +
+                            Number(
+                                review.rating || 0
+                            )
+                        );
 
+                    },
                     0
+                );
 
-                ) / reviews.length
 
+            averageRating = (
+                totalRating /
+                reviews.length
             ).toFixed(1);
 
         }
 
-        const sellerData = seller.toJSON();
 
-        sellerData.averageRating = averageRating;
+        /* ==========================================
+           FORMAT SELLER
+        ========================================== */
 
-        sellerData.totalReviews = reviews.length;
+        const sellerData =
+            seller.toJSON();
 
-        sellerData.totalProducts = formattedProducts.length;
 
-        sellerData.lastSeen = seller.lastSeen || "Recently Active";
+        /* ==========================================
+           FORMAT PROFILE IMAGE
+        ========================================== */
 
-        sellerData.verified = seller.verified || false;
+        try {
 
-        res.json({
+            sellerData.profileImage =
+                getProfileImageUrl(
+                    sellerData.profileImage
+                );
+
+        } catch (profileImageError) {
+
+            console.log(
+                "PROFILE IMAGE URL ERROR:",
+                profileImageError.message
+            );
+
+        }
+
+
+        /* ==========================================
+           SELLER STATISTICS
+        ========================================== */
+
+        sellerData.averageRating =
+            Number(averageRating);
+
+        sellerData.totalReviews =
+            reviews.length;
+
+        sellerData.totalProducts =
+            formattedProducts.length;
+
+        sellerData.lastSeen =
+            seller.lastSeen ||
+            "Recently Active";
+
+        sellerData.verified =
+            seller.verified ||
+            false;
+
+
+        /* ==========================================
+           RESPONSE
+        ========================================== */
+
+        return res.json({
 
             success: true,
 
@@ -725,17 +915,99 @@ exports.getSellerProfile = async (req, res) => {
 
         });
 
-    }
+    } catch (error) {
 
-    catch (error) {
+        console.error(
+            "GET SELLER PROFILE ERROR:",
+            error
+        );
 
-        console.log(error);
-
-        res.status(500).json({
+        return res.status(500).json({
 
             success: false,
 
-            message: error.message
+            message:
+                error.message ||
+                "Unable to load seller profile."
+
+        });
+
+    }
+
+};
+
+
+/*
+=========================================
+ADMIN - GET ALL USERS
+=========================================
+*/
+
+exports.getAllUsers = async (req, res) => {
+
+    try {
+
+        const users = await User.findAll({
+
+            attributes: {
+
+                exclude: [
+                    "password",
+                    "loginOTP",
+                    "resetOTP"
+                ]
+
+            },
+
+            include: [
+
+                {
+
+                    model: Role,
+
+                    as: "roles",
+
+                    through: {
+
+                        attributes: []
+
+                    }
+
+                }
+
+            ],
+
+            order: [
+
+                ["createdAt", "DESC"]
+
+            ]
+
+        });
+
+
+        return res.json({
+
+            success: true,
+
+            users
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "GET ALL USERS ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+
+            success: false,
+
+            message:
+                error.message ||
+                "Unable to load users."
 
         });
 

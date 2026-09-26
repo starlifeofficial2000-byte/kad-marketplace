@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+
 import api from "../config/axios";
 import ReviewList from "../components/ReviewList";
 
@@ -7,22 +8,218 @@ import "./SellerProfile.css";
 
 
 const SERVER_URL =
-    import.meta.env.VITE_SERVER_URL ||
-    "";
+    import.meta.env.VITE_SERVER_URL || "";
 
+const R2_PUBLIC_URL =
+    import.meta.env.VITE_R2_PUBLIC_URL || "";
+
+
+/* ==========================================
+   IMAGE URL HELPER
+========================================== */
+
+const getImageUrl = (
+    image,
+    fallback = null
+) => {
+
+    if (!image || typeof image !== "string") {
+        return fallback;
+    }
+
+    const value = image.trim();
+
+    if (!value) {
+        return fallback;
+    }
+
+
+    /* ======================================
+       COMPLETE URL
+    ====================================== */
+
+    if (
+        value.startsWith("http://") ||
+        value.startsWith("https://") ||
+        value.startsWith("data:")
+    ) {
+        return value;
+    }
+
+
+    /* ======================================
+       CLEAN PATH
+    ====================================== */
+
+    const cleanPath =
+        value.replace(/^\/+/, "");
+
+
+    /* ======================================
+       R2 PUBLIC URL
+    ====================================== */
+
+    if (R2_PUBLIC_URL) {
+
+        if (
+            cleanPath.startsWith("uploads/") ||
+            cleanPath.startsWith("profiles/") ||
+            cleanPath.startsWith("products/")
+        ) {
+
+            return (
+                `${R2_PUBLIC_URL.replace(
+                    /\/+$/,
+                    ""
+                )}/${cleanPath}`
+            );
+
+        }
+
+    }
+
+
+    /* ======================================
+       SERVER STATIC PATH
+    ====================================== */
+
+    if (value.startsWith("/")) {
+
+        return `${SERVER_URL}${value}`;
+
+    }
+
+
+    /* ======================================
+       UPLOAD PATH
+    ====================================== */
+
+    if (
+        cleanPath.startsWith("uploads/")
+    ) {
+
+        return `${SERVER_URL}/${cleanPath}`;
+
+    }
+
+
+    /* ======================================
+       LEGACY FILENAME
+    ====================================== */
+
+    return `${SERVER_URL}/uploads/${cleanPath}`;
+};
+
+
+/* ==========================================
+   AVATAR FALLBACK
+========================================== */
+
+const getAvatarUrl = (
+    name = "Seller"
+) => {
+
+    return (
+        "https://ui-avatars.com/api/?" +
+        new URLSearchParams({
+
+            name,
+
+            background: "0D8ABC",
+
+            color: "ffffff",
+
+            size: "300",
+
+            bold: "true"
+
+        }).toString()
+    );
+};
+
+
+/* ==========================================
+   PARSE PRODUCT IMAGES
+========================================== */
+
+const parseImages = (images) => {
+
+    if (!images) {
+        return [];
+    }
+
+
+    /* Already array */
+
+    if (Array.isArray(images)) {
+
+        return images.filter(Boolean);
+
+    }
+
+
+    /* JSON string */
+
+    if (typeof images === "string") {
+
+        try {
+
+            const parsed =
+                JSON.parse(images);
+
+            if (Array.isArray(parsed)) {
+
+                return parsed.filter(Boolean);
+
+            }
+
+            if (
+                typeof parsed === "string" &&
+                parsed.trim()
+            ) {
+
+                return [parsed];
+
+            }
+
+        } catch {
+
+            /*
+             * Sometimes old records contain
+             * one filename rather than JSON.
+             */
+
+            return [images];
+
+        }
+
+    }
+
+
+    return [];
+};
+
+
+/* ==========================================
+   SELLER PROFILE
+========================================== */
 
 function SellerProfile() {
 
     const { id } = useParams();
 
 
-    const [seller, setSeller] = useState(null);
+    const [seller, setSeller] =
+        useState(null);
 
-    const [products, setProducts] = useState([]);
+    const [products, setProducts] =
+        useState([]);
 
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] =
+        useState(true);
 
-    const [error, setError] = useState("");
+    const [error, setError] =
+        useState("");
 
 
     /* ==========================================
@@ -30,6 +227,17 @@ function SellerProfile() {
     ========================================== */
 
     useEffect(() => {
+
+        if (!id) {
+
+            setError(
+                "Seller ID is missing."
+            );
+
+            setLoading(false);
+
+            return;
+        }
 
         loadSeller();
 
@@ -41,189 +249,184 @@ function SellerProfile() {
         try {
 
             setLoading(true);
-
             setError("");
 
-
-            const response = await api.get(
-
-                `/users/${id}`
-
-            );
+            const response =
+                await api.get(
+                    `/users/${id}`
+                );
 
 
             console.log(
-
-                "SELLER RESPONSE:",
-
+                "SELLER PROFILE RESPONSE:",
                 response.data
-
             );
 
 
+            /* ======================================
+               SELLER DATA
+            ====================================== */
+
             const sellerData =
-
                 response.data?.seller ||
-
+                response.data?.user ||
                 response.data?.data?.seller ||
-
                 response.data?.data ||
-
                 null;
 
 
+            /* ======================================
+               PRODUCTS
+            ====================================== */
+
             const productsData =
-
                 response.data?.products ||
-
                 response.data?.data?.products ||
-
                 [];
 
 
-            setSeller(sellerData);
+            if (!sellerData) {
+
+                throw new Error(
+                    "Seller information was not returned."
+                );
+
+            }
+
+
+            setSeller(
+                sellerData
+            );
+
 
             setProducts(
 
-                Array.isArray(productsData)
-
+                Array.isArray(
+                    productsData
+                )
                     ? productsData
-
                     : []
 
             );
 
-        }
-
-        catch (error) {
+        } catch (error) {
 
             console.error(
-
                 "LOAD SELLER ERROR:",
-
-                error.response?.data || error.message
-
+                error.response?.data ||
+                error.message
             );
+
+
+            setSeller(null);
+            setProducts([]);
 
 
             setError(
 
                 error.response?.data?.message ||
-
+                error.message ||
                 "Failed to load seller profile."
 
             );
 
-        }
-
-        finally {
+        } finally {
 
             setLoading(false);
 
         }
-
     };
 
 
     /* ==========================================
-       IMAGE URL HELPER
+       SELLER INFORMATION
     ========================================== */
 
-    const getImageUrl = (image) => {
-
-        if (!image) {
-
-            return "https://via.placeholder.com/300";
-
-        }
+    const sellerName =
+        seller?.name ||
+        seller?.fullName ||
+        seller?.username ||
+        "Seller";
 
 
-        if (
+    const sellerImage =
+        getImageUrl(
 
-            image.startsWith("http://") ||
+            seller?.profileImage,
 
-            image.startsWith("https://")
+            getAvatarUrl(
+                sellerName
+            )
 
-        ) {
-
-            return image;
-
-        }
-
-
-        if (image.startsWith("/")) {
-
-            return `${SERVER_URL}${image}`;
-
-        }
-
-
-        return `${SERVER_URL}/uploads/${image}`;
-
-    };
+        );
 
 
     /* ==========================================
-       GET PRODUCT IMAGE
+       PRODUCT IMAGE
     ========================================== */
 
-    const getProductImage = (product) => {
+    const getProductImage = (
+        product
+    ) => {
 
-        if (!product.images) {
-
-            return "https://via.placeholder.com/300";
-
-        }
-
-
-        let images = [];
-
-
-        try {
-
-            if (
-
-                typeof product.images === "string"
-
-            ) {
-
-                images = JSON.parse(product.images);
-
-            }
-
-            else if (
-
-                Array.isArray(product.images)
-
-            ) {
-
-                images = product.images;
-
-            }
-
-        }
-
-        catch (error) {
-
-            images = [product.images];
-
-        }
+        const images =
+            parseImages(
+                product?.images
+            );
 
 
         if (
-
-            !Array.isArray(images) ||
-
             images.length === 0
-
         ) {
 
-            return "https://via.placeholder.com/300";
+            return "https://via.placeholder.com/400x300?text=No+Image";
 
         }
 
 
-        return getImageUrl(images[0]);
+        return getImageUrl(
+
+            images[0],
+
+            "https://via.placeholder.com/400x300?text=No+Image"
+
+        );
+
+    };
+
+
+    /* ==========================================
+       PRODUCT IMAGE ERROR
+    ========================================== */
+
+    const handleProductImageError = (
+        event
+    ) => {
+
+        event.currentTarget.onerror =
+            null;
+
+        event.currentTarget.src =
+            "https://via.placeholder.com/400x300?text=Image+Unavailable";
+
+    };
+
+
+    /* ==========================================
+       SELLER IMAGE ERROR
+    ========================================== */
+
+    const handleSellerImageError = (
+        event
+    ) => {
+
+        event.currentTarget.onerror =
+            null;
+
+        event.currentTarget.src =
+            getAvatarUrl(
+                sellerName
+            );
 
     };
 
@@ -238,11 +441,18 @@ function SellerProfile() {
 
             <div className="seller-profile-loading">
 
+                <div className="seller-loading-spinner">
+                    <div></div>
+                </div>
+
                 <h2>
-
                     Loading Seller...
-
                 </h2>
+
+                <p>
+                    Please wait while we load
+                    the seller profile.
+                </p>
 
             </div>
 
@@ -262,16 +472,18 @@ function SellerProfile() {
             <div className="seller-profile-loading">
 
                 <h2>
-
-                    {error}
-
+                    Unable to Load Seller
                 </h2>
 
+                <p>
+                    {error}
+                </p>
 
-                <button onClick={loadSeller}>
-
+                <button
+                    onClick={loadSeller}
+                    className="seller-retry-btn"
+                >
                     Try Again
-
                 </button>
 
             </div>
@@ -292,10 +504,13 @@ function SellerProfile() {
             <div className="seller-profile-loading">
 
                 <h2>
-
-                    Seller not found.
-
+                    Seller Not Found
                 </h2>
+
+                <p>
+                    This seller may no longer
+                    exist.
+                </p>
 
             </div>
 
@@ -319,53 +534,36 @@ function SellerProfile() {
 
             <div className="seller-cover">
 
-
                 <div className="seller-card">
 
+
+                    {/* SELLER IMAGE */}
 
                     <img
 
                         className="seller-image"
 
-                        src={
+                        src={sellerImage}
 
-                            getImageUrl(
+                        alt={sellerName}
 
-                                seller.profileImage
-
-                            )
-
+                        onError={
+                            handleSellerImageError
                         }
-
-                        alt={seller.name || "Seller"}
-
-                        onError={(e) => {
-
-                            e.target.src =
-
-                                "https://ui-avatars.com/api/?name=" +
-
-                                encodeURIComponent(
-
-                                    seller.name || "Seller"
-
-                                );
-
-                        }}
 
                     />
 
 
-                    <div className="seller-details">
+                    {/* SELLER DETAILS */}
 
+                    <div className="seller-details">
 
                         <h1>
 
-                            {seller.name || "Seller"}
+                            {sellerName}
 
-                            {
 
-                                seller.verified &&
+                            {seller.verified && (
 
                                 <span className="verified">
 
@@ -373,42 +571,38 @@ function SellerProfile() {
 
                                 </span>
 
-                            }
+                            )}
 
                         </h1>
 
 
                         <p>
 
-                            📧 {seller.email || "Not Available"}
+                            📧{" "}
+
+                            {seller.email ||
+                                "Not Available"}
 
                         </p>
 
 
                         <p>
 
-                            📞 {
+                            📞{" "}
 
-                                seller.phone ||
-
-                                "Not Available"
-
-                            }
+                            {seller.phone ||
+                                "Not Available"}
 
                         </p>
 
 
                         <p>
 
-                            📍 {
+                            📍{" "}
 
-                                seller.location ||
-
+                            {seller.location ||
                                 seller.city ||
-
-                                "Ghana"
-
-                            }
+                                "Ghana"}
 
                         </p>
 
@@ -417,21 +611,13 @@ function SellerProfile() {
 
                             📅 Joined{" "}
 
-                            {
+                            {seller.createdAt
 
-                                seller.createdAt
+                                ? new Date(
+                                    seller.createdAt
+                                ).toLocaleDateString()
 
-                                    ?
-
-                                    new Date(
-
-                                        seller.createdAt
-
-                                    ).toLocaleDateString()
-
-                                    :
-
-                                    "Not Available"
+                                : "Not Available"
 
                             }
 
@@ -440,21 +626,22 @@ function SellerProfile() {
 
                         <p>
 
-                            🟢 {
+                            🟢{" "}
 
-                                seller.lastSeen
+                            {seller.lastSeen
 
-                                    ?
-
-                                    new Date(
-
+                                ? (
+                                    typeof seller.lastSeen ===
+                                    "string" &&
+                                    seller.lastSeen
+                                        .includes("Recently")
+                                )
+                                    ? seller.lastSeen
+                                    : new Date(
                                         seller.lastSeen
-
                                     ).toLocaleString()
 
-                                    :
-
-                                    "Recently Active"
+                                : "Recently Active"
 
                             }
 
@@ -463,9 +650,7 @@ function SellerProfile() {
 
                     </div>
 
-
                 </div>
-
 
             </div>
 
@@ -480,15 +665,11 @@ function SellerProfile() {
                 <div className="stat-box">
 
                     <h2>
-
                         {products.length}
-
                     </h2>
 
                     <p>
-
                         Active Listings
-
                     </p>
 
                 </div>
@@ -498,22 +679,15 @@ function SellerProfile() {
 
                     <h2>
 
-                        {
-
-                            Number(
-
-                                seller.averageRating || 0
-
-                            ).toFixed(1)
-
-                        }
+                        {Number(
+                            seller.averageRating ||
+                            0
+                        ).toFixed(1)}
 
                     </h2>
 
                     <p>
-
                         Average Rating
-
                     </p>
 
                 </div>
@@ -522,19 +696,11 @@ function SellerProfile() {
                 <div className="stat-box">
 
                     <h2>
-
-                        {
-
-                            seller.totalReviews || 0
-
-                        }
-
+                        {seller.totalReviews || 0}
                     </h2>
 
                     <p>
-
                         Buyer Reviews
-
                     </p>
 
                 </div>
@@ -554,134 +720,119 @@ function SellerProfile() {
             </h2>
 
 
-            {
+            {products.length === 0 ? (
 
-                products.length === 0
+                <div className="no-seller-products">
 
-                    ?
+                    <p>
+                        This seller currently has
+                        no products available.
+                    </p>
 
-                    (
+                </div>
 
-                        <div className="no-seller-products">
+            ) : (
 
-                            <p>
+                <div className="seller-products">
 
-                                This seller currently has no products available.
+                    {products.map(
+                        (product) => {
 
-                            </p>
+                            const productImage =
+                                getProductImage(
+                                    product
+                                );
 
-                        </div>
 
-                    )
+                            return (
 
-                    :
+                                <Link
 
-                    (
+                                    key={
+                                        product.id
+                                    }
 
-                        <div className="seller-products">
+                                    to={
+                                        `/product/${product.id}`
+                                    }
 
-                            {
+                                    className="seller-product"
 
-                                products.map(
+                                >
 
-                                    (product) => (
+                                    {/* PRODUCT IMAGE */}
 
-                                        <Link
+                                    <img
 
-                                            key={product.id}
+                                        src={
+                                            productImage
+                                        }
 
-                                            to={`/product/${product.id}`}
+                                        alt={
+                                            product.title ||
+                                            "Product"
+                                        }
 
-                                            className="seller-product"
+                                        loading="lazy"
 
-                                        >
+                                        onError={
+                                            handleProductImageError
+                                        }
 
+                                    />
 
-                                            <img
 
-                                                src={
+                                    {/* PRODUCT TITLE */}
 
-                                                    getProductImage(
+                                    <h3>
 
-                                                        product
+                                        {product.title ||
+                                            "Untitled Product"}
 
-                                                    )
+                                    </h3>
 
-                                                }
 
-                                                alt={
+                                    {/* PRODUCT PRICE */}
 
-                                                    product.title ||
+                                    <h2>
 
-                                                    "Product"
+                                        GH₵{" "}
 
-                                                }
+                                        {Number(
+                                            product.price ||
+                                            0
+                                        ).toLocaleString(
+                                            "en-GH",
+                                            {
+                                                minimumFractionDigits: 0,
+                                                maximumFractionDigits: 2
+                                            }
+                                        )}
 
-                                                onError={(e) => {
+                                    </h2>
 
-                                                    e.target.src =
 
-                                                        "https://via.placeholder.com/250";
+                                    {/* PRODUCT CONDITION */}
 
-                                                }}
+                                    <span>
 
-                                            />
+                                        {product.condition ||
+                                            product.status ||
+                                            "Not specified"}
 
+                                    </span>
 
-                                            <h3>
+                                </Link>
 
-                                                {
+                            );
 
-                                                    product.title ||
+                        }
 
-                                                    "Untitled Product"
+                    )}
 
-                                                }
+                </div>
 
-                                            </h3>
-
-
-                                            <h2>
-
-                                                GH₵ {
-
-                                                    Number(
-
-                                                        product.price || 0
-
-                                                    ).toLocaleString()
-
-                                                }
-
-                                            </h2>
-
-
-                                            <span>
-
-                                                {
-
-                                                    product.condition ||
-
-                                                    "Not specified"
-
-                                                }
-
-                                            </span>
-
-
-                                        </Link>
-
-                                    )
-
-                                )
-
-                            }
-
-                        </div>
-
-                    )
-
-            }
+            )}
 
 
             {/* ======================================
@@ -689,9 +840,7 @@ function SellerProfile() {
             ====================================== */}
 
             <ReviewList
-
                 sellerId={seller.id}
-
             />
 
 
