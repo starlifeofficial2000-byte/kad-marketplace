@@ -197,9 +197,7 @@ exports.saveSettings = async (req, res) => {
 ========================================================= */
 
 exports.uploadBranding = async (req, res) => {
-
     try {
-
         console.log(
             "[ADMIN SETTINGS] BRANDING UPLOAD"
         );
@@ -214,86 +212,90 @@ exports.uploadBranding = async (req, res) => {
                 : null
         );
 
-
         /* =====================================================
            CHECK FILE
         ===================================================== */
 
         if (!req.file) {
-
             return res.status(400).json({
-
                 success: false,
-
-                message:
-                    "No branding file was uploaded."
-
+                message: "No branding file was uploaded."
             });
-
         }
-
 
         /* =====================================================
            CHECK BUFFER
         ===================================================== */
 
         if (!Buffer.isBuffer(req.file.buffer)) {
-
             console.error(
-                "[BRANDING UPLOAD] Invalid file buffer:",
-                {
-                    hasBuffer:
-                        !!req.file.buffer,
-
-                    file:
-                        req.file
-                }
+                "[BRANDING UPLOAD] Invalid file buffer"
             );
 
             return res.status(500).json({
-
                 success: false,
-
                 message:
                     "Uploaded file does not contain a valid Buffer."
-
             });
-
         }
-
 
         if (req.file.buffer.length === 0) {
-
             return res.status(400).json({
-
                 success: false,
-
-                message:
-                    "Uploaded file is empty."
-
+                message: "Uploaded file is empty."
             });
-
         }
 
+        /* =====================================================
+           DETERMINE BRANDING TYPE
+           
+           Supported:
+           - favicon
+           - logo
+           - admin_logo
+        ===================================================== */
+
+        const brandingType =
+            String(
+                req.body?.type ||
+                req.body?.field ||
+                req.body?.brandingType ||
+                "favicon"
+            )
+                .trim()
+                .toLowerCase();
+
+        const allowedTypes = [
+            "favicon",
+            "logo",
+            "admin_logo"
+        ];
+
+        if (!allowedTypes.includes(brandingType)) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Invalid branding type. Use favicon, logo or admin_logo."
+            });
+        }
 
         /* =====================================================
            FILE INFORMATION
         ===================================================== */
 
         const originalName =
-            req.file.originalname ||
-            "branding";
+            req.file.originalname || "branding";
+
+        const path =
+            require("path");
 
         const extension =
-            require("path")
+            path
                 .extname(originalName)
                 .toLowerCase();
 
-
         const safeExtension =
-            extension ||
-            ".png";
-
+            extension || ".png";
 
         /* =====================================================
            CREATE UNIQUE R2 KEY
@@ -307,10 +309,8 @@ exports.uploadBranding = async (req, res) => {
                 Math.random() * 1e9
             );
 
-
         const key =
-            `uploads/branding/branding-${timestamp}-${randomNumber}${safeExtension}`;
-
+            `uploads/branding/${brandingType}-${timestamp}-${randomNumber}${safeExtension}`;
 
         /* =====================================================
            UPLOAD TO CLOUDFLARE R2
@@ -318,7 +318,6 @@ exports.uploadBranding = async (req, res) => {
 
         const uploaded =
             await uploadToR2({
-
                 key,
 
                 buffer:
@@ -329,22 +328,16 @@ exports.uploadBranding = async (req, res) => {
 
                 cacheControl:
                     "public, max-age=31536000, immutable"
-
             });
 
-
-        /* =====================================================
-           CHECK UPLOAD RESULT
-        ===================================================== */
-
-        if (!uploaded || !uploaded.key) {
-
+        if (
+            !uploaded ||
+            !uploaded.key
+        ) {
             throw new Error(
                 "R2 upload completed but no object key was returned."
             );
-
         }
-
 
         const publicUrl =
             uploaded.url ||
@@ -352,14 +345,51 @@ exports.uploadBranding = async (req, res) => {
                 uploaded.key
             );
 
+        if (!publicUrl) {
+            throw new Error(
+                "R2 upload succeeded but no public URL was generated."
+            );
+        }
 
         /* =====================================================
-           RESPONSE
+           SAVE URL TO MARKETPLACE SETTINGS
+        ===================================================== */
+
+        const settings =
+            await getMarketplaceSettings();
+
+        const updatePayload = {};
+
+        if (brandingType === "favicon") {
+            updatePayload.favicon =
+                publicUrl;
+        }
+
+        if (brandingType === "logo") {
+            updatePayload.logo =
+                publicUrl;
+        }
+
+        if (brandingType === "admin_logo") {
+            updatePayload.admin_logo =
+                publicUrl;
+        }
+
+        const updatedSettings =
+            await updateMarketplaceSettings(
+                updatePayload
+            );
+
+        /* =====================================================
+           SUCCESS LOG
         ===================================================== */
 
         console.log(
             "[BRANDING UPLOAD] SUCCESS:",
             {
+                type:
+                    brandingType,
+
                 key:
                     uploaded.key,
 
@@ -374,16 +404,20 @@ exports.uploadBranding = async (req, res) => {
             }
         );
 
+        /* =====================================================
+           RESPONSE
+        ===================================================== */
 
         return res.status(200).json({
-
             success: true,
 
             message:
-                "Branding uploaded successfully.",
+                `${brandingType} uploaded successfully.`,
+
+            type:
+                brandingType,
 
             file: {
-
                 key:
                     uploaded.key,
 
@@ -398,11 +432,11 @@ exports.uploadBranding = async (req, res) => {
 
                 size:
                     req.file.size
+            },
 
-            }
-
+            settings:
+                updatedSettings
         });
-
 
     } catch (error) {
 
@@ -442,17 +476,12 @@ exports.uploadBranding = async (req, res) => {
             "================================================="
         );
 
-
         return res.status(500).json({
-
             success: false,
 
             message:
                 error?.message ||
                 "Unable to upload branding."
-
         });
-
     }
-
 };
