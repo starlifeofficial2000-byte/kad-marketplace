@@ -1,8 +1,6 @@
-const express =
-    require("express");
+const express = require("express");
 
-const router =
-    express.Router();
+const router = express.Router();
 
 const auth =
     require("../middleware/auth");
@@ -10,20 +8,16 @@ const auth =
 const admin =
     require("../middleware/admin");
 
+const uploadBranding =
+    require("../middleware/uploadBranding");
+
 const controller =
     require("../controllers/adminSettingsController");
 
 
-/*
-=====================================================
- ADMIN MARKETPLACE SETTINGS
-=====================================================
-*/
-
-
-/*
- GET SETTINGS
-*/
+/* =========================================================
+   GET MARKETPLACE SETTINGS
+========================================================= */
 
 router.get(
     "/",
@@ -33,9 +27,9 @@ router.get(
 );
 
 
-/*
- UPDATE SETTINGS
-*/
+/* =========================================================
+   UPDATE MARKETPLACE SETTINGS
+========================================================= */
 
 router.put(
     "/",
@@ -45,9 +39,9 @@ router.put(
 );
 
 
-/*
- BACKWARD COMPATIBILITY
-*/
+/* =========================================================
+   BACKWARD COMPATIBILITY
+========================================================= */
 
 router.post(
     "/",
@@ -57,5 +51,17 @@ router.post(
 );
 
 
-module.exports =
-    router;
+/* =========================================================
+   UPLOAD BRANDING
+========================================================= */
+
+router.post(
+    "/branding/upload",
+    auth,
+    admin,
+    uploadBranding.single("file"),
+    controller.uploadBranding
+);
+
+
+module.exports = router;
