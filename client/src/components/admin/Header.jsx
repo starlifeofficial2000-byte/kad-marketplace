@@ -17,25 +17,31 @@ function Header() {
 
     const [showMenu, setShowMenu] = useState(false);
 
-    return (
+    const profileImage = user.profileImage
+        ? `/uploads/${user.profileImage}`
+        : "/default-avatar.png";
 
+    return (
         <header className="admin-header">
 
             <div className="header-left">
 
-                <div className="search-box">
-
+                <div className="header-brand">
                     <img
                         src={logo}
                         alt="KAD Marketplace"
                         className="header-logo"
                     />
+                </div>
 
-                    <FaSearch />
+                <div className="search-box">
+
+                    <FaSearch className="search-icon" />
 
                     <input
                         type="text"
                         placeholder="Search users, products, stores..."
+                        aria-label="Search"
                     />
 
                 </div>
@@ -47,20 +53,17 @@ function Header() {
                 <div
                     className="profile"
                     onClick={() =>
-                        setShowMenu(!showMenu)
+                        setShowMenu((prev) => !prev)
                     }
                 >
 
                     <img
-                        src={
-                            user.profileImage
-                                ? `/uploads/${user.profileImage}`
-                                : "/default-avatar.png"
-                        }
+                        src={profileImage}
                         alt={user.name || "Administrator"}
+                        className="profile-image"
                     />
 
-                    <div>
+                    <div className="profile-info">
 
                         <h4>
                             {user.name || "Administrator"}
@@ -74,21 +77,26 @@ function Header() {
 
                     {showMenu && (
 
-                        <div className="profile-menu">
+                        <div
+                            className="profile-menu"
+                            onClick={(event) =>
+                                event.stopPropagation()
+                            }
+                        >
 
-                            <button>
+                            <button type="button">
                                 <FaUserCircle />
-                                Profile
+                                <span>Profile</span>
                             </button>
 
-                            <button>
+                            <button type="button">
                                 <FaCog />
-                                Settings
+                                <span>Settings</span>
                             </button>
 
-                            <button>
+                            <button type="button">
                                 <FaSignOutAlt />
-                                Logout
+                                <span>Logout</span>
                             </button>
 
                         </div>
