@@ -306,7 +306,7 @@ function Register() {
 
                         name="name"
 
-                        placeholder="Full Name (e.g. Daniel Asante)"
+                        placeholder="Full Name (e.g. AYITEY PROSPER)"
 
                         value={formData.name}
 
@@ -325,7 +325,7 @@ function Register() {
 
                         name="email"
 
-                        placeholder="Email Address (e.g. daniel@gmail.com)"
+                        placeholder="Email Address (e.g. KOFINKRABEA@gmail.com)"
 
                         value={formData.email}
 
@@ -344,7 +344,7 @@ function Register() {
 
                         name="phone"
 
-                        placeholder="Phone Number (e.g. 0241234567)"
+                        placeholder="Phone Number (e.g. 0241....67)"
 
                         value={formData.phone}
 
