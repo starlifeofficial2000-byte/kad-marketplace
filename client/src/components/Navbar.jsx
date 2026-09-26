@@ -28,7 +28,7 @@ import {
 
 import "./Navbar.css";
 
-import logo from "../assets/KADMARKETPLACE.png";
+import api from "../config/axios";
 
 import getImageUrl from "../utils/imageUrl";
 
@@ -41,6 +41,11 @@ function Navbar() {
 
     const dropdownRef = useRef(null);
 
+
+    /* =========================================================
+       STATE
+    ========================================================= */
+
     const [menuOpen, setMenuOpen] =
         useState(false);
 
@@ -50,12 +55,133 @@ function Navbar() {
     const [user, setUser] =
         useState(null);
 
+    const [marketplaceLogo, setMarketplaceLogo] =
+        useState("");
 
-    /*
-     * =========================================================
-     * LOAD USER SAFELY
-     * =========================================================
-     */
+
+    /* =========================================================
+       LOAD MARKETPLACE LOGO
+    ========================================================= */
+
+    useEffect(() => {
+
+        let cancelled = false;
+
+
+        const loadBranding = async () => {
+
+            try {
+
+                console.log(
+                    "[NAVBAR] Loading marketplace branding..."
+                );
+
+
+                const response =
+                    await api.get(
+                        "/settings/public"
+                    );
+
+
+                console.log(
+                    "[NAVBAR] Public settings:",
+                    response.data
+                );
+
+
+                const settings =
+                    response.data?.settings ||
+                    {};
+
+
+                const logo =
+                    settings.logo ||
+                    "";
+
+
+                if (
+                    logo &&
+                    !cancelled
+                ) {
+
+                    setMarketplaceLogo(
+                        logo
+                    );
+
+
+                    console.log(
+                        "[NAVBAR] Marketplace logo loaded:",
+                        logo
+                    );
+
+                }
+
+            } catch (error) {
+
+                console.error(
+                    "[NAVBAR] BRANDING LOAD ERROR:",
+                    error.response?.data ||
+                    error.message ||
+                    error
+                );
+
+            }
+
+        };
+
+
+        loadBranding();
+
+
+        return () => {
+
+            cancelled = true;
+
+        };
+
+    }, []);
+
+
+    /* =========================================================
+       LOGO ERROR FALLBACK
+    ========================================================= */
+
+    const handleLogoError = (
+        event
+    ) => {
+
+        const image =
+            event.currentTarget;
+
+
+        if (
+            image.dataset.fallbackApplied ===
+            "true"
+        ) {
+
+            return;
+
+        }
+
+
+        image.dataset.fallbackApplied =
+            "true";
+
+
+        image.src =
+            "/KADMARKETPLACE.png";
+
+
+        console.warn(
+            "[NAVBAR] Dynamic logo failed. Using fallback logo."
+        );
+
+    };
+
+
+    /* =========================================================
+       LOAD USER
+    ========================================================= */
 
     useEffect(() => {
 
@@ -64,19 +190,30 @@ function Navbar() {
             try {
 
                 const storedUser =
-                    localStorage.getItem("user");
+                    localStorage.getItem(
+                        "user"
+                    );
+
 
                 if (!storedUser) {
 
                     setUser(null);
 
                     return;
+
                 }
 
-                const parsedUser =
-                    JSON.parse(storedUser);
 
-                setUser(parsedUser);
+                const parsedUser =
+                    JSON.parse(
+                        storedUser
+                    );
+
+
+                setUser(
+                    parsedUser
+                );
+
 
             } catch (error) {
 
@@ -85,17 +222,16 @@ function Navbar() {
                     error
                 );
 
+
                 setUser(null);
 
             }
 
         };
 
+
         loadUser();
 
-        /*
-         * Listen for login/logout changes.
-         */
 
         window.addEventListener(
             "storage",
@@ -106,6 +242,7 @@ function Navbar() {
             "userUpdated",
             loadUser
         );
+
 
         return () => {
 
@@ -124,22 +261,18 @@ function Navbar() {
     }, []);
 
 
-    /*
-     * =========================================================
-     * PROFILE IMAGE
-     * =========================================================
-     */
+    /* =========================================================
+       PROFILE IMAGE
+    ========================================================= */
 
     const profileImage = useMemo(() => {
 
         if (!user) {
+
             return null;
+
         }
 
-        /*
-         * Support the different possible backend
-         * profile image fields.
-         */
 
         const image =
             user.profileImage ||
@@ -148,33 +281,32 @@ function Navbar() {
             user.photo ||
             null;
 
+
         if (image) {
 
-            return getImageUrl(image);
+            return getImageUrl(
+                image
+            );
 
         }
 
-        /*
-         * UI Avatars fallback.
-         */
 
         const name =
             user.name ||
             user.username ||
             "KAD User";
 
+
         return `https://ui-avatars.com/api/?name=${encodeURIComponent(
             name
         )}&background=111827&color=ffffff&bold=true`;
-        
+
     }, [user]);
 
 
-    /*
-     * =========================================================
-     * PROFILE IMAGE ERROR
-     * =========================================================
-     */
+    /* =========================================================
+       PROFILE IMAGE ERROR
+    ========================================================= */
 
     const handleProfileImageError = (
         event
@@ -182,6 +314,7 @@ function Navbar() {
 
         const image =
             event.currentTarget;
+
 
         if (
             image.dataset.fallbackApplied ===
@@ -192,13 +325,16 @@ function Navbar() {
 
         }
 
+
         image.dataset.fallbackApplied =
             "true";
+
 
         const name =
             user?.name ||
             user?.username ||
             "KAD User";
+
 
         image.src =
             `https://ui-avatars.com/api/?name=${encodeURIComponent(
@@ -208,17 +344,19 @@ function Navbar() {
     };
 
 
-    /*
-     * =========================================================
-     * LOGOUT
-     * =========================================================
-     */
+    /* =========================================================
+       LOGOUT
+    ========================================================= */
 
     const logout = () => {
 
-        localStorage.removeItem("token");
+        localStorage.removeItem(
+            "token"
+        );
 
-        localStorage.removeItem("user");
+        localStorage.removeItem(
+            "user"
+        );
 
         setUser(null);
 
@@ -226,20 +364,22 @@ function Navbar() {
 
         setShowProfileMenu(false);
 
+
         window.dispatchEvent(
-            new Event("userUpdated")
+            new Event(
+                "userUpdated"
+            )
         );
+
 
         navigate("/login");
 
     };
 
 
-    /*
-     * =========================================================
-     * CLOSE DROPDOWN WHEN CLICKING OUTSIDE
-     * =========================================================
-     */
+    /* =========================================================
+       CLOSE DROPDOWN
+    ========================================================= */
 
     useEffect(() => {
 
@@ -254,16 +394,20 @@ function Navbar() {
                 )
             ) {
 
-                setShowProfileMenu(false);
+                setShowProfileMenu(
+                    false
+                );
 
             }
 
         };
 
+
         document.addEventListener(
             "mousedown",
             handleClickOutside
         );
+
 
         return () => {
 
@@ -277,11 +421,9 @@ function Navbar() {
     }, []);
 
 
-    /*
-     * =========================================================
-     * CLOSE MENUS WHEN ROUTE CHANGES
-     * =========================================================
-     */
+    /* =========================================================
+       CLOSE MENUS WHEN ROUTE CHANGES
+    ========================================================= */
 
     useEffect(() => {
 
@@ -289,14 +431,14 @@ function Navbar() {
 
         setShowProfileMenu(false);
 
-    }, [location.pathname]);
+    }, [
+        location.pathname
+    ]);
 
 
-    /*
-     * =========================================================
-     * CLOSE MOBILE MENU
-     * =========================================================
-     */
+    /* =========================================================
+       CLOSE MOBILE MENU
+    ========================================================= */
 
     const closeMobileMenu = () => {
 
@@ -305,29 +447,29 @@ function Navbar() {
     };
 
 
-    /*
-     * =========================================================
-     * ACTIVE NAV CLASS
-     * =========================================================
-     */
+    /* =========================================================
+       ACTIVE NAV CLASS
+    ========================================================= */
 
-    const navClass = ({ isActive }) =>
+    const navClass = ({
+        isActive
+    }) =>
+
         isActive
             ? "nav-link active"
             : "nav-link";
 
 
-    /*
-     * =========================================================
-     * RENDER
-     * =========================================================
-     */
+    /* =========================================================
+       RENDER
+    ========================================================= */
 
     return (
 
         <header className="navbar">
 
             <div className="navbar-inner">
+
 
                 {/* =================================================
                     LOGO
@@ -344,10 +486,17 @@ function Navbar() {
                     >
 
                         <img
-                            src={logo}
+                            src={
+                                marketplaceLogo ||
+                                "/KADMARKETPLACE.png"
+                            }
                             alt="KAD Marketplace"
                             className="navbar-logo"
+                            onError={
+                                handleLogoError
+                            }
                         />
+
 
                         <div className="brand-text">
 
@@ -367,7 +516,7 @@ function Navbar() {
 
 
                 {/* =================================================
-                    DESKTOP / MOBILE NAVIGATION
+                    NAVIGATION
                 ================================================= */}
 
                 <div
@@ -487,7 +636,7 @@ function Navbar() {
                     )}
 
 
-                    {/* GUEST LOGIN */}
+                    {/* LOGIN */}
 
                     {!user && (
 
@@ -581,7 +730,7 @@ function Navbar() {
                                     }
                                     onClick={() =>
                                         setShowProfileMenu(
-                                            (previous) =>
+                                            previous =>
                                                 !previous
                                         )
                                     }
@@ -630,13 +779,11 @@ function Navbar() {
                                 </button>
 
 
-                                {/* PROFILE DROPDOWN */}
+                                {/* PROFILE MENU */}
 
                                 {showProfileMenu && (
 
                                     <div className="profile-menu">
-
-                                        {/* HEADER */}
 
                                         <div className="profile-menu-header">
 
@@ -654,30 +801,43 @@ function Navbar() {
 
                                             </div>
 
+
                                             <div className="profile-menu-user">
 
                                                 <strong>
+
                                                     {
                                                         user.name ||
                                                         user.username ||
                                                         "KAD User"
                                                     }
+
                                                 </strong>
 
+
                                                 <span>
+
                                                     {
                                                         user.email ||
                                                         "Marketplace User"
                                                     }
+
                                                 </span>
+
 
                                                 {user.role && (
 
                                                     <small>
-                                                        {user.role ===
-                                                        "admin"
-                                                            ? "Administrator"
-                                                            : "Marketplace Member"}
+
+                                                        {
+                                                            user.role ===
+                                                            "admin"
+
+                                                                ? "Administrator"
+
+                                                                : "Marketplace Member"
+                                                        }
+
                                                     </small>
 
                                                 )}
@@ -687,17 +847,14 @@ function Navbar() {
                                         </div>
 
 
-                                        {/* LINKS */}
-
                                         <div className="profile-menu-links">
 
                                             <Link
                                                 to="/profile"
-                                                onClick={
-                                                    () =>
-                                                        setShowProfileMenu(
-                                                            false
-                                                        )
+                                                onClick={() =>
+                                                    setShowProfileMenu(
+                                                        false
+                                                    )
                                                 }
                                             >
 
@@ -712,11 +869,10 @@ function Navbar() {
 
                                             <Link
                                                 to="/dashboard"
-                                                onClick={
-                                                    () =>
-                                                        setShowProfileMenu(
-                                                            false
-                                                        )
+                                                onClick={() =>
+                                                    setShowProfileMenu(
+                                                        false
+                                                    )
                                                 }
                                             >
 
@@ -731,11 +887,10 @@ function Navbar() {
 
                                             <Link
                                                 to="/support"
-                                                onClick={
-                                                    () =>
-                                                        setShowProfileMenu(
-                                                            false
-                                                        )
+                                                onClick={() =>
+                                                    setShowProfileMenu(
+                                                        false
+                                                    )
                                                 }
                                             >
 
@@ -750,11 +905,10 @@ function Navbar() {
 
                                             <Link
                                                 to="/my-tickets"
-                                                onClick={
-                                                    () =>
-                                                        setShowProfileMenu(
-                                                            false
-                                                        )
+                                                onClick={() =>
+                                                    setShowProfileMenu(
+                                                        false
+                                                    )
                                                 }
                                             >
 
@@ -769,11 +923,10 @@ function Navbar() {
 
                                             <Link
                                                 to="/notifications"
-                                                onClick={
-                                                    () =>
-                                                        setShowProfileMenu(
-                                                            false
-                                                        )
+                                                onClick={() =>
+                                                    setShowProfileMenu(
+                                                        false
+                                                    )
                                                 }
                                             >
 
@@ -819,9 +972,7 @@ function Navbar() {
 
                     ) : (
 
-                        /* =================================================
-                           GUEST ACTIONS
-                        ================================================= */
+                        /* GUEST ACTIONS */
 
                         <div className="guest-actions">
 
@@ -831,6 +982,7 @@ function Navbar() {
                             >
                                 Login
                             </Link>
+
 
                             <Link
                                 to="/register"
@@ -846,16 +998,14 @@ function Navbar() {
                 </div>
 
 
-                {/* =================================================
-                    MOBILE MENU BUTTON
-                ================================================= */}
+                {/* MOBILE MENU BUTTON */}
 
                 <button
                     type="button"
                     className="menu-btn1"
                     onClick={() =>
                         setMenuOpen(
-                            (previous) =>
+                            previous =>
                                 !previous
                         )
                     }
@@ -884,5 +1034,6 @@ function Navbar() {
     );
 
 }
+
 
 export default Navbar;
