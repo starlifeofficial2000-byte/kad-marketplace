@@ -1,5 +1,8 @@
 const { Setting } = require("../models");
 
+const {
+    getMarketplaceSettings
+} = require("../services/marketplaceSettingsService");
 
 /* =========================================================
    GET ALL SETTINGS
@@ -53,42 +56,76 @@ exports.getSettings = async (req, res) => {
 
 };
 
-
 /* =========================================================
-   GET PUBLIC SETTINGS
+   GET PUBLIC MARKETPLACE SETTINGS
 ========================================================= */
 
 exports.getPublicSettings = async (req, res) => {
 
     try {
 
-        const settings = await Setting.findAll({
+        /*
+        -----------------------------------------------------
+        Get settings from MarketplaceSettings table
+        -----------------------------------------------------
+        */
 
-            where: {
-
-                category: "General"
-
-            }
-
-        });
-
-
-        const formattedSettings = {};
+        const settings =
+            await getMarketplaceSettings();
 
 
-        settings.forEach((item) => {
-
-            formattedSettings[item.settingKey] =
-                item.settingValue;
-
-        });
-
+        /*
+        -----------------------------------------------------
+        Return only public branding/configuration data
+        -----------------------------------------------------
+        */
 
         return res.status(200).json({
 
             success: true,
 
-            settings: formattedSettings
+            settings: {
+
+                id:
+                    settings.id || null,
+
+                marketplace_name:
+                    settings.marketplace_name || "",
+
+                logo:
+                    settings.logo || "",
+
+                admin_logo:
+                    settings.admin_logo || "",
+
+                favicon:
+                    settings.favicon || "",
+
+                currency:
+                    settings.currency || "GH₵",
+
+                language:
+                    settings.language || "English",
+
+                timezone:
+                    settings.timezone || "Africa/Accra",
+
+                maintenance_mode:
+                    settings.maintenance_mode || false,
+
+                registration_enabled:
+                    settings.registration_enabled !== false,
+
+                store_registration_enabled:
+                    settings.store_registration_enabled !== false,
+
+                seo_title:
+                    settings.seo_title || "",
+
+                seo_description:
+                    settings.seo_description || ""
+
+            }
 
         });
 
@@ -97,24 +134,22 @@ exports.getPublicSettings = async (req, res) => {
     catch (error) {
 
         console.error(
-            "GET PUBLIC SETTINGS ERROR:",
+            "GET PUBLIC MARKETPLACE SETTINGS ERROR:",
             error
         );
-
 
         return res.status(500).json({
 
             success: false,
 
             message:
-                "Failed to load public settings."
+                "Failed to load public marketplace settings."
 
         });
 
     }
 
 };
-
 
 /* =========================================================
    GET SETTINGS BY CATEGORY

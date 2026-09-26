@@ -144,7 +144,7 @@ function DynamicFavicon() {
                     "[FAVICON] Loading marketplace settings..."
                 );
 
-                const response = await api.get("/settings");
+                const response = await api.get("/settings/public");
 
                 console.log(
                     "[FAVICON] Settings response:",
