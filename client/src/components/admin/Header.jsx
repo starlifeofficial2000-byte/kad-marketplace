@@ -1,22 +1,18 @@
 import { useState } from "react";
 import {
-    FaBell,
-    FaEnvelope,
-    FaMoon,
     FaSearch,
     FaUserCircle,
     FaCog,
     FaSignOutAlt
 } from "react-icons/fa";
 
+import logo from "../assets/KADMARKETPLACE.png";
 import "./Header.css";
 
 function Header() {
 
     const user = JSON.parse(
-
         localStorage.getItem("user") || "{}"
-
     );
 
     const [showMenu, setShowMenu] = useState(false);
@@ -29,14 +25,17 @@ function Header() {
 
                 <div className="search-box">
 
+                    <img
+                        src={logo}
+                        alt="KAD Marketplace"
+                        className="header-logo"
+                    />
+
                     <FaSearch />
 
                     <input
-
                         type="text"
-
                         placeholder="Search users, products, stores..."
-
                     />
 
                 </div>
@@ -45,114 +44,63 @@ function Header() {
 
             <div className="header-right">
 
-                <button className="icon-btn">
-
-                    <FaMoon />
-
-                </button>
-
-                <button className="icon-btn">
-
-                    <FaEnvelope />
-
-                    <span className="badge">
-
-                        3
-
-                    </span>
-
-                </button>
-
-                <button className="icon-btn">
-
-                    <FaBell />
-
-                    <span className="badge">
-
-                        12
-
-                    </span>
-
-                </button>
-
                 <div
-
                     className="profile"
-
                     onClick={() =>
-
                         setShowMenu(!showMenu)
-
                     }
-
                 >
 
                     <img
-
-                        src={`/uploads/${user.profileImage}`}
-
-                        alt=""
-
+                        src={
+                            user.profileImage
+                                ? `/uploads/${user.profileImage}`
+                                : "/default-avatar.png"
+                        }
+                        alt={user.name || "Administrator"}
                     />
 
                     <div>
 
                         <h4>
-
-                            {user.name}
-
+                            {user.name || "Administrator"}
                         </h4>
 
                         <small>
-
                             Administrator
-
                         </small>
 
                     </div>
 
-                    {
-
-                        showMenu &&
+                    {showMenu && (
 
                         <div className="profile-menu">
 
                             <button>
-
                                 <FaUserCircle />
-
                                 Profile
-
                             </button>
 
                             <button>
-
                                 <FaCog />
-
                                 Settings
-
                             </button>
 
                             <button>
-
                                 <FaSignOutAlt />
-
                                 Logout
-
                             </button>
 
                         </div>
 
-                    }
+                    )}
 
                 </div>
 
             </div>
 
         </header>
-
     );
-
 }
 
 export default Header;
