@@ -14,11 +14,12 @@ import {
     FaHome,
     FaEnvelope,
     FaShieldAlt,
+    FaSignOutAlt,
+    FaBars,
     FaUserShield,
     FaKey,
     FaClipboardList,
-    FaHistory,
-    FaTimes
+    FaHistory
 } from "react-icons/fa";
 
 import "./Sidebar.css";
