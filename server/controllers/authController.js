@@ -1202,7 +1202,12 @@ exports.login = async (req, res) => {
                 .trim()
                 .toLowerCase();
 
+/* =========================================
+   LOAD SECURITY CONFIGURATION
+========================================= */
 
+const security =
+    await getSecurityConfiguration();
         /* =========================================
            FIND USER
         ========================================= */
