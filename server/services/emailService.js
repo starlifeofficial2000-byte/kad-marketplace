@@ -21,7 +21,104 @@ async function getEmailConfiguration() {
     const email =
         configuration.email || {};
 
-    return email;
+
+    /*
+     * IMPORTANT
+     *
+     * Resend and SMTP are completely separate.
+     *
+     * We intentionally do NOT copy SMTP sender
+     * information into the Resend configuration.
+     */
+
+    return {
+
+        enabled:
+            email.enabled !== false,
+
+        provider:
+            String(
+                email.provider || "resend"
+            ).toLowerCase(),
+
+        /* ==============================
+           RESEND
+        ============================== */
+
+        resendFromName:
+            String(
+                email.resendFromName ||
+                "KAD Marketplace"
+            ).trim(),
+
+        resendFromEmail:
+            String(
+                email.resendFromEmail ||
+                ""
+            ).trim(),
+
+        /* ==============================
+           SMTP
+        ============================== */
+
+        smtpHost:
+            String(
+                email.smtpHost ||
+                ""
+            ).trim(),
+
+        smtpPort:
+            Number(
+                email.smtpPort
+            ) || 587,
+
+        smtpUsername:
+            String(
+                email.smtpUsername ||
+                ""
+            ).trim(),
+
+        smtpPassword:
+            String(
+                email.smtpPassword ||
+                ""
+            ),
+
+        encryption:
+            String(
+                email.encryption ||
+                "tls"
+            ).toLowerCase(),
+
+        fromName:
+            String(
+                email.fromName ||
+                "KAD Marketplace"
+            ).trim(),
+
+        fromEmail:
+            String(
+                email.fromEmail ||
+                ""
+            ).trim(),
+
+        /* ==============================
+           EMAIL TYPES
+        ============================== */
+
+        registrationEmail:
+            email.registrationEmail !== false,
+
+        passwordResetEmail:
+            email.passwordResetEmail !== false,
+
+        orderEmail:
+            email.orderEmail !== false,
+
+        paymentEmail:
+            email.paymentEmail !== false
+
+    };
 
 }
 
@@ -44,6 +141,10 @@ async function sendWithResend(
         process.env.RESEND_API_KEY;
 
 
+    /* =====================================================
+       CHECK API KEY
+    ===================================================== */
+
     if (!apiKey) {
 
         throw new Error(
@@ -53,35 +154,95 @@ async function sendWithResend(
     }
 
 
-    const resend =
-        new Resend(apiKey);
-
+    /* =====================================================
+       RESEND SENDER
+    ===================================================== */
 
     const fromName =
         emailConfig.resendFromName ||
-        emailConfig.fromName ||
         "KAD Marketplace";
 
 
-    const fromEmail =
-        emailConfig.resendFromEmail ||
-        emailConfig.fromEmail;
+    /*
+     * IMPORTANT:
+     *
+     * DO NOT FALL BACK TO:
+     *
+     * emailConfig.fromEmail
+     *
+     * because that belongs to SMTP.
+     *
+     * This prevents an old Gmail SMTP address
+     * from accidentally being sent to Resend.
+     */
 
+    const fromEmail =
+        emailConfig.resendFromEmail;
+
+
+    /* =====================================================
+       VALIDATE RESEND SENDER
+    ===================================================== */
 
     if (!fromEmail) {
 
         throw new Error(
-            "Resend sender email is not configured."
+            "Resend From Email is not configured. Set a verified sender such as noreply@kadmarket.com in Admin Settings."
         );
 
     }
 
 
+    /*
+     * Basic email validation.
+     */
+
+    const emailPattern =
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+
+    if (!emailPattern.test(fromEmail)) {
+
+        throw new Error(
+            `Invalid Resend From Email: ${fromEmail}`
+        );
+
+    }
+
+
+    /* =====================================================
+       LOG SAFE CONFIGURATION
+       NEVER LOG THE API KEY
+    ===================================================== */
+
+    console.log(
+        "[EMAIL][RESEND]",
+        {
+            fromName,
+            fromEmail,
+            to,
+            subject
+        }
+    );
+
+
+    /* =====================================================
+       CREATE RESEND CLIENT
+    ===================================================== */
+
+    const resend =
+        new Resend(apiKey);
+
+
+    /* =====================================================
+       SEND EMAIL
+    ===================================================== */
+
     const result =
         await resend.emails.send({
 
             from:
-                `"${fromName}" <${fromEmail}>`,
+                `${fromName} <${fromEmail}>`,
 
             to: [to],
 
@@ -90,13 +251,22 @@ async function sendWithResend(
             html,
 
             text:
-                text ||
-                ""
+                text || ""
 
         });
 
 
-    if (result.error) {
+    /* =====================================================
+       HANDLE RESEND ERROR
+    ===================================================== */
+
+    if (result?.error) {
+
+        console.error(
+            "[EMAIL][RESEND] ERROR:",
+            result.error
+        );
+
 
         throw new Error(
             result.error.message ||
@@ -106,12 +276,23 @@ async function sendWithResend(
     }
 
 
+    /* =====================================================
+       SUCCESS
+    ===================================================== */
+
+    console.log(
+        "[EMAIL][RESEND] SENT:",
+        result?.data?.id || null
+    );
+
+
     return {
 
         provider: "resend",
 
         id:
-            result.data?.id || null
+            result?.data?.id ||
+            null
 
     };
 
@@ -152,9 +333,14 @@ function createSMTPTransporter(
 
     const encryption =
         String(
-            emailConfig.encryption || "tls"
+            emailConfig.encryption ||
+            "tls"
         ).toLowerCase();
 
+
+    /* =====================================================
+       VALIDATION
+    ===================================================== */
 
     if (!host) {
 
@@ -183,6 +369,10 @@ function createSMTPTransporter(
     }
 
 
+    /* =====================================================
+       SECURITY SETTINGS
+    ===================================================== */
+
     let secure = false;
 
     let requireTLS = false;
@@ -197,7 +387,6 @@ function createSMTPTransporter(
 
     }
 
-
     else if (
         encryption === "tls" ||
         encryption === "starttls"
@@ -209,6 +398,10 @@ function createSMTPTransporter(
 
     }
 
+
+    /* =====================================================
+       CREATE TRANSPORT
+    ===================================================== */
 
     return nodemailer.createTransport({
 
@@ -261,6 +454,10 @@ async function sendWithSMTP(
         );
 
 
+    /* =====================================================
+       SMTP SENDER
+    ===================================================== */
+
     const fromName =
         emailConfig.fromName ||
         "KAD Marketplace";
@@ -280,11 +477,33 @@ async function sendWithSMTP(
     }
 
 
+    console.log(
+        "[EMAIL][SMTP]",
+        {
+            host:
+                emailConfig.smtpHost,
+
+            port:
+                emailConfig.smtpPort,
+
+            fromEmail,
+
+            to,
+
+            subject
+        }
+    );
+
+
+    /* =====================================================
+       SEND
+    ===================================================== */
+
     const info =
         await transporter.sendMail({
 
             from:
-                `"${fromName}" <${fromEmail}>`,
+                `${fromName} <${fromEmail}>`,
 
             to,
 
@@ -293,10 +512,15 @@ async function sendWithSMTP(
             html,
 
             text:
-                text ||
-                ""
+                text || ""
 
         });
+
+
+    console.log(
+        "[EMAIL][SMTP] SENT:",
+        info.messageId || null
+    );
 
 
     return {
@@ -304,7 +528,8 @@ async function sendWithSMTP(
         provider: "smtp",
 
         id:
-            info.messageId || null
+            info.messageId ||
+            null
 
     };
 
@@ -322,6 +547,10 @@ async function sendEmail(
     text = ""
 ) {
 
+    /* =====================================================
+       VALIDATE RECIPIENT
+    ===================================================== */
+
     if (!to) {
 
         throw new Error(
@@ -331,9 +560,17 @@ async function sendEmail(
     }
 
 
+    /* =====================================================
+       GET CONFIGURATION
+    ===================================================== */
+
     const emailConfig =
         await getEmailConfiguration();
 
+
+    /* =====================================================
+       CHECK EMAIL SYSTEM
+    ===================================================== */
 
     if (
         emailConfig.enabled === false
@@ -346,6 +583,10 @@ async function sendEmail(
     }
 
 
+    /* =====================================================
+       PROVIDER
+    ===================================================== */
+
     const provider =
         String(
             emailConfig.provider ||
@@ -354,11 +595,17 @@ async function sendEmail(
 
 
     console.log(
-        `[EMAIL] Sending using provider: ${provider}`
+        `[EMAIL] Provider selected: ${provider}`
     );
 
 
-    if (provider === "resend") {
+    /* =====================================================
+       RESEND
+    ===================================================== */
+
+    if (
+        provider === "resend"
+    ) {
 
         return sendWithResend(
 
@@ -376,7 +623,13 @@ async function sendEmail(
     }
 
 
-    if (provider === "smtp") {
+    /* =====================================================
+       SMTP
+    ===================================================== */
+
+    if (
+        provider === "smtp"
+    ) {
 
         return sendWithSMTP(
 
@@ -394,8 +647,12 @@ async function sendEmail(
     }
 
 
+    /* =====================================================
+       INVALID PROVIDER
+    ===================================================== */
+
     throw new Error(
-        `Unsupported email provider: ${provider}`
+        `Unsupported email provider: ${provider}. Use "resend" or "smtp".`
     );
 
 }
@@ -408,6 +665,19 @@ async function sendEmail(
 async function sendTestEmail(
     to
 ) {
+
+    if (!to) {
+
+        throw new Error(
+            "Test email recipient is required."
+        );
+
+    }
+
+
+    /* =====================================================
+       GET SETTINGS
+    ===================================================== */
 
     const marketplaceSettings =
         await getMarketplaceSettings();
@@ -428,87 +698,180 @@ async function sendTestEmail(
 
     const marketplaceName =
         marketplaceSettings
+            ?.marketplaceName ||
+        marketplaceSettings
             ?.marketplace_name ||
         "KAD Marketplace";
 
+
+    /* =====================================================
+       SUBJECT
+    ===================================================== */
 
     const subject =
         `${marketplaceName} - Test Email`;
 
 
+    /* =====================================================
+       HTML
+    ===================================================== */
+
     const html = `
 
-        <div
+        <!DOCTYPE html>
+
+        <html>
+
+        <head>
+
+            <meta charset="UTF-8">
+
+            <meta
+                name="viewport"
+                content="width=device-width, initial-scale=1.0"
+            >
+
+            <title>
+                ${marketplaceName} Test Email
+            </title>
+
+        </head>
+
+
+        <body
             style="
-                font-family: Arial, sans-serif;
-                max-width: 600px;
-                margin: 40px auto;
-                padding: 30px;
-                border: 1px solid #e5e7eb;
-                border-radius: 12px;
-                background: #ffffff;
+                margin:0;
+                padding:0;
+                background:#f3f4f6;
+                font-family:Arial,Helvetica,sans-serif;
             "
         >
 
-            <h2
+            <div
                 style="
-                    margin-top: 0;
+                    max-width:600px;
+                    margin:40px auto;
+                    padding:20px;
                 "
             >
-                ${marketplaceName}
-            </h2>
+
+                <div
+                    style="
+                        background:#ffffff;
+                        border:1px solid #e5e7eb;
+                        border-radius:14px;
+                        padding:32px;
+                    "
+                >
+
+                    <h2
+                        style="
+                            margin:0 0 20px;
+                            color:#111827;
+                        "
+                    >
+                        ${marketplaceName}
+                    </h2>
 
 
-            <p>
-                This is a test email from your
-                ${marketplaceName} email configuration.
-            </p>
+                    <p
+                        style="
+                            color:#374151;
+                            line-height:1.7;
+                        "
+                    >
+                        This is a test email from your
+                        ${marketplaceName} email configuration.
+                    </p>
 
 
-            <p>
-                Your email provider is configured
-                successfully.
-            </p>
+                    <div
+                        style="
+                            margin:24px 0;
+                            padding:16px;
+                            background:#f9fafb;
+                            border-radius:10px;
+                        "
+                    >
+
+                        <p
+                            style="
+                                margin:0;
+                                color:#374151;
+                            "
+                        >
+
+                            <strong>
+                                Email Provider:
+                            </strong>
+
+                            ${provider.toUpperCase()}
+
+                        </p>
+
+                    </div>
 
 
-            <p>
-                <strong>
-                    Provider:
-                </strong>
-
-                ${provider.toUpperCase()}
-            </p>
-
-
-            <hr
-                style="
-                    border: none;
-                    border-top: 1px solid #e5e7eb;
-                    margin: 25px 0;
-                "
-            />
+                    <p
+                        style="
+                            color:#374151;
+                            line-height:1.7;
+                        "
+                    >
+                        Your marketplace email service has
+                        successfully processed this test request.
+                    </p>
 
 
-            <p
-                style="
-                    color: #6b7280;
-                    font-size: 13px;
-                "
-            >
-                This message was generated automatically
-                by ${marketplaceName}.
-            </p>
+                    <hr
+                        style="
+                            border:none;
+                            border-top:1px solid #e5e7eb;
+                            margin:25px 0;
+                        "
+                    />
 
-        </div>
+
+                    <p
+                        style="
+                            margin:0;
+                            color:#6b7280;
+                            font-size:13px;
+                        "
+                    >
+                        This message was generated automatically
+                        by ${marketplaceName}.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </body>
+
+        </html>
 
     `;
 
+
+    /* =====================================================
+       TEXT VERSION
+    ===================================================== */
+
+    const text =
+        `This is a test email from ${marketplaceName}. ` +
+        `Provider: ${provider.toUpperCase()}`;
+
+
+    /* =====================================================
+       SEND THROUGH CENTRAL EMAIL SERVICE
+    ===================================================== */
 
     return sendEmail(
         to,
         subject,
         html,
-        `This is a test email from ${marketplaceName}. Provider: ${provider.toUpperCase()}`
+        text
     );
 
 }
