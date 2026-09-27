@@ -1805,12 +1805,25 @@ const buildEmailConfiguration =
                         payload
                     );
 
+console.log(
+    "SAVE ADMIN SETTINGS RESPONSE:",
+    response.data
+);
 
-                console.log(
-                    "SAVE ADMIN SETTINGS RESPONSE:",
-                    response.data
-                );
+console.log(
+    "SAVED EMAIL CONFIGURATION:",
+    response.data?.settings?.configuration?.email
+);
 
+console.log(
+    "RESEND FROM EMAIL:",
+    response.data?.settings?.configuration?.email?.resendFromEmail
+);
+
+console.log(
+    "EMAIL PROVIDER:",
+    response.data?.settings?.configuration?.email?.provider
+);
 
                 if (
                     !response.data?.success
