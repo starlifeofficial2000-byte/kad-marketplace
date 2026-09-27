@@ -16,6 +16,7 @@ import {
     FaShieldAlt,
     FaSignOutAlt,
     FaBars,
+    FaTimes,
     FaUserShield,
     FaKey,
     FaClipboardList,
