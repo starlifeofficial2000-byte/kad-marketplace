@@ -1,5 +1,5 @@
-import { NavLink, useNavigate, useLocation } from "react-router-dom";
-import { useState, useRef, useEffect } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useEffect, useRef } from "react";
 
 import {
     FaChartPie,
@@ -14,398 +14,418 @@ import {
     FaHome,
     FaEnvelope,
     FaShieldAlt,
-    FaSignOutAlt,
-    FaBars,
     FaUserShield,
     FaKey,
     FaClipboardList,
-    FaHistory
+    FaHistory,
+    FaTimes
 } from "react-icons/fa";
 
 import "./Sidebar.css";
 
-function Sidebar() {
+function Sidebar({
+    isOpen = true,
+    onClose
+}) {
 
     const navigate = useNavigate();
 
-    const location = useLocation();
-
     const sidebarRef = useRef(null);
 
-    const [hidden, setHidden] = useState(
-    window.innerWidth <= 768
-);
+    const user =
+        JSON.parse(
+            localStorage.getItem("user") || "{}"
+        );
 
-    const user = JSON.parse(
+    const permissions =
+        user.permissions || [];
 
-        localStorage.getItem("user")
-
-    ) || {};
-
-    const permissions = user.permissions || [];
+    /* =====================================================
+       PERMISSION CHECK
+    ===================================================== */
 
     const hasPermission = (...required) => {
 
         if (
-
             user.roles?.includes("Super Admin")
-
         ) {
-
             return true;
-
         }
 
-        return required.every(permission =>
-
-            permissions.includes(permission)
-
+        return required.every(
+            permission =>
+                permissions.includes(permission)
         );
-
     };
+
+
+    /* =====================================================
+       CLOSE SIDEBAR WHEN CLICKING OUTSIDE
+    ===================================================== */
 
     useEffect(() => {
 
         const handleClickOutside = (event) => {
 
             if (
-
+                window.innerWidth <= 768 &&
                 sidebarRef.current &&
-
-                !sidebarRef.current.contains(event.target)
-
+                !sidebarRef.current.contains(
+                    event.target
+                )
             ) {
 
-                setHidden(true);
+                if (onClose) {
+                    onClose();
+                }
 
             }
 
         };
 
         document.addEventListener(
-
             "mousedown",
-
             handleClickOutside
-
         );
 
         return () => {
 
             document.removeEventListener(
-
                 "mousedown",
-
                 handleClickOutside
-
             );
 
         };
 
-    }, []);
+    }, [onClose]);
+
+
+    /* =====================================================
+       CLOSE SIDEBAR WITH ESC
+    ===================================================== */
+
+    useEffect(() => {
+
+        const handleEscape = (event) => {
+
+            if (
+                event.key === "Escape" &&
+                window.innerWidth <= 768
+            ) {
+
+                if (onClose) {
+                    onClose();
+                }
+
+            }
+
+        };
+
+        document.addEventListener(
+            "keydown",
+            handleEscape
+        );
+
+        return () => {
+
+            document.removeEventListener(
+                "keydown",
+                handleEscape
+            );
+
+        };
+
+    }, [onClose]);
+
+
+    /* =====================================================
+       MENU ITEMS
+    ===================================================== */
 
     const menus = [
 
         {
-
             title: "Dashboard",
-
             icon: <FaChartPie />,
-
             link: "/admin/dashboard",
-
             show: true
-
         },
 
         {
-
             title: "Users",
-
             icon: <FaUsers />,
-
             link: "/admin/users",
-
-            show: hasPermission("manage_users")
-
+            show: hasPermission(
+                "manage_users"
+            )
         },
 
         {
-
             title: "Roles",
-
             icon: <FaUserShield />,
-
             link: "/admin/roles",
-
-            show: hasPermission("manage_roles")
-
+            show: hasPermission(
+                "manage_roles"
+            )
         },
 
         {
-
             title: "Permissions",
-
             icon: <FaKey />,
-
             link: "/admin/permissions",
-
-            show: hasPermission("manage_permissions")
-
+            show: hasPermission(
+                "manage_permissions"
+            )
         },
 
         {
-
             title: "Products",
-
             icon: <FaBoxOpen />,
-
             link: "/admin/products",
-
-            show: hasPermission("manage_products")
-
+            show: hasPermission(
+                "manage_products"
+            )
         },
 
         {
-
             title: "Stores",
-
             icon: <FaStore />,
-
             link: "/admin/stores",
-
-            show: hasPermission("manage_stores")
-
+            show: hasPermission(
+                "manage_stores"
+            )
         },
 
         {
-
             title: "Subscriptions",
-
             icon: <FaCrown />,
-
             link: "/admin/subscriptions",
-
-            show: hasPermission("manage_subscriptions")
-
+            show: hasPermission(
+                "manage_subscriptions"
+            )
         },
 
         {
-
             title: "Homepage",
-
             icon: <FaHome />,
-
             link: "/admin/homepage",
-
-            show: hasPermission("manage_homepage")
-
+            show: hasPermission(
+                "manage_homepage"
+            )
         },
 
         {
-
             title: "Advertisements",
-
             icon: <FaBullhorn />,
-
             link: "/admin/advertisements",
-
-            show: hasPermission("manage_advertisements")
-
+            show: hasPermission(
+                "manage_advertisements"
+            )
         },
 
         {
-
             title: "Payments",
-
             icon: <FaMoneyBillWave />,
-
             link: "/admin/payments",
-
-            show: hasPermission("manage_payments")
-
+            show: hasPermission(
+                "manage_payments"
+            )
         },
 
         {
-
             title: "Messages",
-
             icon: <FaEnvelope />,
-
             link: "/admin/contact-messages",
-
-            show: hasPermission("manage_messages")
-
+            show: hasPermission(
+                "manage_messages"
+            )
         },
 
         {
-
             title: "Audit Logs",
-
             icon: <FaClipboardList />,
-
             link: "/admin/audit-logs",
-
-            show: hasPermission("view_audit_logs")
-
+            show: hasPermission(
+                "view_audit_logs"
+            )
         },
 
         {
-
             title: "Login History",
-
             icon: <FaHistory />,
-
             link: "/admin/login-history",
-
-            show: hasPermission("view_login_history")
-
+            show: hasPermission(
+                "view_login_history"
+            )
         },
 
         {
-
             title: "Security",
-
             icon: <FaShieldAlt />,
-
             link: "/admin/security",
-
-            show: hasPermission("manage_security")
-
+            show: hasPermission(
+                "manage_security"
+            )
         },
 
         {
-
             title: "Support",
-
             icon: <FaLifeRing />,
-
             link: "/admin/support",
-
             show: true
-
         },
 
         {
-
             title: "Settings",
-
             icon: <FaCog />,
-
             link: "/admin/settings",
-
-            show: hasPermission("manage_settings")
-
+            show: hasPermission(
+                "manage_settings"
+            )
         }
 
     ];
 
+
+    /* =====================================================
+       LOGOUT
+    ===================================================== */
+
     const handleLogout = () => {
 
         localStorage.removeItem("token");
-
         localStorage.removeItem("user");
 
         navigate("/login");
 
     };
 
+
+    /* =====================================================
+       NAVIGATION
+    ===================================================== */
+
+    const handleNavigation = () => {
+
+        if (
+            window.innerWidth <= 768 &&
+            onClose
+        ) {
+
+            onClose();
+
+        }
+
+    };
+
+
     return (
 
         <>
 
-            {
+            {/* MOBILE OVERLAY */}
 
-                location.pathname.startsWith("/admin") &&
+            {isOpen && (
+                <div
+                    className="sidebar-overlay"
+                    onClick={onClose}
+                    aria-hidden="true"
+                />
+            )}
 
-                <button
-    className="menu-btn"
-    onClick={() => setHidden(false)}
-    aria-label="Open admin menu"
->
-    <FaBars />
-</button>
 
-            }
+            {/* SIDEBAR */}
 
             <aside
-
                 ref={sidebarRef}
-
                 className={
-
-                    hidden
-
-                    ?
-
-                    "sidebar hidden"
-
-                    :
-
-                    "sidebar"
-
+                    isOpen
+                        ? "sidebar"
+                        : "sidebar hidden"
                 }
-
             >
 
-                <div className="sidebar-logo">
+                {/* =================================================
+                    MOBILE CLOSE BUTTON
+                ================================================= */}
 
-                    KAD ADMIN
+                <div className="sidebar-top">
+
+                    <div className="sidebar-logo">
+                        KAD ADMIN
+                    </div>
+
+                    <button
+                        type="button"
+                        className="sidebar-close-button"
+                        onClick={onClose}
+                        aria-label="Close admin menu"
+                    >
+                        <FaTimes />
+                    </button>
 
                 </div>
 
-                <div className="sidebar-menu">
 
-                    {
+                {/* =================================================
+                    NAVIGATION
+                ================================================= */}
 
-                        menus
+                <nav className="sidebar-menu">
 
+                    {menus
                         .filter(menu => menu.show)
-
                         .map(menu => (
 
                             <NavLink
-    key={menu.link}
-    to={menu.link}
-    onClick={() => {
-        if (window.innerWidth <= 768) {
-            setHidden(true);
-        }
-    }}
-    className={({ isActive }) =>
-        isActive
-            ? "sidebar-link active"
-            : "sidebar-link"
-    }
->
-    {menu.icon}
+                                key={menu.link}
+                                to={menu.link}
+                                onClick={
+                                    handleNavigation
+                                }
+                                className={({ isActive }) =>
+                                    isActive
+                                        ? "sidebar-link active"
+                                        : "sidebar-link"
+                                }
+                            >
 
-    <span>
-        {menu.title}
-    </span>
-</NavLink>                        ))
+                                <span className="sidebar-link-icon">
+                                    {menu.icon}
+                                </span>
 
-                    }
+                                <span className="sidebar-link-text">
+                                    {menu.title}
+                                </span>
+
+                            </NavLink>
+
+                        ))}
+
+                </nav>
+
+
+                {/* =================================================
+                    LOGOUT
+                ================================================= */}
+
+                <div className="sidebar-footer">
+
+                    <button
+                        type="button"
+                        className="logout-btn"
+                        onClick={handleLogout}
+                    >
+
+                        <FaSignOutAlt />
+
+                        <span>
+                            Logout
+                        </span>
+
+                    </button>
 
                 </div>
-
-                <button
-
-                    className="logout-btn"
-
-                    onClick={handleLogout}
-
-                >
-
-                    <FaSignOutAlt />
-
-                    <span>
-
-                        Logout
-
-                    </span>
-
-                </button>
 
             </aside>
 

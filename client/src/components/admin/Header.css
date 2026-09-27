@@ -1,309 +1,496 @@
-.admin-header{
-
-    height:80px;
-
-    background:white;
-
-    display:flex;
-
-    justify-content:space-between;
-
-    align-items:center;
-
-    padding:0 30px;
-
-    box-shadow:0 2px 10px rgba(0,0,0,.08);
-
-}
-
-.header-left{
-
-    flex:1;
-
-}
-
-.search-box{
-
-    width:420px;
-
-    display:flex;
-
-    align-items:center;
-
-    gap:10px;
-
-    background:#f3f4f6;
-
-    padding:12px 18px;
-
-    border-radius:30px;
-
-}
-
-.search-box input{
-
-    flex:1;
-
-    border:none;
-
-    background:none;
-
-    outline:none;
-
-    font-size:15px;
-
-}
-
-.header-right{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:20px;
-
-}
-
-.icon-btn{
-
-    width:45px;
-
-    height:45px;
-
-    border:none;
-
-    border-radius:50%;
-
-    background:#eef2ff;
-
-    cursor:pointer;
-
-    position:relative;
-
-    font-size:18px;
-
-}
-
-.icon-btn:hover{
-
-    background:#2563eb;
-
-    color:white;
-
-}
-
-.badge{
-
-    position:absolute;
-
-    top:-5px;
-
-    right:-5px;
-
-    width:20px;
-
-    height:20px;
-
-    background:red;
-
-    color:white;
-
-    border-radius:50%;
-
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    font-size:11px;
-
-}
-
-.profile{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:12px;
-
-    cursor:pointer;
-
-    position:relative;
-
-}
-
-.profile img{
-
-    width:48px;
-
-    height:48px;
-
-    border-radius:50%;
-
-    object-fit:cover;
-
-}
-
-.profile h4{
-
-    margin:0;
-
-}
-
-.profile small{
-
-    color:#777;
-
-}
-
-.profile-menu{
-
-    position:absolute;
-
-    right:0;
-
-    top:70px;
-
-    background:white;
-
-    width:220px;
-
-    border-radius:12px;
-
-    box-shadow:0 8px 20px rgba(0,0,0,.15);
-
-    overflow:hidden;
-
-    z-index:1000;
-
-}
-
-.profile-menu button{
-
-    width:100%;
-
-    padding:15px;
-
-    border:none;
-
-    background:white;
-
-    display:flex;
-
-    align-items:center;
-
-    gap:15px;
-
-    cursor:pointer;
-
-}
-
-.profile-menu button:hover{
-
-    background:#f5f5f5;
-
-}
-
-@media(max-width:900px){
-
-.search-box{
-
-width:250px;
-
-}
-
-.profile div{
-
-display:none;
-
-}
-
-}
 /* =========================================================
-   RESPONSIVE HEADER
+   ADMIN HEADER
 ========================================================= */
 
 .admin-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
+    width: 100%;
+    height: 72px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 24px;
+
+    background: #ffffff;
+
+    border-bottom: 1px solid #e8edf3;
+
+    box-shadow:
+        0 2px 10px rgba(15, 23, 42, 0.05);
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   LEFT
+========================================================= */
+
+.admin-header-left {
+    display: flex;
+    align-items: center;
+
     min-width: 0;
 }
 
-.header-left,
-.header-right,
-.search-box,
-.profile {
-    min-width: 0;
+
+/* =========================================================
+   MOBILE MENU
+========================================================= */
+
+.admin-menu-button {
+    width: 42px;
+    height: 42px;
+
+    display: none;
+
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+    border-radius: 10px;
+
+    background: transparent;
+
+    color: #1f2937;
+
+    font-size: 20px;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
 }
 
-@media (max-width: 768px) {
+.admin-menu-button:hover {
+    background: #f1f5f9;
+    color: #0a66c2;
+}
+
+.admin-menu-button:active {
+    transform: scale(0.94);
+}
+
+
+/* =========================================================
+   LOGO
+========================================================= */
+
+.admin-header-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    height: 48px;
+
+    overflow: hidden;
+}
+
+.admin-header-logo img {
+    display: block;
+
+    width: auto;
+    height: 44px;
+
+    max-width: 180px;
+
+    object-fit: contain;
+}
+
+
+/* =========================================================
+   RIGHT
+========================================================= */
+
+.admin-header-right {
+    display: flex;
+    align-items: center;
+
+    margin-left: auto;
+}
+
+
+/* =========================================================
+   PROFILE
+========================================================= */
+
+.admin-profile-wrapper {
+    position: relative;
+}
+
+.admin-profile-button {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+
+    min-height: 48px;
+
+    padding: 5px 8px 5px 6px;
+
+    border: none;
+    border-radius: 12px;
+
+    background: transparent;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.admin-profile-button:hover {
+    background: #f6f8fb;
+}
+
+.admin-profile-button:focus-visible {
+    outline: 2px solid #0a66c2;
+    outline-offset: 2px;
+}
+
+
+/* =========================================================
+   PROFILE IMAGE
+========================================================= */
+
+.admin-profile-image {
+    width: 40px;
+    height: 40px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    object-fit: cover;
+
+    border: 2px solid #e5eaf0;
+
+    background: #f1f5f9;
+}
+
+
+/* =========================================================
+   PROFILE INFORMATION
+========================================================= */
+
+.admin-profile-details {
+    display: flex;
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    min-width: 90px;
+
+    text-align: left;
+
+    line-height: 1.2;
+}
+
+.admin-profile-details strong {
+    max-width: 150px;
+
+    overflow: hidden;
+
+    color: #172033;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+.admin-profile-details span {
+    margin-top: 3px;
+
+    color: #7b8794;
+
+    font-size: 11px;
+    font-weight: 500;
+}
+
+
+/* =========================================================
+   ARROW
+========================================================= */
+
+.admin-profile-arrow {
+    color: #64748b;
+
+    font-size: 11px;
+
+    transition:
+        transform 0.2s ease;
+}
+
+.admin-profile-arrow.open {
+    transform: rotate(180deg);
+}
+
+
+/* =========================================================
+   PROFILE MENU
+========================================================= */
+
+.admin-profile-menu {
+    position: absolute;
+
+    top: calc(100% + 10px);
+    right: 0;
+
+    width: 210px;
+
+    padding: 8px;
+
+    background: #ffffff;
+
+    border: 1px solid #e5eaf0;
+
+    border-radius: 14px;
+
+    box-shadow:
+        0 15px 40px rgba(15, 23, 42, 0.14);
+
+    animation:
+        adminMenuAppear 0.18s ease;
+}
+
+@keyframes adminMenuAppear {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* =========================================================
+   MENU BUTTONS
+========================================================= */
+
+.admin-profile-menu button {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 11px 12px;
+
+    border: none;
+    border-radius: 9px;
+
+    background: transparent;
+
+    color: #334155;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+.admin-profile-menu button svg {
+    width: 16px;
+
+    color: #64748b;
+
+    flex-shrink: 0;
+}
+
+.admin-profile-menu button:hover {
+    background: #f1f5f9;
+
+    color: #0a66c2;
+}
+
+.admin-profile-menu button:hover svg {
+    color: #0a66c2;
+}
+
+
+/* =========================================================
+   DIVIDER
+========================================================= */
+
+.admin-profile-divider {
+    height: 1px;
+
+    margin: 6px 4px;
+
+    background: #e9edf2;
+}
+
+
+/* =========================================================
+   LOGOUT
+========================================================= */
+
+.admin-profile-menu .logout-button {
+    color: #dc2626;
+}
+
+.admin-profile-menu .logout-button svg {
+    color: #dc2626;
+}
+
+.admin-profile-menu .logout-button:hover {
+    background: #fef2f2;
+
+    color: #dc2626;
+}
+
+.admin-profile-menu .logout-button:hover svg {
+    color: #dc2626;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 900px) {
+
     .admin-header {
-        flex-wrap: nowrap;
+        height: 68px;
+
+        padding: 0 18px;
     }
 
-    .header-left {
-        flex: 1 1 auto;
+    .admin-menu-button {
+        display: flex;
+
+        margin-right: 10px;
     }
 
-    .search-box {
-        width: 100%;
-        max-width: none;
-        padding: 10px 13px;
+    .admin-header-logo img {
+        height: 40px;
+
+        max-width: 165px;
     }
 
-    .header-right {
-        gap: 7px;
-        flex-shrink: 0;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 640px) {
+
+    .admin-header {
+        height: 64px;
+
+        padding: 0 12px;
     }
 
-    .icon-btn {
+    .admin-menu-button {
         width: 40px;
         height: 40px;
-        flex-shrink: 0;
+
+        margin-right: 6px;
     }
 
-    .profile img {
-        width: 40px;
-        height: 40px;
-    }
-}
-
-@media (max-width: 560px) {
-    .admin-header {
-        align-items: center;
+    .admin-header-logo {
+        height: 42px;
     }
 
-    .search-box {
-        max-width: 180px;
-    }
+    .admin-header-logo img {
+        height: 36px;
 
-    .header-right .icon-btn:nth-child(1) {
-        display: none;
-    }
-
-    .profile-menu {
-        right: -5px;
-        width: min(220px, calc(100vw - 24px));
-    }
-}
-
-@media (max-width: 390px) {
-    .search-box {
         max-width: 145px;
     }
 
-    .header-right {
-        gap: 4px;
+    .admin-profile-button {
+        padding: 3px;
     }
 
-    .icon-btn {
-        width: 36px;
-        height: 36px;
-        font-size: 15px;
+    .admin-profile-image {
+        width: 38px;
+        height: 38px;
     }
 
-    .profile img {
+    .admin-profile-details {
+        display: none;
+    }
+
+    .admin-profile-arrow {
+        display: none;
+    }
+
+    .admin-profile-menu {
+        top: calc(100% + 8px);
+        right: -4px;
+
+        width: 190px;
+    }
+
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 380px) {
+
+    .admin-header {
+        padding: 0 9px;
+    }
+
+    .admin-menu-button {
+        width: 38px;
+        height: 38px;
+
+        margin-right: 3px;
+    }
+
+    .admin-header-logo img {
+        height: 32px;
+
+        max-width: 125px;
+    }
+
+    .admin-profile-image {
         width: 36px;
         height: 36px;
     }
+
+}
+
+
+/* =========================================================
+   REDUCE MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .admin-profile-menu,
+    .admin-profile-arrow,
+    .admin-profile-button,
+    .admin-profile-menu button,
+    .admin-menu-button {
+        animation: none;
+        transition: none;
+    }
+
 }
