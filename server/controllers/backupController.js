@@ -2,10 +2,9 @@ const fs = require("fs");
 const path = require("path");
 const archiverModule = require("archiver");
 
-const archiver =
-    typeof archiverModule === "function"
-        ? archiverModule
-        : archiverModule.default;
+const {
+    Archiver
+} = require("archiver");
 const unzipper = require("unzipper");
 
 const {
@@ -995,21 +994,14 @@ exports.createFullBackup = async (
             );
 
 
-        const archive =
-            archiver(
-                "zip",
-                {
-
-                    zlib: {
-
-                        level:
-                            9
-
-                    }
-
-                }
-            );
-
+        const archive = new Archiver(
+    "zip",
+    {
+        zlib: {
+            level: 9
+        }
+    }
+);
 
         const archiveFinished =
             new Promise(
