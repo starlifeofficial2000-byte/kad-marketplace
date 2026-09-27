@@ -166,6 +166,8 @@ const userSettingsRoutes =
 
 const adminSecurityRoutes =
     require("./routes/adminSecurityRoutes");
+const sitemapRoutes = require("./routes/sitemapRoutes");
+
 
 /* =====================================================
    MIDDLEWARE
@@ -583,6 +585,9 @@ app.get(
 ===================================================== */
 
 /* ---------------- AUTH ---------------- */
+
+app.use("/", sitemapRoutes);
+
 app.use(
     "/api/admin/settings/branding",
     brandingRoutes

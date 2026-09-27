@@ -527,6 +527,35 @@ function SellerProfile() {
 
         <div className="seller-profile">
 
+<SEO
+    title={
+        seller
+            ? `${seller.name || seller.username || "Seller"} | KAD Marketplace`
+            : "Seller Profile | KAD Marketplace"
+    }
+    description={
+        seller
+            ? (
+                seller.bio ||
+                `View products and seller information for ${
+                    seller.name || seller.username || "this seller"
+                } on KAD Marketplace Ghana.`
+            ).substring(0, 160)
+            : "View seller profiles and products on KAD Marketplace Ghana."
+    }
+    keywords={[
+        seller?.name,
+        seller?.username,
+        seller?.location,
+        "seller",
+        "Ghana marketplace",
+        "KAD Marketplace"
+    ]
+        .filter(Boolean)
+        .join(", ")}
+    image={seller?.profileImage || undefined}
+    canonical={`https://kadmarket.com/seller/${id}`}
+/>
 
             {/* ======================================
                SELLER COVER

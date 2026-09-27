@@ -7,7 +7,7 @@ import ReviewList from "../components/ReviewList";
 import SellerCard from "../components/SellerCard";
 import ReportForm from "../components/ReportForm";
 import ProductCard from "../components/ProductCard";
-
+import SEO from "../components/SEO";
 import "./ProductDetails.css";
 
 function ProductDetails() {
@@ -520,15 +520,101 @@ function ProductDetails() {
         product.sellerId ||
         product.seller?.id;
 
+const productStructuredData = product
+    ? {
+        "@context": "https://schema.org",
+        "@type": "Product",
 
+        name: product.title,
+
+        description:
+            product.description ||
+            `Buy ${product.title} on KAD Marketplace Ghana.`,
+
+        image: product.images?.length
+            ? product.images.map((image) =>
+                getImageUrl(image)
+            )
+            : [],
+
+        sku: String(product.id),
+
+        category: product.category || "General",
+
+        brand: {
+            "@type": "Brand",
+            name: "KAD Marketplace"
+        },
+
+        offers: {
+            "@type": "Offer",
+
+            url: `https://kadmarket.com/product/${id}`,
+
+            priceCurrency: "GHS",
+
+            price: Number(product.price || 0),
+
+            availability:
+                "https://schema.org/InStock",
+
+            itemCondition:
+                product.condition === "New"
+                    ? "https://schema.org/NewCondition"
+                    : "https://schema.org/UsedCondition",
+
+            seller: {
+                "@type": "Organization",
+                name:
+                    product.seller?.name ||
+                    "KAD Marketplace Seller"
+            }
+        }
+    }
+    : null;
     /* =========================================
        PAGE
     ========================================= */
 
     return (
+        
 
         <div className="product-details-page">
-
+<SEO
+    title={
+        product
+            ? `${product.name || product.title || "Product"} | KAD Marketplace`
+            : "Product | KAD Marketplace"
+    }
+    description={
+        product
+            ? (
+                product.description ||
+                `Buy ${product.name || product.title || "this product"} on KAD Marketplace Ghana.`
+            ).substring(0, 160)
+            : "View products for sale on KAD Marketplace Ghana."
+    }
+    keywords={
+        product
+            ? [
+                product.name,
+                product.category,
+                product.subcategory,
+                product.location,
+                "Ghana",
+                "KAD Marketplace"
+            ]
+                .filter(Boolean)
+                .join(", ")
+            : "products, marketplace, Ghana, buy and sell"
+    }
+    image={
+        product?.images?.[0]
+            ? getImageUrl(product.images[0])
+            : undefined
+    }
+    canonical={`https://kadmarket.com/product/${id}`}
+/>
             <div className="product-container">
 
 

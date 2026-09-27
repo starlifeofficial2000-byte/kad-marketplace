@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import api from "../../config/axios";
 import { Link } from "react-router-dom";
 import "./TrendingProducts.css";
+import SEO from "../components/SEO";
 
 function TrendingProducts() {
     const [products, setProducts] = useState([]);
@@ -172,6 +173,12 @@ function TrendingProducts() {
     return (
 
         <section className="trending-products">
+            <SEO
+    title="Recommended Products | KAD Marketplace Ghana"
+    description="Discover recommended products and listings selected for shoppers on KAD Marketplace Ghana."
+    keywords="recommended products Ghana, Ghana online marketplace, buy and sell Ghana, KAD Marketplace"
+    canonical="https://kadmarket.com/recommended"
+/>
 
             {/* HEADER */}
 

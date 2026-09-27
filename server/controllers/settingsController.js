@@ -69,7 +69,7 @@ exports.getPublicSettings = async (req, res) => {
 
         /*
         -----------------------------------------------------
-        Get settings from MarketplaceSettings table
+        Get formatted marketplace settings
         -----------------------------------------------------
         */
 
@@ -79,7 +79,26 @@ exports.getPublicSettings = async (req, res) => {
 
         /*
         -----------------------------------------------------
-        Return only public branding/configuration data
+        Extract advanced configuration
+        -----------------------------------------------------
+        */
+
+        const configuration =
+            settings.configuration || {};
+
+        const seo =
+            configuration.seo || {};
+
+        const analytics =
+            configuration.analytics || {};
+
+        const marketplace =
+            configuration.marketplace || {};
+
+
+        /*
+        -----------------------------------------------------
+        Return ONLY safe public settings
         -----------------------------------------------------
         */
 
@@ -88,6 +107,10 @@ exports.getPublicSettings = async (req, res) => {
             success: true,
 
             settings: {
+
+                /* =========================================
+                   BASIC MARKETPLACE
+                ========================================= */
 
                 id:
                     settings.id || null,
@@ -113,8 +136,13 @@ exports.getPublicSettings = async (req, res) => {
                 timezone:
                     settings.timezone || "Africa/Accra",
 
+
+                /* =========================================
+                   PUBLIC STATUS
+                ========================================= */
+
                 maintenance_mode:
-                    settings.maintenance_mode || false,
+                    settings.maintenance_mode === true,
 
                 registration_enabled:
                     settings.registration_enabled !== false,
@@ -122,11 +150,72 @@ exports.getPublicSettings = async (req, res) => {
                 store_registration_enabled:
                     settings.store_registration_enabled !== false,
 
+
+                /* =========================================
+                   SEO
+                ========================================= */
+
                 seo_title:
-                    settings.seo_title || "",
+                    settings.seo_title ||
+                    seo.title ||
+                    "",
 
                 seo_description:
-                    settings.seo_description || ""
+                    settings.seo_description ||
+                    seo.description ||
+                    "",
+
+                seo_keywords:
+                    seo.keywords ||
+                    "",
+
+                google_site_verification:
+                    seo.googleSiteVerification ||
+                    "",
+
+                og_title:
+                    seo.openGraphTitle ||
+                    seo.title ||
+                    settings.seo_title ||
+                    "",
+
+                og_description:
+                    seo.openGraphDescription ||
+                    seo.description ||
+                    settings.seo_description ||
+                    "",
+
+                search_engine_indexing:
+                    seo.searchEngineIndexing !== false,
+
+                enable_sitemap:
+                    seo.sitemapEnabled !== false,
+
+
+                /* =========================================
+                   ANALYTICS
+                ========================================= */
+
+                analytics_enabled:
+                    analytics.enabled === true,
+
+                google_analytics_id:
+                    analytics.googleAnalyticsId ||
+                    seo.googleAnalyticsId ||
+                    "",
+
+
+                /* =========================================
+                   MARKETPLACE THEME
+                ========================================= */
+
+                primary_color:
+                    marketplace.primaryColor ||
+                    "#0A66C2",
+
+                secondary_color:
+                    marketplace.secondaryColor ||
+                    "#198754"
 
             }
 

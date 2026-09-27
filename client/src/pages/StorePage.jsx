@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import api from "../config/axios";
 import "./StorePage.css";
+import SEO from "../components/SEO";
 
 const SERVER_URL = "";
 
@@ -491,9 +492,41 @@ function StorePage() {
        PAGE
     ========================================== */
 
-    return (
+   return (
+    <div className="store-page">
 
-        <div className="store-page">
+        <SEO
+            title={
+                store
+                    ? `${store.storeName || "Store"} | KAD Marketplace`
+                    : "Store | KAD Marketplace"
+            }
+            description={
+                store
+                    ? (
+                        store.description ||
+                        `Visit ${store.storeName || "this store"} on KAD Marketplace Ghana and browse products for sale.`
+                    ).substring(0, 160)
+                    : "Browse stores and products on KAD Marketplace Ghana."
+            }
+            keywords={[
+                store?.storeName,
+                store?.category,
+                store?.city,
+                store?.region,
+                "online store Ghana",
+                "Ghana marketplace",
+                "KAD Marketplace"
+            ]
+                .filter(Boolean)
+                .join(", ")}
+            image={
+                store?.logo ||
+                store?.banner ||
+                undefined
+            }
+            canonical={`https://kadmarket.com/store/${storeSlug}`}
+        />
 
 
             {/* STORE HERO */}

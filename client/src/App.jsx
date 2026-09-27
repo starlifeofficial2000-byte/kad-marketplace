@@ -11,7 +11,7 @@ import api from "./config/axios";
 /* ==========================================
    PUBLIC PAGES
 ========================================== */
-
+import SEO from "./components/SEO";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -319,7 +319,6 @@ function DynamicFavicon() {
     return null;
 }
 
-
 /* =========================================================
    APP
    ========================================================= */
@@ -335,7 +334,7 @@ function App() {
 
             <DynamicFavicon />
 
-
+            <SEO />
             <BrowserRouter>
 
                 <Routes>

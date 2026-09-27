@@ -3,6 +3,7 @@ import api from "../../config/axios";
 import { Link } from "react-router-dom";
 import getImageUrl from "../../utils/imageUrl";
 import "./FeaturedProducts.css";
+import SEO from "../components/SEO";
 
 function FeaturedProducts() {
     const [products, setProducts] = useState([]);
@@ -348,6 +349,12 @@ function FeaturedProducts() {
 
     return (
         <section className="featured-products">
+            <SEO
+    title="Featured Products | KAD Marketplace Ghana"
+    description="Discover featured products for sale from sellers across Ghana on KAD Marketplace."
+    keywords="featured products Ghana, featured marketplace Ghana, buy products Ghana, KAD Marketplace"
+    canonical="https://kadmarket.com/featured"
+/>
 
             {/* =================================================
                 HEADER

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import api from "../../config/axios";
 import { Link } from "react-router-dom";
 import "./TrendingProducts.css";
-
+import SEO from "../components/SEO";
 
 function TrendingProducts() {
 
@@ -183,6 +183,13 @@ function TrendingProducts() {
     return (
 
         <section className="trending-products">
+
+<SEO
+    title="Trending Products | KAD Marketplace Ghana"
+    description="Explore trending products and popular listings from sellers across Ghana on KAD Marketplace."
+    keywords="trending products Ghana, popular products Ghana, Ghana marketplace, KAD Marketplace"
+    canonical="https://kadmarket.com/trending"
+/>
 
 
             {/* =====================================
