@@ -34,20 +34,28 @@ const DEFAULT_CONFIGURATION = {
         paymentNotifications: true
     },
 
-    email: {
-        enabled: true,
-        smtpHost: "",
-        smtpPort: 587,
-        smtpUsername: "",
-        smtpPassword: "",
-        encryption: "tls",
-        fromName: "KAD Marketplace",
-        fromEmail: "",
-        registrationEmail: true,
-        passwordResetEmail: true,
-        orderEmail: true,
-        paymentEmail: true
-    },
+   email: {
+    enabled: true,
+
+    provider: "resend",
+
+    resendFromName: "KAD Marketplace",
+    resendFromEmail: "",
+
+    smtpHost: "",
+    smtpPort: 587,
+    smtpUsername: "",
+    smtpPassword: "",
+    encryption: "tls",
+
+    fromName: "KAD Marketplace",
+    fromEmail: "",
+
+    registrationEmail: true,
+    passwordResetEmail: true,
+    orderEmail: true,
+    paymentEmail: true
+},
 
     notifications: {
     emailNotifications: true,

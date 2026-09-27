@@ -140,6 +140,12 @@ const DEFAULT_SETTINGS = {
 
     email_enabled: "true",
 
+    email_provider: "resend",
+
+resend_from_name: "KAD Marketplace",
+
+resend_from_email: "",
+
     smtp_host: "",
 
     smtp_port: "587",
@@ -700,94 +706,113 @@ function Settings() {
                         DEFAULT_SETTINGS.payment_notifications
                     );
 
+/* =================================================
+   EMAIL
+================================================= */
 
-                /* =================================================
-                   EMAIL
-                ================================================= */
-
-                const email =
-                    configuration.email || {};
-
-
-                normalized.email_enabled =
-                    toStringBoolean(
-                        email.enabled,
-                        DEFAULT_SETTINGS.email_enabled
-                    );
+const email =
+    configuration.email || {};
 
 
-                normalized.smtp_host =
-                    safeString(
-                        email.smtpHost
-                    );
+normalized.email_enabled =
+    toStringBoolean(
+        email.enabled,
+        DEFAULT_SETTINGS.email_enabled
+    );
 
 
-                normalized.smtp_port =
-                    safeString(
-                        email.smtpPort,
-                        DEFAULT_SETTINGS.smtp_port
-                    );
+normalized.email_provider =
+    safeString(
+        email.provider,
+        DEFAULT_SETTINGS.email_provider
+    );
 
 
-                normalized.smtp_username =
-                    safeString(
-                        email.smtpUsername
-                    );
+normalized.resend_from_name =
+    safeString(
+        email.resendFromName,
+        DEFAULT_SETTINGS.resend_from_name
+    );
 
 
-                normalized.smtp_password =
-                    safeString(
-                        email.smtpPassword
-                    );
+normalized.resend_from_email =
+    safeString(
+        email.resendFromEmail,
+        DEFAULT_SETTINGS.resend_from_email
+    );
 
 
-                normalized.smtp_encryption =
-                    safeString(
-                        email.encryption,
-                        DEFAULT_SETTINGS.smtp_encryption
-                    );
+normalized.smtp_host =
+    safeString(
+        email.smtpHost
+    );
 
 
-                normalized.smtp_from_email =
-                    safeString(
-                        email.fromEmail
-                    );
+normalized.smtp_port =
+    safeString(
+        email.smtpPort,
+        DEFAULT_SETTINGS.smtp_port
+    );
 
 
-                normalized.smtp_from_name =
-                    safeString(
-                        email.fromName,
-                        DEFAULT_SETTINGS.smtp_from_name
-                    );
+normalized.smtp_username =
+    safeString(
+        email.smtpUsername
+    );
 
 
-                normalized.registration_email =
-                    toStringBoolean(
-                        email.registrationEmail,
-                        DEFAULT_SETTINGS.registration_email
-                    );
+normalized.smtp_password =
+    safeString(
+        email.smtpPassword
+    );
 
 
-                normalized.password_reset_email =
-                    toStringBoolean(
-                        email.passwordResetEmail,
-                        DEFAULT_SETTINGS.password_reset_email
-                    );
+normalized.smtp_encryption =
+    safeString(
+        email.encryption,
+        DEFAULT_SETTINGS.smtp_encryption
+    );
 
 
-                normalized.order_email =
-                    toStringBoolean(
-                        email.orderEmail,
-                        DEFAULT_SETTINGS.order_email
-                    );
+normalized.smtp_from_email =
+    safeString(
+        email.fromEmail
+    );
 
 
-                normalized.payment_email =
-                    toStringBoolean(
-                        email.paymentEmail,
-                        DEFAULT_SETTINGS.payment_email
-                    );
+normalized.smtp_from_name =
+    safeString(
+        email.fromName,
+        DEFAULT_SETTINGS.smtp_from_name
+    );
 
+
+normalized.registration_email =
+    toStringBoolean(
+        email.registrationEmail,
+        DEFAULT_SETTINGS.registration_email
+    );
+
+
+normalized.password_reset_email =
+    toStringBoolean(
+        email.passwordResetEmail,
+        DEFAULT_SETTINGS.password_reset_email
+    );
+
+
+normalized.order_email =
+    toStringBoolean(
+        email.orderEmail,
+        DEFAULT_SETTINGS.order_email
+    );
+
+
+normalized.payment_email =
+    toStringBoolean(
+        email.paymentEmail,
+        DEFAULT_SETTINGS.payment_email
+    );
 
                 /* =================================================
                    NOTIFICATIONS
@@ -1381,59 +1406,66 @@ function Settings() {
 
         };
 
+/* =====================================================
+   BUILD EMAIL CONFIGURATION
+===================================================== */
 
-    /* =====================================================
-       BUILD EMAIL CONFIGURATION
-    ===================================================== */
+const buildEmailConfiguration =
+    () => {
 
-    const buildEmailConfiguration =
-        () => {
+        return {
 
-            return {
+            enabled:
+                settings.email_enabled === "true",
 
-                enabled:
-                    settings.email_enabled === "true",
+            provider:
+                settings.email_provider || "resend",
 
-                smtpHost:
-                    settings.smtp_host,
+            resendFromName:
+                settings.resend_from_name ||
+                "KAD Marketplace",
 
-                smtpPort:
-                    Number(
-                        settings.smtp_port
-                    ) || 587,
+            resendFromEmail:
+                settings.resend_from_email,
 
-                smtpUsername:
-                    settings.smtp_username,
+            smtpHost:
+                settings.smtp_host,
 
-                smtpPassword:
-                    settings.smtp_password,
+            smtpPort:
+                Number(
+                    settings.smtp_port
+                ) || 587,
 
-                encryption:
-                    settings.smtp_encryption,
+            smtpUsername:
+                settings.smtp_username,
 
-                fromName:
-                    settings.smtp_from_name,
+            smtpPassword:
+                settings.smtp_password,
 
-                fromEmail:
-                    settings.smtp_from_email,
+            encryption:
+                settings.smtp_encryption,
 
-                registrationEmail:
-                    settings.registration_email === "true",
+            fromName:
+                settings.smtp_from_name,
 
-                passwordResetEmail:
-                    settings.password_reset_email === "true",
+            fromEmail:
+                settings.smtp_from_email,
 
-                orderEmail:
-                    settings.order_email === "true",
+            registrationEmail:
+                settings.registration_email === "true",
 
-                paymentEmail:
-                    settings.payment_email === "true"
+            passwordResetEmail:
+                settings.password_reset_email === "true",
 
-            };
+            orderEmail:
+                settings.order_email === "true",
+
+            paymentEmail:
+                settings.payment_email === "true"
 
         };
 
-
+    };
     /* =====================================================
        BUILD NOTIFICATION CONFIGURATION
     ===================================================== */

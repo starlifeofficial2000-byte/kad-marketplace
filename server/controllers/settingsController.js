@@ -3,7 +3,10 @@ const { Setting } = require("../models");
 const {
     getMarketplaceSettings
 } = require("../services/marketplaceSettingsService");
-const nodemailer = require("nodemailer");
+
+const {
+    sendTestEmail
+} = require("../services/emailService");
 /* =========================================================
    GET ALL SETTINGS
 ========================================================= */
@@ -573,7 +576,6 @@ exports.deleteBranding = async (req, res) => {
     }
 
 };
-
 /* =========================================================
    TEST EMAIL
 ========================================================= */
@@ -583,8 +585,7 @@ exports.testEmail = async (req, res) => {
     try {
 
         const {
-            email,
-            smtp
+            email
         } = req.body;
 
 
@@ -607,242 +608,16 @@ exports.testEmail = async (req, res) => {
 
 
         /* -----------------------------------------------------
-           VALIDATE SMTP CONFIGURATION
-        ----------------------------------------------------- */
-
-        if (!smtp) {
-
-            return res.status(400).json({
-
-                success: false,
-
-                message:
-                    "SMTP configuration is required."
-
-            });
-
-        }
-
-
-        const host =
-            String(smtp.host || "").trim();
-
-        const port =
-            Number(smtp.port) || 587;
-
-        const username =
-            String(smtp.username || "").trim();
-
-        const password =
-            String(smtp.password || "");
-
-        const encryption =
-            String(
-                smtp.encryption || "tls"
-            ).toLowerCase();
-
-        const fromName =
-            String(
-                smtp.fromName ||
-                "KAD Marketplace"
-            ).trim();
-
-        const fromEmail =
-            String(
-                smtp.fromEmail ||
-                username
-            ).trim();
-
-
-        /* -----------------------------------------------------
-           REQUIRED SMTP FIELDS
-        ----------------------------------------------------- */
-
-        if (!host) {
-
-            return res.status(400).json({
-
-                success: false,
-
-                message:
-                    "SMTP host is required."
-
-            });
-
-        }
-
-
-        if (!username) {
-
-            return res.status(400).json({
-
-                success: false,
-
-                message:
-                    "SMTP username is required."
-
-            });
-
-        }
-
-
-        if (!password) {
-
-            return res.status(400).json({
-
-                success: false,
-
-                message:
-                    "SMTP password is required."
-
-            });
-
-        }
-
-
-        /* -----------------------------------------------------
-           SMTP ENCRYPTION
-           
-           TLS  = STARTTLS, normally port 587
-           SSL  = secure connection, normally port 465
-           NONE = no forced encryption
-        ----------------------------------------------------- */
-
-        let secure = false;
-
-        let requireTLS = false;
-
-
-        if (
-            encryption === "ssl" ||
-            port === 465
-        ) {
-
-            secure = true;
-
-        }
-
-
-        else if (
-            encryption === "tls" ||
-            encryption === "starttls"
-        ) {
-
-            secure = false;
-
-            requireTLS = true;
-
-        }
-
-
-        else if (
-            encryption === "none"
-        ) {
-
-            secure = false;
-
-            requireTLS = false;
-
-        }
-
-
-        /* -----------------------------------------------------
-           CREATE SMTP TRANSPORTER
-        ----------------------------------------------------- */
-
-        const transporter =
-            nodemailer.createTransport({
-
-                host,
-
-                port,
-
-                secure,
-
-                requireTLS,
-
-                auth: {
-
-                    user:
-                        username,
-
-                    pass:
-                        password
-
-                }
-
-            });
-
-
-        /* -----------------------------------------------------
-           VERIFY SMTP CONNECTION
-        ----------------------------------------------------- */
-
-        await transporter.verify();
-
-
-        /* -----------------------------------------------------
            SEND TEST EMAIL
+           
+           The emailService automatically determines
+           whether to use Resend or SMTP based on:
+           
+           configuration.email.provider
         ----------------------------------------------------- */
 
-        const info =
-            await transporter.sendMail({
-
-                from:
-                    `"${fromName}" <${fromEmail}>`,
-
-                to:
-                    email,
-
-                subject:
-                    "KAD Marketplace - Test Email",
-
-                html: `
-
-                    <div
-                        style="
-                            font-family: Arial, sans-serif;
-                            max-width: 600px;
-                            margin: 0 auto;
-                            padding: 30px;
-                            border: 1px solid #e5e7eb;
-                            border-radius: 10px;
-                        "
-                    >
-
-                        <h2>
-                            KAD Marketplace
-                        </h2>
-
-                        <p>
-                            This is a test email from
-                            your KAD Marketplace email
-                            configuration.
-                        </p>
-
-                        <p>
-                            Your SMTP connection and
-                            email delivery are working
-                            successfully.
-                        </p>
-
-                        <hr />
-
-                        <p
-                            style="
-                                color: #6b7280;
-                                font-size: 13px;
-                            "
-                        >
-                            This email was generated
-                            automatically by KAD Marketplace.
-                        </p>
-
-                    </div>
-
-                `
-
-            });
+        const result =
+            await sendTestEmail(email);
 
 
         /* -----------------------------------------------------
@@ -851,7 +626,7 @@ exports.testEmail = async (req, res) => {
 
         console.log(
             "TEST EMAIL SENT:",
-            info.messageId
+            result
         );
 
 
@@ -862,8 +637,11 @@ exports.testEmail = async (req, res) => {
             message:
                 `Test email sent successfully to ${email}.`,
 
+            provider:
+                result.provider,
+
             messageId:
-                info.messageId
+                result.id
 
         });
 
@@ -878,72 +656,13 @@ exports.testEmail = async (req, res) => {
         );
 
 
-        /* -----------------------------------------------------
-           RETURN USEFUL SMTP ERROR
-        ----------------------------------------------------- */
-
-        let message =
-            "Failed to send test email.";
-
-
-        if (error.code === "EAUTH") {
-
-            message =
-                "SMTP authentication failed. Check your username, password, or Gmail App Password.";
-
-        }
-
-        else if (
-            error.code === "ECONNECTION"
-        ) {
-
-            message =
-                "Could not connect to the SMTP server. Check the SMTP host and port.";
-
-        }
-
-        else if (
-            error.code === "ETIMEDOUT"
-        ) {
-
-            message =
-                "SMTP connection timed out. Check the SMTP host, port, and network connection.";
-
-        }
-
-        else if (
-            error.code === "ESOCKET"
-        ) {
-
-            message =
-                "SMTP socket connection failed. Check the SMTP encryption and port settings.";
-
-        }
-
-        else if (
-            error.response
-        ) {
-
-            message =
-                `SMTP server rejected the request: ${error.response}`;
-
-        }
-
-        else if (
-            error.message
-        ) {
-
-            message =
-                error.message;
-
-        }
-
-
         return res.status(500).json({
 
             success: false,
 
-            message,
+            message:
+                error.message ||
+                "Failed to send test email.",
 
             errorCode:
                 error.code || null
