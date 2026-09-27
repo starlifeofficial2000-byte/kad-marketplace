@@ -1,14 +1,11 @@
 const express = require("express");
-
 const router = express.Router();
 
 const auth = require("../middleware/auth");
 const admin = require("../middleware/admin");
 const checkPermission = require("../middleware/checkPermission");
 
-const backupController = require(
-    "../controllers/backupController"
-);
+const backupController = require("../controllers/backupController");
 
 const multer = require("multer");
 const path = require("path");
@@ -16,7 +13,7 @@ const fs = require("fs");
 
 
 /* =====================================================
-   BACKUP UPLOAD DIRECTORY
+   RESTORE DIRECTORY
 ===================================================== */
 
 const restoreDirectory = path.join(
@@ -24,16 +21,13 @@ const restoreDirectory = path.join(
     "../temp/uploads"
 );
 
-
 if (!fs.existsSync(restoreDirectory)) {
-
     fs.mkdirSync(
         restoreDirectory,
         {
             recursive: true
         }
     );
-
 }
 
 
@@ -52,27 +46,22 @@ const storage = multer.diskStorage({
 
     },
 
-
     filename: (req, file, cb) => {
 
-        const uniqueName =
-
-            `${Date.now()}-${Math.round(
-                Math.random() * 1E9
-            )}`
-
-            +
-
+        const extension =
             path.extname(
                 file.originalname
-            );
+            ).toLowerCase();
 
+        const safeName =
+            `backup-${Date.now()}-${Math.round(
+                Math.random() * 1e9
+            )}${extension}`;
 
         cb(
             null,
-            uniqueName
+            safeName
         );
-
     }
 
 });
@@ -88,47 +77,35 @@ const fileFilter = (
     cb
 ) => {
 
-    const allowedExtensions =
-
-        /json|zip/;
-
-
     const extension =
-
         path.extname(
             file.originalname
-        )
-        .toLowerCase();
+        ).toLowerCase();
 
+    const allowedExtensions = [
+        ".json",
+        ".zip"
+    ];
 
     if (
-
-        allowedExtensions.test(
+        allowedExtensions.includes(
             extension
         )
-
     ) {
 
-        cb(
+        return cb(
             null,
             true
         );
 
     }
 
-    else {
-
-        cb(
-
-            new Error(
-                "Only JSON and ZIP backup files are allowed."
-            ),
-
-            false
-
-        );
-
-    }
+    return cb(
+        new Error(
+            "Only JSON and ZIP backup files are allowed."
+        ),
+        false
+    );
 
 };
 
@@ -146,8 +123,9 @@ const upload = multer({
     limits: {
 
         fileSize:
+            500 * 1024 * 1024,
 
-            500 * 1024 * 1024
+        files: 1
 
     }
 
@@ -155,7 +133,7 @@ const upload = multer({
 
 
 /* =====================================================
-   SECURITY MIDDLEWARE
+   BACKUP SECURITY
 ===================================================== */
 
 const protectBackupRoutes = [
@@ -226,9 +204,7 @@ router.post(
 
     ...protectBackupRoutes,
 
-    upload.single(
-        "backup"
-    ),
+    upload.single("backup"),
 
     backupController.restoreDatabase
 
@@ -245,9 +221,7 @@ router.post(
 
     ...protectBackupRoutes,
 
-    upload.single(
-        "backup"
-    ),
+    upload.single("backup"),
 
     backupController.restoreFullBackup
 
@@ -268,15 +242,38 @@ router.use(
     ) => {
 
         if (
-            error instanceof multer.MulterError
+            error instanceof
+            multer.MulterError
         ) {
+
+            let message =
+                error.message;
+
+            if (
+                error.code ===
+                "LIMIT_FILE_SIZE"
+            ) {
+
+                message =
+                    "Backup file is too large. Maximum allowed size is 500 MB.";
+
+            }
+
+            if (
+                error.code ===
+                "LIMIT_FILE_COUNT"
+            ) {
+
+                message =
+                    "Only one backup file can be uploaded at a time.";
+
+            }
 
             return res.status(400).json({
 
                 success: false,
 
-                message:
-                    error.message
+                message
 
             });
 
@@ -291,7 +288,7 @@ router.use(
 
                 message:
                     error.message ||
-                    "File upload error."
+                    "Backup upload error."
 
             });
 

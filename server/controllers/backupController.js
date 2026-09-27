@@ -49,12 +49,129 @@ const {
 } = require("../models");
 
 
-/* =====================================================
-   HELPER FUNCTIONS
-===================================================== */
+/* =========================================================
+   CONFIGURATION
+========================================================= */
+
+const APPLICATION_NAME = "KAD Marketplace";
+const BACKUP_VERSION = "3.0";
+
+const MAX_BACKUP_JSON_SIZE = 1024 * 1024 * 1024; // 1 GB
+const MAX_ZIP_ENTRIES = 10000;
+const MAX_EXTRACTED_SIZE = 5 * 1024 * 1024 * 1024; // 5 GB
+
+let restoreInProgress = false;
 
 
-/* DELETE FILE */
+/* =========================================================
+   DATABASE MODEL MAP
+========================================================= */
+
+const DATABASE_MODELS = {
+
+    roles: Role,
+    permissions: Permission,
+    subscriptionPlans: SubscriptionPlan,
+
+    users: User,
+
+    products: Product,
+    stores: Store,
+
+    payments: Payment,
+    promotionPayments: PromotionPayment,
+
+    subscriptions: Subscription,
+
+    productPromotions: ProductPromotion,
+
+    conversations: Conversation,
+    messages: Message,
+
+    wishlists: Wishlist,
+    productViews: ProductView,
+    productStatistics: ProductStatistic,
+    reviews: Review,
+    notifications: Notification,
+
+    reports: Report,
+    advertisements: Advertisement,
+    searchHistory: SearchHistory,
+
+    supports: Support,
+    supportTickets: SupportTicket,
+
+    leads: Lead,
+    storeFollows: StoreFollow,
+
+    userRoles: UserRole,
+    rolePermissions: RolePermission,
+
+    securityAlerts: SecurityAlert,
+    loginHistory: LoginHistory,
+    auditLogs: AuditLog,
+
+    settings: Setting
+};
+
+
+/*
+ * Restore order.
+ *
+ * Parent tables are restored before child tables.
+ */
+
+const RESTORE_ORDER = [
+
+    "roles",
+    "permissions",
+    "subscriptionPlans",
+
+    "users",
+
+    "products",
+    "stores",
+
+    "payments",
+    "promotionPayments",
+
+    "subscriptions",
+
+    "productPromotions",
+
+    "conversations",
+    "messages",
+
+    "wishlists",
+    "productViews",
+    "productStatistics",
+    "reviews",
+    "notifications",
+
+    "reports",
+    "advertisements",
+    "searchHistory",
+
+    "supports",
+    "supportTickets",
+
+    "leads",
+    "storeFollows",
+
+    "userRoles",
+    "rolePermissions",
+
+    "securityAlerts",
+    "loginHistory",
+    "auditLogs",
+
+    "settings"
+];
+
+
+/* =========================================================
+   FILE HELPERS
+========================================================= */
 
 const deleteFile = (filePath) => {
 
@@ -69,12 +186,10 @@ const deleteFile = (filePath) => {
 
         }
 
-    }
-
-    catch (error) {
+    } catch (error) {
 
         console.error(
-            "File cleanup error:",
+            "Backup file cleanup error:",
             error.message
         );
 
@@ -82,8 +197,6 @@ const deleteFile = (filePath) => {
 
 };
 
-
-/* DELETE DIRECTORY */
 
 const deleteDirectory = (directoryPath) => {
 
@@ -104,12 +217,10 @@ const deleteDirectory = (directoryPath) => {
 
         }
 
-    }
-
-    catch (error) {
+    } catch (error) {
 
         console.error(
-            "Directory cleanup error:",
+            "Backup directory cleanup error:",
             error.message
         );
 
@@ -118,11 +229,13 @@ const deleteDirectory = (directoryPath) => {
 };
 
 
-/* CONVERT SEQUELIZE DATA */
+/* =========================================================
+   SEQUELIZE DATA CLEANING
+========================================================= */
 
 const cleanData = (records) => {
 
-    if (!records) {
+    if (!Array.isArray(records)) {
 
         return [];
 
@@ -130,234 +243,402 @@ const cleanData = (records) => {
 
     return records.map((record) => {
 
-        if (record.dataValues) {
+        if (
+            record &&
+            record.dataValues
+        ) {
 
-            return record.dataValues;
+            return {
+                ...record.dataValues
+            };
 
         }
 
-        return record;
+        return {
+            ...record
+        };
 
     });
 
 };
 
 
-/* =====================================================
-   GET COMPLETE DATABASE DATA
-===================================================== */
+/* =========================================================
+   SAFE JSON STRINGIFY
+========================================================= */
 
-const getDatabaseData = async () => {
+const stringifyBackup = (data) => {
 
-    try {
+    return JSON.stringify(
+        data,
+        null,
+        2
+    );
 
-        const database = {
-
-
-            /* =========================================
-               CORE
-            ========================================= */
-
-            users: cleanData(
-                await User.findAll()
-            ),
-
-            products: cleanData(
-                await Product.findAll()
-            ),
-
-            stores: cleanData(
-                await Store.findAll()
-            ),
+};
 
 
-            /* =========================================
-               SUBSCRIPTIONS
-            ========================================= */
+/* =========================================================
+   VALIDATE BACKUP ENVELOPE
+========================================================= */
 
-            subscriptions: cleanData(
-                await Subscription.findAll()
-            ),
+const validateBackupEnvelope = (
+    backup,
+    expectedType
+) => {
 
-            subscriptionPlans: cleanData(
-                await SubscriptionPlan.findAll()
-            ),
+    if (
+        !backup ||
+        typeof backup !== "object"
+    ) {
 
-
-            /* =========================================
-               PAYMENTS
-            ========================================= */
-
-            payments: cleanData(
-                await Payment.findAll()
-            ),
-
-            promotionPayments: cleanData(
-                await PromotionPayment.findAll()
-            ),
-
-
-            /* =========================================
-               MESSAGING
-            ========================================= */
-
-            conversations: cleanData(
-                await Conversation.findAll()
-            ),
-
-            messages: cleanData(
-                await Message.findAll()
-            ),
-
-
-            /* =========================================
-               MARKETPLACE
-            ========================================= */
-
-            wishlists: cleanData(
-                await Wishlist.findAll()
-            ),
-
-            productViews: cleanData(
-                await ProductView.findAll()
-            ),
-
-            productStatistics: cleanData(
-                await ProductStatistic.findAll()
-            ),
-
-            reviews: cleanData(
-                await Review.findAll()
-            ),
-
-            notifications: cleanData(
-                await Notification.findAll()
-            ),
-
-            reports: cleanData(
-                await Report.findAll()
-            ),
-
-            advertisements: cleanData(
-                await Advertisement.findAll()
-            ),
-
-            searchHistory: cleanData(
-                await SearchHistory.findAll()
-            ),
-
-            supports: cleanData(
-                await Support.findAll()
-            ),
-
-            supportTickets: cleanData(
-                await SupportTicket.findAll()
-            ),
-
-            leads: cleanData(
-                await Lead.findAll()
-            ),
-
-            storeFollows: cleanData(
-                await StoreFollow.findAll()
-            ),
-
-
-            /* =========================================
-               PROMOTIONS
-            ========================================= */
-
-            productPromotions: cleanData(
-                await ProductPromotion.findAll()
-            ),
-
-
-            /* =========================================
-               SECURITY
-            ========================================= */
-
-            roles: cleanData(
-                await Role.findAll()
-            ),
-
-            permissions: cleanData(
-                await Permission.findAll()
-            ),
-
-            rolePermissions: cleanData(
-                await RolePermission.findAll()
-            ),
-
-            userRoles: cleanData(
-                await UserRole.findAll()
-            ),
-
-            securityAlerts: cleanData(
-                await SecurityAlert.findAll()
-            ),
-
-            auditLogs: cleanData(
-                await AuditLog.findAll()
-            ),
-
-            loginHistory: cleanData(
-                await LoginHistory.findAll()
-            ),
-
-
-            /* =========================================
-               SETTINGS
-            ========================================= */
-
-            settings: cleanData(
-                await Setting.findAll()
-            )
-
-        };
-
-
-        return database;
+        throw new Error(
+            "Backup file contains invalid data."
+        );
 
     }
 
-    catch (error) {
 
-        console.error(
-            "Database collection error:",
-            error
+    if (
+        backup.application !==
+        APPLICATION_NAME
+    ) {
+
+        throw new Error(
+            "This backup does not belong to KAD Marketplace."
         );
 
-        throw error;
+    }
+
+
+    if (
+        backup.backupType !==
+        expectedType
+    ) {
+
+        throw new Error(
+            `Invalid ${expectedType} backup file.`
+        );
+
+    }
+
+
+    if (
+        !backup.version
+    ) {
+
+        throw new Error(
+            "Backup version is missing."
+        );
+
+    }
+
+
+    if (
+        !backup.createdAt
+    ) {
+
+        throw new Error(
+            "Backup creation timestamp is missing."
+        );
+
+    }
+
+
+    if (
+        expectedType !== "settings" &&
+        (
+            !backup.data ||
+            typeof backup.data !== "object"
+        )
+    ) {
+
+        throw new Error(
+            "Backup database data is missing."
+        );
 
     }
 
 };
 
 
-/* =====================================================
-   EXPORT SETTINGS ONLY
-===================================================== */
+/* =========================================================
+   READ JSON FILE SAFELY
+========================================================= */
 
-exports.exportSettings = async (req, res) => {
+const readJsonFile = (
+    filePath
+) => {
+
+    if (
+        !filePath ||
+        !fs.existsSync(filePath)
+    ) {
+
+        throw new Error(
+            "Backup file could not be found."
+        );
+
+    }
+
+
+    const stats =
+        fs.statSync(filePath);
+
+
+    if (
+        stats.size >
+        MAX_BACKUP_JSON_SIZE
+    ) {
+
+        throw new Error(
+            "Backup JSON file is too large."
+        );
+
+    }
+
+
+    const raw =
+        fs.readFileSync(
+            filePath,
+            "utf8"
+        );
+
+
+    if (!raw.trim()) {
+
+        throw new Error(
+            "Backup file is empty."
+        );
+
+    }
+
 
     try {
 
-        const settings = cleanData(
-            await Setting.findAll()
+        return JSON.parse(raw);
+
+    } catch (error) {
+
+        throw new Error(
+            "Backup file contains invalid JSON."
         );
+
+    }
+
+};
+
+
+/* =========================================================
+   AUDIT BACKUP OPERATION
+========================================================= */
+
+const createBackupAudit = async ({
+    req,
+    action,
+    description
+}) => {
+
+    try {
+
+        if (!AuditLog) {
+
+            return;
+
+        }
+
+
+        await AuditLog.create({
+
+            adminId:
+                req?.user?.id || null,
+
+            action,
+
+            entity:
+                "Backup",
+
+            entityId:
+                null,
+
+            description,
+
+            ipAddress:
+                req?.ip ||
+                req?.headers?.["x-forwarded-for"] ||
+                "Unknown"
+
+        });
+
+    } catch (error) {
+
+        /*
+         * Backup must not fail simply because
+         * audit logging failed.
+         */
+
+        console.error(
+            "BACKUP AUDIT ERROR:",
+            error.message
+        );
+
+    }
+
+};
+
+
+/* =========================================================
+   GET COMPLETE DATABASE
+========================================================= */
+
+const getDatabaseData = async () => {
+
+    const database = {};
+
+
+    for (
+        const key of Object.keys(
+            DATABASE_MODELS
+        )
+    ) {
+
+        const Model =
+            DATABASE_MODELS[key];
+
+
+        if (!Model) {
+
+            database[key] = [];
+
+            continue;
+
+        }
+
+
+        const records =
+            await Model.findAll();
+
+
+        database[key] =
+            cleanData(records);
+
+    }
+
+
+    return database;
+
+};
+
+
+/* =========================================================
+   VALIDATE DATABASE STRUCTURE
+========================================================= */
+
+const validateDatabaseStructure = (
+    database
+) => {
+
+    if (
+        !database ||
+        typeof database !== "object"
+    ) {
+
+        throw new Error(
+            "Database backup data is invalid."
+        );
+
+    }
+
+
+    const suppliedKeys =
+        Object.keys(database);
+
+
+    if (
+        suppliedKeys.length === 0
+    ) {
+
+        throw new Error(
+            "Database backup contains no tables."
+        );
+
+    }
+
+
+    for (
+        const key of suppliedKeys
+    ) {
+
+        if (
+            !Object.prototype.hasOwnProperty.call(
+                DATABASE_MODELS,
+                key
+            )
+        ) {
+
+            /*
+             * Unknown tables are ignored.
+             *
+             * This allows backups from newer
+             * versions to be restored into an
+             * older compatible version.
+             */
+
+            continue;
+
+        }
+
+
+        if (
+            !Array.isArray(
+                database[key]
+            )
+        ) {
+
+            throw new Error(
+                `Invalid database table: ${key}`
+            );
+
+        }
+
+    }
+
+};
+
+
+/* =========================================================
+   EXPORT SETTINGS
+========================================================= */
+
+exports.exportSettings = async (
+    req,
+    res
+) => {
+
+    try {
+
+        const settings =
+            cleanData(
+                await Setting.findAll()
+            );
 
 
         const backup = {
 
-            application: "KAD Marketplace",
+            application:
+                APPLICATION_NAME,
 
-            backupType: "settings",
+            backupType:
+                "settings",
 
-            version: "2.0",
+            version:
+                BACKUP_VERSION,
 
-            createdAt: new Date().toISOString(),
+            createdAt:
+                new Date().toISOString(),
 
-            data: settings
+            data:
+                settings
 
         };
 
@@ -378,23 +659,40 @@ exports.exportSettings = async (req, res) => {
         );
 
 
-        return res.json(backup);
+        await createBackupAudit({
 
-    }
+            req,
 
-    catch (error) {
+            action:
+                "BACKUP_SETTINGS_EXPORTED",
+
+            description:
+                "Marketplace settings backup exported."
+
+        });
+
+
+        return res.send(
+            stringifyBackup(
+                backup
+            )
+        );
+
+    } catch (error) {
 
         console.error(
-            "Settings export error:",
+            "SETTINGS EXPORT ERROR:",
             error
         );
 
 
         return res.status(500).json({
 
-            success: false,
+            success:
+                false,
 
             message:
+                error.message ||
                 "Unable to export settings."
 
         });
@@ -404,11 +702,14 @@ exports.exportSettings = async (req, res) => {
 };
 
 
-/* =====================================================
-   EXPORT DATABASE ONLY
-===================================================== */
+/* =========================================================
+   EXPORT DATABASE
+========================================================= */
 
-exports.exportDatabase = async (req, res) => {
+exports.exportDatabase = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -418,16 +719,20 @@ exports.exportDatabase = async (req, res) => {
 
         const backup = {
 
-            application: "KAD Marketplace",
+            application:
+                APPLICATION_NAME,
 
-            backupType: "database",
+            backupType:
+                "database",
 
-            version: "2.0",
+            version:
+                BACKUP_VERSION,
 
             createdAt:
                 new Date().toISOString(),
 
-            data: database
+            data:
+                database
 
         };
 
@@ -448,21 +753,37 @@ exports.exportDatabase = async (req, res) => {
         );
 
 
-        return res.json(backup);
+        await createBackupAudit({
 
-    }
+            req,
 
-    catch (error) {
+            action:
+                "BACKUP_DATABASE_EXPORTED",
+
+            description:
+                "Complete marketplace database backup exported."
+
+        });
+
+
+        return res.send(
+            stringifyBackup(
+                backup
+            )
+        );
+
+    } catch (error) {
 
         console.error(
-            "Database export error:",
+            "DATABASE EXPORT ERROR:",
             error
         );
 
 
         return res.status(500).json({
 
-            success: false,
+            success:
+                false,
 
             message:
                 error.message ||
@@ -475,62 +796,130 @@ exports.exportDatabase = async (req, res) => {
 };
 
 
-/* =====================================================
-   CREATE COMPLETE SYSTEM BACKUP
-===================================================== */
+/* =========================================================
+   ADD DIRECTORY TO ARCHIVE
+========================================================= */
 
-exports.createFullBackup = async (req, res) => {
+const addDirectoryToArchive = (
+    archive,
+    sourceDirectory,
+    archiveDirectory
+) => {
+
+    if (
+        !fs.existsSync(
+            sourceDirectory
+        )
+    ) {
+
+        return false;
+
+    }
+
+
+    const stats =
+        fs.statSync(
+            sourceDirectory
+        );
+
+
+    if (!stats.isDirectory()) {
+
+        return false;
+
+    }
+
+
+    archive.directory(
+        sourceDirectory,
+        archiveDirectory
+    );
+
+
+    return true;
+
+};
+
+
+/* =========================================================
+   CREATE FULL SYSTEM BACKUP
+========================================================= */
+
+exports.createFullBackup = async (
+    req,
+    res
+) => {
 
     let backupPath = null;
 
     try {
 
-        const timestamp = Date.now();
+        const timestamp =
+            Date.now();
 
 
-        const backupDirectory = path.join(
-            __dirname,
-            "../backups"
-        );
-
-
-        if (!fs.existsSync(backupDirectory)) {
-
-            fs.mkdirSync(
-                backupDirectory,
-                {
-                    recursive: true
-                }
+        const backupDirectory =
+            path.join(
+                __dirname,
+                "../backups"
             );
 
-        }
+
+        fs.mkdirSync(
+            backupDirectory,
+            {
+                recursive: true
+            }
+        );
 
 
         const filename =
             `KAD-Marketplace-Full-Backup-${timestamp}.zip`;
 
 
-        backupPath = path.join(
-            backupDirectory,
-            filename
-        );
+        backupPath =
+            path.join(
+                backupDirectory,
+                filename
+            );
 
 
-        /* GET ALL DATABASE DATA */
+        /*
+         * Collect database.
+         */
 
         const database =
             await getDatabaseData();
 
 
-        /* BACKUP INFORMATION */
+        /*
+         * Local upload directory.
+         */
+
+        const uploadsDirectory =
+            path.join(
+                __dirname,
+                "../uploads"
+            );
+
+
+        const uploadsIncluded =
+            fs.existsSync(
+                uploadsDirectory
+            );
+
+
+        /*
+         * Backup metadata.
+         */
 
         const backupInfo = {
 
             application:
-                "KAD Marketplace",
+                APPLICATION_NAME,
 
             version:
-                "2.0",
+                BACKUP_VERSION,
 
             backupType:
                 "full",
@@ -538,36 +927,62 @@ exports.createFullBackup = async (req, res) => {
             createdAt:
                 new Date().toISOString(),
 
+            createdBy:
+                req?.user?.id || null,
+
             includes: {
 
-                database: true,
+                database:
+                    true,
 
-                uploads: true,
+                uploads:
+                    uploadsIncluded,
 
-                users: true,
+                users:
+                    true,
 
-                products: true,
+                products:
+                    true,
 
-                stores: true,
+                stores:
+                    true,
 
-                payments: true,
+                payments:
+                    true,
 
-                messages: true,
+                messages:
+                    true,
 
-                subscriptions: true,
+                subscriptions:
+                    true,
 
-                promotions: true,
+                promotions:
+                    true,
 
-                security: true,
+                security:
+                    true,
 
-                settings: true
+                settings:
+                    true
+
+            },
+
+            storage: {
+
+                localUploads:
+                    uploadsIncluded,
+
+                cloudStorage:
+                    false
 
             }
 
         };
 
 
-        /* CREATE ZIP */
+        /*
+         * Create ZIP.
+         */
 
         const output =
             fs.createWriteStream(
@@ -582,7 +997,8 @@ exports.createFullBackup = async (req, res) => {
 
                     zlib: {
 
-                        level: 9
+                        level:
+                            9
 
                     }
 
@@ -590,85 +1006,45 @@ exports.createFullBackup = async (req, res) => {
             );
 
 
-        output.on(
-            "close",
-            () => {
+        const archiveFinished =
+            new Promise(
+                (
+                    resolve,
+                    reject
+                ) => {
 
-                console.log(
-                    `Backup created successfully: ${archive.pointer()} bytes`
-                );
+                    output.on(
+                        "close",
+                        resolve
+                    );
+
+                    output.on(
+                        "error",
+                        reject
+                    );
+
+                    archive.on(
+                        "error",
+                        reject
+                    );
+
+                }
+            );
 
 
-                res.download(
-
-                    backupPath,
-
-                    filename,
-
-                    (error) => {
-
-                        if (error) {
-
-                            console.error(
-                                "Download error:",
-                                error
-                            );
-
-                        }
-
-
-                        /* DELETE TEMP BACKUP */
-
-                        setTimeout(() => {
-
-                            deleteFile(
-                                backupPath
-                            );
-
-                        }, 10000);
-
-                    }
-
-                );
-
-            }
+        archive.pipe(
+            output
         );
 
 
-        archive.on(
-            "warning",
-            (warning) => {
-
-                console.warn(
-                    "Backup warning:",
-                    warning
-                );
-
-            }
-        );
-
-
-        archive.on(
-            "error",
-            (error) => {
-
-                throw error;
-
-            }
-        );
-
-
-        archive.pipe(output);
-
-
-        /* DATABASE FILE */
+        /*
+         * Database.
+         */
 
         archive.append(
 
-            JSON.stringify(
-                database,
-                null,
-                2
+            stringifyBackup(
+                database
             ),
 
             {
@@ -681,14 +1057,14 @@ exports.createFullBackup = async (req, res) => {
         );
 
 
-        /* BACKUP INFORMATION */
+        /*
+         * Backup information.
+         */
 
         archive.append(
 
-            JSON.stringify(
-                backupInfo,
-                null,
-                2
+            stringifyBackup(
+                backupInfo
             ),
 
             {
@@ -701,24 +1077,17 @@ exports.createFullBackup = async (req, res) => {
         );
 
 
-        /* =============================================
-           ADD UPLOADS
-        ============================================= */
-
-        const uploadsDirectory =
-            path.join(
-                __dirname,
-                "../uploads"
-            );
-
+        /*
+         * Uploaded files.
+         */
 
         if (
-            fs.existsSync(
-                uploadsDirectory
-            )
+            uploadsIncluded
         ) {
 
-            archive.directory(
+            addDirectoryToArchive(
+
+                archive,
 
                 uploadsDirectory,
 
@@ -729,21 +1098,76 @@ exports.createFullBackup = async (req, res) => {
         }
 
 
-        /* FINALIZE */
+        /*
+         * Finalize archive.
+         */
 
         await archive.finalize();
 
-    }
+        await archiveFinished;
 
-    catch (error) {
+
+        const backupStats =
+            fs.statSync(
+                backupPath
+            );
+
+
+        console.log(
+            `KAD Marketplace backup created: ${backupStats.size} bytes`
+        );
+
+
+        await createBackupAudit({
+
+            req,
+
+            action:
+                "BACKUP_FULL_CREATED",
+
+            description:
+                `Complete marketplace backup created successfully. Size: ${backupStats.size} bytes.`
+
+        });
+
+
+        return res.download(
+
+            backupPath,
+
+            filename,
+
+            (error) => {
+
+                if (error) {
+
+                    console.error(
+                        "FULL BACKUP DOWNLOAD ERROR:",
+                        error
+                    );
+
+                }
+
+
+                deleteFile(
+                    backupPath
+                );
+
+            }
+
+        );
+
+    } catch (error) {
 
         console.error(
-            "Full backup error:",
+            "FULL BACKUP ERROR:",
             error
         );
 
 
-        if (backupPath) {
+        if (
+            backupPath
+        ) {
 
             deleteFile(
                 backupPath
@@ -752,11 +1176,14 @@ exports.createFullBackup = async (req, res) => {
         }
 
 
-        if (!res.headersSent) {
+        if (
+            !res.headersSent
+        ) {
 
             return res.status(500).json({
 
-                success: false,
+                success:
+                    false,
 
                 message:
                     error.message ||
@@ -771,584 +1198,193 @@ exports.createFullBackup = async (req, res) => {
 };
 
 
-/* =====================================================
-   RESTORE HELPER
-===================================================== */
+/* =========================================================
+   RESTORE ONE TABLE
+========================================================= */
 
-const restoreDatabaseData = async (data) => {
+const restoreTable = async (
+    tableName,
+    records
+) => {
 
-
-    /* =========================================
-       FOUNDATIONAL DATA FIRST
-    ========================================= */
-
-
-    /* ROLES */
-
-    if (Array.isArray(data.roles)) {
-
-        for (const item of data.roles) {
-
-            await Role.upsert(item);
-
-        }
-
-    }
+    const Model =
+        DATABASE_MODELS[
+            tableName
+        ];
 
 
-    /* PERMISSIONS */
+    if (!Model) {
 
-    if (Array.isArray(data.permissions)) {
+        return {
 
-        for (const item of data.permissions) {
+            table:
+                tableName,
 
-            await Permission.upsert(item);
+            restored:
+                0,
 
-        }
+            skipped:
+                true
 
-    }
-
-
-    /* SUBSCRIPTION PLANS */
-
-    if (
-        Array.isArray(
-            data.subscriptionPlans
-        )
-    ) {
-
-        for (
-            const item of data.subscriptionPlans
-        ) {
-
-            await SubscriptionPlan.upsert(
-                item
-            );
-
-        }
-
-    }
-
-
-    /* USERS */
-
-    if (Array.isArray(data.users)) {
-
-        for (const item of data.users) {
-
-            await User.upsert(item);
-
-        }
-
-    }
-
-
-    /* =========================================
-       MARKETPLACE DATA
-    ========================================= */
-
-
-    /* PRODUCTS */
-
-    if (Array.isArray(data.products)) {
-
-        for (const item of data.products) {
-
-            await Product.upsert(item);
-
-        }
-
-    }
-
-
-    /* STORES */
-
-    if (Array.isArray(data.stores)) {
-
-        for (const item of data.stores) {
-
-            await Store.upsert(item);
-
-        }
-
-    }
-
-
-    /* =========================================
-       PAYMENTS
-    ========================================= */
-
-    if (Array.isArray(data.payments)) {
-
-        for (const item of data.payments) {
-
-            await Payment.upsert(item);
-
-        }
+        };
 
     }
 
 
     if (
-        Array.isArray(
-            data.promotionPayments
+        !Array.isArray(
+            records
         )
     ) {
 
-        for (
-            const item of data.promotionPayments
-        ) {
-
-            await PromotionPayment.upsert(
-                item
-            );
-
-        }
+        throw new Error(
+            `Invalid records for table: ${tableName}`
+        );
 
     }
 
 
-    /* =========================================
-       SUBSCRIPTIONS
-    ========================================= */
+    let restored = 0;
 
-    if (
-        Array.isArray(
-            data.subscriptions
-        )
+
+    for (
+        const item of records
     ) {
 
-        for (
-            const item of data.subscriptions
+        if (
+            !item ||
+            typeof item !== "object"
         ) {
 
-            await Subscription.upsert(
-                item
-            );
+            continue;
 
         }
+
+
+        await Model.upsert(
+            item
+        );
+
+
+        restored++;
 
     }
 
 
-    /* =========================================
-       PROMOTIONS
-    ========================================= */
+    return {
 
-    if (
-        Array.isArray(
-            data.productPromotions
-        )
-    ) {
+        table:
+            tableName,
 
-        for (
-            const item of data.productPromotions
-        ) {
+        restored,
 
-            await ProductPromotion.upsert(
-                item
-            );
+        skipped:
+            false
 
-        }
-
-    }
-
-
-    /* =========================================
-       MESSAGING
-    ========================================= */
-
-    if (
-        Array.isArray(
-            data.conversations
-        )
-    ) {
-
-        for (
-            const item of data.conversations
-        ) {
-
-            await Conversation.upsert(
-                item
-            );
-
-        }
-
-    }
-
-
-    if (Array.isArray(data.messages)) {
-
-        for (const item of data.messages) {
-
-            await Message.upsert(item);
-
-        }
-
-    }
-
-
-    /* =========================================
-       USER FEATURES
-    ========================================= */
-
-    if (Array.isArray(data.wishlists)) {
-
-        for (const item of data.wishlists) {
-
-            await Wishlist.upsert(item);
-
-        }
-
-    }
-
-
-    if (
-        Array.isArray(
-            data.productViews
-        )
-    ) {
-
-        for (
-            const item of data.productViews
-        ) {
-
-            await ProductView.upsert(
-                item
-            );
-
-        }
-
-    }
-
-
-    if (
-        Array.isArray(
-            data.productStatistics
-        )
-    ) {
-
-        for (
-            const item of data.productStatistics
-        ) {
-
-            await ProductStatistic.upsert(
-                item
-            );
-
-        }
-
-    }
-
-
-    if (Array.isArray(data.reviews)) {
-
-        for (const item of data.reviews) {
-
-            await Review.upsert(item);
-
-        }
-
-    }
-
-
-    if (
-        Array.isArray(
-            data.notifications
-        )
-    ) {
-
-        for (
-            const item of data.notifications
-        ) {
-
-            await Notification.upsert(
-                item
-            );
-
-        }
-
-    }
-
-
-    /* =========================================
-       REPORTS & ADMINISTRATION
-    ========================================= */
-
-    if (Array.isArray(data.reports)) {
-
-        for (const item of data.reports) {
-
-            await Report.upsert(item);
-
-        }
-
-    }
-
-
-    if (
-        Array.isArray(
-            data.advertisements
-        )
-    ) {
-
-        for (
-            const item of data.advertisements
-        ) {
-
-            await Advertisement.upsert(
-                item
-            );
-
-        }
-
-    }
-
-
-    if (
-        Array.isArray(
-            data.searchHistory
-        )
-    ) {
-
-        for (
-            const item of data.searchHistory
-        ) {
-
-            await SearchHistory.upsert(
-                item
-            );
-
-        }
-
-    }
-
-
-    /* =========================================
-       SUPPORT
-    ========================================= */
-
-    if (Array.isArray(data.supports)) {
-
-        for (const item of data.supports) {
-
-            await Support.upsert(item);
-
-        }
-
-    }
-
-
-    if (
-        Array.isArray(
-            data.supportTickets
-        )
-    ) {
-
-        for (
-            const item of data.supportTickets
-        ) {
-
-            await SupportTicket.upsert(
-                item
-            );
-
-        }
-
-    }
-
-
-    /* =========================================
-       LEADS
-    ========================================= */
-
-    if (Array.isArray(data.leads)) {
-
-        for (const item of data.leads) {
-
-            await Lead.upsert(item);
-
-        }
-
-    }
-
-
-    /* =========================================
-       STORE FOLLOWS
-    ========================================= */
-
-    if (
-        Array.isArray(
-            data.storeFollows
-        )
-    ) {
-
-        for (
-            const item of data.storeFollows
-        ) {
-
-            await StoreFollow.upsert(
-                item
-            );
-
-        }
-
-    }
-
-
-    /* =========================================
-       USER ROLES
-    ========================================= */
-
-    if (
-        Array.isArray(
-            data.userRoles
-        )
-    ) {
-
-        for (
-            const item of data.userRoles
-        ) {
-
-            await UserRole.upsert(item);
-
-        }
-
-    }
-
-
-    /* =========================================
-       ROLE PERMISSIONS
-    ========================================= */
-
-    if (
-        Array.isArray(
-            data.rolePermissions
-        )
-    ) {
-
-        for (
-            const item of data.rolePermissions
-        ) {
-
-            await RolePermission.upsert(
-                item
-            );
-
-        }
-
-    }
-
-
-    /* =========================================
-       SECURITY ALERTS
-    ========================================= */
-
-    if (
-        Array.isArray(
-            data.securityAlerts
-        )
-    ) {
-
-        for (
-            const item of data.securityAlerts
-        ) {
-
-            await SecurityAlert.upsert(
-                item
-            );
-
-        }
-
-    }
-
-
-    /* =========================================
-       LOGIN HISTORY
-    ========================================= */
-
-    if (
-        Array.isArray(
-            data.loginHistory
-        )
-    ) {
-
-        for (
-            const item of data.loginHistory
-        ) {
-
-            await LoginHistory.upsert(
-                item
-            );
-
-        }
-
-    }
-
-
-    /* =========================================
-       AUDIT LOGS
-    ========================================= */
-
-    if (
-        Array.isArray(
-            data.auditLogs
-        )
-    ) {
-
-        for (
-            const item of data.auditLogs
-        ) {
-
-            await AuditLog.upsert(
-                item
-            );
-
-        }
-
-    }
-
-
-    /* =========================================
-       SETTINGS
-    ========================================= */
-
-    if (
-        Array.isArray(
-            data.settings
-        )
-    ) {
-
-        for (
-            const item of data.settings
-        ) {
-
-            await Setting.upsert(
-                item
-            );
-
-        }
-
-    }
+    };
 
 };
 
 
-/* =====================================================
-   RESTORE DATABASE BACKUP
-===================================================== */
+/* =========================================================
+   RESTORE DATABASE DATA
+========================================================= */
 
-exports.restoreDatabase = async (req, res) => {
+const restoreDatabaseData = async (
+    data
+) => {
+
+    validateDatabaseStructure(
+        data
+    );
+
+
+    const results = [];
+
+
+    for (
+        const tableName of
+        RESTORE_ORDER
+    ) {
+
+        if (
+            !Object.prototype.hasOwnProperty.call(
+                data,
+                tableName
+            )
+        ) {
+
+            continue;
+
+        }
+
+
+        const result =
+            await restoreTable(
+
+                tableName,
+
+                data[
+                    tableName
+                ]
+
+            );
+
+
+        results.push(
+            result
+        );
+
+    }
+
+
+    return results;
+
+};
+
+
+/* =========================================================
+   RESTORE DATABASE BACKUP
+========================================================= */
+
+exports.restoreDatabase = async (
+    req,
+    res
+) => {
 
     let uploadedFilePath = null;
 
+
+    if (
+        restoreInProgress
+    ) {
+
+        return res.status(409).json({
+
+            success:
+                false,
+
+            message:
+                "Another restore operation is already running. Please wait."
+
+        });
+
+    }
+
+
+    restoreInProgress = true;
+
+
     try {
 
-        if (!req.file) {
+        if (
+            !req.file
+        ) {
 
             return res.status(400).json({
 
-                success: false,
+                success:
+                    false,
 
                 message:
                     "Please upload a database backup file."
@@ -1363,70 +1399,95 @@ exports.restoreDatabase = async (req, res) => {
 
 
         const backup =
-            JSON.parse(
-
-                fs.readFileSync(
-                    uploadedFilePath,
-                    "utf8"
-                )
-
+            readJsonFile(
+                uploadedFilePath
             );
 
 
-        if (
-            backup.application !==
-            "KAD Marketplace"
-        ) {
-
-            throw new Error(
-                "Invalid KAD Marketplace backup."
-            );
-
-        }
-
-
-        if (
-            backup.backupType !==
+        validateBackupEnvelope(
+            backup,
             "database"
-        ) {
-
-            throw new Error(
-                "Invalid database backup."
-            );
-
-        }
+        );
 
 
-        await restoreDatabaseData(
+        validateDatabaseStructure(
             backup.data
         );
 
 
-        deleteFile(
-            uploadedFilePath
-        );
+        const results =
+            await restoreDatabaseData(
+                backup.data
+            );
+
+
+        const restoredTables =
+            results.reduce(
+                (
+                    total,
+                    item
+                ) =>
+                    total +
+                    Number(
+                        item.restored || 0
+                    ),
+                0
+            );
+
+
+        await createBackupAudit({
+
+            req,
+
+            action:
+                "BACKUP_DATABASE_RESTORED",
+
+            description:
+                `Database backup restored successfully. ${restoredTables} records processed.`
+
+        });
 
 
         return res.json({
 
-            success: true,
+            success:
+                true,
 
             message:
-                "Database restored successfully."
+                "Database backup restored successfully.",
+
+            restoredRecords:
+                restoredTables,
+
+            tables:
+                results
 
         });
 
-    }
-
-    catch (error) {
+    } catch (error) {
 
         console.error(
-            "Database restore error:",
+            "DATABASE RESTORE ERROR:",
             error
         );
 
 
-        if (uploadedFilePath) {
+        return res.status(500).json({
+
+            success:
+                false,
+
+            message:
+                error.message ||
+                "Unable to restore database."
+
+        });
+
+    } finally {
+
+        if (
+            uploadedFilePath
+        ) {
 
             deleteFile(
                 uploadedFilePath
@@ -1435,41 +1496,514 @@ exports.restoreDatabase = async (req, res) => {
         }
 
 
-        return res.status(500).json({
-
-            success: false,
-
-            message:
-                error.message ||
-                "Unable to restore database."
-
-        });
+        restoreInProgress = false;
 
     }
 
 };
 
 
-/* =====================================================
-   RESTORE FULL SYSTEM BACKUP
-===================================================== */
+/* =========================================================
+   ZIP PATH SECURITY
+========================================================= */
 
-exports.restoreFullBackup = async (req, res) => {
+const getSafeExtractionPath = (
+    rootDirectory,
+    entryPath
+) => {
+
+    if (
+        typeof entryPath !==
+        "string"
+    ) {
+
+        throw new Error(
+            "ZIP archive contains an invalid file path."
+        );
+
+    }
+
+
+    /*
+     * ZIP paths always use forward slashes.
+     */
+
+    const normalizedEntry =
+        path.posix.normalize(
+            entryPath
+                .replace(/\\/g, "/")
+        );
+
+
+    /*
+     * Reject absolute paths.
+     */
+
+    if (
+        normalizedEntry.startsWith("/")
+    ) {
+
+        throw new Error(
+            "Unsafe ZIP archive detected."
+        );
+
+    }
+
+
+    /*
+     * Reject directory traversal.
+     */
+
+    if (
+        normalizedEntry === ".." ||
+        normalizedEntry.startsWith("../") ||
+        normalizedEntry.includes("/../")
+    ) {
+
+        throw new Error(
+            "Unsafe ZIP archive detected."
+        );
+
+    }
+
+
+    const root =
+        path.resolve(
+            rootDirectory
+        );
+
+
+    const target =
+        path.resolve(
+            rootDirectory,
+            normalizedEntry
+        );
+
+
+    if (
+        target !== root &&
+        !target.startsWith(
+            root + path.sep
+        )
+    ) {
+
+        throw new Error(
+            "Unsafe ZIP archive path detected."
+        );
+
+    }
+
+
+    return target;
+
+};
+
+
+/* =========================================================
+   SAFE ZIP EXTRACTION
+========================================================= */
+
+const extractZipSafely = async (
+    zipPath,
+    destination
+) => {
+
+    const directory =
+        await unzipper.Open.file(
+            zipPath
+        );
+
+
+    if (
+        !directory ||
+        !Array.isArray(
+            directory.files
+        )
+    ) {
+
+        throw new Error(
+            "Unable to read backup ZIP archive."
+        );
+
+    }
+
+
+    if (
+        directory.files.length >
+        MAX_ZIP_ENTRIES
+    ) {
+
+        throw new Error(
+            "Backup ZIP contains too many files."
+        );
+
+    }
+
+
+    let extractedBytes = 0;
+
+
+    for (
+        const entry of
+        directory.files
+    ) {
+
+        const targetPath =
+            getSafeExtractionPath(
+
+                destination,
+
+                entry.path
+
+            );
+
+
+        /*
+         * Directories.
+         */
+
+        if (
+            entry.type ===
+                "Directory" ||
+            entry.path.endsWith("/")
+        ) {
+
+            fs.mkdirSync(
+                targetPath,
+                {
+                    recursive:
+                        true
+                }
+            );
+
+            continue;
+
+        }
+
+
+        /*
+         * Check declared size.
+         */
+
+        const declaredSize =
+            Number(
+                entry.uncompressedSize || 0
+            );
+
+
+        if (
+            declaredSize >
+            0
+        ) {
+
+            extractedBytes +=
+                declaredSize;
+
+        }
+
+
+        if (
+            extractedBytes >
+            MAX_EXTRACTED_SIZE
+        ) {
+
+            throw new Error(
+                "Backup ZIP exceeds the maximum extraction size."
+            );
+
+        }
+
+
+        const parentDirectory =
+            path.dirname(
+                targetPath
+            );
+
+
+        fs.mkdirSync(
+            parentDirectory,
+            {
+                recursive:
+                    true
+            }
+        );
+
+
+        await new Promise(
+            (
+                resolve,
+                reject
+            ) => {
+
+                const input =
+                    entry.stream();
+
+
+                const output =
+                    fs.createWriteStream(
+                        targetPath
+                    );
+
+
+                let actualBytes = 0;
+
+
+                input.on(
+                    "data",
+                    (chunk) => {
+
+                        actualBytes +=
+                            chunk.length;
+
+                    }
+                );
+
+
+                input.on(
+                    "error",
+                    reject
+                );
+
+
+                output.on(
+                    "error",
+                    reject
+                );
+
+
+                output.on(
+                    "finish",
+                    () => {
+
+                        if (
+                            actualBytes >
+                            MAX_EXTRACTED_SIZE
+                        ) {
+
+                            reject(
+                                new Error(
+                                    "Extracted backup file is too large."
+                                )
+                            );
+
+                            return;
+
+                        }
+
+
+                        resolve();
+
+                    }
+                );
+
+
+                input.pipe(
+                    output
+                );
+
+            }
+        );
+
+    }
+
+};
+
+
+/* =========================================================
+   VALIDATE FULL BACKUP
+========================================================= */
+
+const validateFullBackupContents = (
+    extractDirectory
+) => {
+
+    const infoPath =
+        path.join(
+            extractDirectory,
+            "backup-info.json"
+        );
+
+
+    const databasePath =
+        path.join(
+            extractDirectory,
+            "database.json"
+        );
+
+
+    if (
+        !fs.existsSync(
+            infoPath
+        )
+    ) {
+
+        throw new Error(
+            "backup-info.json is missing from the backup."
+        );
+
+    }
+
+
+    if (
+        !fs.existsSync(
+            databasePath
+        )
+    ) {
+
+        throw new Error(
+            "database.json is missing from the backup."
+        );
+
+    }
+
+
+    const backupInfo =
+        readJsonFile(
+            infoPath
+        );
+
+
+    validateBackupEnvelope(
+        backupInfo,
+        "full"
+    );
+
+
+    const database =
+        readJsonFile(
+            databasePath
+        );
+
+
+    validateDatabaseStructure(
+        database
+    );
+
+
+    return {
+
+        backupInfo,
+
+        database
+
+    };
+
+};
+
+
+/* =========================================================
+   RESTORE LOCAL UPLOADS
+========================================================= */
+
+const restoreLocalUploads = (
+    extractDirectory
+) => {
+
+    const extractedUploads =
+        path.join(
+            extractDirectory,
+            "uploads"
+        );
+
+
+    if (
+        !fs.existsSync(
+            extractedUploads
+        )
+    ) {
+
+        return false;
+
+    }
+
+
+    const liveUploads =
+        path.join(
+            __dirname,
+            "../uploads"
+        );
+
+
+    fs.mkdirSync(
+        liveUploads,
+        {
+            recursive:
+                true
+        }
+    );
+
+
+    fs.cpSync(
+
+        extractedUploads,
+
+        liveUploads,
+
+        {
+
+            recursive:
+                true,
+
+            force:
+                true
+
+        }
+
+    );
+
+
+    return true;
+
+};
+
+
+/* =========================================================
+   RESTORE FULL SYSTEM BACKUP
+========================================================= */
+
+exports.restoreFullBackup = async (
+    req,
+    res
+) => {
 
     let uploadedFilePath = null;
 
     let extractDirectory = null;
 
+
+    if (
+        restoreInProgress
+    ) {
+
+        return res.status(409).json({
+
+            success:
+                false,
+
+            message:
+                "Another restore operation is already running. Please wait."
+
+        });
+
+    }
+
+
+    restoreInProgress = true;
+
+
     try {
 
-        if (!req.file) {
+        if (
+            !req.file
+        ) {
 
             return res.status(400).json({
 
-                success: false,
+                success:
+                    false,
 
                 message:
-                    "Please upload a backup ZIP file."
+                    "Please upload a complete backup ZIP file."
 
             });
 
@@ -1480,202 +2014,172 @@ exports.restoreFullBackup = async (req, res) => {
             req.file.path;
 
 
-        /* TEMP EXTRACTION DIRECTORY */
+        /*
+         * Verify the uploaded file exists.
+         */
 
-        extractDirectory = path.join(
+        if (
+            !fs.existsSync(
+                uploadedFilePath
+            )
+        ) {
 
-            __dirname,
+            throw new Error(
+                "Uploaded backup file could not be found."
+            );
 
-            "../temp/restores",
+        }
 
-            `restore-${Date.now()}`
 
-        );
+        /*
+         * Create isolated extraction directory.
+         */
+
+        extractDirectory =
+            path.join(
+
+                __dirname,
+
+                "../temp/restores",
+
+                `restore-${Date.now()}-${Math.random()
+                    .toString(36)
+                    .slice(2, 10)}`
+
+            );
 
 
         fs.mkdirSync(
-
             extractDirectory,
-
             {
-
-                recursive: true
-
+                recursive:
+                    true
             }
-
         );
 
 
-        /* EXTRACT ZIP */
+        /*
+         * Secure ZIP extraction.
+         */
 
-        await fs
+        await extractZipSafely(
 
-            .createReadStream(
-                uploadedFilePath
-            )
+            uploadedFilePath,
 
-            .pipe(
-
-                unzipper.Extract({
-
-                    path:
-                        extractDirectory
-
-                })
-
-            )
-
-            .promise();
-
-
-        const infoPath = path.join(
-            extractDirectory,
-            "backup-info.json"
-        );
-
-
-        const databasePath = path.join(
-            extractDirectory,
-            "database.json"
-        );
-
-
-        if (
-            !fs.existsSync(infoPath) ||
-            !fs.existsSync(databasePath)
-        ) {
-
-            throw new Error(
-                "Invalid backup ZIP file."
-            );
-
-        }
-
-
-        /* VALIDATE BACKUP */
-
-        const backupInfo =
-            JSON.parse(
-
-                fs.readFileSync(
-                    infoPath,
-                    "utf8"
-                )
-
-            );
-
-
-        if (
-            backupInfo.application !==
-            "KAD Marketplace"
-        ) {
-
-            throw new Error(
-                "This backup does not belong to KAD Marketplace."
-            );
-
-        }
-
-
-        /* RESTORE DATABASE */
-
-        const database =
-            JSON.parse(
-
-                fs.readFileSync(
-                    databasePath,
-                    "utf8"
-                )
-
-            );
-
-
-        await restoreDatabaseData(
-            database
-        );
-
-
-        /* =============================================
-           RESTORE UPLOADS
-        ============================================= */
-
-        const extractedUploads = path.join(
-            extractDirectory,
-            "uploads"
-        );
-
-
-        const liveUploads = path.join(
-            __dirname,
-            "../uploads"
-        );
-
-
-        if (
-            fs.existsSync(
-                extractedUploads
-            )
-        ) {
-
-            fs.mkdirSync(
-                liveUploads,
-                {
-                    recursive: true
-                }
-            );
-
-
-            fs.cpSync(
-
-                extractedUploads,
-
-                liveUploads,
-
-                {
-
-                    recursive: true,
-
-                    force: true
-
-                }
-
-            );
-
-        }
-
-
-        /* CLEANUP */
-
-        deleteFile(
-            uploadedFilePath
-        );
-
-
-        deleteDirectory(
             extractDirectory
+
         );
+
+
+        /*
+         * Validate everything BEFORE
+         * changing the database.
+         */
+
+        const {
+            backupInfo,
+            database
+        } =
+            validateFullBackupContents(
+                extractDirectory
+            );
+
+
+        /*
+         * Restore database.
+         */
+
+        const results =
+            await restoreDatabaseData(
+                database
+            );
+
+
+        /*
+         * Restore local uploaded files.
+         */
+
+        const uploadsRestored =
+            restoreLocalUploads(
+                extractDirectory
+            );
+
+
+        const restoredRecords =
+            results.reduce(
+                (
+                    total,
+                    item
+                ) =>
+                    total +
+                    Number(
+                        item.restored || 0
+                    ),
+                0
+            );
+
+
+        await createBackupAudit({
+
+            req,
+
+            action:
+                "BACKUP_FULL_RESTORED",
+
+            description:
+                `Complete backup restored. Original backup date: ${backupInfo.createdAt}. ${restoredRecords} database records processed. Uploads restored: ${uploadsRestored}.`
+
+        });
 
 
         return res.json({
 
-            success: true,
+            success:
+                true,
 
             message:
-                "Complete KAD Marketplace backup restored successfully."
+                "Complete KAD Marketplace backup restored successfully.",
+
+            backupCreatedAt:
+                backupInfo.createdAt,
+
+            restoredRecords,
+
+            uploadsRestored,
+
+            tables:
+                results
 
         });
 
-    }
-
-    catch (error) {
+    } catch (error) {
 
         console.error(
-            "Full restore error:",
+            "FULL BACKUP RESTORE ERROR:",
             error
         );
 
 
-        if (uploadedFilePath) {
+        return res.status(500).json({
+
+            success:
+                false,
+
+            message:
+                error.message ||
+                "Unable to restore full backup."
+
+        });
+
+    } finally {
+
+        /*
+         * Always clean temporary files.
+         */
+
+        if (
+            uploadedFilePath
+        ) {
 
             deleteFile(
                 uploadedFilePath
@@ -1684,7 +2188,9 @@ exports.restoreFullBackup = async (req, res) => {
         }
 
 
-        if (extractDirectory) {
+        if (
+            extractDirectory
+        ) {
 
             deleteDirectory(
                 extractDirectory
@@ -1693,16 +2199,15 @@ exports.restoreFullBackup = async (req, res) => {
         }
 
 
-        return res.status(500).json({
-
-            success: false,
-
-            message:
-                error.message ||
-                "Unable to restore full backup."
-
-        });
+        restoreInProgress = false;
 
     }
 
 };
+
+
+/* =========================================================
+   MODULE EXPORT CHECK
+========================================================= */
+
+module.exports = exports;
