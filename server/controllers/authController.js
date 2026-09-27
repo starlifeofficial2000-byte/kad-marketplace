@@ -2853,27 +2853,115 @@ exports.resendLoginOTP = async (req, res) => {
 
     try {
 
+        console.log("\n========================================");
+        console.log("RESEND LOGIN OTP REQUEST");
+        console.log("========================================");
+
+
+        /* =================================================
+           GET REQUEST DATA
+        ================================================= */
+
         const {
             email
         } = req.body;
 
 
+        /* =================================================
+           VALIDATE EMAIL
+        ================================================= */
+
         if (!email) {
 
             return res.status(400).json({
+
                 success: false,
 
                 message:
                     "Email is required."
+
             });
+
         }
 
+
+        /* =================================================
+           NORMALIZE EMAIL
+        ================================================= */
 
         const normalizedEmail =
             String(email)
                 .trim()
                 .toLowerCase();
 
+
+        console.log(
+            "RESEND OTP EMAIL:",
+            normalizedEmail
+        );
+
+
+        /* =================================================
+           LOAD SECURITY CONFIGURATION
+        ================================================= */
+
+        const security =
+            await getSecurityConfiguration();
+
+
+        /* =================================================
+           NORMALIZE SECURITY SETTINGS
+        ================================================= */
+
+        const toSafeBoolean = (
+            value,
+            defaultValue = false
+        ) => {
+
+            if (
+                value === true ||
+                value === "true" ||
+                value === 1 ||
+                value === "1"
+            ) {
+
+                return true;
+
+            }
+
+            if (
+                value === false ||
+                value === "false" ||
+                value === 0 ||
+                value === "0"
+            ) {
+
+                return false;
+
+            }
+
+            return defaultValue;
+
+        };
+
+
+        const twoFactorEnabled =
+            toSafeBoolean(
+                security.twoFactorEnabled,
+                false
+            );
+
+
+        const requireAdminTwoFactor =
+            toSafeBoolean(
+                security.requireAdminTwoFactor,
+                true
+            );
+
+
+        /* =================================================
+           FIND USER
+        ================================================= */
 
         const user =
             await findUserWithAccess(
@@ -2883,46 +2971,228 @@ exports.resendLoginOTP = async (req, res) => {
 
         if (!user) {
 
+            console.warn(
+                "RESEND OTP - USER NOT FOUND:",
+                normalizedEmail
+            );
+
+
             return res.status(404).json({
+
                 success: false,
 
                 message:
                     "User not found."
+
             });
+
         }
 
 
-       const {
-    requires2FA
-} = await shouldRequireTwoFactor(user);
+        /* =================================================
+           CHECK ACCOUNT STATUS
+        ================================================= */
 
-if (!requires2FA) {
+        if (
+            String(user.status || "")
+                .trim()
+                .toLowerCase() ===
+            "blocked"
+        ) {
 
-    return res.status(403).json({
-        success: false,
+            console.warn(
+                "RESEND OTP - ACCOUNT BLOCKED:",
+                user.email
+            );
 
-        message:
-            "This account does not require two-factor authentication."
-    });
-}
 
-        const otp =
-            generateOTP();
+            return res.status(403).json({
 
-        const hashedOTP =
-            await bcrypt.hash(
-                otp,
-                10
+                success: false,
+
+                message:
+                    "Your account has been blocked. Please contact support."
+
+            });
+
+        }
+
+
+        /* =================================================
+           DETERMINE ADMIN ACCESS
+        ================================================= */
+
+        let isAdmin = false;
+
+
+        try {
+
+            isAdmin =
+                requiresTwoFactorAuthentication(
+                    user
+                );
+
+        } catch (adminCheckError) {
+
+            console.error(
+                "RESEND OTP - ADMIN CHECK ERROR:",
+                adminCheckError
+            );
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Unable to determine account security requirements."
+
+            });
+
+        }
+
+
+        /* =================================================
+           DETERMINE 2FA REQUIREMENT
+        ================================================= */
+
+        const requires2FA =
+            twoFactorEnabled &&
+            (
+                !requireAdminTwoFactor ||
+                isAdmin
+            );
+
+
+        console.log(
+            "RESEND OTP - 2FA DECISION:",
+            {
+                email:
+                    user.email,
+
+                isAdmin,
+
+                twoFactorEnabled,
+
+                requireAdminTwoFactor,
+
+                requires2FA
+            }
+        );
+
+
+        /* =================================================
+           2FA NOT REQUIRED
+        ================================================= */
+
+        if (!requires2FA) {
+
+            console.warn(
+                "RESEND OTP REJECTED - 2FA NOT REQUIRED:",
+                user.email
+            );
+
+
+            return res.status(403).json({
+
+                success: false,
+
+                message:
+                    "This account does not require two-factor authentication."
+
+            });
+
+        }
+
+
+        /* =================================================
+           GENERATE NEW OTP
+        ================================================= */
+
+        let otp;
+
+
+        try {
+
+            otp =
+                generateOTP();
+
+        } catch (otpError) {
+
+            console.error(
+                "RESEND OTP - GENERATION ERROR:",
+                otpError
+            );
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Unable to generate verification code."
+
+            });
+
+        }
+
+
+        /* =================================================
+           HASH OTP
+        ================================================= */
+
+        let hashedOTP;
+
+
+        try {
+
+            hashedOTP =
+                await bcrypt.hash(
+                    String(otp),
+                    10
+                );
+
+        } catch (hashError) {
+
+            console.error(
+                "RESEND OTP - HASH ERROR:",
+                hashError
+            );
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Unable to prepare verification code."
+
+            });
+
+        }
+
+
+        /* =================================================
+           OTP EXPIRATION
+        ================================================= */
+
+        const otpExpiryMinutes =
+            Math.max(
+                1,
+                Number(
+                    OTP_EXPIRY_MINUTES
+                ) || 10
             );
 
 
         user.twoFactorCode =
             hashedOTP;
 
+
         user.twoFactorExpires =
             new Date(
                 Date.now() +
-                OTP_EXPIRY_MINUTES *
+                otpExpiryMinutes *
                 60 *
                 1000
             );
@@ -2930,100 +3200,231 @@ if (!requires2FA) {
 
         await user.save();
 
-await sendEmail(
-    user.email,
-    "KAD Marketplace New Verification Code",
-    `
-    <div style="
-        font-family:Arial,sans-serif;
-        max-width:600px;
-        margin:0 auto;
-        padding:30px;
-        background:#f8fafc;
-        border-radius:12px;
-    ">
 
-        <h2 style="
-            color:#0562be;
-            margin-bottom:20px;
-        ">
-            KAD Marketplace
-        </h2>
+        console.log(
+            "RESEND OTP - NEW CODE STORED:",
+            {
+                email:
+                    user.email,
 
-        <p>
-            Hello ${user.name},
-        </p>
+                expires:
+                    user.twoFactorExpires
+            }
+        );
 
-        <p>
-            Your new login verification code is:
-        </p>
 
-        <div style="
-            margin:25px 0;
-            padding:20px;
-            text-align:center;
-            background:#ffffff;
-            border-radius:10px;
-        ">
+        /* =================================================
+           SEND EMAIL
+        ================================================= */
 
-            <h1 style="
-                font-size:36px;
-                letter-spacing:8px;
-                color:#0562be;
-                margin:0;
-            ">
-                ${otp}
-            </h1>
+        try {
 
-        </div>
+            await sendEmail(
 
-        <p>
-            This code expires in
-            <strong>${OTP_EXPIRY_MINUTES} minutes</strong>.
-        </p>
+                user.email,
 
-        <p>
-            Never share this verification code with anyone.
-        </p>
+                "KAD Marketplace New Verification Code",
 
-        <p style="
-            color:#64748b;
-            font-size:13px;
-            margin-top:30px;
-        ">
-            This is an automated message from KAD Marketplace.
-        </p>
+                `
+                <div style="
+                    font-family:Arial,sans-serif;
+                    max-width:600px;
+                    margin:0 auto;
+                    padding:30px;
+                    background:#f8fafc;
+                    border-radius:12px;
+                ">
 
-    </div>
-    `
-);
+                    <div style="
+                        background:#ffffff;
+                        padding:30px;
+                        border-radius:12px;
+                        border:1px solid #e5e7eb;
+                    ">
+
+                        <h2 style="
+                            color:#0562be;
+                            margin-top:0;
+                            margin-bottom:20px;
+                        ">
+                            KAD Marketplace
+                        </h2>
+
+                        <p>
+                            Hello ${user.name || "User"},
+                        </p>
+
+                        <p>
+                            You requested a new login
+                            verification code.
+                        </p>
+
+                        <p>
+                            Your new verification code is:
+                        </p>
+
+                        <div style="
+                            margin:25px 0;
+                            padding:20px;
+                            text-align:center;
+                            background:#f1f5f9;
+                            border-radius:10px;
+                        ">
+
+                            <span style="
+                                font-size:36px;
+                                font-weight:bold;
+                                letter-spacing:8px;
+                                color:#0562be;
+                            ">
+                                ${otp}
+                            </span>
+
+                        </div>
+
+                        <p>
+                            This code expires in
+                            <strong>
+                                ${otpExpiryMinutes} minutes
+                            </strong>.
+                        </p>
+
+                        <p>
+                            Never share this verification
+                            code with anyone.
+                        </p>
+
+                        <p style="
+                            color:#64748b;
+                            font-size:13px;
+                            margin-top:30px;
+                        ">
+                            If you did not request this
+                            code, please secure your account.
+                        </p>
+
+                        <p style="
+                            color:#64748b;
+                            font-size:13px;
+                        ">
+                            This is an automated message
+                            from KAD Marketplace.
+                        </p>
+
+                    </div>
+
+                </div>
+                `
+            );
+
+        } catch (emailError) {
+
+            console.error(
+                "RESEND OTP - EMAIL ERROR:",
+                emailError
+            );
+
+
+            /*
+             * Remove the OTP because the email was
+             * not successfully delivered.
+             */
+
+            user.twoFactorCode =
+                null;
+
+            user.twoFactorExpires =
+                null;
+
+
+            await user.save();
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Unable to send verification code."
+
+            });
+
+        }
+
+
+        /* =================================================
+           SUCCESS
+        ================================================= */
+
+        console.log(
+            "RESEND OTP SUCCESS:",
+            user.email
+        );
+
+
+        console.log(
+            "========================================"
+        );
 
 
         return res.status(200).json({
 
-            success: true,
+            success:
+                true,
+
+            requiresTwoFactor:
+                true,
+
+            requiresOTP:
+                true,
+
+            email:
+                user.email,
 
             message:
                 "A new verification code has been sent."
+
         });
+
 
     } catch (error) {
 
         console.error(
-            "RESEND OTP ERROR:",
-            error
+            "\n========================================"
         );
+
+        console.error(
+            "RESEND OTP ERROR"
+        );
+
+        console.error(
+            "========================================"
+        );
+
+        console.error(
+            "MESSAGE:",
+            error?.message
+        );
+
+        console.error(
+            "STACK:",
+            error?.stack
+        );
+
 
         return res.status(500).json({
 
-            success: false,
+            success:
+                false,
 
             message:
                 "Unable to resend verification code."
-        });
-    }
-};
 
+        });
+
+    }
+
+};
 
 /* =========================================================
    FORGOT PASSWORD
