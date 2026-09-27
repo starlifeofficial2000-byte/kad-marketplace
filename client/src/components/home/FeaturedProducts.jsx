@@ -3,7 +3,7 @@ import api from "../../config/axios";
 import { Link } from "react-router-dom";
 import getImageUrl from "../../utils/imageUrl";
 import "./FeaturedProducts.css";
-import SEO from "../components/SEO";
+import SEO from "../SEO";
 
 function FeaturedProducts() {
     const [products, setProducts] = useState([]);

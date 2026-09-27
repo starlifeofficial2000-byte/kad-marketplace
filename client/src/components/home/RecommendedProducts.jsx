@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import api from "../../config/axios";
 import { Link } from "react-router-dom";
 import "./TrendingProducts.css";
-import SEO from "../components/SEO";
+import SEO from "../SEO";
 
 function TrendingProducts() {
     const [products, setProducts] = useState([]);
