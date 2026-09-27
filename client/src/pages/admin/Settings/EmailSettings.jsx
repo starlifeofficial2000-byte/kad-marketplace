@@ -8,14 +8,25 @@ function EmailSettings({
 }) {
 
     const [testing, setTesting] = useState(false);
-
     const [message, setMessage] = useState("");
+
+    /* =====================================================
+       EMAIL SYSTEM
+    ===================================================== */
 
     const emailEnabled =
         settings?.email_enabled === "true";
 
+    /* =====================================================
+       EMAIL PROVIDER
+    ===================================================== */
+
     const emailProvider =
         settings?.email_provider || "resend";
+
+    /* =====================================================
+       RESEND SETTINGS
+    ===================================================== */
 
     const resendFromName =
         settings?.resend_from_name ||
@@ -25,6 +36,10 @@ function EmailSettings({
     const resendFromEmail =
         settings?.resend_from_email ||
         "";
+
+    /* =====================================================
+       SMTP SETTINGS
+    ===================================================== */
 
     const smtpHost =
         settings?.smtp_host || "";
@@ -51,6 +66,10 @@ function EmailSettings({
         settings?.support_email ||
         "";
 
+    /* =====================================================
+       EMAIL TYPE SETTINGS
+    ===================================================== */
+
     const registrationEmail =
         settings?.registration_email === "true";
 
@@ -62,6 +81,10 @@ function EmailSettings({
 
     const paymentEmail =
         settings?.payment_email === "true";
+
+    /* =====================================================
+       TEST EMAIL
+    ===================================================== */
 
     const testEmail =
         settings?.test_email || "";
@@ -118,19 +141,21 @@ function EmailSettings({
                 setMessage("");
 
 
+                /*
+                 * The recipient is the address that
+                 * should RECEIVE the test email.
+                 *
+                 * It is NOT the Resend sender address.
+                 */
+
                 const recipient =
-                    testEmail ||
-                    (
-                        emailProvider === "resend"
-                            ? resendFromEmail
-                            : smtpFromEmail
-                    );
+                    testEmail.trim();
 
 
                 if (!recipient) {
 
                     setMessage(
-                        "Please enter a test email address or configure a sender email address."
+                        "Please enter the email address that should receive the test email."
                     );
 
                     return;
@@ -139,14 +164,14 @@ function EmailSettings({
 
 
                 /*
-                 * IMPORTANT:
+                 * The frontend never sends:
                  *
-                 * We intentionally do NOT send
-                 * SMTP credentials or Resend API
-                 * credentials from the frontend.
+                 * - RESEND_API_KEY
+                 * - SMTP password
+                 * - SMTP credentials
                  *
-                 * The backend emailService decides
-                 * which provider to use.
+                 * The backend emailService determines
+                 * which provider should be used.
                  */
 
                 const response =
@@ -195,6 +220,7 @@ function EmailSettings({
     return (
 
         <div className="settings-section">
+
 
             {/* =================================================
                 HEADER
@@ -269,102 +295,49 @@ function EmailSettings({
                         Email Provider
                     </label>
 
-                    <div
+
+                    <select
+                        value={emailProvider}
+                        disabled={!emailEnabled}
+                        onChange={(e) =>
+                            changeProvider(
+                                e.target.value
+                            )
+                        }
                         style={{
-                            display: "grid",
-                            gridTemplateColumns:
-                                "repeat(2, minmax(0, 1fr))",
-                            gap: "10px",
-                            marginTop: "8px"
+                            width: "100%",
+                            padding: "14px 16px",
+                            marginTop: "8px",
+                            borderRadius: "10px",
+                            border: "1px solid #d1d5db",
+                            background: "#ffffff",
+                            color: "#111827",
+                            fontSize: "15px",
+                            fontWeight: 600,
+                            cursor: emailEnabled
+                                ? "pointer"
+                                : "not-allowed"
                         }}
                     >
 
-                        <button
-                            type="button"
-                            disabled={!emailEnabled}
-                            onClick={() =>
-                                changeProvider("resend")
-                            }
-                            style={{
-                                padding: "14px 16px",
-                                borderRadius: "10px",
-                                border:
-                                    emailProvider === "resend"
-                                        ? "2px solid #7c3aed"
-                                        : "1px solid #d1d5db",
-                                background:
-                                    emailProvider === "resend"
-                                        ? "#f5f3ff"
-                                        : "#ffffff",
-                                color:
-                                    emailProvider === "resend"
-                                        ? "#6d28d9"
-                                        : "#374151",
-                                fontWeight: 700,
-                                cursor:
-                                    emailEnabled
-                                        ? "pointer"
-                                        : "not-allowed"
-                            }}
-                        >
-                            🟣 Resend API
+                        <option value="resend">
+                            🟣 Resend API — HTTPS email delivery
+                        </option>
 
-                            <div
-                                style={{
-                                    fontSize: "12px",
-                                    fontWeight: 400,
-                                    marginTop: "4px"
-                                }}
-                            >
-                                HTTPS email delivery
-                            </div>
+                        <option value="smtp">
+                            🔵 SMTP / Nodemailer
+                        </option>
 
-                        </button>
+                    </select>
 
 
-                        <button
-                            type="button"
-                            disabled={!emailEnabled}
-                            onClick={() =>
-                                changeProvider("smtp")
-                            }
-                            style={{
-                                padding: "14px 16px",
-                                borderRadius: "10px",
-                                border:
-                                    emailProvider === "smtp"
-                                        ? "2px solid #2563eb"
-                                        : "1px solid #d1d5db",
-                                background:
-                                    emailProvider === "smtp"
-                                        ? "#eff6ff"
-                                        : "#ffffff",
-                                color:
-                                    emailProvider === "smtp"
-                                        ? "#1d4ed8"
-                                        : "#374151",
-                                fontWeight: 700,
-                                cursor:
-                                    emailEnabled
-                                        ? "pointer"
-                                        : "not-allowed"
-                            }}
-                        >
-                            🔵 SMTP
-
-                            <div
-                                style={{
-                                    fontSize: "12px",
-                                    fontWeight: 400,
-                                    marginTop: "4px"
-                                }}
-                            >
-                                SMTP / Nodemailer
-                            </div>
-
-                        </button>
-
-                    </div>
+                    <small>
+                        Select how KAD Marketplace should
+                        send emails. Resend uses the
+                        RESEND_API_KEY stored securely on
+                        the server. SMTP uses the SMTP
+                        credentials configured below.
+                    </small>
 
                 </div>
 
@@ -388,6 +361,7 @@ function EmailSettings({
                                 🚀
                             </div>
 
+
                             <div>
 
                                 <strong>
@@ -406,11 +380,16 @@ function EmailSettings({
                         </div>
 
 
+                        {/* =========================================
+                            RESEND FROM NAME
+                        ========================================= */}
+
                         <div className="form-group">
 
                             <label>
                                 Resend From Name
                             </label>
+
 
                             <input
                                 type="text"
@@ -428,11 +407,16 @@ function EmailSettings({
                         </div>
 
 
+                        {/* =========================================
+                            RESEND FROM EMAIL
+                        ========================================= */}
+
                         <div className="form-group">
 
                             <label>
                                 Resend From Email
                             </label>
+
 
                             <input
                                 type="email"
@@ -448,10 +432,47 @@ function EmailSettings({
                                 autoComplete="email"
                             />
 
+
                             <small>
-                                This sender must be verified
-                                with your Resend account/domain.
+                                This email must use a domain
+                                verified with your Resend account.
+                                Example:
+                                noreply@kadmarket.com
                             </small>
+
+                        </div>
+
+
+                        {/* =========================================
+                            RESEND STATUS
+                        ========================================= */}
+
+                        <div
+                            className="settings-info-card"
+                            style={{
+                                marginTop: "10px"
+                            }}
+                        >
+
+                            <div className="settings-info-icon">
+                                🔐
+                            </div>
+
+
+                            <div>
+
+                                <strong>
+                                    Resend API Key
+                                </strong>
+
+                                <p>
+                                    The Resend API key is stored
+                                    only on the backend/server.
+                                    It is never stored or exposed
+                                    in this frontend settings page.
+                                </p>
+
+                            </div>
 
                         </div>
 
@@ -479,6 +500,7 @@ function EmailSettings({
                                 🔐
                             </div>
 
+
                             <div>
 
                                 <strong>
@@ -496,11 +518,16 @@ function EmailSettings({
                         </div>
 
 
+                        {/* =========================================
+                            SMTP HOST
+                        ========================================= */}
+
                         <div className="form-group">
 
                             <label>
                                 SMTP Host
                             </label>
+
 
                             <input
                                 type="text"
@@ -518,11 +545,16 @@ function EmailSettings({
                         </div>
 
 
+                        {/* =========================================
+                            SMTP PORT
+                        ========================================= */}
+
                         <div className="form-group">
 
                             <label>
                                 SMTP Port
                             </label>
+
 
                             <input
                                 type="number"
@@ -539,6 +571,7 @@ function EmailSettings({
                                 placeholder="587"
                             />
 
+
                             <small>
                                 Common ports: 587 for TLS
                                 or 465 for SSL.
@@ -547,11 +580,16 @@ function EmailSettings({
                         </div>
 
 
+                        {/* =========================================
+                            SMTP USERNAME
+                        ========================================= */}
+
                         <div className="form-group">
 
                             <label>
                                 SMTP Username
                             </label>
+
 
                             <input
                                 type="text"
@@ -570,11 +608,16 @@ function EmailSettings({
                         </div>
 
 
+                        {/* =========================================
+                            SMTP PASSWORD
+                        ========================================= */}
+
                         <div className="form-group">
 
                             <label>
                                 SMTP Password
                             </label>
+
 
                             <input
                                 type="password"
@@ -590,6 +633,7 @@ function EmailSettings({
                                 autoComplete="new-password"
                             />
 
+
                             <small>
                                 For Gmail, use an App Password
                                 instead of your normal password.
@@ -598,11 +642,16 @@ function EmailSettings({
                         </div>
 
 
+                        {/* =========================================
+                            SMTP ENCRYPTION
+                        ========================================= */}
+
                         <div className="form-group">
 
                             <label>
                                 Encryption
                             </label>
+
 
                             <select
                                 value={smtpEncryption}
@@ -632,11 +681,16 @@ function EmailSettings({
                         </div>
 
 
+                        {/* =========================================
+                            SMTP FROM NAME
+                        ========================================= */}
+
                         <div className="form-group">
 
                             <label>
                                 Sender Name
                             </label>
+
 
                             <input
                                 type="text"
@@ -654,11 +708,16 @@ function EmailSettings({
                         </div>
 
 
+                        {/* =========================================
+                            SMTP FROM EMAIL
+                        ========================================= */}
+
                         <div className="form-group">
 
                             <label>
                                 Sender Email
                             </label>
+
 
                             <input
                                 type="email"
@@ -700,6 +759,7 @@ function EmailSettings({
 
                     </div>
 
+
                     <input
                         type="checkbox"
                         checked={registrationEmail}
@@ -729,6 +789,7 @@ function EmailSettings({
                         </p>
 
                     </div>
+
 
                     <input
                         type="checkbox"
@@ -760,6 +821,7 @@ function EmailSettings({
 
                     </div>
 
+
                     <input
                         type="checkbox"
                         checked={orderEmail}
@@ -790,6 +852,7 @@ function EmailSettings({
 
                     </div>
 
+
                     <input
                         type="checkbox"
                         checked={paymentEmail}
@@ -815,6 +878,7 @@ function EmailSettings({
                         Test Email Address
                     </label>
 
+
                     <input
                         type="email"
                         value={testEmail}
@@ -826,11 +890,13 @@ function EmailSettings({
                             )
                         }
                         placeholder="test@example.com"
+                        autoComplete="email"
                     />
 
+
                     <small>
-                        Enter an email address where
-                        you want to receive a test message.
+                        Enter the email address where you
+                        want to receive the test message.
                     </small>
 
                 </div>
@@ -884,11 +950,13 @@ function EmailSettings({
                     ✉️
                 </div>
 
+
                 <div>
 
                     <strong>
                         Email Configuration
                     </strong>
+
 
                     <p>
 
@@ -900,7 +968,8 @@ function EmailSettings({
                                 : "disabled"}
                         </strong>
 
-                        {" "}and currently configured to use{" "}
+                        {" "}and currently configured
+                        to use{" "}
 
                         <strong>
                             {emailProvider === "resend"
@@ -910,9 +979,46 @@ function EmailSettings({
 
                     </p>
 
+
+                    {emailProvider === "resend" && (
+
+                        <p>
+
+                            Sender:
+
+                            {" "}
+
+                            <strong>
+                                {resendFromEmail ||
+                                    "Not configured"}
+                            </strong>
+
+                        </p>
+
+                    )}
+
+
+                    {emailProvider === "smtp" && (
+
+                        <p>
+
+                            SMTP Host:
+
+                            {" "}
+
+                            <strong>
+                                {smtpHost ||
+                                    "Not configured"}
+                            </strong>
+
+                        </p>
+
+                    )}
+
                 </div>
 
             </div>
+
 
         </div>
 
