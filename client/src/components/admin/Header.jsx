@@ -6,7 +6,7 @@ import {
     FaSignOutAlt
 } from "react-icons/fa";
 
-import logo from "../assets/KADMARKETPLACE.png";
+import logo from "../../assets/KADMARKETPLACE.png";
 import "./Header.css";
 
 function Header() {
