@@ -4,7 +4,7 @@ import api from "../config/axios";
 import {
     FaPhoneAlt,
     FaEnvelope,
-    FaMapMarkerAlt
+    FaClock
 } from "react-icons/fa";
 
 import Layout from "../components/Layout";
@@ -14,9 +14,9 @@ import "./Contact.css";
 function Contact() {
 
     const [contactSettings, setContactSettings] = useState({
-        contactEmail: "Loading...",
-        contactPhone: "Loading...",
-        contactAddress: "Loading..."
+        supportEmail: "",
+        supportPhone: "",
+        timezone: ""
     });
 
     const [formData, setFormData] = useState({
@@ -28,70 +28,108 @@ function Contact() {
     });
 
     const [loading, setLoading] = useState(false);
+    const [settingsLoading, setSettingsLoading] = useState(true);
 
+
+    /* =========================================================
+       LOAD CONTACT SETTINGS
+    ========================================================= */
 
     useEffect(() => {
-        loadContactSettings();
-    }, []);
 
+        let cancelled = false;
 
-    const loadContactSettings = async () => {
+        const loadContactSettings = async () => {
 
-        try {
+            try {
 
-            const response = await api.get("/settings/public");
+                console.log(
+                    "[CONTACT] Loading contact settings..."
+                );
 
-            if (response.data.success) {
+                const response = await api.get(
+                    "/settings/public"
+                );
 
-                const settings = response.data.settings || {};
+                console.log(
+                    "[CONTACT] Public settings:",
+                    response.data
+                );
 
-                setContactSettings({
-                    contactEmail:
-                        settings.contactEmail ||
-                        settings.contact_email ||
-                        "support@kadmarketplace.com",
+                const settings =
+                    response.data?.settings || {};
 
-                    contactPhone:
-                        settings.contactPhone ||
-                        settings.contact_phone ||
-                        "Not available",
+                if (!cancelled) {
 
-                    contactAddress:
-                        settings.contactAddress ||
-                        settings.contact_address ||
-                        "Kumasi, Ashanti Region, Ghana"
-                });
+                    setContactSettings({
+                        supportEmail:
+                            settings.support_email || "",
+
+                        supportPhone:
+                            settings.support_phone || "",
+
+                        timezone:
+                            settings.timezone ||
+                            "Africa/Accra"
+                    });
+
+                }
+
+            } catch (error) {
+
+                console.error(
+                    "[CONTACT] SETTINGS ERROR:",
+                    error.response?.data ||
+                    error.message ||
+                    error
+                );
+
+                if (!cancelled) {
+
+                    setContactSettings({
+                        supportEmail: "",
+                        supportPhone: "",
+                        timezone: "Africa/Accra"
+                    });
+
+                }
+
+            } finally {
+
+                if (!cancelled) {
+                    setSettingsLoading(false);
+                }
 
             }
 
-        } catch (error) {
+        };
 
-            console.error(
-                "CONTACT SETTINGS ERROR:",
-                error
-            );
+        loadContactSettings();
 
-            setContactSettings({
-                contactEmail: "support@kadmarketplace.com",
-                contactPhone: "+233 XX XXX XXXX",
-                contactAddress:
-                    "Kumasi, Ashanti Region, Ghana"
-            });
+        return () => {
+            cancelled = true;
+        };
 
-        }
+    }, []);
 
-    };
 
+    /* =========================================================
+       HANDLE FORM INPUT
+    ========================================================= */
 
     const handleChange = (e) => {
 
-        setFormData({
-            ...formData,
+        setFormData((previous) => ({
+            ...previous,
             [e.target.name]: e.target.value
-        });
+        }));
 
     };
 
+
+    /* =========================================================
+       SUBMIT CONTACT FORM
+    ========================================================= */
 
     const handleSubmit = async (e) => {
 
@@ -121,7 +159,10 @@ function Contact() {
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "[CONTACT] SUBMIT ERROR:",
+                error
+            );
 
             alert(
                 error.response?.data?.message ||
@@ -137,6 +178,10 @@ function Contact() {
     };
 
 
+    /* =========================================================
+       RENDER
+    ========================================================= */
+
     return (
 
         <Layout>
@@ -145,7 +190,9 @@ function Contact() {
 
                 <div className="contact-overlay">
 
-                    <h1>Contact Us</h1>
+                    <h1>
+                        Contact Us
+                    </h1>
 
                     <p>
                         We'd love to hear from you.
@@ -160,9 +207,15 @@ function Contact() {
             <section className="contact-container">
 
 
+                {/* =================================================
+                    CONTACT INFORMATION
+                ================================================= */}
+
                 <div className="contact-info">
 
-                    <h2>Get In Touch</h2>
+                    <h2>
+                        Get In Touch
+                    </h2>
 
                     <p>
                         Our team is ready to help you
@@ -170,22 +223,34 @@ function Contact() {
                     </p>
 
 
+                    {/* PHONE */}
+
                     <div className="info-box">
 
                         <FaPhoneAlt />
 
                         <div>
 
-                            <small>Phone</small>
+                            <small>
+                                Phone
+                            </small>
 
                             <span>
-                                {contactSettings.contactPhone}
+
+                                {settingsLoading
+                                    ? "Loading..."
+                                    : contactSettings.supportPhone ||
+                                      "Phone number not available"
+                                }
+
                             </span>
 
                         </div>
 
                     </div>
 
+
+                    {/* EMAIL */}
 
                     <div className="info-box">
 
@@ -193,10 +258,18 @@ function Contact() {
 
                         <div>
 
-                            <small>Email</small>
+                            <small>
+                                Email
+                            </small>
 
                             <span>
-                                {contactSettings.contactEmail}
+
+                                {settingsLoading
+                                    ? "Loading..."
+                                    : contactSettings.supportEmail ||
+                                      "Email address not available"
+                                }
+
                             </span>
 
                         </div>
@@ -204,16 +277,26 @@ function Contact() {
                     </div>
 
 
+                    {/* TIMEZONE */}
+
                     <div className="info-box">
 
-                        <FaMapMarkerAlt />
+                        <FaClock />
 
                         <div>
 
-                            <small>Address</small>
+                            <small>
+                                Timezone
+                            </small>
 
                             <span>
-                                {contactSettings.contactAddress}
+
+                                {settingsLoading
+                                    ? "Loading..."
+                                    : contactSettings.timezone ||
+                                      "Africa/Accra"
+                                }
+
                             </span>
 
                         </div>
@@ -223,12 +306,18 @@ function Contact() {
                 </div>
 
 
+                {/* =================================================
+                    CONTACT FORM
+                ================================================= */}
+
                 <form
                     className="contact-form"
                     onSubmit={handleSubmit}
                 >
 
-                    <h2>Send Us a Message</h2>
+                    <h2>
+                        Send Us a Message
+                    </h2>
 
 
                     <input
@@ -287,7 +376,8 @@ function Contact() {
 
                         {loading
                             ? "Sending..."
-                            : "Send Message"}
+                            : "Send Message"
+                        }
 
                     </button>
 

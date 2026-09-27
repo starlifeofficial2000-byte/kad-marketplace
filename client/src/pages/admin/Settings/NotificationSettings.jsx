@@ -6,11 +6,16 @@ function NotificationSettings({ settings, handleChange }) {
             return fallback;
         }
 
-        return value === true || value === "true";
+        return (
+            value === true ||
+            value === "true" ||
+            value === 1 ||
+            value === "1"
+        );
     };
 
     const toggle = (key) => {
-        handleChange(key, (!isEnabled(key)).toString());
+        handleChange(key, isEnabled(key) ? "false" : "true");
     };
 
     return (
@@ -19,9 +24,8 @@ function NotificationSettings({ settings, handleChange }) {
                 <div>
                     <h2>Notification Settings</h2>
                     <p>
-                        Configure notifications for users,
-                        administrators, security events, and
-                        marketplace activities.
+                        Configure email, SMS, administrator, security,
+                        system, and marketplace notifications.
                     </p>
                 </div>
             </div>
@@ -65,7 +69,9 @@ function NotificationSettings({ settings, handleChange }) {
                         type="checkbox"
                         checked={isEnabled("welcome_email", true)}
                         onChange={() => toggle("welcome_email")}
-                        disabled={!isEnabled("email_notifications", true)}
+                        disabled={
+                            !isEnabled("email_notifications", true)
+                        }
                     />
                 </div>
 
@@ -80,9 +86,16 @@ function NotificationSettings({ settings, handleChange }) {
 
                     <input
                         type="checkbox"
-                        checked={isEnabled("product_notifications", true)}
-                        onChange={() => toggle("product_notifications")}
-                        disabled={!isEnabled("email_notifications", true)}
+                        checked={isEnabled(
+                            "product_notifications",
+                            true
+                        )}
+                        onChange={() =>
+                            toggle("product_notifications")
+                        }
+                        disabled={
+                            !isEnabled("email_notifications", true)
+                        }
                     />
                 </div>
 
@@ -97,9 +110,16 @@ function NotificationSettings({ settings, handleChange }) {
 
                     <input
                         type="checkbox"
-                        checked={isEnabled("order_notifications", true)}
-                        onChange={() => toggle("order_notifications")}
-                        disabled={!isEnabled("email_notifications", true)}
+                        checked={isEnabled(
+                            "order_notifications",
+                            true
+                        )}
+                        onChange={() =>
+                            toggle("order_notifications")
+                        }
+                        disabled={
+                            !isEnabled("email_notifications", true)
+                        }
                     />
                 </div>
 
@@ -114,9 +134,16 @@ function NotificationSettings({ settings, handleChange }) {
 
                     <input
                         type="checkbox"
-                        checked={isEnabled("payment_notifications", true)}
-                        onChange={() => toggle("payment_notifications")}
-                        disabled={!isEnabled("email_notifications", true)}
+                        checked={isEnabled(
+                            "payment_notifications",
+                            true
+                        )}
+                        onChange={() =>
+                            toggle("payment_notifications")
+                        }
+                        disabled={
+                            !isEnabled("email_notifications", true)
+                        }
                     />
                 </div>
 
@@ -131,11 +158,19 @@ function NotificationSettings({ settings, handleChange }) {
 
                     <input
                         type="checkbox"
-                        checked={isEnabled("seller_notifications", true)}
-                        onChange={() => toggle("seller_notifications")}
-                        disabled={!isEnabled("email_notifications", true)}
+                        checked={isEnabled(
+                            "seller_notifications",
+                            true
+                        )}
+                        onChange={() =>
+                            toggle("seller_notifications")
+                        }
+                        disabled={
+                            !isEnabled("email_notifications", true)
+                        }
                     />
                 </div>
+
 
                 {/* =====================================================
                     SMS NOTIFICATIONS
@@ -168,7 +203,7 @@ function NotificationSettings({ settings, handleChange }) {
 
                     <select
                         id="sms_provider"
-                        value={settings?.sms_provider || "Hubtel"}
+                        value={settings?.sms_provider || ""}
                         onChange={(e) =>
                             handleChange(
                                 "sms_provider",
@@ -177,6 +212,10 @@ function NotificationSettings({ settings, handleChange }) {
                         }
                         disabled={!isEnabled("sms_enabled", false)}
                     >
+                        <option value="">
+                            Select SMS Provider
+                        </option>
+
                         <option value="Hubtel">
                             Hubtel
                         </option>
@@ -194,6 +233,7 @@ function NotificationSettings({ settings, handleChange }) {
                         </option>
                     </select>
                 </div>
+
 
                 {/* =====================================================
                     ADMINISTRATOR NOTIFICATIONS
@@ -214,8 +254,13 @@ function NotificationSettings({ settings, handleChange }) {
 
                     <input
                         type="checkbox"
-                        checked={isEnabled("admin_alerts", true)}
-                        onChange={() => toggle("admin_alerts")}
+                        checked={isEnabled(
+                            "admin_notifications",
+                            true
+                        )}
+                        onChange={() =>
+                            toggle("admin_notifications")
+                        }
                     />
                 </div>
 
@@ -230,8 +275,13 @@ function NotificationSettings({ settings, handleChange }) {
 
                     <input
                         type="checkbox"
-                        checked={isEnabled("admin_alerts", true)}
-                        onChange={() => toggle("admin_alerts")}
+                        checked={isEnabled(
+                            "admin_notifications",
+                            true
+                        )}
+                        onChange={() =>
+                            toggle("admin_notifications")
+                        }
                     />
                 </div>
 
@@ -246,8 +296,13 @@ function NotificationSettings({ settings, handleChange }) {
 
                     <input
                         type="checkbox"
-                        checked={isEnabled("product_notifications", true)}
-                        onChange={() => toggle("product_notifications")}
+                        checked={isEnabled(
+                            "product_notifications",
+                            true
+                        )}
+                        onChange={() =>
+                            toggle("product_notifications")
+                        }
                     />
                 </div>
 
@@ -262,10 +317,16 @@ function NotificationSettings({ settings, handleChange }) {
 
                     <input
                         type="checkbox"
-                        checked={isEnabled("seller_notifications", true)}
-                        onChange={() => toggle("seller_notifications")}
+                        checked={isEnabled(
+                            "seller_notifications",
+                            true
+                        )}
+                        onChange={() =>
+                            toggle("seller_notifications")
+                        }
                     />
                 </div>
+
 
                 {/* =====================================================
                     SECURITY NOTIFICATIONS
@@ -279,15 +340,20 @@ function NotificationSettings({ settings, handleChange }) {
                     <div>
                         <strong>Security Alerts</strong>
                         <p>
-                            Send alerts for important security events and
-                            suspicious activities.
+                            Send alerts for important security events
+                            and suspicious activities.
                         </p>
                     </div>
 
                     <input
                         type="checkbox"
-                        checked={isEnabled("security_alerts", true)}
-                        onChange={() => toggle("security_alerts")}
+                        checked={isEnabled(
+                            "security_alerts",
+                            true
+                        )}
+                        onChange={() =>
+                            toggle("security_alerts")
+                        }
                     />
                 </div>
 
@@ -302,10 +368,16 @@ function NotificationSettings({ settings, handleChange }) {
 
                     <input
                         type="checkbox"
-                        checked={isEnabled("security_alerts", true)}
-                        onChange={() => toggle("security_alerts")}
+                        checked={isEnabled(
+                            "security_alerts",
+                            true
+                        )}
+                        onChange={() =>
+                            toggle("security_alerts")
+                        }
                     />
                 </div>
+
 
                 {/* =====================================================
                     SYSTEM NOTIFICATIONS
@@ -326,8 +398,13 @@ function NotificationSettings({ settings, handleChange }) {
 
                     <input
                         type="checkbox"
-                        checked={isEnabled("maintenance_alerts", true)}
-                        onChange={() => toggle("maintenance_alerts")}
+                        checked={isEnabled(
+                            "maintenance_alerts",
+                            true
+                        )}
+                        onChange={() =>
+                            toggle("maintenance_alerts")
+                        }
                     />
                 </div>
 
@@ -335,9 +412,8 @@ function NotificationSettings({ settings, handleChange }) {
                     <div>
                         <strong>Promotional Notifications</strong>
                         <p>
-                            Allow promotional messages, promotions,
-                            featured products, and marketplace
-                            announcements.
+                            Allow promotional messages, featured
+                            products, and marketplace announcements.
                         </p>
                     </div>
 
@@ -352,6 +428,7 @@ function NotificationSettings({ settings, handleChange }) {
                         }
                     />
                 </div>
+
 
                 {/* =====================================================
                     NOTIFICATION STATUS
@@ -370,7 +447,10 @@ function NotificationSettings({ settings, handleChange }) {
 
                     <p style={{ marginTop: "8px" }}>
                         Email:{" "}
-                        {isEnabled("email_notifications", true)
+                        {isEnabled(
+                            "email_notifications",
+                            true
+                        )
                             ? "Enabled"
                             : "Disabled"}
                     </p>
@@ -383,8 +463,31 @@ function NotificationSettings({ settings, handleChange }) {
                     </p>
 
                     <p>
+                        Administrator Alerts:{" "}
+                        {isEnabled(
+                            "admin_notifications",
+                            true
+                        )
+                            ? "Enabled"
+                            : "Disabled"}
+                    </p>
+
+                    <p>
                         Security Alerts:{" "}
-                        {isEnabled("security_alerts", true)
+                        {isEnabled(
+                            "security_alerts",
+                            true
+                        )
+                            ? "Enabled"
+                            : "Disabled"}
+                    </p>
+
+                    <p>
+                        Maintenance Alerts:{" "}
+                        {isEnabled(
+                            "maintenance_alerts",
+                            true
+                        )
                             ? "Enabled"
                             : "Disabled"}
                     </p>

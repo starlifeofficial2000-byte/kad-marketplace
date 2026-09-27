@@ -50,19 +50,19 @@ const DEFAULT_CONFIGURATION = {
     },
 
     notifications: {
-        emailNotifications: true,
-        welcomeEmail: true,
-        paymentEmail: true,
-        orderNotifications: true,
-        sellerNotifications: true,
-        adminAlerts: true,
-        securityAlerts: true,
-        maintenanceAlerts: true,
-        promotionalNotifications: true,
-        smsEnabled: false,
-        smsProvider: ""
-    },
-
+    emailNotifications: true,
+    welcomeEmail: true,
+    productNotifications: true,
+    orderNotifications: true,
+    paymentNotifications: true,
+    sellerNotifications: true,
+    adminAlerts: true,
+    securityAlerts: true,
+    maintenanceAlerts: true,
+    promotionalNotifications: true,
+    smsEnabled: false,
+    smsProvider: ""
+},
     security: {
         maxFailedLoginAttempts: 5,
         accountLockDuration: 30,
