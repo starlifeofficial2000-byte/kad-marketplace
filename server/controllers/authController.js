@@ -15,6 +15,7 @@ const {
     sendEmail
 } = require("../services/emailService");
 const {
+    getMarketplaceSettings,
     getSetting,
     toBoolean
 } = require("../services/marketplaceSettingsService");
@@ -30,7 +31,85 @@ const RESET_OTP_EXPIRY_MINUTES = 10;
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCK_TIME_MINUTES = 30;
 
+/* =========================================================
+   SECURITY CONFIGURATION
+========================================================= */
 
+const getSecurityConfiguration = async () => {
+
+    try {
+
+        const marketplaceSettings =
+            await getMarketplaceSettings();
+
+        const security =
+            marketplaceSettings?.configuration?.security || {};
+
+        return {
+
+            maxFailedLoginAttempts: Math.max(
+                1,
+                Number(
+                    security.maxFailedLoginAttempts
+                ) || 5
+            ),
+
+            accountLockDuration: Math.max(
+                1,
+                Number(
+                    security.accountLockDuration
+                ) || 30
+            ),
+
+            sessionTimeout: Math.max(
+                5,
+                Number(
+                    security.sessionTimeout
+                ) || 120
+            ),
+
+            twoFactorEnabled:
+                security.twoFactorEnabled === true,
+
+            requireAdminTwoFactor:
+                security.requireAdminTwoFactor !== false,
+
+            securityAlerts:
+                security.securityAlerts !== false,
+
+            securityAlertFailedLogin:
+                security.securityAlertFailedLogin !== false,
+
+            securityAlertAccountLock:
+                security.securityAlertAccountLock !== false,
+
+            securityAlertAdminLogin:
+                security.securityAlertAdminLogin !== false
+        };
+
+    } catch (error) {
+
+        console.error(
+            "SECURITY CONFIGURATION ERROR:",
+            error.message
+        );
+
+        return {
+
+            maxFailedLoginAttempts: 5,
+            accountLockDuration: 30,
+            sessionTimeout: 120,
+
+            twoFactorEnabled: false,
+            requireAdminTwoFactor: true,
+
+            securityAlerts: true,
+            securityAlertFailedLogin: true,
+            securityAlertAccountLock: true,
+            securityAlertAdminLogin: true
+        };
+    }
+};
 /* =========================================================
    ADMINISTRATIVE PERMISSIONS
 
@@ -1229,32 +1308,36 @@ exports.login = async (req, res) => {
             user.loginAttempts =
                 (user.loginAttempts || 0) + 1;
 
-            if (
-                user.loginAttempts >=
-                MAX_LOGIN_ATTEMPTS
-            ) {
+          if (
+    user.loginAttempts >=
+    security.maxFailedLoginAttempts
+){
 
                 user.lockUntil =
                     new Date(
-                        Date.now() +
-                        LOCK_TIME_MINUTES *
-                        60 *
-                        1000
+                       Date.now() +
+security.accountLockDuration *
+60 *
+1000
                     );
 
-                await createAlert({
-                    userId:
-                        user.id,
+              if (
+    security.securityAlerts &&
+    security.securityAlertAccountLock
+) {
 
-                    title:
-                        "Account Locked",
+    await createAlert({
+        userId: user.id,
 
-                    description:
-                        `Account locked after ${MAX_LOGIN_ATTEMPTS} failed login attempts.`,
+        title: "Account Locked",
 
-                    riskLevel:
-                        "High"
-                });
+        description:
+            `Account locked after ${security.maxFailedLoginAttempts} failed login attempts.`,
+
+        riskLevel: "High"
+    });
+
+}
             }
 
             await user.save();
@@ -1290,11 +1373,15 @@ exports.login = async (req, res) => {
            CHECK ADMINISTRATIVE ACCESS
         ========================================= */
 
-        const requires2FA =
-            requiresTwoFactorAuthentication(
-                user
-            );
+        const isAdmin =
+    requiresTwoFactorAuthentication(user);
 
+const requires2FA =
+    security.twoFactorEnabled &&
+    (
+        !security.requireAdminTwoFactor ||
+        isAdmin
+    );
 
         /* =========================================
            REQUIRE TWO FACTOR AUTHENTICATION

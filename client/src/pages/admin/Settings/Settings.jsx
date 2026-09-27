@@ -197,31 +197,63 @@ resend_from_email: "",
 
     sms_provider: "",
 
+/* =====================================================
+   SECURITY
+===================================================== */
 
-    /* =====================================================
-       SECURITY
-    ===================================================== */
+two_factor_authentication: "false",
 
-    two_factor_authentication: "false",
+require_admin_two_factor: "true",
 
-    login_attempt_limit: "5",
+login_attempt_limit: "5",
 
-    session_timeout: "120",
+account_lock_duration: "30",
 
-    account_lock_duration: "30",
+session_timeout: "120",
 
-    password_min_length: "8",
+password_min_length: "8",
 
-    password_expiry_enabled: "false",
+require_strong_passwords: "true",
 
-    password_expiry_days: "90",
+require_uppercase_password: "true",
 
-    ip_monitoring: "true",
+require_lowercase_password: "true",
 
-    suspicious_ip_blocking: "true",
+require_number_password: "true",
 
-    audit_logging: "true",
+require_special_character: "true",
 
+password_history_count: "5",
+
+password_expiry_enabled: "false",
+
+password_expiry_days: "90",
+
+ip_monitoring: "true",
+
+suspicious_ip_blocking: "true",
+
+ip_failed_login_threshold: "10",
+
+ip_block_duration: "60",
+
+security_alerts: "true",
+
+security_alert_failed_login: "true",
+
+security_alert_account_lock: "true",
+
+security_alert_suspicious_ip: "true",
+
+security_alert_admin_login: "true",
+
+security_alert_password_change: "true",
+
+security_alert_new_device: "true",
+
+security_admin_alerts: "true",
+
+audit_logging: "true",
 
     /* =====================================================
        BACKUP
@@ -904,84 +936,229 @@ normalized.payment_email =
                         notifications.smsProvider
                     );
 
+/* =================================================
+   SECURITY
+================================================= */
 
-                /* =================================================
-                   SECURITY
-                ================================================= */
-
-                const security =
-                    configuration.security || {};
-
-
-                normalized.two_factor_authentication =
-                    toStringBoolean(
-                        security.twoFactorEnabled,
-                        DEFAULT_SETTINGS.two_factor_authentication
-                    );
+const security =
+    configuration.security || {};
 
 
-                normalized.login_attempt_limit =
-                    safeString(
-                        security.maxFailedLoginAttempts,
-                        DEFAULT_SETTINGS.login_attempt_limit
-                    );
+/* =========================================
+   LOGIN SECURITY
+========================================= */
+
+normalized.login_attempt_limit =
+    safeString(
+        security.maxFailedLoginAttempts,
+        DEFAULT_SETTINGS.login_attempt_limit
+    );
 
 
-                normalized.session_timeout =
-                    safeString(
-                        security.sessionTimeout,
-                        DEFAULT_SETTINGS.session_timeout
-                    );
+normalized.session_timeout =
+    safeString(
+        security.sessionTimeout,
+        DEFAULT_SETTINGS.session_timeout
+    );
 
 
-                normalized.account_lock_duration =
-                    safeString(
-                        security.accountLockDuration,
-                        DEFAULT_SETTINGS.account_lock_duration
-                    );
+normalized.account_lock_duration =
+    safeString(
+        security.accountLockDuration,
+        DEFAULT_SETTINGS.account_lock_duration
+    );
 
 
-                normalized.password_min_length =
-                    safeString(
-                        security.minimumPasswordLength,
-                        DEFAULT_SETTINGS.password_min_length
-                    );
+/* =========================================
+   TWO FACTOR
+========================================= */
+
+normalized.two_factor_authentication =
+    toStringBoolean(
+        security.twoFactorEnabled,
+        DEFAULT_SETTINGS.two_factor_authentication
+    );
 
 
-                normalized.password_expiry_enabled =
-                    toStringBoolean(
-                        security.passwordExpiryEnabled,
-                        DEFAULT_SETTINGS.password_expiry_enabled
-                    );
+normalized.require_admin_two_factor =
+    toStringBoolean(
+        security.requireAdminTwoFactor,
+        DEFAULT_SETTINGS.require_admin_two_factor
+    );
 
 
-                normalized.password_expiry_days =
-                    safeString(
-                        security.passwordExpiryDays,
-                        DEFAULT_SETTINGS.password_expiry_days
-                    );
+/* =========================================
+   PASSWORD SECURITY
+========================================= */
+
+normalized.require_strong_passwords =
+    toStringBoolean(
+        security.requireStrongPasswords,
+        DEFAULT_SETTINGS.require_strong_passwords
+    );
 
 
-                normalized.ip_monitoring =
-                    toStringBoolean(
-                        security.ipMonitoring,
-                        DEFAULT_SETTINGS.ip_monitoring
-                    );
+normalized.password_min_length =
+    safeString(
+        security.minimumPasswordLength,
+        DEFAULT_SETTINGS.password_min_length
+    );
 
 
-                normalized.suspicious_ip_blocking =
-                    toStringBoolean(
-                        security.suspiciousIpBlocking,
-                        DEFAULT_SETTINGS.suspicious_ip_blocking
-                    );
+normalized.require_uppercase_password =
+    toStringBoolean(
+        security.requireUppercasePassword,
+        DEFAULT_SETTINGS.require_uppercase_password
+    );
 
 
-                normalized.audit_logging =
-                    toStringBoolean(
-                        security.auditLogging,
-                        DEFAULT_SETTINGS.audit_logging
-                    );
+normalized.require_lowercase_password =
+    toStringBoolean(
+        security.requireLowercasePassword,
+        DEFAULT_SETTINGS.require_lowercase_password
+    );
 
+
+normalized.require_number_password =
+    toStringBoolean(
+        security.requireNumberPassword,
+        DEFAULT_SETTINGS.require_number_password
+    );
+
+
+normalized.require_special_character =
+    toStringBoolean(
+        security.requireSpecialCharacter,
+        DEFAULT_SETTINGS.require_special_character
+    );
+
+
+normalized.password_history_count =
+    safeString(
+        security.passwordHistoryCount,
+        DEFAULT_SETTINGS.password_history_count
+    );
+
+
+/* =========================================
+   PASSWORD EXPIRY
+========================================= */
+
+normalized.password_expiry_enabled =
+    toStringBoolean(
+        security.passwordExpiryEnabled,
+        DEFAULT_SETTINGS.password_expiry_enabled
+    );
+
+
+normalized.password_expiry_days =
+    safeString(
+        security.passwordExpiryDays,
+        DEFAULT_SETTINGS.password_expiry_days
+    );
+
+
+/* =========================================
+   IP SECURITY
+========================================= */
+
+normalized.ip_monitoring =
+    toStringBoolean(
+        security.ipMonitoring,
+        DEFAULT_SETTINGS.ip_monitoring
+    );
+
+
+normalized.suspicious_ip_blocking =
+    toStringBoolean(
+        security.suspiciousIpBlocking,
+        DEFAULT_SETTINGS.suspicious_ip_blocking
+    );
+
+
+normalized.ip_failed_login_threshold =
+    safeString(
+        security.ipFailedLoginThreshold,
+        DEFAULT_SETTINGS.ip_failed_login_threshold
+    );
+
+
+normalized.ip_block_duration =
+    safeString(
+        security.ipBlockDuration,
+        DEFAULT_SETTINGS.ip_block_duration
+    );
+
+
+/* =========================================
+   SECURITY ALERTS
+========================================= */
+
+normalized.security_alerts =
+    toStringBoolean(
+        security.securityAlerts,
+        DEFAULT_SETTINGS.security_alerts
+    );
+
+
+normalized.security_alert_failed_login =
+    toStringBoolean(
+        security.securityAlertFailedLogin,
+        DEFAULT_SETTINGS.security_alert_failed_login
+    );
+
+
+normalized.security_alert_account_lock =
+    toStringBoolean(
+        security.securityAlertAccountLock,
+        DEFAULT_SETTINGS.security_alert_account_lock
+    );
+
+
+normalized.security_alert_suspicious_ip =
+    toStringBoolean(
+        security.securityAlertSuspiciousIp,
+        DEFAULT_SETTINGS.security_alert_suspicious_ip
+    );
+
+
+normalized.security_alert_admin_login =
+    toStringBoolean(
+        security.securityAlertAdminLogin,
+        DEFAULT_SETTINGS.security_alert_admin_login
+    );
+
+
+normalized.security_alert_password_change =
+    toStringBoolean(
+        security.securityAlertPasswordChange,
+        DEFAULT_SETTINGS.security_alert_password_change
+    );
+
+
+normalized.security_alert_new_device =
+    toStringBoolean(
+        security.securityAlertNewDevice,
+        DEFAULT_SETTINGS.security_alert_new_device
+    );
+
+
+normalized.security_admin_alerts =
+    toStringBoolean(
+        security.securityAdminAlerts,
+        DEFAULT_SETTINGS.security_admin_alerts
+    );
+
+
+/* =========================================
+   AUDIT LOGGING
+========================================= */
+
+normalized.audit_logging =
+    toStringBoolean(
+        security.auditLogging,
+        DEFAULT_SETTINGS.audit_logging
+    );
 
                 /* =================================================
                    BACKUP
@@ -1515,64 +1692,173 @@ const buildEmailConfiguration =
 
         };
 
+/* =====================================================
+   BUILD SECURITY CONFIGURATION
+===================================================== */
 
-    /* =====================================================
-       BUILD SECURITY CONFIGURATION
-    ===================================================== */
+const buildSecurityConfiguration =
+    () => {
 
-    const buildSecurityConfiguration =
-        () => {
+        return {
 
-            return {
+            /* =========================================
+               LOGIN SECURITY
+            ========================================= */
 
-                maxFailedLoginAttempts:
+            maxFailedLoginAttempts:
+                Math.max(
+                    1,
                     Number(
                         settings.login_attempt_limit
-                    ) || 5,
+                    ) || 5
+                ),
 
-                accountLockDuration:
+            accountLockDuration:
+                Math.max(
+                    1,
                     Number(
                         settings.account_lock_duration
-                    ) || 30,
+                    ) || 30
+                ),
 
-                sessionTimeout:
+            sessionTimeout:
+                Math.max(
+                    5,
                     Number(
                         settings.session_timeout
-                    ) || 120,
+                    ) || 120
+                ),
 
-                twoFactorEnabled:
-                    settings.two_factor_authentication === "true",
 
-                requireStrongPasswords:
+            /* =========================================
+               TWO FACTOR AUTHENTICATION
+            ========================================= */
+
+            twoFactorEnabled:
+                settings.two_factor_authentication === "true",
+
+            requireAdminTwoFactor:
+                settings.require_admin_two_factor === "true",
+
+
+            /* =========================================
+               PASSWORD SECURITY
+            ========================================= */
+
+            requireStrongPasswords:
+                settings.require_strong_passwords === "true",
+
+            minimumPasswordLength:
+                Math.max(
+                    6,
                     Number(
                         settings.password_min_length
-                    ) >= 8,
+                    ) || 8
+                ),
 
-                minimumPasswordLength:
+            requireUppercasePassword:
+                settings.require_uppercase_password === "true",
+
+            requireLowercasePassword:
+                settings.require_lowercase_password === "true",
+
+            requireNumberPassword:
+                settings.require_number_password === "true",
+
+            requireSpecialCharacter:
+                settings.require_special_character === "true",
+
+            passwordHistoryCount:
+                Math.max(
+                    0,
                     Number(
-                        settings.password_min_length
-                    ) || 8,
+                        settings.password_history_count
+                    ) || 0
+                ),
 
-                passwordExpiryEnabled:
-                    settings.password_expiry_enabled === "true",
 
-                passwordExpiryDays:
+            /* =========================================
+               PASSWORD EXPIRY
+            ========================================= */
+
+            passwordExpiryEnabled:
+                settings.password_expiry_enabled === "true",
+
+            passwordExpiryDays:
+                Math.max(
+                    1,
                     Number(
                         settings.password_expiry_days
-                    ) || 90,
+                    ) || 90
+                ),
 
-                ipMonitoring:
-                    settings.ip_monitoring === "true",
 
-                suspiciousIpBlocking:
-                    settings.suspicious_ip_blocking === "true",
+            /* =========================================
+               IP SECURITY
+            ========================================= */
 
-                auditLogging:
-                    settings.audit_logging === "true"
+            ipMonitoring:
+                settings.ip_monitoring === "true",
 
-            };
+            suspiciousIpBlocking:
+                settings.suspicious_ip_blocking === "true",
+
+            ipFailedLoginThreshold:
+                Math.max(
+                    1,
+                    Number(
+                        settings.ip_failed_login_threshold
+                    ) || 10
+                ),
+
+            ipBlockDuration:
+                Math.max(
+                    1,
+                    Number(
+                        settings.ip_block_duration
+                    ) || 60
+                ),
+
+
+            /* =========================================
+               SECURITY ALERTS
+            ========================================= */
+
+            securityAlerts:
+                settings.security_alerts === "true",
+
+            securityAlertFailedLogin:
+                settings.security_alert_failed_login === "true",
+
+            securityAlertAccountLock:
+                settings.security_alert_account_lock === "true",
+
+            securityAlertSuspiciousIp:
+                settings.security_alert_suspicious_ip === "true",
+
+            securityAlertAdminLogin:
+                settings.security_alert_admin_login === "true",
+
+            securityAlertPasswordChange:
+                settings.security_alert_password_change === "true",
+
+            securityAlertNewDevice:
+                settings.security_alert_new_device === "true",
+
+            securityAdminAlerts:
+                settings.security_admin_alerts === "true",
+
+
+            /* =========================================
+               AUDIT
+            ========================================= */
+
+            auditLogging:
+                settings.audit_logging === "true"
 
         };
+
+    };
 
 
     /* =====================================================

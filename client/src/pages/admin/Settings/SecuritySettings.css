@@ -1,0 +1,531 @@
+/* =========================================================
+   SECURITY SETTINGS
+========================================================= */
+
+.security-settings {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.security-settings-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 24px;
+    border-radius: 16px;
+    background: linear-gradient(
+        135deg,
+        #0d8abc 0%,
+        #075985 100%
+    );
+    color: #ffffff;
+    box-shadow: 0 8px 25px rgba(13, 138, 188, 0.18);
+}
+
+.security-settings-header-icon {
+    width: 58px;
+    height: 58px;
+    min-width: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.16);
+    font-size: 28px;
+}
+
+.security-settings-header h2 {
+    margin: 0 0 6px;
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.security-settings-header p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   SECURITY STATUS
+========================================================= */
+
+.security-status-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.security-status-card {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    min-width: 0;
+    padding: 18px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+}
+
+.security-status-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    background: #f0f9ff;
+    font-size: 21px;
+}
+
+.security-status-card strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #111827;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.security-status-card span:last-child {
+    color: #64748b;
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   SECURITY CARD
+========================================================= */
+
+.security-card {
+    margin-bottom: 20px;
+    padding: 24px;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.045);
+}
+
+.security-card-header {
+    margin-bottom: 24px;
+}
+
+.security-card-title {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+}
+
+.security-section-icon {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    background: #eff6ff;
+    font-size: 20px;
+}
+
+.security-card-title h3 {
+    margin: 0 0 5px;
+    color: #111827;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.security-card-title p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   FORM GRID
+========================================================= */
+
+.security-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.security-field {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.security-field-single {
+    max-width: 50%;
+    margin-top: 20px;
+}
+
+.security-field label {
+    margin-bottom: 8px;
+    color: #1f2937;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.security-field label span {
+    color: #64748b;
+    font-weight: 500;
+}
+
+.security-field input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 13px;
+    box-sizing: border-box;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    outline: none;
+    background: #ffffff;
+    color: #111827;
+    font-size: 14px;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.security-field input:hover {
+    border-color: #94a3b8;
+}
+
+.security-field input:focus {
+    border-color: #0d8abc;
+    box-shadow: 0 0 0 3px rgba(13, 138, 188, 0.12);
+}
+
+.security-field small {
+    margin-top: 7px;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+
+/* =========================================================
+   TOGGLE LIST
+========================================================= */
+
+.security-toggle-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.security-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 18px 0;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.security-toggle-row:first-child {
+    padding-top: 0;
+}
+
+.security-toggle-row:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.security-toggle-row > div:first-child {
+    min-width: 0;
+}
+
+.security-toggle-row strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #1f2937;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.security-toggle-row p {
+    margin: 0;
+    max-width: 760px;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   TOGGLE
+========================================================= */
+
+.security-toggle {
+    position: relative;
+    width: 50px;
+    min-width: 50px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: #cbd5e1;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.security-toggle span {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 2px 5px rgba(15, 23, 42, 0.2);
+    transition: transform 0.2s ease;
+}
+
+.security-toggle.active {
+    background: #0d8abc;
+}
+
+.security-toggle.active span {
+    transform: translateX(22px);
+}
+
+.security-toggle:hover {
+    box-shadow: 0 0 0 4px rgba(13, 138, 188, 0.08);
+}
+
+.security-toggle:focus-visible {
+    outline: 3px solid rgba(13, 138, 188, 0.22);
+    outline-offset: 2px;
+}
+
+
+/* =========================================================
+   MASTER ALERT
+========================================================= */
+
+.security-master-toggle {
+    margin-bottom: 18px;
+    padding: 17px 18px;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    background: #f8fbff;
+}
+
+.security-master-toggle:first-child {
+    padding-top: 17px;
+}
+
+.security-master-toggle:last-child {
+    padding-bottom: 17px;
+}
+
+
+/* =========================================================
+   SECURITY SUMMARY
+========================================================= */
+
+.security-summary {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    margin-top: 4px;
+    padding: 20px;
+    border: 1px solid #bae6fd;
+    border-radius: 14px;
+    background: #f0f9ff;
+}
+
+.security-summary-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    background: #ffffff;
+    font-size: 22px;
+}
+
+.security-summary h3 {
+    margin: 0 0 5px;
+    color: #0f172a;
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.security-summary p {
+    margin: 0;
+    color: #475569;
+    font-size: 13px;
+    line-height: 1.65;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 1000px) {
+
+    .security-status-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+    .security-settings {
+        width: 100%;
+    }
+
+    .security-settings-header {
+        padding: 18px;
+        border-radius: 13px;
+    }
+
+    .security-settings-header-icon {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        font-size: 23px;
+    }
+
+    .security-settings-header h2 {
+        font-size: 20px;
+    }
+
+    .security-settings-header p {
+        font-size: 12px;
+    }
+
+    .security-status-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .security-card {
+        padding: 18px;
+        border-radius: 13px;
+    }
+
+    .security-card-title h3 {
+        font-size: 16px;
+    }
+
+    .security-card-title p {
+        font-size: 12px;
+    }
+
+    .security-form-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .security-field-single {
+        max-width: 100%;
+    }
+
+    .security-toggle-row {
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .security-toggle {
+        margin-top: 2px;
+    }
+
+    .security-toggle-row p {
+        font-size: 11px;
+    }
+
+    .security-summary {
+        padding: 17px;
+    }
+
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 450px) {
+
+    .security-settings-header {
+        gap: 11px;
+    }
+
+    .security-settings-header-icon {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        font-size: 20px;
+    }
+
+    .security-settings-header h2 {
+        font-size: 18px;
+    }
+
+    .security-card {
+        padding: 15px;
+    }
+
+    .security-status-card {
+        padding: 14px;
+    }
+
+    .security-section-icon {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        font-size: 17px;
+    }
+
+    .security-toggle-row {
+        gap: 10px;
+    }
+
+    .security-toggle {
+        width: 46px;
+        min-width: 46px;
+        height: 26px;
+    }
+
+    .security-toggle span {
+        width: 18px;
+        height: 18px;
+    }
+
+    .security-toggle.active span {
+        transform: translateX(20px);
+    }
+
+}
