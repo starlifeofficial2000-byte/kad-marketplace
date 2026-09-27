@@ -1,5 +1,13 @@
-import { NavLink, useNavigate } from "react-router-dom";
-import { useEffect, useRef } from "react";
+import {
+    NavLink,
+    useNavigate,
+    useLocation
+} from "react-router-dom";
+
+import {
+    useState,
+    useEffect
+} from "react";
 
 import {
     FaChartPie,
@@ -25,31 +33,43 @@ import {
 
 import "./Sidebar.css";
 
-function Sidebar({
-    isOpen = true,
-    onClose
-}) {
+
+function Sidebar() {
 
     const navigate = useNavigate();
+    const location = useLocation();
 
-    const sidebarRef = useRef(null);
+    const [isMobile, setIsMobile] = useState(
+        window.innerWidth <= 768
+    );
 
-    const user =
-        JSON.parse(
-            localStorage.getItem("user") || "{}"
-        );
+    const [isOpen, setIsOpen] = useState(
+        window.innerWidth > 768
+    );
+
+
+    /* =====================================================
+       USER
+    ===================================================== */
+
+    const user = JSON.parse(
+        localStorage.getItem("user") || "{}"
+    );
 
     const permissions =
         user.permissions || [];
 
+
     /* =====================================================
-       PERMISSION CHECK
+       PERMISSIONS
     ===================================================== */
 
     const hasPermission = (...required) => {
 
         if (
-            user.roles?.includes("Super Admin")
+            user.roles?.includes("Super Admin") ||
+            user.role === "super_admin" ||
+            user.role === "Super Admin"
         ) {
             return true;
         }
@@ -62,86 +82,101 @@ function Sidebar({
 
 
     /* =====================================================
-       CLOSE SIDEBAR WHEN CLICKING OUTSIDE
+       RESPONSIVE SCREEN CHECK
     ===================================================== */
 
     useEffect(() => {
 
-        const handleClickOutside = (event) => {
+        const handleResize = () => {
 
-            if (
-                window.innerWidth <= 768 &&
-                sidebarRef.current &&
-                !sidebarRef.current.contains(
-                    event.target
-                )
-            ) {
+            const mobile =
+                window.innerWidth <= 768;
 
-                if (onClose) {
-                    onClose();
-                }
+            setIsMobile(mobile);
+
+            if (!mobile) {
+
+                setIsOpen(true);
+
+            } else {
+
+                setIsOpen(false);
 
             }
 
         };
 
-        document.addEventListener(
-            "mousedown",
-            handleClickOutside
+
+        window.addEventListener(
+            "resize",
+            handleResize
         );
+
 
         return () => {
 
-            document.removeEventListener(
-                "mousedown",
-                handleClickOutside
+            window.removeEventListener(
+                "resize",
+                handleResize
             );
 
         };
 
-    }, [onClose]);
+    }, []);
 
 
     /* =====================================================
-       CLOSE SIDEBAR WITH ESC
+       CLOSE MOBILE MENU
+    ===================================================== */
+
+    const closeMobileMenu = () => {
+
+        if (isMobile) {
+
+            setIsOpen(false);
+
+        }
+
+    };
+
+
+    /* =====================================================
+       BODY SCROLL LOCK
     ===================================================== */
 
     useEffect(() => {
 
-        const handleEscape = (event) => {
+        if (
+            isMobile &&
+            isOpen
+        ) {
 
-            if (
-                event.key === "Escape" &&
-                window.innerWidth <= 768
-            ) {
+            document.body.style.overflow =
+                "hidden";
 
-                if (onClose) {
-                    onClose();
-                }
+        } else {
 
-            }
+            document.body.style.overflow =
+                "";
 
-        };
+        }
 
-        document.addEventListener(
-            "keydown",
-            handleEscape
-        );
 
         return () => {
 
-            document.removeEventListener(
-                "keydown",
-                handleEscape
-            );
+            document.body.style.overflow =
+                "";
 
         };
 
-    }, [onClose]);
+    }, [
+        isMobile,
+        isOpen
+    ]);
 
 
     /* =====================================================
-       MENU ITEMS
+       MENU
     ===================================================== */
 
     const menus = [
@@ -157,117 +192,91 @@ function Sidebar({
             title: "Users",
             icon: <FaUsers />,
             link: "/admin/users",
-            show: hasPermission(
-                "manage_users"
-            )
+            show: hasPermission("manage_users")
         },
 
         {
             title: "Roles",
             icon: <FaUserShield />,
             link: "/admin/roles",
-            show: hasPermission(
-                "manage_roles"
-            )
+            show: hasPermission("manage_roles")
         },
 
         {
             title: "Permissions",
             icon: <FaKey />,
             link: "/admin/permissions",
-            show: hasPermission(
-                "manage_permissions"
-            )
+            show: hasPermission("manage_permissions")
         },
 
         {
             title: "Products",
             icon: <FaBoxOpen />,
             link: "/admin/products",
-            show: hasPermission(
-                "manage_products"
-            )
+            show: hasPermission("manage_products")
         },
 
         {
             title: "Stores",
             icon: <FaStore />,
             link: "/admin/stores",
-            show: hasPermission(
-                "manage_stores"
-            )
+            show: hasPermission("manage_stores")
         },
 
         {
             title: "Subscriptions",
             icon: <FaCrown />,
             link: "/admin/subscriptions",
-            show: hasPermission(
-                "manage_subscriptions"
-            )
+            show: hasPermission("manage_subscriptions")
         },
 
         {
             title: "Homepage",
             icon: <FaHome />,
             link: "/admin/homepage",
-            show: hasPermission(
-                "manage_homepage"
-            )
+            show: hasPermission("manage_homepage")
         },
 
         {
             title: "Advertisements",
             icon: <FaBullhorn />,
             link: "/admin/advertisements",
-            show: hasPermission(
-                "manage_advertisements"
-            )
+            show: hasPermission("manage_advertisements")
         },
 
         {
             title: "Payments",
             icon: <FaMoneyBillWave />,
             link: "/admin/payments",
-            show: hasPermission(
-                "manage_payments"
-            )
+            show: hasPermission("manage_payments")
         },
 
         {
             title: "Messages",
             icon: <FaEnvelope />,
             link: "/admin/contact-messages",
-            show: hasPermission(
-                "manage_messages"
-            )
+            show: hasPermission("manage_messages")
         },
 
         {
             title: "Audit Logs",
             icon: <FaClipboardList />,
             link: "/admin/audit-logs",
-            show: hasPermission(
-                "view_audit_logs"
-            )
+            show: hasPermission("view_audit_logs")
         },
 
         {
             title: "Login History",
             icon: <FaHistory />,
             link: "/admin/login-history",
-            show: hasPermission(
-                "view_login_history"
-            )
+            show: hasPermission("view_login_history")
         },
 
         {
             title: "Security",
             icon: <FaShieldAlt />,
             link: "/admin/security",
-            show: hasPermission(
-                "manage_security"
-            )
+            show: hasPermission("manage_security")
         },
 
         {
@@ -281,9 +290,7 @@ function Sidebar({
             title: "Settings",
             icon: <FaCog />,
             link: "/admin/settings",
-            show: hasPermission(
-                "manage_settings"
-            )
+            show: hasPermission("manage_settings")
         }
 
     ];
@@ -304,88 +311,116 @@ function Sidebar({
 
 
     /* =====================================================
-       NAVIGATION
+       OPEN / CLOSE BUTTON
     ===================================================== */
 
-    const handleNavigation = () => {
+    const toggleSidebar = () => {
 
-        if (
-            window.innerWidth <= 768 &&
-            onClose
-        ) {
-
-            onClose();
-
-        }
+        setIsOpen(
+            previous => !previous
+        );
 
     };
 
+
+    /* =====================================================
+       RENDER
+    ===================================================== */
 
     return (
 
         <>
 
-            {/* MOBILE OVERLAY */}
+            {/* MOBILE MENU BUTTON */}
 
-            {isOpen && (
+            {isMobile && !isOpen && (
+
+                <button
+                    type="button"
+                    className="menu-btn"
+                    onClick={toggleSidebar}
+                    aria-label="Open admin menu"
+                    aria-expanded={false}
+                >
+                    <FaBars />
+                </button>
+
+            )}
+
+
+            {/* MOBILE BACKDROP */}
+
+            {isMobile && isOpen && (
+
                 <div
                     className="sidebar-overlay"
-                    onClick={onClose}
+                    onClick={closeMobileMenu}
                     aria-hidden="true"
                 />
+
             )}
 
 
             {/* SIDEBAR */}
 
             <aside
-                ref={sidebarRef}
-                className={
+                className={`sidebar ${
                     isOpen
-                        ? "sidebar"
-                        : "sidebar hidden"
-                }
+                        ? "open"
+                        : "hidden"
+                }`}
             >
 
-                {/* =================================================
-                    MOBILE CLOSE BUTTON
-                ================================================= */}
+                {/* SIDEBAR HEADER */}
 
                 <div className="sidebar-top">
 
                     <div className="sidebar-logo">
+
                         KAD ADMIN
+
                     </div>
 
-                    <button
-                        type="button"
-                        className="sidebar-close-button"
-                        onClick={onClose}
-                        aria-label="Close admin menu"
-                    >
-                        <FaTimes />
-                    </button>
+
+                    {isMobile && (
+
+                        <button
+                            type="button"
+                            className="sidebar-close-button"
+                            onClick={
+                                closeMobileMenu
+                            }
+                            aria-label="Close admin menu"
+                        >
+
+                            <FaTimes />
+
+                        </button>
+
+                    )}
 
                 </div>
 
 
-                {/* =================================================
-                    NAVIGATION
-                ================================================= */}
+                {/* MENU */}
 
                 <nav className="sidebar-menu">
 
                     {menus
-                        .filter(menu => menu.show)
+                        .filter(
+                            menu => menu.show
+                        )
                         .map(menu => (
 
                             <NavLink
                                 key={menu.link}
                                 to={menu.link}
                                 onClick={
-                                    handleNavigation
+                                    closeMobileMenu
                                 }
-                                className={({ isActive }) =>
+                                className={({
+                                    isActive
+                                }) =>
                                     isActive
                                         ? "sidebar-link active"
                                         : "sidebar-link"
@@ -393,11 +428,16 @@ function Sidebar({
                             >
 
                                 <span className="sidebar-link-icon">
+
                                     {menu.icon}
+
                                 </span>
 
+
                                 <span className="sidebar-link-text">
+
                                     {menu.title}
+
                                 </span>
 
                             </NavLink>
@@ -407,9 +447,7 @@ function Sidebar({
                 </nav>
 
 
-                {/* =================================================
-                    LOGOUT
-                ================================================= */}
+                {/* FOOTER */}
 
                 <div className="sidebar-footer">
 
@@ -419,10 +457,16 @@ function Sidebar({
                         onClick={handleLogout}
                     >
 
-                        <FaSignOutAlt />
+                        <span className="sidebar-link-icon">
+
+                            <FaSignOutAlt />
+
+                        </span>
 
                         <span>
+
                             Logout
+
                         </span>
 
                     </button>
@@ -436,5 +480,6 @@ function Sidebar({
     );
 
 }
+
 
 export default Sidebar;

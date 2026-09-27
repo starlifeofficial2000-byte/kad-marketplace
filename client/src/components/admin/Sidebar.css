@@ -1,9 +1,10 @@
 /* =========================================================
    KAD MARKETPLACE ADMIN SIDEBAR
-   Fully Responsive
+   Desktop + Tablet + Mobile
 ========================================================= */
 
 :root {
+
     --admin-primary: #0a66c2;
     --admin-primary-dark: #07539e;
     --admin-primary-light: #eaf4ff;
@@ -32,6 +33,7 @@
 ========================================================= */
 
 .sidebar {
+
     position: fixed;
 
     top: var(--header-height);
@@ -49,9 +51,11 @@
 
     box-shadow: var(--sidebar-shadow);
 
-    z-index: 900;
+    z-index: 1000;
 
     overflow: hidden;
+
+    transform: translateX(0);
 
     transition:
         transform 0.3s ease,
@@ -60,11 +64,12 @@
 
 
 /* =========================================================
-   HIDDEN SIDEBAR
+   HIDDEN
 ========================================================= */
 
 .sidebar.hidden {
-    transform: translateX(-100%);
+
+    transform: translateX(-105%);
 }
 
 
@@ -73,6 +78,7 @@
 ========================================================= */
 
 .sidebar-top {
+
     min-height: 70px;
 
     display: flex;
@@ -81,17 +87,19 @@
 
     padding: 0 18px;
 
-    border-bottom: 1px solid var(--sidebar-border);
+    border-bottom:
+        1px solid var(--sidebar-border);
 
     flex-shrink: 0;
 }
 
 
 /* =========================================================
-   SIDEBAR LOGO
+   LOGO
 ========================================================= */
 
 .sidebar-logo {
+
     display: flex;
     align-items: center;
 
@@ -111,6 +119,7 @@
 ========================================================= */
 
 .sidebar-close-button {
+
     width: 38px;
     height: 38px;
 
@@ -120,6 +129,7 @@
     justify-content: center;
 
     border: none;
+
     border-radius: 9px;
 
     background: transparent;
@@ -136,22 +146,27 @@
         transform 0.2s ease;
 }
 
+
 .sidebar-close-button:hover {
+
     background: #f1f5f9;
 
     color: var(--admin-primary);
 }
 
+
 .sidebar-close-button:active {
+
     transform: scale(0.92);
 }
 
 
 /* =========================================================
-   SIDEBAR MENU
+   MENU
 ========================================================= */
 
 .sidebar-menu {
+
     flex: 1;
 
     display: flex;
@@ -165,38 +180,39 @@
     overflow-x: hidden;
 
     scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
+
+    scrollbar-color:
+        #cbd5e1
+        transparent;
 }
 
 
-/* =========================================================
-   SCROLLBAR
-========================================================= */
-
 .sidebar-menu::-webkit-scrollbar {
+
     width: 5px;
 }
 
+
 .sidebar-menu::-webkit-scrollbar-track {
+
     background: transparent;
 }
 
+
 .sidebar-menu::-webkit-scrollbar-thumb {
+
     background: #cbd5e1;
 
     border-radius: 10px;
 }
 
-.sidebar-menu::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-}
-
 
 /* =========================================================
-   SIDEBAR LINK
+   MENU LINK
 ========================================================= */
 
 .sidebar-link {
+
     position: relative;
 
     min-height: 46px;
@@ -215,6 +231,7 @@
     text-decoration: none;
 
     font-size: 14px;
+
     font-weight: 500;
 
     white-space: nowrap;
@@ -226,11 +243,8 @@
 }
 
 
-/* =========================================================
-   LINK HOVER
-========================================================= */
-
 .sidebar-link:hover {
+
     background: var(--sidebar-hover);
 
     color: var(--admin-primary);
@@ -240,14 +254,16 @@
 
 
 /* =========================================================
-   LINK ICON
+   ICON
 ========================================================= */
 
 .sidebar-link-icon {
+
     width: 22px;
     min-width: 22px;
 
     display: flex;
+
     align-items: center;
     justify-content: center;
 
@@ -260,7 +276,10 @@
         transform 0.2s ease;
 }
 
-.sidebar-link:hover .sidebar-link-icon {
+
+.sidebar-link:hover
+.sidebar-link-icon {
+
     color: var(--admin-primary);
 
     transform: scale(1.05);
@@ -268,10 +287,11 @@
 
 
 /* =========================================================
-   LINK TEXT
+   TEXT
 ========================================================= */
 
 .sidebar-link-text {
+
     overflow: hidden;
 
     text-overflow: ellipsis;
@@ -279,23 +299,23 @@
 
 
 /* =========================================================
-   ACTIVE LINK
+   ACTIVE
 ========================================================= */
 
 .sidebar-link.active {
-    background: var(--admin-primary-light);
 
-    color: var(--admin-primary);
+    background:
+        var(--admin-primary-light);
+
+    color:
+        var(--admin-primary);
 
     font-weight: 700;
 }
 
 
-/* =========================================================
-   ACTIVE INDICATOR
-========================================================= */
-
 .sidebar-link.active::before {
+
     content: "";
 
     position: absolute;
@@ -307,46 +327,52 @@
 
     width: 4px;
 
-    border-radius: 0 5px 5px 0;
+    border-radius:
+        0 5px 5px 0;
 
-    background: var(--admin-primary);
+    background:
+        var(--admin-primary);
+}
+
+
+.sidebar-link.active
+.sidebar-link-icon {
+
+    color:
+        var(--admin-primary);
 }
 
 
 /* =========================================================
-   ACTIVE ICON
-========================================================= */
-
-.sidebar-link.active .sidebar-link-icon {
-    color: var(--admin-primary);
-}
-
-
-/* =========================================================
-   SIDEBAR FOOTER
+   FOOTER
 ========================================================= */
 
 .sidebar-footer {
+
     flex-shrink: 0;
 
     padding: 12px;
 
-    border-top: 1px solid var(--sidebar-border);
+    border-top:
+        1px solid var(--sidebar-border);
 
-    background: #ffffff;
+    background:
+        #ffffff;
 }
 
 
 /* =========================================================
-   LOGOUT BUTTON
+   LOGOUT
 ========================================================= */
 
 .logout-btn {
+
     width: 100%;
 
     min-height: 46px;
 
     display: flex;
+
     align-items: center;
 
     gap: 13px;
@@ -354,6 +380,7 @@
     padding: 0 14px;
 
     border: none;
+
     border-radius: 10px;
 
     background: transparent;
@@ -363,6 +390,7 @@
     font-family: inherit;
 
     font-size: 14px;
+
     font-weight: 600;
 
     cursor: pointer;
@@ -371,55 +399,93 @@
 
     transition:
         background 0.2s ease,
-        color 0.2s ease,
         transform 0.2s ease;
 }
 
+
 .logout-btn:hover {
-    background: var(--danger-bg);
 
-    color: var(--danger);
+    background:
+        var(--danger-bg);
 
-    transform: translateX(2px);
-}
-
-.logout-btn svg {
-    width: 22px;
-
-    font-size: 16px;
+    transform:
+        translateX(2px);
 }
 
 
 /* =========================================================
-   MOBILE OVERLAY
+   MOBILE MENU BUTTON
+========================================================= */
+
+.menu-btn {
+
+    position: fixed;
+
+    top: 16px;
+    left: 16px;
+
+    width: 44px;
+    height: 44px;
+
+    display: none;
+
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background:
+        var(--admin-primary);
+
+    color: #ffffff;
+
+    font-size: 19px;
+
+    cursor: pointer;
+
+    z-index: 1500;
+
+    box-shadow:
+        0 6px 18px
+        rgba(10, 102, 194, 0.25);
+}
+
+
+.menu-btn:hover {
+
+    background:
+        var(--admin-primary-dark);
+}
+
+
+/* =========================================================
+   BACKDROP
+
+   IMPORTANT:
+   Hidden by default.
+   Therefore it can NEVER block the desktop page.
 ========================================================= */
 
 .sidebar-overlay {
+
+    display: none;
+
     position: fixed;
 
     inset: 0;
 
-    background: rgba(15, 23, 42, 0.48);
+    background:
+        rgba(15, 23, 42, 0.48);
 
-    backdrop-filter: blur(2px);
+    backdrop-filter:
+        blur(2px);
 
-    -webkit-backdrop-filter: blur(2px);
+    -webkit-backdrop-filter:
+        blur(2px);
 
-    z-index: 850;
-
-    animation: sidebarOverlayIn 0.25s ease;
-}
-
-@keyframes sidebarOverlayIn {
-
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-
+    z-index: 900;
 }
 
 
@@ -430,25 +496,16 @@
 @media (max-width: 900px) {
 
     :root {
+
         --header-height: 68px;
+
         --sidebar-width: 250px;
     }
 
-    .sidebar {
-        box-shadow:
-            8px 0 30px rgba(15, 23, 42, 0.15);
-    }
 
     .sidebar-close-button {
+
         display: flex;
-    }
-
-    .sidebar-top {
-        min-height: 64px;
-    }
-
-    .sidebar-menu {
-        padding: 14px 10px;
     }
 
 }
@@ -461,8 +518,11 @@
 @media (max-width: 768px) {
 
     :root {
+
         --header-height: 64px;
-        --sidebar-width: min(290px, 86vw);
+
+        --sidebar-width:
+            min(290px, 86vw);
     }
 
 
@@ -471,22 +531,26 @@
         top: 0;
         bottom: 0;
 
-        width: var(--sidebar-width);
+        width:
+            var(--sidebar-width);
 
         z-index: 1200;
 
         box-shadow:
-            10px 0 35px rgba(15, 23, 42, 0.2);
-
+            10px 0 35px
+            rgba(15, 23, 42, 0.20);
     }
 
 
     .sidebar.hidden {
-        transform: translateX(-105%);
+
+        transform:
+            translateX(-105%);
     }
 
 
     .sidebar-top {
+
         min-height: 70px;
 
         padding:
@@ -494,12 +558,8 @@
     }
 
 
-    .sidebar-logo {
-        font-size: 17px;
-    }
-
-
     .sidebar-close-button {
+
         display: flex;
 
         width: 40px;
@@ -508,6 +568,7 @@
 
 
     .sidebar-menu {
+
         padding:
             14px 12px 20px;
 
@@ -516,6 +577,7 @@
 
 
     .sidebar-link {
+
         min-height: 48px;
 
         padding:
@@ -526,7 +588,9 @@
 
 
     .sidebar-link-icon {
+
         width: 24px;
+
         min-width: 24px;
 
         font-size: 17px;
@@ -534,13 +598,31 @@
 
 
     .sidebar-footer {
+
         padding:
             12px;
     }
 
 
     .logout-btn {
+
         min-height: 48px;
+    }
+
+
+    /* Show backdrop ONLY when React renders it */
+
+    .sidebar-overlay {
+
+        display: block;
+    }
+
+
+    /* Show menu button */
+
+    .menu-btn {
+
+        display: flex;
     }
 
 }
@@ -553,11 +635,23 @@
 @media (max-width: 480px) {
 
     :root {
+
         --sidebar-width: 85vw;
     }
 
 
+    .menu-btn {
+
+        top: 12px;
+        left: 12px;
+
+        width: 42px;
+        height: 42px;
+    }
+
+
     .sidebar-top {
+
         min-height: 64px;
 
         padding:
@@ -566,17 +660,20 @@
 
 
     .sidebar-logo {
+
         font-size: 16px;
     }
 
 
     .sidebar-menu {
+
         padding:
             12px 10px 18px;
     }
 
 
     .sidebar-link {
+
         min-height: 47px;
 
         gap: 12px;
@@ -589,11 +686,13 @@
 
 
     .sidebar-link-text {
+
         font-size: 14px;
     }
 
 
     .logout-btn {
+
         min-height: 47px;
 
         padding:
@@ -610,11 +709,13 @@
 @media (max-width: 360px) {
 
     :root {
+
         --sidebar-width: 88vw;
     }
 
 
     .sidebar-link {
+
         min-height: 45px;
 
         font-size: 13px;
@@ -622,7 +723,9 @@
 
 
     .sidebar-link-icon {
+
         width: 22px;
+
         min-width: 22px;
 
         font-size: 15px;
@@ -630,6 +733,7 @@
 
 
     .sidebar-logo {
+
         font-size: 15px;
     }
 
@@ -642,9 +746,12 @@
 
 .sidebar-link:focus-visible,
 .logout-btn:focus-visible,
-.sidebar-close-button:focus-visible {
+.sidebar-close-button:focus-visible,
+.menu-btn:focus-visible {
 
-    outline: 2px solid var(--admin-primary);
+    outline:
+        2px solid
+        var(--admin-primary);
 
     outline-offset: 2px;
 }
@@ -661,9 +768,7 @@
     .sidebar-link-icon,
     .logout-btn,
     .sidebar-close-button,
-    .sidebar-overlay {
-
-        animation: none !important;
+    .menu-btn {
 
         transition: none !important;
     }
