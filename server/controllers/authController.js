@@ -1167,7 +1167,6 @@ ${marketplaceName}
 
 };
 
-
 /* =========================================================
    LOGIN
 ========================================================= */
@@ -1176,245 +1175,745 @@ exports.login = async (req, res) => {
 
     try {
 
+        console.log("\n========================================");
+        console.log("LOGIN REQUEST");
+        console.log("========================================");
+
+
+        /* =================================================
+           GET REQUEST DATA
+        ================================================= */
+
         const {
             email,
             password
         } = req.body;
 
 
-        /* =========================================
-           VALIDATION
-        ========================================= */
+        /* =================================================
+           VALIDATE INPUT
+        ================================================= */
 
         if (!email || !password) {
 
+            console.warn(
+                "LOGIN VALIDATION FAILED"
+            );
+
             return res.status(400).json({
+
                 success: false,
 
                 message:
                     "Email and password are required."
+
             });
+
         }
 
+
+        /* =================================================
+           NORMALIZE EMAIL
+        ================================================= */
 
         const normalizedEmail =
             String(email)
                 .trim()
                 .toLowerCase();
 
-/* =========================================
-   LOAD SECURITY CONFIGURATION
-========================================= */
 
-const security =
-    await getSecurityConfiguration();
-        /* =========================================
+        console.log(
+            "LOGIN EMAIL:",
+            normalizedEmail
+        );
+
+
+        /* =================================================
+           LOAD SECURITY CONFIGURATION
+        ================================================= */
+
+        const security =
+            await getSecurityConfiguration();
+
+
+        /*
+         * Normalize boolean settings.
+         *
+         * This protects against settings being returned
+         * as either:
+         *
+         * true / false
+         *
+         * or:
+         *
+         * "true" / "false"
+         */
+
+        const toSafeBoolean = (
+            value,
+            defaultValue = false
+        ) => {
+
+            if (
+                value === true ||
+                value === "true" ||
+                value === 1 ||
+                value === "1"
+            ) {
+
+                return true;
+
+            }
+
+            if (
+                value === false ||
+                value === "false" ||
+                value === 0 ||
+                value === "0"
+            ) {
+
+                return false;
+
+            }
+
+            return defaultValue;
+
+        };
+
+
+        const twoFactorEnabled =
+            toSafeBoolean(
+                security.twoFactorEnabled,
+                false
+            );
+
+
+        const requireAdminTwoFactor =
+            toSafeBoolean(
+                security.requireAdminTwoFactor,
+                true
+            );
+
+
+        const securityAlerts =
+            toSafeBoolean(
+                security.securityAlerts,
+                true
+            );
+
+
+        const securityAlertAccountLock =
+            toSafeBoolean(
+                security.securityAlertAccountLock,
+                true
+            );
+
+
+        console.log(
+            "LOGIN SECURITY CONFIG:",
+            {
+                twoFactorEnabled,
+                requireAdminTwoFactor,
+                maxFailedLoginAttempts:
+                    security.maxFailedLoginAttempts,
+                accountLockDuration:
+                    security.accountLockDuration
+            }
+        );
+
+
+        /* =================================================
            FIND USER
-        ========================================= */
+        ================================================= */
 
         const user =
             await findUserWithAccess(
                 normalizedEmail
             );
 
+
+        /* =================================================
+           USER NOT FOUND
+        ================================================= */
+
         if (!user) {
 
+            console.warn(
+                "LOGIN FAILED - USER NOT FOUND:",
+                normalizedEmail
+            );
+
             return res.status(401).json({
+
                 success: false,
 
                 message:
                     "Invalid email or password."
+
             });
+
         }
 
 
-        /* =========================================
+        console.log(
+            "LOGIN USER FOUND:",
+            {
+                id:
+                    user.id,
+
+                email:
+                    user.email,
+
+                status:
+                    user.status
+            }
+        );
+
+
+        /* =================================================
            CHECK ACCOUNT STATUS
-        ========================================= */
+        ================================================= */
 
         if (
             String(user.status || "")
+                .trim()
                 .toLowerCase() ===
             "blocked"
         ) {
 
+            console.warn(
+                "LOGIN BLOCKED - ACCOUNT STATUS:",
+                user.email
+            );
+
             return res.status(403).json({
+
                 success: false,
 
                 message:
                     "Your account has been blocked. Please contact support."
+
             });
+
         }
 
 
-        /* =========================================
-           CHECK ACCOUNT LOCK
-        ========================================= */
+        /* =================================================
+           CHECK ACTIVE ACCOUNT LOCK
+        ================================================= */
 
         if (
             user.lockUntil &&
-            new Date(user.lockUntil) >
-                new Date()
+            new Date(user.lockUntil).getTime() >
+                Date.now()
         ) {
 
+            const remainingMilliseconds =
+                new Date(user.lockUntil).getTime() -
+                Date.now();
+
+
             const remainingMinutes =
-                Math.ceil(
-                    (
-                        new Date(
-                            user.lockUntil
-                        ).getTime() -
-                        Date.now()
-                    ) / 60000
+                Math.max(
+                    1,
+                    Math.ceil(
+                        remainingMilliseconds /
+                        60000
+                    )
                 );
 
+
+            console.warn(
+                "LOGIN BLOCKED - ACCOUNT TEMPORARILY LOCKED:",
+                {
+                    email:
+                        user.email,
+
+                    lockUntil:
+                        user.lockUntil,
+
+                    remainingMinutes
+                }
+            );
+
+
             return res.status(423).json({
+
                 success: false,
 
                 message:
                     `Account temporarily locked. Try again in ${remainingMinutes} minute(s).`
+
             });
+
         }
 
 
-        /* =========================================
-           RESET EXPIRED LOCK
-        ========================================= */
+        /* =================================================
+           CLEAR EXPIRED ACCOUNT LOCK
+        ================================================= */
 
         if (
             user.lockUntil &&
-            new Date(user.lockUntil) <=
-                new Date()
+            new Date(user.lockUntil).getTime() <=
+                Date.now()
         ) {
 
-            user.loginAttempts = 0;
-            user.lockUntil = null;
-
-            await user.save();
-        }
-
-
-        /* =========================================
-           VERIFY PASSWORD
-        ========================================= */
-
-        const validPassword =
-            await bcrypt.compare(
-                String(password),
-                user.password
+            console.log(
+                "LOGIN - EXPIRED ACCOUNT LOCK CLEARED:",
+                user.email
             );
 
 
-        /* =========================================
+            user.loginAttempts =
+                0;
+
+            user.lockUntil =
+                null;
+
+
+            await user.save();
+
+        }
+
+
+        /* =================================================
+           VERIFY PASSWORD
+        ================================================= */
+
+        let validPassword = false;
+
+
+        try {
+
+            validPassword =
+                await bcrypt.compare(
+                    String(password),
+                    user.password
+                );
+
+        } catch (passwordError) {
+
+            console.error(
+                "LOGIN PASSWORD VERIFICATION ERROR:",
+                passwordError
+            );
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Unable to verify login credentials."
+
+            });
+
+        }
+
+
+        /* =================================================
            INVALID PASSWORD
-        ========================================= */
+        ================================================= */
 
         if (!validPassword) {
 
             user.loginAttempts =
-                (user.loginAttempts || 0) + 1;
+                Number(
+                    user.loginAttempts || 0
+                ) + 1;
 
-          if (
-    user.loginAttempts >=
-    security.maxFailedLoginAttempts
-){
+
+            const maxAttempts =
+                Math.max(
+                    1,
+                    Number(
+                        security.maxFailedLoginAttempts
+                    ) || 5
+                );
+
+
+            const lockDuration =
+                Math.max(
+                    1,
+                    Number(
+                        security.accountLockDuration
+                    ) || 30
+                );
+
+
+            console.warn(
+                "LOGIN FAILED - INVALID PASSWORD:",
+                {
+                    email:
+                        user.email,
+
+                    loginAttempts:
+                        user.loginAttempts,
+
+                    maxAttempts
+                }
+            );
+
+
+            /* =============================================
+               ACCOUNT LOCK
+            ============================================= */
+
+            if (
+                user.loginAttempts >=
+                maxAttempts
+            ) {
 
                 user.lockUntil =
                     new Date(
-                       Date.now() +
-security.accountLockDuration *
-60 *
-1000
+                        Date.now() +
+                        lockDuration *
+                        60 *
+                        1000
                     );
 
-              if (
-    security.securityAlerts &&
-    security.securityAlertAccountLock
-) {
 
-    await createAlert({
-        userId: user.id,
+                console.warn(
+                    "ACCOUNT LOCKED:",
+                    {
+                        email:
+                            user.email,
 
-        title: "Account Locked",
+                        lockUntil:
+                            user.lockUntil
+                    }
+                );
 
-        description:
-            `Account locked after ${security.maxFailedLoginAttempts} failed login attempts.`,
 
-        riskLevel: "High"
-    });
+                /* =========================================
+                   SECURITY ALERT
+                ========================================= */
 
-}
+                if (
+                    securityAlerts &&
+                    securityAlertAccountLock
+                ) {
+
+                    try {
+
+                        await createAlert({
+
+                            userId:
+                                user.id,
+
+                            title:
+                                "Account Locked",
+
+                            description:
+                                `Account locked after ${maxAttempts} failed login attempts.`,
+
+                            riskLevel:
+                                "High"
+
+                        });
+
+                    } catch (alertError) {
+
+                        console.error(
+                            "ACCOUNT LOCK ALERT ERROR:",
+                            alertError
+                        );
+
+                    }
+
+                }
+
             }
+
 
             await user.save();
 
-            await saveLoginHistory({
-                userId:
-                    user.id,
 
-                req,
+            /* =============================================
+               SAVE FAILED LOGIN HISTORY
+            ============================================= */
 
-                success:
-                    false
-            });
+            try {
+
+                await saveLoginHistory({
+
+                    userId:
+                        user.id,
+
+                    req,
+
+                    success:
+                        false
+
+                });
+
+            } catch (historyError) {
+
+                console.error(
+                    "FAILED LOGIN HISTORY ERROR:",
+                    historyError
+                );
+
+            }
+
+
+            /*
+             * Return the same generic message whether
+             * the account exists or the password is wrong.
+             */
 
             return res.status(401).json({
+
                 success: false,
 
                 message:
                     "Invalid email or password."
+
             });
+
         }
 
 
-        /* =========================================
+        /* =================================================
            PASSWORD CORRECT
-        ========================================= */
+        ================================================= */
 
-        user.loginAttempts = 0;
-        user.lockUntil = null;
+        console.log(
+            "PASSWORD VERIFIED:",
+            user.email
+        );
 
 
-        /* =========================================
-           CHECK ADMINISTRATIVE ACCESS
-        ========================================= */
+        /*
+         * Reset failed attempts after a successful
+         * password verification.
+         */
 
-        const isAdmin =
-    requiresTwoFactorAuthentication(user);
+        user.loginAttempts =
+            0;
 
-const requires2FA =
-    security.twoFactorEnabled &&
-    (
-        !security.requireAdminTwoFactor ||
-        isAdmin
-    );
+        user.lockUntil =
+            null;
 
-        /* =========================================
-           REQUIRE TWO FACTOR AUTHENTICATION
-        ========================================= */
+
+        /* =================================================
+           DETERMINE ADMIN ACCESS
+        ================================================= */
+
+        let isAdmin = false;
+
+
+        try {
+
+            isAdmin =
+                requiresTwoFactorAuthentication(
+                    user
+                );
+
+        } catch (adminCheckError) {
+
+            console.error(
+                "ADMIN ACCESS CHECK ERROR:",
+                adminCheckError
+            );
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Unable to determine account security requirements."
+
+            });
+
+        }
+
+
+        console.log(
+            "LOGIN ADMIN CHECK:",
+            {
+                email:
+                    user.email,
+
+                isAdmin
+            }
+        );
+
+
+        /* =================================================
+           DETERMINE 2FA REQUIREMENT
+        ================================================= */
+
+        /*
+         * Rules:
+         *
+         * 2FA OFF
+         * ----------------
+         * Nobody receives OTP.
+         *
+         *
+         * 2FA ON +
+         * Require Admin 2FA ON
+         * ----------------
+         * Only administrators receive OTP.
+         *
+         *
+         * 2FA ON +
+         * Require Admin 2FA OFF
+         * ----------------
+         * All users receive OTP.
+         */
+
+        const requires2FA =
+            twoFactorEnabled &&
+            (
+                !requireAdminTwoFactor ||
+                isAdmin
+            );
+
+
+        console.log(
+            "LOGIN 2FA DECISION:",
+            {
+                email:
+                    user.email,
+
+                isAdmin,
+
+                twoFactorEnabled,
+
+                requireAdminTwoFactor,
+
+                requires2FA
+            }
+        );
+
+
+        /* =================================================
+           REQUIRE OTP
+        ================================================= */
 
         if (requires2FA) {
 
-            const otp =
-                generateOTP();
+            console.log(
+                "OTP REQUIRED FOR:",
+                user.email
+            );
 
-            const hashedOTP =
-                await bcrypt.hash(
-                    otp,
-                    10
+
+            /* =============================================
+               GENERATE OTP
+            ============================================= */
+
+            let otp;
+
+
+            try {
+
+                otp =
+                    generateOTP();
+
+            } catch (otpGenerationError) {
+
+                console.error(
+                    "OTP GENERATION ERROR:",
+                    otpGenerationError
                 );
+
+
+                return res.status(500).json({
+
+                    success: false,
+
+                    message:
+                        "Unable to generate verification code."
+
+                });
+
+            }
+
+
+            /* =============================================
+               HASH OTP
+            ============================================= */
+
+            let hashedOTP;
+
+
+            try {
+
+                hashedOTP =
+                    await bcrypt.hash(
+                        String(otp),
+                        10
+                    );
+
+            } catch (hashError) {
+
+                console.error(
+                    "OTP HASH ERROR:",
+                    hashError
+                );
+
+
+                return res.status(500).json({
+
+                    success: false,
+
+                    message:
+                        "Unable to prepare verification code."
+
+                });
+
+            }
+
+
+            /* =============================================
+               OTP EXPIRATION
+            ============================================= */
+
+            const otpExpiryMinutes =
+                Math.max(
+                    1,
+                    Number(
+                        OTP_EXPIRY_MINUTES
+                    ) || 10
+                );
+
 
             user.twoFactorCode =
                 hashedOTP;
 
+
             user.twoFactorExpires =
                 new Date(
                     Date.now() +
-                    OTP_EXPIRY_MINUTES *
+                    otpExpiryMinutes *
                     60 *
                     1000
                 );
 
+
             await user.save();
+
+
+            console.log(
+                "OTP STORED:",
+                {
+                    email:
+                        user.email,
+
+                    expires:
+                        user.twoFactorExpires
+                }
+            );
+
+
+            /* =============================================
+               SEND OTP EMAIL
+            ============================================= */
 
             try {
 
@@ -1422,45 +1921,86 @@ const requires2FA =
 
                     user.email,
 
-                    "KAD Marketplace Administrator Verification",
+                    "KAD Marketplace Login Verification",
 
                     `
                     <div style="
-                        font-family:Arial,sans-serif;
-                        padding:20px;
+                        font-family: Arial, sans-serif;
+                        max-width: 600px;
+                        margin: 0 auto;
+                        padding: 30px;
+                        background: #f7f9fc;
                     ">
 
-                        <h2>
-                            KAD Marketplace
-                        </h2>
-
-                        <p>
-                            Hello ${user.name},
-                        </p>
-
-                        <p>
-                            Your administrator
-                            login verification code is:
-                        </p>
-
-                        <h1 style="
-                            font-size:32px;
-                            letter-spacing:6px;
-                            color:#0562be;
+                        <div style="
+                            background: #ffffff;
+                            padding: 30px;
+                            border-radius: 12px;
+                            border: 1px solid #e5e7eb;
                         ">
-                            ${otp}
-                        </h1>
 
-                        <p>
-                            This code expires in
-                            ${OTP_EXPIRY_MINUTES}
-                            minutes.
-                        </p>
+                            <h2 style="
+                                margin-top: 0;
+                                color: #0562be;
+                            ">
+                                KAD Marketplace
+                            </h2>
 
-                        <p>
-                            Never share this code
-                            with anyone.
-                        </p>
+                            <p>
+                                Hello ${user.name || "User"},
+                            </p>
+
+                            <p>
+                                A login attempt was made on
+                                your KAD Marketplace account.
+                            </p>
+
+                            <p>
+                                Your verification code is:
+                            </p>
+
+                            <div style="
+                                margin: 25px 0;
+                                padding: 20px;
+                                text-align: center;
+                                background: #f1f5f9;
+                                border-radius: 10px;
+                            ">
+
+                                <span style="
+                                    font-size: 34px;
+                                    font-weight: bold;
+                                    letter-spacing: 8px;
+                                    color: #0562be;
+                                ">
+                                    ${otp}
+                                </span>
+
+                            </div>
+
+                            <p>
+                                This verification code will
+                                expire in
+                                <strong>
+                                    ${otpExpiryMinutes} minutes
+                                </strong>.
+                            </p>
+
+                            <p>
+                                If you did not attempt to log
+                                in, please secure your account
+                                immediately.
+                            </p>
+
+                            <p style="
+                                color: #6b7280;
+                                font-size: 13px;
+                            ">
+                                Never share this verification
+                                code with anyone.
+                            </p>
+
+                        </div>
 
                     </div>
                     `
@@ -1469,31 +2009,51 @@ const requires2FA =
             } catch (emailError) {
 
                 console.error(
-                    "EMAIL ERROR:",
+                    "LOGIN OTP EMAIL ERROR:",
                     emailError
                 );
 
+
                 /*
-                 * Remove the temporary OTP so
-                 * an unusable code is not left active.
+                 * Remove unusable OTP.
                  */
 
-                user.twoFactorCode = null;
-                user.twoFactorExpires = null;
+                user.twoFactorCode =
+                    null;
+
+                user.twoFactorExpires =
+                    null;
+
 
                 await user.save();
 
+
                 return res.status(500).json({
+
                     success: false,
 
                     message:
                         "Unable to send verification code."
+
                 });
+
             }
+
+
+            /* =============================================
+               OTP LOGIN RESPONSE
+            ============================================= */
+
+            console.log(
+                "OTP SENT SUCCESSFULLY:",
+                user.email
+            );
+
 
             return res.status(200).json({
 
-                success: true,
+                success:
+                    true,
 
                 requiresTwoFactor:
                     true,
@@ -1506,46 +2066,144 @@ const requires2FA =
 
                 message:
                     "Verification code sent to your email."
+
             });
+
         }
 
 
-        /* =========================================
-           NORMAL USER LOGIN
-        ========================================= */
+        /* =================================================
+           NORMAL LOGIN
+        ================================================= */
+
+        console.log(
+            "NORMAL LOGIN - NO OTP REQUIRED:",
+            user.email
+        );
+
+
+        /* =================================================
+           SAVE USER CHANGES
+        ================================================= */
 
         await user.save();
 
-        const token =
-            generateToken(user);
 
-        await saveLoginHistory({
-            userId:
-                user.id,
+        /* =================================================
+           GENERATE JWT
+        ================================================= */
 
-            req,
+        let token;
 
-            success:
-                true
-        });
 
-        await createAlert({
-            userId:
-                user.id,
+        try {
 
-            title:
-                "Successful Login",
+            token =
+                generateToken(user);
 
-            description:
-                `${user.email} successfully logged in.`,
+        } catch (tokenError) {
 
-            riskLevel:
-                "Low"
-        });
+            console.error(
+                "LOGIN TOKEN GENERATION ERROR:",
+                tokenError
+            );
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Unable to create login session."
+
+            });
+
+        }
+
+
+        /* =================================================
+           SAVE LOGIN HISTORY
+        ================================================= */
+
+        try {
+
+            await saveLoginHistory({
+
+                userId:
+                    user.id,
+
+                req,
+
+                success:
+                    true
+
+            });
+
+        } catch (historyError) {
+
+            console.error(
+                "SUCCESSFUL LOGIN HISTORY ERROR:",
+                historyError
+            );
+
+        }
+
+
+        /* =================================================
+           SECURITY ALERT
+        ================================================= */
+
+        if (securityAlerts) {
+
+            try {
+
+                await createAlert({
+
+                    userId:
+                        user.id,
+
+                    title:
+                        "Successful Login",
+
+                    description:
+                        `${user.email} successfully logged in.`,
+
+                    riskLevel:
+                        "Low"
+
+                });
+
+            } catch (alertError) {
+
+                console.error(
+                    "SUCCESSFUL LOGIN ALERT ERROR:",
+                    alertError
+                );
+
+            }
+
+        }
+
+
+        /* =================================================
+           NORMAL LOGIN RESPONSE
+        ================================================= */
+
+        console.log(
+            "LOGIN SUCCESS:",
+            user.email
+        );
+
+
+        console.log(
+            "========================================"
+        );
+
 
         return res.status(200).json({
 
-            success: true,
+            success:
+                true,
 
             requiresTwoFactor:
                 false,
@@ -1557,26 +2215,52 @@ const requires2FA =
 
             user:
                 formatUserResponse(user)
+
         });
+
 
     } catch (error) {
 
+        /* =================================================
+           GLOBAL LOGIN ERROR
+        ================================================= */
+
         console.error(
-            "LOGIN ERROR:",
-            error
+            "\n========================================"
         );
+
+        console.error(
+            "LOGIN ERROR"
+        );
+
+        console.error(
+            "========================================"
+        );
+
+        console.error(
+            "MESSAGE:",
+            error?.message
+        );
+
+        console.error(
+            "STACK:",
+            error?.stack
+        );
+
 
         return res.status(500).json({
 
-            success: false,
+            success:
+                false,
 
             message:
                 "Login failed."
+
         });
+
     }
+
 };
-
-
 /* =========================================================
    VERIFY LOGIN OTP
 ========================================================= */
@@ -1585,20 +2269,31 @@ exports.verifyLoginOTP = async (req, res) => {
 
     try {
 
+        /* =========================================
+           GET REQUEST DATA
+        ========================================= */
+
         const {
             email,
             otp
         } = req.body;
 
 
+        /* =========================================
+           VALIDATION
+        ========================================= */
+
         if (!email || !otp) {
 
             return res.status(400).json({
+
                 success: false,
 
                 message:
                     "Email and verification code are required."
+
             });
+
         }
 
 
@@ -1607,6 +2302,56 @@ exports.verifyLoginOTP = async (req, res) => {
                 .trim()
                 .toLowerCase();
 
+
+        const normalizedOTP =
+            String(otp)
+                .trim();
+
+
+        /* =========================================
+           BASIC OTP VALIDATION
+        ========================================= */
+
+        if (!/^\d{6}$/.test(normalizedOTP)) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Verification code must be 6 digits."
+
+            });
+
+        }
+
+
+        /* =========================================
+           LOAD SECURITY CONFIGURATION
+        ========================================= */
+
+        const security =
+            await getSecurityConfiguration();
+
+
+        console.log(
+            "VERIFY LOGIN OTP - SECURITY CONFIG:",
+            {
+                email:
+                    normalizedEmail,
+
+                twoFactorEnabled:
+                    security.twoFactorEnabled,
+
+                requireAdminTwoFactor:
+                    security.requireAdminTwoFactor
+            }
+        );
+
+
+        /* =========================================
+           FIND USER
+        ========================================= */
 
         const user =
             await findUserWithAccess(
@@ -1617,74 +2362,298 @@ exports.verifyLoginOTP = async (req, res) => {
         if (!user) {
 
             return res.status(404).json({
+
                 success: false,
 
                 message:
                     "User not found."
+
             });
+
         }
 
-const {
-    requires2FA
-} = await shouldRequireTwoFactor(user);
 
-if (!requires2FA) {
-    return res.status(403).json({
-        success: false,
-        message:
-            "This account does not require two-factor authentication."
-    });
-}
+        /* =========================================
+           DETERMINE ADMIN STATUS
+        ========================================= */
 
-        if (
-            !user.twoFactorCode ||
-            !user.twoFactorExpires
-        ) {
+        const isAdmin =
+            requiresTwoFactorAuthentication(
+                user
+            );
+
+
+        /* =========================================
+           DETERMINE WHETHER THIS USER
+           CURRENTLY REQUIRES 2FA
+        ========================================= */
+
+        const requires2FA =
+            security.twoFactorEnabled &&
+            (
+                !security.requireAdminTwoFactor ||
+                isAdmin
+            );
+
+
+        console.log(
+            "VERIFY LOGIN OTP - 2FA DECISION:",
+            {
+                email:
+                    user.email,
+
+                isAdmin,
+
+                twoFactorEnabled:
+                    security.twoFactorEnabled,
+
+                requireAdminTwoFactor:
+                    security.requireAdminTwoFactor,
+
+                requires2FA
+            }
+        );
+
+
+        /* =========================================
+           2FA NOT REQUIRED
+        ========================================= */
+
+        if (!requires2FA) {
+
+            return res.status(403).json({
+
+                success: false,
+
+                message:
+                    "This account does not require two-factor authentication."
+
+            });
+
+        }
+
+
+        /* =========================================
+           CHECK OTP EXISTS
+        ========================================= */
+
+        if (!user.twoFactorCode) {
+
+            console.warn(
+                "VERIFY LOGIN OTP - NO OTP FOUND:",
+                user.email
+            );
 
             return res.status(400).json({
+
                 success: false,
 
                 message:
                     "No active verification code found. Please log in again."
+
             });
+
+        }
+
+
+        /* =========================================
+           CHECK OTP EXPIRATION
+        ========================================= */
+
+        if (!user.twoFactorExpires) {
+
+            console.warn(
+                "VERIFY LOGIN OTP - NO OTP EXPIRATION:",
+                user.email
+            );
+
+
+            user.twoFactorCode =
+                null;
+
+            user.twoFactorExpires =
+                null;
+
+            await user.save();
+
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "No active verification code found. Please log in again."
+
+            });
+
+        }
+
+
+        const otpExpiration =
+            new Date(
+                user.twoFactorExpires
+            );
+
+
+        if (
+            Number.isNaN(
+                otpExpiration.getTime()
+            )
+        ) {
+
+            console.error(
+                "VERIFY LOGIN OTP - INVALID OTP EXPIRATION:",
+                {
+                    email:
+                        user.email,
+
+                    twoFactorExpires:
+                        user.twoFactorExpires
+                }
+            );
+
+
+            user.twoFactorCode =
+                null;
+
+            user.twoFactorExpires =
+                null;
+
+            await user.save();
+
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Invalid verification session. Please log in again."
+
+            });
+
         }
 
 
         if (
-            new Date(
-                user.twoFactorExpires
-            ) < new Date()
+            otpExpiration <
+            new Date()
         ) {
 
-            user.twoFactorCode = null;
-            user.twoFactorExpires = null;
+            console.warn(
+                "VERIFY LOGIN OTP - OTP EXPIRED:",
+                user.email
+            );
+
+
+            user.twoFactorCode =
+                null;
+
+            user.twoFactorExpires =
+                null;
 
             await user.save();
 
+
             return res.status(400).json({
+
                 success: false,
 
                 message:
                     "Verification code has expired. Please log in again."
+
             });
+
         }
 
 
-        const validOTP =
-            await bcrypt.compare(
-                String(otp).trim(),
-                user.twoFactorCode
+        /* =========================================
+           VERIFY OTP
+        ========================================= */
+
+        console.log(
+            "VERIFY LOGIN OTP - CHECKING CODE:",
+            {
+                email:
+                    user.email,
+
+                otpLength:
+                    normalizedOTP.length,
+
+                expiresAt:
+                    otpExpiration.toISOString()
+            }
+        );
+
+
+        let validOTP = false;
+
+
+        try {
+
+            validOTP =
+                await bcrypt.compare(
+                    normalizedOTP,
+                    user.twoFactorCode
+                );
+
+        } catch (otpError) {
+
+            console.error(
+                "VERIFY LOGIN OTP - BCRYPT ERROR:",
+                otpError
             );
 
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Unable to verify authentication code."
+
+            });
+
+        }
+
+
+        console.log(
+            "VERIFY LOGIN OTP - OTP RESULT:",
+            {
+                email:
+                    user.email,
+
+                validOTP
+            }
+        );
+
+
+        /* =========================================
+           INVALID OTP
+        ========================================= */
 
         if (!validOTP) {
 
+            await saveLoginHistory({
+
+                userId:
+                    user.id,
+
+                req,
+
+                success:
+                    false
+
+            });
+
+
             return res.status(400).json({
+
                 success: false,
 
                 message:
                     "Invalid verification code."
+
             });
+
         }
 
 
@@ -1692,79 +2661,189 @@ if (!requires2FA) {
            CLEAR OTP
         ========================================= */
 
-        user.twoFactorCode = null;
-        user.twoFactorExpires = null;
+        user.twoFactorCode =
+            null;
 
-        user.loginAttempts = 0;
-        user.lockUntil = null;
+        user.twoFactorExpires =
+            null;
+
+        user.loginAttempts =
+            0;
+
+        user.lockUntil =
+            null;
+
 
         await user.save();
 
 
+        console.log(
+            "VERIFY LOGIN OTP - OTP CLEARED:",
+            user.email
+        );
+
+
         /* =========================================
-           GENERATE TOKEN
+           GENERATE JWT TOKEN
         ========================================= */
 
-        const token =
-            generateToken(user);
+        let token;
 
 
-        await saveLoginHistory({
-            userId:
-                user.id,
+        try {
 
-            req,
+            token =
+                generateToken(user);
 
-            success:
-                true
-        });
+        } catch (tokenError) {
+
+            console.error(
+                "VERIFY LOGIN OTP - TOKEN ERROR:",
+                tokenError
+            );
 
 
-        await createAlert({
-            userId:
-                user.id,
+            return res.status(500).json({
 
-            title:
-                "Two-Factor Authentication Successful",
+                success: false,
 
-            description:
-                `${user.email} successfully completed administrator verification.`,
+                message:
+                    "Authentication completed, but we could not create your login session."
 
-            riskLevel:
-                "Low"
-        });
+            });
 
+        }
+
+
+        console.log(
+            "VERIFY LOGIN OTP - TOKEN GENERATED:",
+            user.email
+        );
+
+
+        /* =========================================
+           SAVE LOGIN HISTORY
+        ========================================= */
+
+        try {
+
+            await saveLoginHistory({
+
+                userId:
+                    user.id,
+
+                req,
+
+                success:
+                    true
+
+            });
+
+        } catch (historyError) {
+
+            console.error(
+                "VERIFY LOGIN OTP - LOGIN HISTORY ERROR:",
+                historyError
+            );
+
+        }
+
+
+        /* =========================================
+           SECURITY ALERT
+        ========================================= */
+
+        try {
+
+            await createAlert({
+
+                userId:
+                    user.id,
+
+                title:
+                    "Two-Factor Authentication Successful",
+
+                description:
+                    `${user.email} successfully completed administrator verification.`,
+
+                riskLevel:
+                    "Low"
+
+            });
+
+        } catch (alertError) {
+
+            console.error(
+                "VERIFY LOGIN OTP - SECURITY ALERT ERROR:",
+                alertError
+            );
+
+        }
+
+
+        /* =========================================
+           SUCCESS RESPONSE
+        ========================================= */
 
         return res.status(200).json({
 
-            success: true,
+            success:
+                true,
 
             message:
                 "Verification successful.",
+
+            requiresTwoFactor:
+                true,
+
+            requiresOTP:
+                true,
 
             token,
 
             user:
                 formatUserResponse(user)
+
         });
 
+
     } catch (error) {
+
+        /* =========================================
+           UNEXPECTED ERROR
+        ========================================= */
 
         console.error(
             "VERIFY LOGIN OTP ERROR:",
             error
         );
 
+
+        console.error(
+            "VERIFY LOGIN OTP ERROR MESSAGE:",
+            error?.message
+        );
+
+
+        console.error(
+            "VERIFY LOGIN OTP ERROR STACK:",
+            error?.stack
+        );
+
+
         return res.status(500).json({
 
-            success: false,
+            success:
+                false,
 
             message:
                 "Unable to verify authentication code."
-        });
-    }
-};
 
+        });
+
+    }
+
+};
 
 /* =========================================================
    RESEND LOGIN OTP
