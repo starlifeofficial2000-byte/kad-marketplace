@@ -1,12 +1,5 @@
 import { useEffect } from "react";
-
-/* =========================================================
-   CONFIGURATION
-========================================================= */
-
-const API_BASE_URL =
-    import.meta.env.VITE_API_URL ||
-    "http://localhost:5000/api";
+import api from "../config/axios";
 
 const SITE_URL =
     import.meta.env.VITE_SITE_URL ||
@@ -651,30 +644,11 @@ setMetaTag(
                      * NOT /api/settings
                      */
 
-                    const response =
-                        await fetch(
-                            `${API_BASE_URL}/settings/public`,
-                            {
-                                method: "GET",
-                                headers: {
-                                    Accept:
-                                        "application/json"
-                                }
-                            }
-                        );
+                   const response = await api.get(
+    "/settings/public"
+);
 
-
-                    if (!response.ok) {
-
-                        throw new Error(
-                            `Settings request failed: ${response.status}`
-                        );
-
-                    }
-
-
-                    const result =
-                        await response.json();
+const result = response.data;
 
 
                     if (
