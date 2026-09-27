@@ -1624,23 +1624,17 @@ exports.verifyLoginOTP = async (req, res) => {
             });
         }
 
+const {
+    requires2FA
+} = await shouldRequireTwoFactor(user);
 
-        const requires2FA =
-            requiresTwoFactorAuthentication(
-                user
-            );
-
-
-        if (!requires2FA) {
-
-            return res.status(403).json({
-                success: false,
-
-                message:
-                    "This account does not require two-factor authentication."
-            });
-        }
-
+if (!requires2FA) {
+    return res.status(403).json({
+        success: false,
+        message:
+            "This account does not require two-factor authentication."
+    });
+}
 
         if (
             !user.twoFactorCode ||
@@ -1819,22 +1813,19 @@ exports.resendLoginOTP = async (req, res) => {
         }
 
 
-        const requires2FA =
-            requiresTwoFactorAuthentication(
-                user
-            );
+       const {
+    requires2FA
+} = await shouldRequireTwoFactor(user);
 
+if (!requires2FA) {
 
-        if (!requires2FA) {
+    return res.status(403).json({
+        success: false,
 
-            return res.status(403).json({
-                success: false,
-
-                message:
-                    "This account does not require two-factor authentication."
-            });
-        }
-
+        message:
+            "This account does not require two-factor authentication."
+    });
+}
 
         const otp =
             generateOTP();
