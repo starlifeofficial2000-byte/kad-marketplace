@@ -11,8 +11,9 @@ const {
     AuditLog
 } = require("../models");
 
-const sendEmail = require("../utils/sendEmail");
-
+const {
+    sendEmail
+} = require("../services/emailService");
 const {
     getSetting,
     toBoolean
@@ -346,7 +347,6 @@ const createAlert = async ({
     }
 };
 
-
 /* =========================================================
    REGISTER USER
 ========================================================= */
@@ -371,54 +371,63 @@ exports.register = async (req, res) => {
            CENTRALIZED REGISTRATION SETTING
         ========================================== */
 
-        const registrationEnabled =
-            toBoolean(
-                await getSetting(
-                    "registration_enabled",
-                    true
-                ),
-                true
-            );
+        const marketplaceSettings =
+    await getMarketplaceSettings();
+
+const emailConfig =
+    marketplaceSettings
+        ?.configuration
+        ?.email || {};
+
+const registrationEmailEnabled =
+    emailConfig.registrationEmail !== false;
 
         if (!registrationEnabled) {
 
             return res.status(403).json({
+
                 success: false,
 
                 message:
                     "New user registration is currently disabled by the administrator."
+
             });
+
         }
 
 
         /* ==========================================
            GET PASSWORD SETTINGS
-
-           Kept compatible with the existing Setting
-           model until password settings are migrated
-           to MarketplaceSetting.
         ========================================== */
 
         let minimumPasswordLength = 8;
+
 
         try {
 
             const passwordSetting =
                 await Setting.findOne({
+
                     where: {
+
                         settingKey:
                             "minimum_password_length"
+
                     }
+
                 });
+
 
             if (
                 passwordSetting &&
                 passwordSetting.settingValue
             ) {
+
                 const configuredLength =
                     Number(
                         passwordSetting.settingValue
                     );
+
 
                 if (
                     Number.isFinite(
@@ -426,10 +435,14 @@ exports.register = async (req, res) => {
                     ) &&
                     configuredLength >= 6
                 ) {
+
                     minimumPasswordLength =
                         configuredLength;
+
                 }
+
             }
+
 
         } catch (settingError) {
 
@@ -442,6 +455,7 @@ exports.register = async (req, res) => {
              * Do not stop registration simply because
              * the legacy password setting cannot be read.
              */
+
         }
 
 
@@ -459,11 +473,14 @@ exports.register = async (req, res) => {
         ) {
 
             return res.status(400).json({
+
                 success: false,
 
                 message:
                     "Please fill in all required fields."
+
             });
+
         }
 
 
@@ -477,11 +494,14 @@ exports.register = async (req, res) => {
         ) {
 
             return res.status(400).json({
+
                 success: false,
 
                 message:
                     `Password must be at least ${minimumPasswordLength} characters long.`
+
             });
+
         }
 
 
@@ -492,26 +512,32 @@ exports.register = async (req, res) => {
         const normalizedName =
             String(name).trim();
 
+
         const normalizedEmail =
             String(email)
                 .trim()
                 .toLowerCase();
+
 
         const normalizedPhone =
             phone
                 ? String(phone).trim()
                 : null;
 
+
         const normalizedGhanaCard =
             String(ghanaCard)
                 .trim()
                 .toUpperCase();
 
+
         const normalizedRegion =
             String(region).trim();
 
+
         const normalizedCity =
             String(city).trim();
+
 
         const normalizedAddress =
             address
@@ -525,20 +551,28 @@ exports.register = async (req, res) => {
 
         const existingUser =
             await User.findOne({
+
                 where: {
+
                     email:
                         normalizedEmail
+
                 }
+
             });
+
 
         if (existingUser) {
 
             return res.status(400).json({
+
                 success: false,
 
                 message:
                     "An account with this email already exists."
+
             });
+
         }
 
 
@@ -548,20 +582,28 @@ exports.register = async (req, res) => {
 
         const existingGhanaCard =
             await User.findOne({
+
                 where: {
+
                     ghanaCard:
                         normalizedGhanaCard
+
                 }
+
             });
+
 
         if (existingGhanaCard) {
 
             return res.status(400).json({
+
                 success: false,
 
                 message:
                     "This Ghana Card is already registered."
+
             });
+
         }
 
 
@@ -612,6 +654,7 @@ exports.register = async (req, res) => {
 
                 status:
                     "Active"
+
             });
 
 
@@ -644,7 +687,9 @@ exports.register = async (req, res) => {
                         req.ip ||
                         req.headers["x-forwarded-for"] ||
                         "Unknown"
+
                 });
+
             }
 
         } catch (auditError) {
@@ -653,6 +698,355 @@ exports.register = async (req, res) => {
                 "AUDIT LOG ERROR:",
                 auditError.message
             );
+
+        }
+
+
+        /* ==========================================
+           SEND WELCOME EMAIL
+        ========================================== */
+
+        try {
+
+            /*
+             * Read the registration email setting.
+             *
+             * If the setting is missing, default to true.
+             */
+
+            const registrationEmailEnabled =
+                toBoolean(
+                    await getSetting(
+                        "registrationEmail",
+                        true
+                    ),
+                    true
+                );
+
+
+            if (registrationEmailEnabled) {
+
+                const marketplaceSettings =
+                    await getMarketplaceSettings();
+
+
+                const marketplaceName =
+                    marketplaceSettings?.marketplace_name ||
+                    marketplaceSettings?.marketplaceName ||
+                    "KAD Marketplace";
+
+
+                const supportEmail =
+                    marketplaceSettings?.support_email ||
+                    "";
+
+
+                const supportPhone =
+                    marketplaceSettings?.support_phone ||
+                    "";
+
+
+                const html = `
+
+                    <!DOCTYPE html>
+
+                    <html>
+
+                    <head>
+
+                        <meta
+                            charset="UTF-8"
+                        />
+
+                        <meta
+                            name="viewport"
+                            content="width=device-width, initial-scale=1.0"
+                        />
+
+                        <title>
+                            Welcome to ${marketplaceName}
+                        </title>
+
+                    </head>
+
+
+                    <body
+                        style="
+                            margin:0;
+                            padding:0;
+                            background:#f4f7fb;
+                            font-family:Arial,Helvetica,sans-serif;
+                            color:#1f2937;
+                        "
+                    >
+
+                        <div
+                            style="
+                                max-width:600px;
+                                margin:40px auto;
+                                background:#ffffff;
+                                border-radius:14px;
+                                overflow:hidden;
+                                box-shadow:0 4px 20px rgba(0,0,0,0.08);
+                            "
+                        >
+
+                            <!-- HEADER -->
+
+                            <div
+                                style="
+                                    background:#0562be;
+                                    padding:30px;
+                                    text-align:center;
+                                "
+                            >
+
+                                <h1
+                                    style="
+                                        margin:0;
+                                        color:#ffffff;
+                                        font-size:28px;
+                                    "
+                                >
+                                    ${marketplaceName}
+                                </h1>
+
+                            </div>
+
+
+                            <!-- CONTENT -->
+
+                            <div
+                                style="
+                                    padding:35px 30px;
+                                "
+                            >
+
+                                <h2
+                                    style="
+                                        margin-top:0;
+                                        color:#111827;
+                                    "
+                                >
+                                    Welcome, ${normalizedName}!
+                                </h2>
+
+
+                                <p
+                                    style="
+                                        font-size:16px;
+                                        line-height:1.7;
+                                    "
+                                >
+                                    Thank you for creating an account
+                                    with ${marketplaceName}.
+                                </p>
+
+
+                                <p
+                                    style="
+                                        font-size:16px;
+                                        line-height:1.7;
+                                    "
+                                >
+                                    Your account has been successfully
+                                    created and you can now log in to
+                                    start using the marketplace.
+                                </p>
+
+
+                                <div
+                                    style="
+                                        margin:25px 0;
+                                        padding:20px;
+                                        background:#f3f7fc;
+                                        border-radius:10px;
+                                    "
+                                >
+
+                                    <p
+                                        style="
+                                            margin:0 0 10px;
+                                        "
+                                    >
+                                        <strong>
+                                            Account Email:
+                                        </strong>
+                                    </p>
+
+                                    <p
+                                        style="
+                                            margin:0;
+                                        "
+                                    >
+                                        ${normalizedEmail}
+                                    </p>
+
+                                </div>
+
+
+                                <p
+                                    style="
+                                        font-size:15px;
+                                        line-height:1.7;
+                                    "
+                                >
+                                    Please keep your account credentials
+                                    secure and do not share your password
+                                    with anyone.
+                                </p>
+
+
+                                <p
+                                    style="
+                                        margin-top:30px;
+                                        font-size:15px;
+                                    "
+                                >
+                                    Welcome to ${marketplaceName}.
+                                </p>
+
+
+                                <p
+                                    style="
+                                        margin-bottom:0;
+                                        font-size:15px;
+                                    "
+                                >
+                                    Regards,<br />
+
+                                    <strong>
+                                        ${marketplaceName}
+                                    </strong>
+                                </p>
+
+
+                            </div>
+
+
+                            <!-- FOOTER -->
+
+                            <div
+                                style="
+                                    padding:20px 30px;
+                                    background:#f8fafc;
+                                    border-top:1px solid #e5e7eb;
+                                "
+                            >
+
+                                ${
+                                    supportEmail
+                                        ? `
+                                            <p
+                                                style="
+                                                    margin:0 0 5px;
+                                                    font-size:13px;
+                                                    color:#6b7280;
+                                                "
+                                            >
+                                                Email:
+                                                ${supportEmail}
+                                            </p>
+                                        `
+                                        : ""
+                                }
+
+
+                                ${
+                                    supportPhone
+                                        ? `
+                                            <p
+                                                style="
+                                                    margin:0;
+                                                    font-size:13px;
+                                                    color:#6b7280;
+                                                "
+                                            >
+                                                Phone:
+                                                ${supportPhone}
+                                            </p>
+                                        `
+                                        : ""
+                                }
+
+
+                                <p
+                                    style="
+                                        margin:12px 0 0;
+                                        font-size:12px;
+                                        color:#9ca3af;
+                                    "
+                                >
+                                    This is an automated message from
+                                    ${marketplaceName}.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </body>
+
+                    </html>
+
+                `;
+
+
+                const text = `
+
+Welcome to ${marketplaceName}!
+
+Hello ${normalizedName},
+
+Thank you for creating an account with ${marketplaceName}.
+
+Your account has been successfully created.
+
+Account Email:
+${normalizedEmail}
+
+Please keep your account credentials secure and do not share your password with anyone.
+
+Regards,
+${marketplaceName}
+
+                `.trim();
+
+
+                await sendEmail(
+
+                    normalizedEmail,
+
+                    `Welcome to ${marketplaceName}`,
+
+                    html,
+
+                    text
+
+                );
+
+
+                console.log(
+                    `WELCOME EMAIL SENT: ${normalizedEmail}`
+                );
+
+            }
+
+
+        } catch (emailError) {
+
+            /*
+             * IMPORTANT:
+             *
+             * Registration must NOT fail simply because
+             * the email provider is temporarily unavailable.
+             */
+
+            console.error(
+                "WELCOME EMAIL ERROR:",
+                emailError
+            );
+
         }
 
 
@@ -665,11 +1059,13 @@ exports.register = async (req, res) => {
             success: true,
 
             message:
-                "Account created successfully.",
+                "Account created successfully. A welcome email has been sent to your email address.",
 
             user:
                 formatUserResponse(user)
+
         });
+
 
     } catch (error) {
 
@@ -678,14 +1074,18 @@ exports.register = async (req, res) => {
             error
         );
 
+
         return res.status(500).json({
 
             success: false,
 
             message:
                 "Registration failed."
+
         });
+
     }
+
 };
 
 
