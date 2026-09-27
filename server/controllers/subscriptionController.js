@@ -3,7 +3,13 @@ const {
     SubscriptionPlan
 } = require("../models");
 
+const {
+    sendEmail
+} = require("../services/emailService");
 
+const {
+    getMarketplaceSettings
+} = require("../services/marketplaceSettingsService");
 /* =====================================================
    HELPER: VALIDATE AUTHENTICATED USER
 ===================================================== */
@@ -726,7 +732,115 @@ const subscribeToPlan = async (req, res) => {
                 }
 
             );
+        /* =============================================
+           SEND SUBSCRIPTION ACTIVATION EMAIL
+        ============================================= */
 
+        try {
+
+            const marketplaceSettings =
+                await getMarketplaceSettings();
+
+            const emailConfig =
+                marketplaceSettings?.configuration?.email || {};
+
+            const subscriptionEmailEnabled =
+    emailConfig.subscriptionEmail !== false;
+
+            if (
+                subscriptionEmailEnabled &&
+                req.user?.email
+            ) {
+
+                const planName =
+                    completeSubscription?.subscriptionPlan?.name ||
+                    plan.name ||
+                    "Subscription Plan";
+
+                const duration =
+                    Number(plan.duration || 0);
+
+                const start =
+                    new Date(startDate).toLocaleDateString(
+                        "en-GH",
+                        {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric"
+                        }
+                    );
+
+                const end =
+                    new Date(endDate).toLocaleDateString(
+                        "en-GH",
+                        {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric"
+                        }
+                    );
+
+                await sendEmail(
+                    req.user.email,
+                    "KAD Marketplace Subscription Activated",
+                    `
+                        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+                            <h2>Subscription Activated</h2>
+
+                            <p>Your KAD Marketplace subscription has been successfully activated.</p>
+
+                            <h3>Subscription Details</h3>
+
+                            <p>
+                                <strong>Plan:</strong> ${planName}<br>
+                                <strong>Price:</strong> GHS ${Number(plan.price || 0).toFixed(2)}<br>
+                                <strong>Duration:</strong> ${duration} days<br>
+                                <strong>Start Date:</strong> ${start}<br>
+                                <strong>End Date:</strong> ${end}<br>
+                                <strong>Status:</strong> Active
+                            </p>
+
+                            <p>
+                                You can now use the features and benefits included
+                                in your subscription plan.
+                            </p>
+
+                            <p>
+                                Thank you for using KAD Marketplace.
+                            </p>
+                        </div>
+                    `,
+                    `
+Subscription Activated
+
+Your KAD Marketplace subscription has been successfully activated.
+
+Plan: ${planName}
+Price: GHS ${Number(plan.price || 0).toFixed(2)}
+Duration: ${duration} days
+Start Date: ${start}
+End Date: ${end}
+Status: Active
+
+Thank you for using KAD Marketplace.
+`
+                );
+
+                console.log(
+                    "SUBSCRIPTION ACTIVATION EMAIL SENT:",
+                    req.user.email
+                );
+
+            }
+
+        } catch (emailError) {
+
+            console.error(
+                "SUBSCRIPTION ACTIVATION EMAIL ERROR:",
+                emailError
+            );
+
+        }
 
         return res.status(201).json({
 

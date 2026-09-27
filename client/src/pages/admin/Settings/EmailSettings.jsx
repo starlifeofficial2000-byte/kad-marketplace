@@ -78,9 +78,11 @@ function EmailSettings({
 
     const orderEmail =
         settings?.order_email === "true";
+const paymentEmail =
+    settings?.payment_email === "true";
 
-    const paymentEmail =
-        settings?.payment_email === "true";
+const subscriptionEmail =
+    settings?.subscription_email === "true";
 
     /* =====================================================
        TEST EMAIL
@@ -866,7 +868,35 @@ function EmailSettings({
                     />
 
                 </div>
+                <div className="toggle-setting">
 
+                    <div>
+
+                        <strong>
+                            Subscription Emails
+                        </strong>
+
+                        <p>
+                            Send email notifications when
+                            subscriptions are activated.
+                        </p>
+
+                    </div>
+
+
+                    <input
+                        type="checkbox"
+                        checked={subscriptionEmail}
+                        disabled={!emailEnabled}
+                        onChange={(e) =>
+                            updateBoolean(
+                                "subscription_email",
+                                e.target.checked
+                            )
+                        }
+                    />
+
+                </div>
 
                 {/* =================================================
                     TEST EMAIL

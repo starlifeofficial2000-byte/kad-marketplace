@@ -1,7 +1,9 @@
 const Payment = require("../models/Payment");
 const Subscription = require("../models/Subscription");
 const SubscriptionPlan = require("../models/SubscriptionPlan");
-
+const {
+    sendEmail
+} = require("../services/emailService");
 const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 
@@ -609,7 +611,123 @@ exports.verifyPayment = async (req, res) => {
         payment.paidAt = new Date();
 
         await payment.save();
+/* =====================================================
+   PAYMENT SUCCESS EMAIL
+===================================================== */
 
+try {
+
+    await sendEmail(
+
+        req.user.email,
+
+        "KAD Marketplace Payment Successful",
+
+        `
+        <div style="
+            font-family:Arial,sans-serif;
+            max-width:600px;
+            margin:0 auto;
+            padding:30px;
+            background:#f8fafc;
+            border-radius:12px;
+        ">
+
+            <h2 style="
+                color:#0562be;
+                margin-bottom:20px;
+            ">
+                KAD Marketplace
+            </h2>
+
+            <h3>
+                Payment Successful
+            </h3>
+
+            <p>
+                Hello ${req.user.name || "Customer"},
+            </p>
+
+            <p>
+                Your payment has been successfully received.
+            </p>
+
+            <div style="
+                margin:25px 0;
+                padding:20px;
+                background:#ffffff;
+                border-radius:10px;
+                border:1px solid #e5e7eb;
+            ">
+
+                <p>
+                    <strong>Plan:</strong>
+                    ${plan.name}
+                </p>
+
+                <p>
+                    <strong>Amount:</strong>
+                    GHS ${Number(payment.amount).toFixed(2)}
+                </p>
+
+                <p>
+                    <strong>Payment Method:</strong>
+                    Paystack
+                </p>
+
+                <p>
+                    <strong>Reference:</strong>
+                    ${payment.reference}
+                </p>
+
+                <p>
+                    <strong>Status:</strong>
+                    Successful
+                </p>
+
+            </div>
+
+            <p>
+                Your subscription is being activated for
+                ${Number(plan.duration || 30)} days.
+            </p>
+
+            <p style="
+                color:#64748b;
+                font-size:13px;
+                margin-top:30px;
+            ">
+                This is an automated message from KAD Marketplace.
+            </p>
+
+        </div>
+        `,
+
+        `
+KAD Marketplace Payment Successful
+
+Hello ${req.user.name || "Customer"},
+
+Your payment has been successfully received.
+
+Plan: ${plan.name}
+Amount: GHS ${Number(payment.amount).toFixed(2)}
+Payment Method: Paystack
+Reference: ${payment.reference}
+Status: Successful
+
+Your subscription is being activated for ${Number(plan.duration || 30)} days.
+        `
+    );
+
+} catch (emailError) {
+
+    console.error(
+        "PAYMENT SUCCESS EMAIL ERROR:",
+        emailError
+    );
+
+}
 
         console.log(
             "PAYMENT MARKED SUCCESSFUL"

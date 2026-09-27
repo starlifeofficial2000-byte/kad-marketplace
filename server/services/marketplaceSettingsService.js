@@ -51,10 +51,11 @@ const DEFAULT_CONFIGURATION = {
     fromName: "KAD Marketplace",
     fromEmail: "",
 
-    registrationEmail: true,
-    passwordResetEmail: true,
-    orderEmail: true,
-    paymentEmail: true
+  registrationEmail: true,
+passwordResetEmail: true,
+orderEmail: true,
+paymentEmail: true,
+subscriptionEmail: true
 },
 
     notifications: {

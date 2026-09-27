@@ -1768,48 +1768,73 @@ exports.resendLoginOTP = async (req, res) => {
 
         await user.save();
 
+await sendEmail(
+    user.email,
+    "KAD Marketplace New Verification Code",
+    `
+    <div style="
+        font-family:Arial,sans-serif;
+        max-width:600px;
+        margin:0 auto;
+        padding:30px;
+        background:#f8fafc;
+        border-radius:12px;
+    ">
 
-        await sendEmail(
+        <h2 style="
+            color:#0562be;
+            margin-bottom:20px;
+        ">
+            KAD Marketplace
+        </h2>
 
-            user.email,
+        <p>
+            Hello ${user.name},
+        </p>
 
-            "KAD Marketplace New Verification Code",
+        <p>
+            Your new login verification code is:
+        </p>
 
-            `
-            <div style="
-                font-family:Arial,sans-serif;
-                padding:20px;
+        <div style="
+            margin:25px 0;
+            padding:20px;
+            text-align:center;
+            background:#ffffff;
+            border-radius:10px;
+        ">
+
+            <h1 style="
+                font-size:36px;
+                letter-spacing:8px;
+                color:#0562be;
+                margin:0;
             ">
+                ${otp}
+            </h1>
 
-                <h2>
-                    KAD Marketplace
-                </h2>
+        </div>
 
-                <p>
-                    Hello ${user.name},
-                </p>
+        <p>
+            This code expires in
+            <strong>${OTP_EXPIRY_MINUTES} minutes</strong>.
+        </p>
 
-                <p>
-                    Your new verification code is:
-                </p>
+        <p>
+            Never share this verification code with anyone.
+        </p>
 
-                <h1 style="
-                    font-size:32px;
-                    letter-spacing:6px;
-                    color:#0562be;
-                ">
-                    ${otp}
-                </h1>
+        <p style="
+            color:#64748b;
+            font-size:13px;
+            margin-top:30px;
+        ">
+            This is an automated message from KAD Marketplace.
+        </p>
 
-                <p>
-                    This code expires in
-                    ${OTP_EXPIRY_MINUTES}
-                    minutes.
-                </p>
-
-            </div>
-            `
-        );
+    </div>
+    `
+);
 
 
         return res.status(200).json({
@@ -1916,48 +1941,83 @@ exports.forgotPassword = async (req, res) => {
         await user.save();
 
 
-        await sendEmail(
+       await sendEmail(
+    user.email,
+    "KAD Marketplace Password Reset",
+    `
+    <div style="
+        font-family:Arial,sans-serif;
+        max-width:600px;
+        margin:0 auto;
+        padding:30px;
+        background:#f8fafc;
+        border-radius:12px;
+    ">
 
-            user.email,
+        <h2 style="
+            color:#0562be;
+            margin-bottom:20px;
+        ">
+            KAD Marketplace
+        </h2>
 
-            "KAD Marketplace Password Reset",
+        <h3>
+            Password Reset Request
+        </h3>
 
-            `
-            <div style="
-                font-family:Arial,sans-serif;
-                padding:20px;
+        <p>
+            Hello ${user.name},
+        </p>
+
+        <p>
+            We received a request to reset the password
+            for your KAD Marketplace account.
+        </p>
+
+        <p>
+            Your password reset code is:
+        </p>
+
+        <div style="
+            margin:25px 0;
+            padding:20px;
+            text-align:center;
+            background:#ffffff;
+            border-radius:10px;
+        ">
+
+            <h1 style="
+                font-size:36px;
+                letter-spacing:8px;
+                color:#0562be;
+                margin:0;
             ">
+                ${otp}
+            </h1>
 
-                <h2>
-                    Password Reset Request
-                </h2>
+        </div>
 
-                <p>
-                    Hello ${user.name},
-                </p>
+        <p>
+            This code expires in
+            <strong>${RESET_OTP_EXPIRY_MINUTES} minutes</strong>.
+        </p>
 
-                <p>
-                    Your password reset code is:
-                </p>
+        <p>
+            If you did not request a password reset,
+            you can safely ignore this email.
+        </p>
 
-                <h1 style="
-                    font-size:32px;
-                    letter-spacing:6px;
-                    color:#0562be;
-                ">
-                    ${otp}
-                </h1>
+        <p style="
+            color:#64748b;
+            font-size:13px;
+            margin-top:30px;
+        ">
+            This is an automated message from KAD Marketplace.
+        </p>
 
-                <p>
-                    This code expires in
-                    ${RESET_OTP_EXPIRY_MINUTES}
-                    minutes.
-                </p>
-
-            </div>
-            `
-        );
-
+    </div>
+    `
+);
 
         return res.status(200).json({
 
