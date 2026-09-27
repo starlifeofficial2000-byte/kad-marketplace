@@ -1,6 +1,11 @@
 const fs = require("fs");
 const path = require("path");
-const archiver = require("archiver");
+const archiverModule = require("archiver");
+
+const archiver =
+    typeof archiverModule === "function"
+        ? archiverModule
+        : archiverModule.default;
 const unzipper = require("unzipper");
 
 const {
