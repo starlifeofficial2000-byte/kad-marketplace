@@ -2,10 +2,9 @@ const express = require("express");
 
 const router = express.Router();
 
-
-/* =====================================
+/* =========================================================
    MIDDLEWARE
-===================================== */
+========================================================= */
 
 const auth = require("../middleware/auth");
 
@@ -17,14 +16,12 @@ const checkPermission = require(
 
 const {
     adminLimiter
-} = require(
-    "../middleware/rateLimiter"
-);
+} = require("../middleware/rateLimiter");
 
 
-/* =====================================
+/* =========================================================
    CONTROLLERS
-===================================== */
+========================================================= */
 
 const adminController = require(
     "../controllers/adminController"
@@ -43,16 +40,204 @@ const userController = require(
 );
 
 
-/* =====================================
-   APPLY ADMIN RATE LIMITER
-===================================== */
+/* =========================================================
+   CONTROLLER SAFETY CHECK
+========================================================= */
 
-router.use(adminLimiter);
+const controllerHandler = (controller, name) => {
+
+    if (typeof controller !== "function") {
+
+        console.error(
+            `ADMIN ROUTE ERROR: ${name} is not a function`
+        );
+
+        return (req, res) => {
+
+            return res.status(501).json({
+
+                success: false,
+
+                message:
+                    `${name} controller is not implemented.`
+
+            });
+
+        };
+
+    }
+
+    return controller;
+
+};
 
 
-/* =====================================
+/* =========================================================
+   CONTROLLER HANDLERS
+========================================================= */
+
+const dashboard =
+    controllerHandler(
+        adminController.dashboard,
+        "adminController.dashboard"
+    );
+
+const getStats =
+    controllerHandler(
+        adminController.getStats,
+        "adminController.getStats"
+    );
+
+const getRevenue =
+    controllerHandler(
+        adminController.getRevenue,
+        "adminController.getRevenue"
+    );
+
+const getRevenueChart =
+    controllerHandler(
+        adminController.getRevenueChart,
+        "adminController.getRevenueChart"
+    );
+
+const getAdminActivitySummary =
+    controllerHandler(
+        adminController.getAdminActivitySummary,
+        "adminController.getAdminActivitySummary"
+    );
+
+const testAuditLog =
+    controllerHandler(
+        adminController.testAuditLog,
+        "adminController.testAuditLog"
+    );
+
+const getAuditLogs =
+    controllerHandler(
+        adminController.getAuditLogs,
+        "adminController.getAuditLogs"
+    );
+
+const getLoginHistory =
+    controllerHandler(
+        adminController.getLoginHistory,
+        "adminController.getLoginHistory"
+    );
+
+
+/* =========================================================
+   USER CONTROLLER HANDLERS
+========================================================= */
+
+const getUsers =
+    controllerHandler(
+        adminUserController.getUsers,
+        "adminUserController.getUsers"
+    );
+
+const getUser =
+    controllerHandler(
+        adminUserController.getUser,
+        "adminUserController.getUser"
+    );
+
+const blockUser =
+    controllerHandler(
+        adminUserController.blockUser,
+        "adminUserController.blockUser"
+    );
+
+const unblockUser =
+    controllerHandler(
+        adminUserController.unblockUser,
+        "adminUserController.unblockUser"
+    );
+
+const makeAdmin =
+    controllerHandler(
+        adminUserController.makeAdmin,
+        "adminUserController.makeAdmin"
+    );
+
+const removeAdmin =
+    controllerHandler(
+        adminUserController.removeAdmin,
+        "adminUserController.removeAdmin"
+    );
+
+const deleteUser =
+    controllerHandler(
+        adminUserController.deleteUser,
+        "adminUserController.deleteUser"
+    );
+
+
+/* =========================================================
+   STORE CONTROLLER HANDLERS
+========================================================= */
+
+const getStores =
+    controllerHandler(
+        adminStoreController.getStores,
+        "adminStoreController.getStores"
+    );
+
+const verifyStore =
+    controllerHandler(
+        adminStoreController.verifyStore,
+        "adminStoreController.verifyStore"
+    );
+
+const suspendStore =
+    controllerHandler(
+        adminStoreController.suspendStore,
+        "adminStoreController.suspendStore"
+    );
+
+const activateStore =
+    controllerHandler(
+        adminStoreController.activateStore,
+        "adminStoreController.activateStore"
+    );
+
+const deleteStore =
+    controllerHandler(
+        adminStoreController.deleteStore,
+        "adminStoreController.deleteStore"
+    );
+
+
+/* =========================================================
+   USER ROLE CONTROLLER
+========================================================= */
+
+const changeUserRole =
+    controllerHandler(
+        userController.changeUserRole,
+        "userController.changeUserRole"
+    );
+
+
+/* =========================================================
+   RATE LIMITER
+========================================================= */
+
+if (typeof adminLimiter === "function") {
+
+    router.use(adminLimiter);
+
+} else {
+
+    console.warn(
+        "ADMIN ROUTES WARNING: adminLimiter is not available."
+    );
+
+}
+
+
+/* =========================================================
    ADMIN DASHBOARD
-===================================== */
+========================================================= */
 
 /*
     GET /api/admin/dashboard
@@ -62,220 +247,225 @@ router.get(
     "/dashboard",
     auth,
     admin,
-    adminController.dashboard
+    dashboard
 );
 
+
+/* =========================================================
+   DASHBOARD STATISTICS
+========================================================= */
 
 /*
     GET /api/admin/stats
 
-    Permission-controlled
+    Requires:
+    view_analytics
+
+    IMPORTANT:
+    Do NOT use admin middleware here.
+
+    Permission middleware handles access.
 */
 
 router.get(
     "/stats",
     auth,
     checkPermission("view_analytics"),
-    adminController.getStats
+    getStats
 );
 
+
+/* =========================================================
+   REVENUE
+========================================================= */
 
 /*
     GET /api/admin/revenue
 
-    Permission-controlled
+    Requires:
+    view_analytics
 */
 
 router.get(
     "/revenue",
     auth,
     checkPermission("view_analytics"),
-    adminController.getRevenue
+    getRevenue
 );
 
+
+/* =========================================================
+   REVENUE CHART
+========================================================= */
 
 /*
     GET /api/admin/revenue/chart
 
-    Permission-controlled
+    Requires:
+    view_analytics
 */
 
 router.get(
     "/revenue/chart",
     auth,
     checkPermission("view_analytics"),
-    adminController.getRevenueChart
+    getRevenueChart
 );
 
 
-/* =====================================
+/* =========================================================
    SECURITY / ACTIVITY SUMMARY
-===================================== */
+========================================================= */
 
 /*
     GET /api/admin/activity-summary
+
+    Requires:
+    view_audit_logs
 */
 
 router.get(
     "/activity-summary",
     auth,
-    admin,
     checkPermission("view_audit_logs"),
-    adminController.getAdminActivitySummary
+    getAdminActivitySummary
 );
 
 
-/* =====================================
-   TEST AUDIT LOG
-===================================== */
+/* =========================================================
+   TEST AUDIT
+========================================================= */
 
 /*
     POST /api/admin/test-audit
+
+    Administrator only
 */
 
 router.post(
     "/test-audit",
     auth,
     admin,
-    adminController.testAuditLog
+    testAuditLog
 );
 
 
-/* =====================================
+/* =========================================================
    USER MANAGEMENT
-===================================== */
+========================================================= */
 
 /*
     GET /api/admin/users
+
+    Requires:
+    manage_users
 */
 
 router.get(
     "/users",
     auth,
-    admin,
     checkPermission("manage_users"),
-    adminUserController.getUsers
+    getUsers
 );
 
 
 /*
     GET /api/admin/users/:id
+
+    Requires:
+    manage_users
 */
 
 router.get(
     "/users/:id",
     auth,
-    admin,
     checkPermission("manage_users"),
-    adminUserController.getUser
+    getUser
 );
 
 
-/* =====================================
+/* =========================================================
    CHANGE USER ROLE
-===================================== */
+========================================================= */
 
 /*
     PUT /api/admin/users/:id/role
+
+    Requires:
+    manage_roles
 */
 
 router.put(
     "/users/:id/role",
     auth,
-    admin,
     checkPermission("manage_roles"),
-    userController.changeUserRole
+    changeUserRole
 );
 
 
-/* =====================================
+/* =========================================================
    BLOCK USER
-===================================== */
-
-/*
-    PUT /api/admin/users/:id/block
-*/
+========================================================= */
 
 router.put(
     "/users/:id/block",
     auth,
-    admin,
     checkPermission("manage_users"),
-    adminUserController.blockUser
+    blockUser
 );
 
 
-/* =====================================
+/* =========================================================
    UNBLOCK USER
-===================================== */
-
-/*
-    PUT /api/admin/users/:id/unblock
-*/
+========================================================= */
 
 router.put(
     "/users/:id/unblock",
     auth,
-    admin,
     checkPermission("manage_users"),
-    adminUserController.unblockUser
+    unblockUser
 );
 
 
-/* =====================================
+/* =========================================================
    MAKE USER ADMIN
-===================================== */
-
-/*
-    PUT /api/admin/users/:id/admin
-*/
+========================================================= */
 
 router.put(
     "/users/:id/admin",
     auth,
-    admin,
     checkPermission("manage_roles"),
-    adminUserController.makeAdmin
+    makeAdmin
 );
 
 
-/* =====================================
-   REMOVE ADMIN PRIVILEGES
-===================================== */
-
-/*
-    PUT /api/admin/users/:id/remove-admin
-*/
+/* =========================================================
+   REMOVE ADMIN
+========================================================= */
 
 router.put(
     "/users/:id/remove-admin",
     auth,
-    admin,
     checkPermission("manage_roles"),
-    adminUserController.removeAdmin
+    removeAdmin
 );
 
 
-/* =====================================
+/* =========================================================
    DELETE USER
-===================================== */
-
-/*
-    DELETE /api/admin/users/:id
-*/
+========================================================= */
 
 router.delete(
     "/users/:id",
     auth,
-    admin,
     checkPermission("manage_users"),
-    adminUserController.deleteUser
+    deleteUser
 );
 
 
-/* =====================================
+/* =========================================================
    STORE MANAGEMENT
-===================================== */
+========================================================= */
 
 /*
     GET /api/admin/stores
@@ -284,9 +474,8 @@ router.delete(
 router.get(
     "/stores",
     auth,
-    admin,
     checkPermission("manage_stores"),
-    adminStoreController.getStores
+    getStores
 );
 
 
@@ -297,9 +486,8 @@ router.get(
 router.put(
     "/stores/:id/verify",
     auth,
-    admin,
     checkPermission("manage_stores"),
-    adminStoreController.verifyStore
+    verifyStore
 );
 
 
@@ -310,9 +498,8 @@ router.put(
 router.put(
     "/stores/:id/suspend",
     auth,
-    admin,
     checkPermission("manage_stores"),
-    adminStoreController.suspendStore
+    suspendStore
 );
 
 
@@ -323,9 +510,8 @@ router.put(
 router.put(
     "/stores/:id/activate",
     auth,
-    admin,
     checkPermission("manage_stores"),
-    adminStoreController.activateStore
+    activateStore
 );
 
 
@@ -336,48 +522,51 @@ router.put(
 router.delete(
     "/stores/:id",
     auth,
-    admin,
     checkPermission("manage_stores"),
-    adminStoreController.deleteStore
+    deleteStore
 );
 
 
-/* =====================================
+/* =========================================================
    AUDIT LOGS
-===================================== */
+========================================================= */
 
 /*
     GET /api/admin/audit-logs
+
+    Requires:
+    view_audit_logs
 */
 
 router.get(
     "/audit-logs",
     auth,
-    admin,
     checkPermission("view_audit_logs"),
-    adminController.getAuditLogs
+    getAuditLogs
 );
 
 
-/* =====================================
+/* =========================================================
    LOGIN HISTORY
-===================================== */
+========================================================= */
 
 /*
     GET /api/admin/login-history
+
+    Requires:
+    view_login_history
 */
 
 router.get(
     "/login-history",
     auth,
-    admin,
     checkPermission("view_login_history"),
-    adminController.getLoginHistory
+    getLoginHistory
 );
 
 
-/* =====================================
-   EXPORT ROUTER
-===================================== */
+/* =========================================================
+   EXPORT
+========================================================= */
 
 module.exports = router;
