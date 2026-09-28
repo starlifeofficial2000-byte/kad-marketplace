@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 
 import api from "../config/axios";
 import ReviewList from "../components/ReviewList";
-
+import SEO from "../components/SEO";
 import "./SellerProfile.css";
 
 
