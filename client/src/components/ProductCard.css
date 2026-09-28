@@ -1,557 +1,530 @@
-/* =========================================================
-   KAD MARKETPLACE - COMPACT PRODUCT CARD
-========================================================= */
+/* ======================================
+   HOME PAGE
+====================================== */
 
-.product-card {
+.home-page {
     width: 100%;
-    max-width: 100%;
-    min-width: 0;
-
-    box-sizing: border-box;
-
-    display: flex;
-    flex-direction: column;
-
-    overflow: hidden;
-
-    background: #ffffff;
-
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-
-    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.06);
-
-    transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
-}
-
-.product-card:hover {
-    transform: translateY(-2px);
-
-    box-shadow:
-        0 5px 14px rgba(0, 0, 0, 0.09);
+    min-height: 100%;
+    background: linear-gradient(
+        to left,
+        rgb(154, 160, 189),
+        rgb(240, 235, 235),
+        rgb(138, 223, 238)
+    );
+    overflow-x: hidden;
 }
 
 
-/* =========================================================
-   IMAGE
-========================================================= */
-
-.product-image-container {
-    position: relative;
-
-    width: 100%;
-    max-width: 100%;
-
-    aspect-ratio: 1 / 0.70;
-
-    overflow: hidden;
-
-    background: #f3f4f6;
-
-    box-sizing: border-box;
-}
-
-.product-image {
-    display: block;
-
-    width: 100%;
-    height: 100%;
-
-    max-width: 100%;
-
-    object-fit: cover;
-
-    transition: transform 0.2s ease;
-}
-
-.product-card:hover .product-image {
-    transform: scale(1.02);
-}
-
-
-/* =========================================================
-   BADGES
-========================================================= */
-
-.promotion-badges {
-    position: absolute;
-
-    top: 4px;
-    left: 4px;
-    right: 4px;
-
-    display: flex;
-    flex-wrap: wrap;
-
-    gap: 3px;
-
-    max-width: calc(100% - 8px);
-
-    pointer-events: none;
-}
-
-.promotion-badges span {
-    max-width: 100%;
-
-    display: inline-block;
-
-    padding: 2px 4px;
-
-    border-radius: 4px;
-
-    font-size: 7px;
-    font-weight: 700;
-
-    line-height: 1.15;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-
-/* =========================================================
-   PRODUCT INFORMATION
-========================================================= */
-
-.product-info {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-
-    box-sizing: border-box;
-
-    display: flex;
-    flex-direction: column;
-
-    padding: 6px;
-}
-
-
-/* =========================================================
-   SELLER PLAN
-========================================================= */
-
-.seller-plan {
-    width: fit-content;
-    max-width: 100%;
-
-    box-sizing: border-box;
-
-    margin-bottom: 3px;
-
-    padding: 2px 4px;
-
-    border-radius: 4px;
-
-    font-size: 7px;
-    font-weight: 700;
-
-    line-height: 1.15;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-
-/* =========================================================
-   PRICE
-========================================================= */
-
-.product-price {
-    width: 100%;
-    max-width: 100%;
-
-    box-sizing: border-box;
-
-    margin: 0 0 3px;
-
-    color: #111827;
-
-    font-size: 14px;
-    font-weight: 800;
-
-    line-height: 1.15;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-
-/* =========================================================
-   TITLE
-========================================================= */
-
-.product-title {
-    width: 100%;
-    max-width: 100%;
-
-    box-sizing: border-box;
-
-    display: -webkit-box;
-
-    overflow: hidden;
-
-    margin: 0 0 3px;
-
-    color: #111827;
-
-    font-size: 10px;
-    font-weight: 600;
-
-    line-height: 1.2;
-
-    text-decoration: none;
-
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-
-    overflow-wrap: anywhere;
-    word-break: break-word;
-}
-
-.product-title:hover {
-    text-decoration: underline;
-}
-
-
-/* =========================================================
-   CONDITION
-========================================================= */
-
-.product-condition {
-    width: 100%;
-    max-width: 100%;
-
-    margin: 0 0 2px;
-
-    color: #4b5563;
-
-    font-size: 8px;
-
-    line-height: 1.15;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-
-/* =========================================================
-   LOCATION
-========================================================= */
-
-.product-location {
-    width: 100%;
-    max-width: 100%;
-
-    margin: 0 0 2px;
-
-    color: #6b7280;
-
-    font-size: 8px;
-
-    line-height: 1.15;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-
-/* =========================================================
-   STATS
-========================================================= */
-
-.product-stats {
-    width: 100%;
-    max-width: 100%;
-
-    margin: 0 0 4px;
-
-    color: #6b7280;
-
-    font-size: 7px;
-
-    line-height: 1.15;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-
-/* =========================================================
-   ACTIONS
-========================================================= */
-
-.product-actions {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-
-    box-sizing: border-box;
-
-    display: flex;
-
-    gap: 3px;
-}
-
-.details-btn,
-.store-btn {
-    flex: 1 1 0;
-
-    width: 0;
-    min-width: 0;
-    max-width: 100%;
-
-    box-sizing: border-box;
-
-    padding: 4px 2px;
-
-    border-radius: 4px;
-
-    font-size: 7px;
-    font-weight: 700;
-
-    line-height: 1.15;
+/* ======================================
+   HOME SEARCH
+====================================== */
+
+.home-search {
+    width: min(90%, 900px);
+    margin: 40px auto;
+    padding: 24px;
 
     text-align: center;
 
-    text-decoration: none;
+    background: #ffffff;
+    border-radius: 18px;
+}
+
+.home-search h1 {
+    margin: 0 0 10px;
+
+    color: #222;
+
+    font-size: clamp(28px, 4vw, 42px);
+    line-height: 1.15;
+}
+
+.home-search p {
+    margin: 0;
+
+    color: #666;
+
+    font-size: clamp(15px, 2vw, 18px);
+    line-height: 1.5;
+}
+
+
+/* ======================================
+   CATEGORY SECTION
+====================================== */
+
+.category-section {
+    width: 100%;
+    max-width: 1400px;
+
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.category-header {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 20px;
+
+    margin-bottom: 25px;
+}
+
+.category-header h2 {
+    margin: 0;
+
+    font-size: clamp(22px, 3vw, 28px);
+    font-weight: 700;
+}
+
+.category-header p {
+    margin: 6px 0 0;
+
+    color: #777;
+}
+
+.show-all-btn {
+    flex-shrink: 0;
+
+    border: none;
+
+    background: #0A66C2;
+    color: white;
+
+    padding: 10px 18px;
+
+    border-radius: 8px;
+
+    cursor: pointer;
+
+    font-weight: 600;
+}
+
+
+/* ======================================
+   CATEGORIES
+====================================== */
+
+.categories-grid {
+    display: grid;
+
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+
+    gap: 16px;
+}
+
+.category-card {
+    min-width: 0;
+
+    padding: 20px 12px;
+
+    background: white;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 12px;
+
+    text-align: center;
+
+    cursor: pointer;
+
+    transition: 0.25s ease;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+
+    border-color: #0A66C2;
+
+    box-shadow:
+        0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+.category-card.active {
+    background: #eff6ff;
+
+    border-color: #0A66C2;
+
+    box-shadow:
+        0 0 0 2px rgba(10, 102, 194, 0.15);
+}
+
+.category-icon {
+    margin-bottom: 10px;
+
+    font-size: 32px;
+}
+
+.category-card h3 {
+    margin: 0 0 8px;
+
+    color: #222;
+
+    font-size: 14px;
+
+    overflow-wrap: anywhere;
+}
+
+.category-card span {
+    color: #777;
+
+    font-size: 12px;
+}
+
+
+/* ======================================
+   MARKET FILTERS
+====================================== */
+
+.market-filters-container {
+    width: 100%;
+}
+
+.market-filters {
+    width: min(90%, 1300px);
+
+    margin: 30px auto 50px;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 18px;
+}
+
+.search-box {
+    grid-column: 1 / -1;
+
+    display: flex;
+
+    gap: 10px;
+}
+
+.market-filters input,
+.market-filters select {
+    width: 100%;
+    min-width: 0;
+
+    padding: 15px 18px;
+
+    border: 1px solid #ddd;
+
+    border-radius: 12px;
+
+    background: #fff;
+
+    font-size: 16px;
+
+    outline: none;
+
+    box-shadow:
+        0 5px 15px rgba(0, 0, 0, 0.06);
+
+    transition: 0.3s;
+}
+
+.market-filters input:focus,
+.market-filters select:focus {
+    border-color: #0A66C2;
+
+    box-shadow:
+        0 0 0 4px rgba(10, 102, 194, 0.15);
+}
+
+.search-box button {
+    flex-shrink: 0;
+
+    border: none;
+
+    padding: 0 22px;
+
+    border-radius: 12px;
+
+    background: #0A66C2;
+    color: white;
+
+    font-weight: 700;
+
+    cursor: pointer;
 
     white-space: nowrap;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 
-/* =========================================================
-   DESKTOP - 6 CARDS
-========================================================= */
+/* ======================================
+   PRODUCT SECTION
+====================================== */
 
-@media (min-width: 1200px) {
+.products-section {
+    width: 100%;
 
-    .product-card {
-        border-radius: 8px;
+    padding: 40px clamp(15px, 3vw, 40px);
+}
+
+.section-header {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 15px;
+
+    margin-bottom: 24px;
+}
+
+.section-header h2 {
+    margin: 0;
+
+    color: #222;
+
+    font-size: clamp(24px, 3vw, 34px);
+}
+
+.section-header span {
+    flex-shrink: 0;
+
+    padding: 8px 18px;
+
+    border-radius: 20px;
+
+    background: #0A66C2;
+    color: white;
+
+    font-weight: 600;
+}
+
+
+/* ======================================
+   PRODUCTS GRID
+====================================== */
+
+.products {
+    width: 100%;
+
+    display: grid;
+
+    /*
+       SIX PRODUCTS ON DESKTOP
+    */
+    grid-template-columns:
+        repeat(6, minmax(0, 1fr));
+
+    gap: 16px;
+
+    align-items: start;
+}
+
+.products > * {
+    min-width: 0;
+}
+
+
+/* ======================================
+   EMPTY PRODUCTS
+====================================== */
+
+.empty-products {
+    width: 100%;
+
+    padding: 60px 20px;
+
+    background: linear-gradient(
+        to left,
+        rgb(154, 160, 189),
+        rgb(240, 235, 235),
+        rgb(138, 223, 238)
+    );
+
+    text-align: center;
+
+    border-radius: 20px;
+
+    box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.empty-products h2 {
+    margin-bottom: 10px;
+
+    color: #333;
+}
+
+.empty-products p {
+    color: #777;
+}
+
+
+/* ======================================
+   LARGE TABLET / SMALL DESKTOP
+====================================== */
+
+@media (max-width: 1200px) {
+
+    .products {
+        grid-template-columns:
+            repeat(5, minmax(0, 1fr));
+
+        gap: 14px;
     }
 
-    .product-image-container {
-        aspect-ratio: 1 / 0.68;
-    }
-
-    .product-info {
-        padding: 6px;
-    }
-
-    .product-price {
-        font-size: 13px;
-    }
-
-    .product-title {
-        font-size: 9px;
-    }
-
-    .product-condition,
-    .product-location {
-        font-size: 7px;
-    }
-
-    .product-stats {
-        font-size: 6.5px;
-    }
-
-    .details-btn,
-    .store-btn {
-        font-size: 6.5px;
-        padding: 4px 2px;
+    .categories-grid {
+        grid-template-columns:
+            repeat(5, minmax(0, 1fr));
     }
 }
 
 
-/* =========================================================
+/* ======================================
    TABLET
-========================================================= */
+====================================== */
 
-@media (max-width: 1199px) {
+@media (max-width: 1000px) {
 
-    .product-image-container {
-        aspect-ratio: 1 / 0.70;
+    .products {
+        grid-template-columns:
+            repeat(4, minmax(0, 1fr));
+
+        gap: 14px;
     }
 
-    .product-info {
-        padding: 6px;
+    .categories-grid {
+        grid-template-columns:
+            repeat(4, minmax(0, 1fr));
     }
 
-    .product-price {
-        font-size: 13px;
-    }
-
-    .product-title {
-        font-size: 9px;
-    }
-
-    .product-condition,
-    .product-location {
-        font-size: 7px;
-    }
-
-    .product-stats {
-        font-size: 6.5px;
+    .market-filters {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
     }
 }
 
 
-/* =========================================================
-   MOBILE - 2 CARDS
-========================================================= */
+/* ======================================
+   MOBILE
+====================================== */
 
 @media (max-width: 700px) {
 
-    .product-card {
-        border-radius: 7px;
+    .home-search {
+        width: calc(100% - 24px);
+
+        margin: 24px auto;
+
+        padding: 20px 14px;
     }
 
-    .product-image-container {
-        aspect-ratio: 1 / 0.68;
+
+    .category-section {
+        margin: 25px auto;
+
+        padding: 0 12px;
     }
 
-    .product-info {
-        padding: 5px;
+
+    .category-header {
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        margin-bottom: 18px;
     }
 
-    .seller-plan {
-        font-size: 6.5px;
-        padding: 2px 3px;
+
+    .show-all-btn {
+        width: 100%;
     }
 
-    .product-price {
-        font-size: 12px;
+
+    .categories-grid {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+
+        gap: 10px;
     }
 
-    .product-title {
-        font-size: 8.5px;
-        line-height: 1.15;
+
+    .category-card {
+        padding: 14px 6px;
     }
 
-    .product-condition,
-    .product-location {
-        font-size: 7px;
+
+    .category-icon {
+        font-size: 26px;
     }
 
-    .product-stats {
-        font-size: 6px;
-    }
 
-    .details-btn,
-    .store-btn {
-        padding: 4px 2px;
-        font-size: 6.5px;
-    }
-
-    .promotion-badges span {
-        font-size: 6px;
-        padding: 2px 3px;
-    }
-}
-
-
-/* =========================================================
-   SMALL PHONES
-========================================================= */
-
-@media (max-width: 420px) {
-
-    .product-image-container {
-        aspect-ratio: 1 / 0.65;
-    }
-
-    .product-info {
-        padding: 4px;
-    }
-
-    .product-price {
+    .category-card h3 {
         font-size: 11px;
     }
 
-    .product-title {
-        font-size: 8px;
+
+    .market-filters {
+        width: calc(100% - 24px);
+
+        grid-template-columns: 1fr;
+
+        gap: 12px;
+
+        margin: 24px auto 35px;
     }
 
-    .product-condition,
-    .product-location {
-        font-size: 6.5px;
+
+    .search-box {
+        grid-column: auto;
     }
 
-    .product-stats {
-        font-size: 5.5px;
+
+    .search-box button {
+        padding: 0 16px;
     }
 
-    .details-btn,
-    .store-btn {
-        padding: 4px 1px;
-        font-size: 6px;
+
+    .products-section {
+        padding: 30px 10px;
     }
 
-    .seller-plan {
-        font-size: 6px;
+
+    .section-header {
+        margin-bottom: 18px;
+    }
+
+
+    /*
+       IMPORTANT:
+       ALWAYS TWO PRODUCTS ON MOBILE
+    */
+    .products {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap: 10px;
     }
 }
 
 
-/* =========================================================
+/* ======================================
    VERY SMALL PHONES
-========================================================= */
+====================================== */
 
-@media (max-width: 360px) {
+@media (max-width: 380px) {
 
-    .product-image-container {
-        aspect-ratio: 1 / 0.62;
+    .products {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap: 8px;
     }
 
-    .product-info {
-        padding: 3px;
+    .products-section {
+        padding-left: 8px;
+        padding-right: 8px;
     }
 
-    .product-price {
-        font-size: 10px;
-    }
-
-    .product-title {
-        font-size: 7.5px;
-    }
-
-    .product-condition,
-    .product-location {
-        font-size: 6px;
-    }
-
-    .product-stats {
-        font-size: 5px;
-    }
-
-    .details-btn,
-    .store-btn {
-        font-size: 5.5px;
-        padding: 3px 1px;
-    }
-
-    .seller-plan {
-        font-size: 5.5px;
-    }
-
-    .promotion-badges span {
-        font-size: 5.5px;
+    .categories-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
     }
 }
