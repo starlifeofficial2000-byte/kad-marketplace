@@ -4,82 +4,42 @@ function MarketplaceSettings({
 }) {
 
     /* =====================================================
-       SAFE SETTINGS
+       SAFE VALUES
     ===================================================== */
 
     const maxProductImages =
         settings?.max_product_images || "5";
 
-    const maxProductsPerUser =
-        settings?.max_products_per_user || "50";
-
-    const allowProductPosting =
-        settings?.allow_product_posting !== "false";
-
     const requireProductApproval =
-        settings?.require_product_approval === "true";
-
-    const allowStoreCreation =
-        settings?.allow_store_creation !== "false";
-
-    const requireStoreVerification =
-        settings?.require_store_verification === "true";
-
-    const promotionPrice =
-        settings?.promotion_price || "";
-
-    const advertisementPrice =
-        settings?.advertisement_price || "";
+        settings?.require_product_approval === "true" ||
+        settings?.require_product_approval === true;
 
     const allowRegistration =
-        settings?.allow_registration !== "false";
-
-    const maintenanceMode =
-        settings?.maintenance_mode === "true";
-
-    const developerMode =
-        settings?.developer_mode === "true" ||
-        settings?.developer_mode === true;
+        settings?.allow_registration !== "false" &&
+        settings?.allow_registration !== false;
 
 
     /* =====================================================
-       SAFE NUMBER HANDLER
+       NUMBER HANDLER
     ===================================================== */
 
-    const updateNumber = (
-        key,
-        value
-    ) => {
+    const updateNumber = (key, value) => {
 
         if (value === "") {
-
-            handleChange(
-                key,
-                ""
-            );
-
+            handleChange(key, "");
             return;
         }
 
+        const number = Number(value);
 
-        const number =
-            Number(value);
-
-
-        if (
-            Number.isNaN(number)
-        ) {
-
+        if (Number.isNaN(number)) {
             return;
-
         }
-
 
         handleChange(
             key,
             String(number)
         );
-
     };
 
 
@@ -87,16 +47,11 @@ function MarketplaceSettings({
        BOOLEAN HANDLER
     ===================================================== */
 
-    const updateBoolean = (
-        key,
-        value
-    ) => {
+    const updateBoolean = (key, value) => {
 
         handleChange(
             key,
-            value
-                ? "true"
-                : "false"
+            value ? "true" : "false"
         );
 
     };
@@ -108,7 +63,7 @@ function MarketplaceSettings({
 
     return (
 
-        <div className="settings-section">
+        <div className="settings-section marketplace-settings">
 
             {/* =================================================
                 HEADER
@@ -129,9 +84,8 @@ function MarketplaceSettings({
                         </h2>
 
                         <p>
-                            Configure how your marketplace
-                            operates and how users interact
-                            with products and stores.
+                            Configure the core rules that control
+                            product listings and user registration.
                         </p>
 
                     </div>
@@ -152,21 +106,20 @@ function MarketplaceSettings({
                 </h3>
 
 
-                {/* MAX PRODUCT IMAGES */}
+                {/* MAXIMUM PRODUCT IMAGES */}
 
                 <div className="form-group">
 
-                    <label>
+                    <label htmlFor="max_product_images">
                         Maximum Product Images
                     </label>
 
                     <input
+                        id="max_product_images"
                         type="number"
                         min="1"
-                        max="10"
-                        value={
-                            maxProductImages
-                        }
+                        max="20"
+                        value={maxProductImages}
                         onChange={(e) =>
                             updateNumber(
                                 "max_product_images",
@@ -176,79 +129,14 @@ function MarketplaceSettings({
                     />
 
                     <small>
-                        Maximum number of images
-                        sellers can upload for
-                        one product.
+                        Maximum number of images a seller can
+                        upload for one product.
                     </small>
 
                 </div>
 
 
-                {/* MAX PRODUCTS PER USER */}
-
-                <div className="form-group">
-
-                    <label>
-                        Maximum Products Per User
-                    </label>
-
-                    <input
-                        type="number"
-                        min="1"
-                        max="10000"
-                        value={
-                            maxProductsPerUser
-                        }
-                        onChange={(e) =>
-                            updateNumber(
-                                "max_products_per_user",
-                                e.target.value
-                            )
-                        }
-                    />
-
-                    <small>
-                        Maximum number of products
-                        one user can post.
-                    </small>
-
-                </div>
-
-
-                {/* ALLOW PRODUCT POSTING */}
-
-                <div className="toggle-setting">
-
-                    <div>
-
-                        <strong>
-                            Allow Product Posting
-                        </strong>
-
-                        <p>
-                            Allow users to post
-                            products on the marketplace.
-                        </p>
-
-                    </div>
-
-                    <input
-                        type="checkbox"
-                        checked={
-                            allowProductPosting
-                        }
-                        onChange={(e) =>
-                            updateBoolean(
-                                "allow_product_posting",
-                                e.target.checked
-                            )
-                        }
-                    />
-
-                </div>
-
-
-                {/* REQUIRE PRODUCT APPROVAL */}
+                {/* PRODUCT APPROVAL */}
 
                 <div className="toggle-setting">
 
@@ -259,200 +147,44 @@ function MarketplaceSettings({
                         </strong>
 
                         <p>
-                            Products must be approved by
-                            an administrator before they
-                            become publicly visible.
+                            Products must be reviewed and approved
+                            by an administrator before they become
+                            publicly visible.
                         </p>
 
                     </div>
 
-                    <input
-                        type="checkbox"
-                        checked={
-                            requireProductApproval
-                        }
-                        onChange={(e) =>
-                            updateBoolean(
-                                "require_product_approval",
-                                e.target.checked
-                            )
-                        }
-                    />
+                    <label className="switch">
 
-                </div>
+                        <input
+                            type="checkbox"
+                            checked={requireProductApproval}
+                            onChange={(e) =>
+                                updateBoolean(
+                                    "require_product_approval",
+                                    e.target.checked
+                                )
+                            }
+                        />
 
-            </div>
+                        <span className="slider"></span>
 
-
-            {/* =================================================
-                STORE SETTINGS
-            ================================================= */}
-
-            <div className="settings-card">
-
-                <h3>
-                    Store Settings
-                </h3>
-
-
-                {/* ALLOW STORE CREATION */}
-
-                <div className="toggle-setting">
-
-                    <div>
-
-                        <strong>
-                            Allow Store Creation
-                        </strong>
-
-                        <p>
-                            Allow users to create and
-                            manage marketplace stores.
-                        </p>
-
-                    </div>
-
-                    <input
-                        type="checkbox"
-                        checked={
-                            allowStoreCreation
-                        }
-                        onChange={(e) =>
-                            updateBoolean(
-                                "allow_store_creation",
-                                e.target.checked
-                            )
-                        }
-                    />
-
-                </div>
-
-
-                {/* REQUIRE STORE VERIFICATION */}
-
-                <div className="toggle-setting">
-
-                    <div>
-
-                        <strong>
-                            Require Store Verification
-                        </strong>
-
-                        <p>
-                            Stores must be verified by
-                            an administrator before
-                            they can operate.
-                        </p>
-
-                    </div>
-
-                    <input
-                        type="checkbox"
-                        checked={
-                            requireStoreVerification
-                        }
-                        onChange={(e) =>
-                            updateBoolean(
-                                "require_store_verification",
-                                e.target.checked
-                            )
-                        }
-                    />
-
-                </div>
-
-            </div>
-
-
-            {/* =================================================
-                PRICING SETTINGS
-            ================================================= */}
-
-            <div className="settings-card">
-
-                <h3>
-                    Marketplace Pricing
-                </h3>
-
-
-                {/* PROMOTION PRICE */}
-
-                <div className="form-group">
-
-                    <label>
-                        Promotion Price (GH₵)
                     </label>
 
-                    <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={
-                            promotionPrice
-                        }
-                        onChange={(e) =>
-                            handleChange(
-                                "promotion_price",
-                                e.target.value
-                            )
-                        }
-                        placeholder="0.00"
-                    />
-
-                    <small>
-                        Default amount charged when
-                        a seller promotes a product.
-                    </small>
-
-                </div>
-
-
-                {/* ADVERTISEMENT PRICE */}
-
-                <div className="form-group">
-
-                    <label>
-                        Advertisement Price (GH₵)
-                    </label>
-
-                    <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={
-                            advertisementPrice
-                        }
-                        onChange={(e) =>
-                            handleChange(
-                                "advertisement_price",
-                                e.target.value
-                            )
-                        }
-                        placeholder="0.00"
-                    />
-
-                    <small>
-                        Default price for marketplace
-                        advertisements.
-                    </small>
-
                 </div>
 
             </div>
 
 
             {/* =================================================
-                MARKETPLACE CONTROL
+                REGISTRATION SETTINGS
             ================================================= */}
 
             <div className="settings-card">
 
                 <h3>
-                    Marketplace Control
+                    Registration Settings
                 </h3>
-
-
-                {/* REGISTRATION */}
 
                 <div className="toggle-setting">
 
@@ -463,91 +195,28 @@ function MarketplaceSettings({
                         </strong>
 
                         <p>
-                            Allow new users to create
-                            marketplace accounts.
+                            Allow new users to create accounts
+                            on KAD Marketplace.
                         </p>
 
                     </div>
 
-                    <input
-                        type="checkbox"
-                        checked={
-                            allowRegistration
-                        }
-                        onChange={(e) =>
-                            updateBoolean(
-                                "allow_registration",
-                                e.target.checked
-                            )
-                        }
-                    />
+                    <label className="switch">
 
-                </div>
+                        <input
+                            type="checkbox"
+                            checked={allowRegistration}
+                            onChange={(e) =>
+                                updateBoolean(
+                                    "allow_registration",
+                                    e.target.checked
+                                )
+                            }
+                        />
 
+                        <span className="slider"></span>
 
-                {/* MAINTENANCE MODE */}
-
-                <div className="toggle-setting">
-
-                    <div>
-
-                        <strong>
-                            Maintenance Mode
-                        </strong>
-
-                        <p>
-                            Temporarily restrict access
-                            to the marketplace while
-                            maintenance is being performed.
-                        </p>
-
-                    </div>
-
-                    <input
-                        type="checkbox"
-                        checked={
-                            maintenanceMode
-                        }
-                        onChange={(e) =>
-                            updateBoolean(
-                                "maintenance_mode",
-                                e.target.checked
-                            )
-                        }
-                    />
-
-                </div>
-
-
-                {/* DEVELOPER MODE */}
-
-                <div className="toggle-setting">
-
-                    <div>
-
-                        <strong>
-                            Developer Mode
-                        </strong>
-
-                        <p>
-                            Enable developer tools and
-                            additional debugging features.
-                        </p>
-
-                    </div>
-
-                    <input
-                        type="checkbox"
-                        checked={
-                            developerMode
-                        }
-                        onChange={(e) =>
-                            updateBoolean(
-                                "developer_mode",
-                                e.target.checked
-                            )
-                        }
-                    />
+                    </label>
 
                 </div>
 
@@ -555,42 +224,46 @@ function MarketplaceSettings({
 
 
             {/* =================================================
-                INFORMATION
+                CURRENT CONFIGURATION
             ================================================= */}
 
             <div className="settings-info-card">
 
                 <div className="settings-info-icon">
-                    ℹ️
+                    ⚙️
                 </div>
 
                 <div>
 
                     <strong>
-                        Marketplace Configuration
+                        Current Marketplace Configuration
                     </strong>
 
                     <p>
 
-                        Product posting is{" "}
+                        Sellers can upload up to{" "}
+
                         <strong>
-                            {allowProductPosting
-                                ? "enabled"
-                                : "disabled"}
-                        </strong>
-                        , product approval is{" "}
+                            {maxProductImages}
+                        </strong>{" "}
+
+                        images per product.
+
+                        Product approval is{" "}
+
                         <strong>
                             {requireProductApproval
                                 ? "required"
                                 : "not required"}
-                        </strong>
-                        , and store verification is{" "}
+                        </strong>.
+
+                        New user registration is{" "}
+
                         <strong>
-                            {requireStoreVerification
-                                ? "required"
-                                : "not required"}
-                        </strong>
-                        .
+                            {allowRegistration
+                                ? "enabled"
+                                : "disabled"}
+                        </strong>.
 
                     </p>
 
@@ -601,8 +274,6 @@ function MarketplaceSettings({
         </div>
 
     );
-
 }
-
 
 export default MarketplaceSettings;

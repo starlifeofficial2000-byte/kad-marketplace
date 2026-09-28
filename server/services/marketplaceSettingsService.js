@@ -512,11 +512,10 @@ async function updateMarketplaceSettings(
 
 }
 
-
 /*
-=====================================================
+=========================================================
  GET INDIVIDUAL SETTING
-=====================================================
+=========================================================
 */
 
 async function getSetting(
@@ -527,6 +526,12 @@ async function getSetting(
     const settings =
         await getMarketplaceSettings();
 
+
+    /*
+    -----------------------------------------------------
+     DIRECT SETTINGS / ALIASES
+    -----------------------------------------------------
+    */
 
     const aliases = {
 
@@ -542,11 +547,34 @@ async function getSetting(
         registration_enabled:
             settings.registration_enabled,
 
+        /*
+        Frontend Marketplace Settings
+        */
+
+        allow_registration:
+            settings.registration_enabled,
+
         store_registration_enabled:
-            settings.store_registration_enabled
+            settings.store_registration_enabled,
+
+        /*
+        Product Settings
+        */
+
+        max_product_images:
+            settings.configuration?.marketplace?.maxProductImages,
+
+        require_product_approval:
+            settings.configuration?.marketplace?.requireProductApproval
 
     };
 
+
+    /*
+    -----------------------------------------------------
+     RETURN DIRECT / ALIASED SETTING
+    -----------------------------------------------------
+    */
 
     if (
         Object.prototype.hasOwnProperty.call(
@@ -559,6 +587,12 @@ async function getSetting(
 
     }
 
+
+    /*
+    -----------------------------------------------------
+     SEARCH ALL CONFIGURATION SECTIONS
+    -----------------------------------------------------
+    */
 
     const sections =
         Object.values(
@@ -586,10 +620,15 @@ async function getSetting(
     }
 
 
+    /*
+    -----------------------------------------------------
+     FALLBACK
+    -----------------------------------------------------
+    */
+
     return fallback;
 
 }
-
 
 /*
 =====================================================
