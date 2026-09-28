@@ -447,10 +447,10 @@ exports.register = async (req, res) => {
 
 
         /* ==========================================
-           CENTRALIZED REGISTRATION SETTING
-        ========================================== */
+   CENTRALIZED REGISTRATION SETTINGS
+========================================== */
 
-        const marketplaceSettings =
+const marketplaceSettings =
     await getMarketplaceSettings();
 
 const emailConfig =
@@ -458,21 +458,45 @@ const emailConfig =
         ?.configuration
         ?.email || {};
 
+
+/* ==========================================
+   NEW USER REGISTRATION
+========================================== */
+
+const registrationSetting =
+    marketplaceSettings?.registration_enabled;
+
+const registrationEnabled =
+    registrationSetting === true ||
+    registrationSetting === "true" ||
+    registrationSetting === 1 ||
+    registrationSetting === "1";
+
+
+/* ==========================================
+   REGISTRATION EMAIL
+========================================== */
+
 const registrationEmailEnabled =
     emailConfig.registrationEmail !== false;
 
-        if (!registrationEnabled) {
 
-            return res.status(403).json({
+/* ==========================================
+   BLOCK NEW REGISTRATION
+========================================== */
 
-                success: false,
+if (!registrationEnabled) {
 
-                message:
-                    "New user registration is currently disabled by the administrator."
+    return res.status(403).json({
 
-            });
+        success: false,
 
-        }
+        message:
+            "New user registration is currently disabled."
+
+    });
+
+}
 
 
         /* ==========================================
