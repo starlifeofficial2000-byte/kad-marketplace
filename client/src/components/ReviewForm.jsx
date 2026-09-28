@@ -2,265 +2,265 @@ import { useState } from "react";
 import api from "../config/axios";
 import "./ReviewForm.css";
 
-function ReviewForm({ sellerId, productId }) {
-
-    /* =========================================
-       STATES
-    ========================================= */
-
+function ReviewForm({ sellerId, productId, onReviewSubmitted }) {
     const [rating, setRating] = useState(5);
     const [review, setReview] = useState("");
     const [loading, setLoading] = useState(false);
-
-
-    /* =========================================
-       SUBMIT REVIEW
-    ========================================= */
+    const [message, setMessage] = useState("");
+    const [error, setError] = useState("");
 
     const submitReview = async (e) => {
-
         e.preventDefault();
 
+        setMessage("");
+        setError("");
 
-        const user = JSON.parse(
-            localStorage.getItem("user") || "null"
-        );
+        const storedUser = localStorage.getItem("user");
 
-
-        /* CHECK LOGIN */
-
-        if (!user) {
-
-            alert("Please login first.");
-
+        if (!storedUser) {
+            setError("Please login first.");
             return;
-
         }
 
-
-        /* VALIDATE REVIEW */
-
-        if (!review.trim()) {
-
-            alert("Please write your review.");
-
-            return;
-
-        }
-
-
-        if (!sellerId) {
-
-            alert("Seller information is missing.");
-
-            return;
-
-        }
-
+        let user;
 
         try {
+            user = JSON.parse(storedUser);
+        } catch (err) {
+            console.error("USER DATA ERROR:", err);
+            setError("Your login session is invalid. Please login again.");
+            return;
+        }
 
+        const buyerId = user?.id || user?._id || user?.userId;
+
+        if (!buyerId) {
+            setError("Unable to identify your account. Please login again.");
+            return;
+        }
+
+        if (!sellerId) {
+            setError("Seller information is missing.");
+            return;
+        }
+
+        if (!productId) {
+            setError("Product information is missing.");
+            return;
+        }
+
+        const cleanReview = review.trim();
+
+        if (!cleanReview) {
+            setError("Please write your review.");
+            return;
+        }
+
+        if (cleanReview.length < 5) {
+            setError("Your review must contain at least 5 characters.");
+            return;
+        }
+
+        if (cleanReview.length > 1000) {
+            setError("Your review cannot exceed 1000 characters.");
+            return;
+        }
+
+        if (rating < 1 || rating > 5) {
+            setError("Please select a valid rating.");
+            return;
+        }
+
+        try {
             setLoading(true);
 
+            const response = await api.post("/reviews", {
+                sellerId: Number(sellerId) || sellerId,
+                buyerId: Number(buyerId) || buyerId,
+                productId: Number(productId) || productId,
+                rating: Number(rating),
+                review: cleanReview
+            });
 
-            const response = await api.post(
-
-                "/reviews",
-
-                {
-
-                    sellerId,
-
-                    buyerId: user.id,
-
-                    productId,
-
-                    rating,
-
-                    review: review.trim()
-
-                }
-
+            console.log(
+                "REVIEW SUBMISSION RESPONSE:",
+                response.data
             );
 
-
-            alert(
-
-                response.data.message ||
-
+            setMessage(
+                response.data?.message ||
                 "Review submitted successfully."
-
             );
-
-
-            /* RESET FORM */
 
             setReview("");
-
             setRating(5);
 
-        }
-
-        catch (error) {
-
+            if (typeof onReviewSubmitted === "function") {
+                onReviewSubmitted(response.data);
+            }
+        } catch (err) {
             console.error(
-
                 "REVIEW SUBMISSION ERROR:",
-
-                error.response?.data || error.message
-
+                err.response?.data || err.message
             );
 
-
-            alert(
-
-                error.response?.data?.message ||
-
-                "Unable to submit review."
-
-            );
-
-        }
-
-        finally {
-
+            if (err.response?.status === 401) {
+                setError(
+                    "Your session has expired. Please login again."
+                );
+            } else if (err.response?.status === 403) {
+                setError(
+                    err.response?.data?.message ||
+                    "You are not allowed to submit this review."
+                );
+            } else if (err.response?.status === 409) {
+                setError(
+                    err.response?.data?.message ||
+                    "You have already reviewed this product or seller."
+                );
+            } else {
+                setError(
+                    err.response?.data?.message ||
+                    "Unable to submit your review. Please try again."
+                );
+            }
+        } finally {
             setLoading(false);
-
         }
-
     };
 
-
     return (
+        <section className="review-form">
 
-        <div className="review-form">
+            <div className="review-form-header">
+                <div>
+                    <h2>Leave a Review</h2>
 
-            <h2>
-                Leave a Review
-            </h2>
+                    <p>
+                        Share your experience with this seller.
+                    </p>
+                </div>
 
+                <div className="review-rating-preview">
+                    {"★".repeat(rating)}
+                    {"☆".repeat(5 - rating)}
+                </div>
+            </div>
 
-            <form onSubmit={submitReview}>
-
-
-                {/* =====================================
-                   RATING
-                ===================================== */}
-
-                <label>
-                    Rating
-                </label>
-
-                <select
-
-                    value={rating}
-
-                    disabled={loading}
-
-                    onChange={(e) =>
-
-                        setRating(
-
-                            Number(e.target.value)
-
-                        )
-
-                    }
-
+            {message && (
+                <div
+                    className="review-message review-success"
+                    role="alert"
                 >
+                    ✓ {message}
+                </div>
+            )}
 
-                    <option value={5}>
-                        ⭐⭐⭐⭐⭐ Excellent
-                    </option>
+            {error && (
+                <div
+                    className="review-message review-error"
+                    role="alert"
+                >
+                    {error}
+                </div>
+            )}
 
-                    <option value={4}>
-                        ⭐⭐⭐⭐ Very Good
-                    </option>
+            <form
+                className="review-form-content"
+                onSubmit={submitReview}
+            >
 
-                    <option value={3}>
-                        ⭐⭐⭐ Average
-                    </option>
+                <div className="review-field">
 
-                    <option value={2}>
-                        ⭐⭐ Poor
-                    </option>
+                    <label htmlFor="review-rating">
+                        Rating
+                    </label>
 
-                    <option value={1}>
-                        ⭐ Very Poor
-                    </option>
+                    <select
+                        id="review-rating"
+                        value={rating}
+                        disabled={loading}
+                        onChange={(e) => {
+                            setRating(Number(e.target.value));
+                            setError("");
+                        }}
+                    >
+                        <option value={5}>
+                            ⭐⭐⭐⭐⭐ Excellent
+                        </option>
 
-                </select>
+                        <option value={4}>
+                            ⭐⭐⭐⭐ Very Good
+                        </option>
 
+                        <option value={3}>
+                            ⭐⭐⭐ Average
+                        </option>
 
-                {/* =====================================
-                   REVIEW MESSAGE
-                ===================================== */}
+                        <option value={2}>
+                            ⭐⭐ Poor
+                        </option>
 
-                <label>
-                    Your Review
-                </label>
+                        <option value={1}>
+                            ⭐ Very Poor
+                        </option>
+                    </select>
 
-                <textarea
+                </div>
 
-                    placeholder="Write your review..."
+                <div className="review-field">
 
-                    value={review}
+                    <div className="review-label-row">
 
-                    disabled={loading}
+                        <label htmlFor="review-message">
+                            Your Review
+                        </label>
 
-                    required
+                        <span>
+                            {review.length}/1000
+                        </span>
 
-                    rows="5"
+                    </div>
 
-                    maxLength="1000"
+                    <textarea
+                        id="review-message"
+                        value={review}
+                        disabled={loading}
+                        rows={5}
+                        maxLength={1000}
+                        required
+                        placeholder="Tell other buyers about your experience..."
+                        onChange={(e) => {
+                            setReview(e.target.value);
+                            setError("");
+                            setMessage("");
+                        }}
+                    />
 
-                    onChange={(e) =>
-
-                        setReview(e.target.value)
-
-                    }
-
-                />
-
-
-                <small>
-
-                    {review.length}/1000 Characters
-
-                </small>
-
-
-                {/* =====================================
-                   SUBMIT BUTTON
-                ===================================== */}
+                </div>
 
                 <button
-
+                    className="review-submit-btn"
                     type="submit"
-
                     disabled={loading}
-
                 >
-
-                    {
-
-                        loading
-
-                            ? "Submitting..."
-
-                            : "Submit Review"
-
-                    }
-
+                    {loading ? (
+                        <>
+                            <span className="review-spinner"></span>
+                            Submitting...
+                        </>
+                    ) : (
+                        <>
+                            Submit Review
+                            <span>→</span>
+                        </>
+                    )}
                 </button>
-
 
             </form>
 
-        </div>
-
+        </section>
     );
-
 }
 
 export default ReviewForm;
