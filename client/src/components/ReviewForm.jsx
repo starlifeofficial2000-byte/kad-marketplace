@@ -2,50 +2,40 @@ import { useState } from "react";
 import api from "../config/axios";
 import "./ReviewForm.css";
 
-function ReviewForm({
-    sellerId,
-    seller,
-    productId
-}) {
+function ReviewForm({ productId, onReviewSubmitted }) {
 
     const [rating, setRating] = useState(5);
-    const [review, setReview] = useState("");
+    const [comment, setComment] = useState("");
     const [loading, setLoading] = useState(false);
 
-    /*
-    =====================================================
-    RESOLVE SELLER ID
-    =====================================================
-    */
-
-    const resolvedSellerId =
-        sellerId ||
-        seller?.id ||
-        seller?.userId ||
-        seller?._id ||
-        seller?.user?.id ||
-        seller?.user?.userId ||
-        null;
-
-
-    /*
-    =====================================================
-    SUBMIT REVIEW
-    =====================================================
-    */
+    /* =========================================
+       SUBMIT REVIEW
+    ========================================= */
 
     const submitReview = async (e) => {
 
         e.preventDefault();
 
+        /* -----------------------------------------
+           CHECK PRODUCT
+        ----------------------------------------- */
+
+        if (!productId) {
+
+            alert(
+                "Product information is missing. Please refresh the page."
+            );
+
+            return;
+        }
+
+        /* -----------------------------------------
+           CHECK LOGIN
+        ----------------------------------------- */
+
         const user = JSON.parse(
             localStorage.getItem("user") || "null"
         );
-
-
-        /*
-        LOGIN CHECK
-        */
 
         if (!user) {
 
@@ -54,124 +44,155 @@ function ReviewForm({
             return;
         }
 
+        /* -----------------------------------------
+           VALIDATE COMMENT
+        ----------------------------------------- */
 
-        /*
-        SELLER CHECK
-        */
+        if (!comment.trim()) {
 
-        if (!resolvedSellerId) {
-
-            console.error(
-                "REVIEW ERROR: Seller ID is missing",
-                {
-                    sellerId,
-                    seller,
-                    productId,
-                    user
-                }
-            );
-
-            alert(
-                "Unable to identify the seller. Please refresh the product page and try again."
-            );
+            alert("Please write your review.");
 
             return;
         }
 
-
-        /*
-        REVIEW CHECK
-        */
-
-        if (!review.trim()) {
+        if (comment.trim().length < 3) {
 
             alert(
-                "Please write your review."
+                "Your review must contain at least 3 characters."
             );
 
             return;
         }
-
 
         try {
 
             setLoading(true);
 
+            console.log(
+                "========== SUBMITTING REVIEW =========="
+            );
 
-            /*
-            SEND REVIEW
-            */
+            console.log(
+                "Product ID:",
+                productId
+            );
+
+            console.log(
+                "Rating:",
+                rating
+            );
+
+            console.log(
+                "Comment:",
+                comment.trim()
+            );
+
+            console.log(
+                "========================================"
+            );
+
+            /* -----------------------------------------
+               SEND REVIEW
+            ----------------------------------------- */
 
             const response = await api.post(
                 "/reviews",
                 {
-                    sellerId: resolvedSellerId,
-
-                    buyerId:
-                        user.id ||
-                        user.userId ||
-                        user._id,
-
-                    productId:
-                        productId || null,
-
+                    productId: Number(productId),
                     rating: Number(rating),
-
-                    review:
-                        review.trim()
+                    comment: comment.trim()
                 }
             );
 
+            console.log(
+                "REVIEW RESPONSE:",
+                response.data
+            );
 
-            /*
-            SUCCESS
-            */
+            /* -----------------------------------------
+               SUCCESS
+            ----------------------------------------- */
 
             alert(
                 response.data?.message ||
                 "Review submitted successfully."
             );
 
+            /* -----------------------------------------
+               RESET FORM
+            ----------------------------------------- */
 
-            /*
-            RESET FORM
-            */
-
-            setReview("");
-
+            setComment("");
             setRating(5);
 
+            /* -----------------------------------------
+               REFRESH REVIEW LIST
+            ----------------------------------------- */
 
-        } catch (error) {
+            if (
+                typeof onReviewSubmitted === "function"
+            ) {
+
+                onReviewSubmitted(
+                    response.data?.review
+                );
+
+            }
+
+        }
+
+        catch (error) {
 
             console.error(
-                "REVIEW SUBMISSION ERROR:",
-                error.response?.data ||
-                error
+                "========================================"
             );
 
+            console.error(
+                "REVIEW SUBMISSION ERROR"
+            );
+
+            console.error(
+                "STATUS:",
+                error.response?.status
+            );
+
+            console.error(
+                "DATA:",
+                error.response?.data
+            );
+
+            console.error(
+                "ERROR:",
+                error.message
+            );
+
+            console.error(
+                "========================================"
+            );
 
             alert(
                 error.response?.data?.message ||
-                "Unable to submit review."
+                "Unable to submit review. Please try again."
             );
 
+        }
 
-        } finally {
+        finally {
 
             setLoading(false);
 
         }
+
     };
 
+
+    /* =========================================
+       RENDER
+    ========================================= */
 
     return (
 
         <section className="review-form">
-
-            {/* =========================================
-                HEADER
-            ========================================= */}
 
             <div className="review-form-header">
 
@@ -186,7 +207,8 @@ function ReviewForm({
                     </h2>
 
                     <p>
-                        Share your experience with this seller.
+                        Share your experience with this product
+                        and help other buyers.
                     </p>
 
                 </div>
@@ -194,19 +216,14 @@ function ReviewForm({
             </div>
 
 
-            {/* =========================================
-                FORM
-            ========================================= */}
-
             <form
                 className="review-form-content"
                 onSubmit={submitReview}
             >
 
-
-                {/* =====================================
-                    RATING
-                ===================================== */}
+                {/* =================================
+                   RATING
+                ================================= */}
 
                 <div className="review-field">
 
@@ -250,47 +267,51 @@ function ReviewForm({
                 </div>
 
 
-                {/* =====================================
-                    REVIEW
-                ===================================== */}
+                {/* =================================
+                   COMMENT
+                ================================= */}
 
                 <div className="review-field">
 
-                    <label htmlFor="review">
+                    <label htmlFor="review-comment">
                         Your Review
                     </label>
 
                     <textarea
-                        id="review"
-                        value={review}
+                        id="review-comment"
+                        value={comment}
                         disabled={loading}
                         required
                         maxLength={1000}
                         rows={6}
-                        placeholder="Tell other buyers about your experience with this seller..."
+                        placeholder="Tell other buyers about your experience with this product..."
                         onChange={(e) =>
-                            setReview(e.target.value)
+                            setComment(
+                                e.target.value
+                            )
                         }
                     />
 
                     <div className="review-character-count">
-                        {review.length}/1000 characters
+
+                        {comment.length}/1000 characters
+
                     </div>
 
                 </div>
 
 
-                {/* =====================================
-                    SUBMIT BUTTON
-                ===================================== */}
+                {/* =================================
+                   SUBMIT
+                ================================= */}
 
                 <button
                     type="submit"
                     className="review-submit-btn"
                     disabled={
                         loading ||
-                        !review.trim() ||
-                        !resolvedSellerId
+                        !comment.trim() ||
+                        !productId
                     }
                 >
 
@@ -325,7 +346,7 @@ function ReviewForm({
         </section>
 
     );
-}
 
+}
 
 export default ReviewForm;
