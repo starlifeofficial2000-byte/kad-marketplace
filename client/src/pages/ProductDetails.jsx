@@ -1,931 +1,419 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import api from "../config/axios";
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import "./ProductCard.css";
 
-import ReviewForm from "../components/ReviewForm";
-import ReviewList from "../components/ReviewList";
-import SellerCard from "../components/SellerCard";
-import ReportForm from "../components/ReportForm";
-import ProductCard from "../components/ProductCard";
-import SEO from "../components/SEO";
-import "./ProductDetails.css";
-
-function ProductDetails() {
-    const { id } = useParams();
+function ProductCard({ product }) {
     const navigate = useNavigate();
 
-    const user = JSON.parse(localStorage.getItem("user") || "null");
-    const token = localStorage.getItem("token");
+    if (!product) return null;
 
-    const [product, setProduct] = useState(null);
-    const [selectedImage, setSelectedImage] = useState("");
-    const [relatedProducts, setRelatedProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [offer, setOffer] = useState("");
-    const [refresh, setRefresh] = useState(false);
+    const productId = product.id;
 
     /* =========================================
-       BACKEND URL
+       IMAGE HANDLING
     ========================================= */
 
-    const backendUrl = (
-        import.meta.env.VITE_API_URL ||
-        "/api"
-    ).replace("/api", "");
+    const getImageUrl = () => {
+        let images = [];
 
+        try {
+            if (Array.isArray(product.images)) {
+                images = product.images;
+            } else if (typeof product.images === "string") {
+                const value = product.images.trim();
 
-    /* =========================================
-       GET IMAGE URL
-    ========================================= */
+                if (value) {
+                    try {
+                        const parsed = JSON.parse(value);
 
-    const getImageUrl = (image) => {
-        if (!image) {
-            return "https://via.placeholder.com/700x600?text=No+Image";
+                        if (Array.isArray(parsed)) {
+                            images = parsed;
+                        } else if (parsed) {
+                            images = [parsed];
+                        }
+                    } catch {
+                        images = value.includes(",")
+                            ? value
+                                  .split(",")
+                                  .map((item) => item.trim())
+                                  .filter(Boolean)
+                            : [value];
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("PRODUCT IMAGE ERROR:", error);
         }
 
+        if (!images.length) {
+            return "/default-product.png";
+        }
+
+        let image = images[0];
+
         if (
-            image.startsWith("http://") ||
-            image.startsWith("https://")
+            typeof image === "object" &&
+            image !== null
         ) {
+            image =
+                image.url ||
+                image.imageUrl ||
+                image.src ||
+                image.path ||
+                image.location ||
+                image.filename ||
+                image.key ||
+                image.fileName ||
+                "";
+        }
+
+        if (typeof image !== "string") {
+            return "/default-product.png";
+        }
+
+        image = image.trim();
+
+        if (!image) {
+            return "/default-product.png";
+        }
+
+        /* Already complete URL */
+        if (/^https?:\/\//i.test(image)) {
             return image;
         }
 
-        return `${backendUrl}/uploads/${image}`;
+        const CDN_URL = (
+            import.meta.env.VITE_R2_PUBLIC_URL ||
+            "https://cdn.kadmarket.com"
+        ).replace(/\/+$/, "");
+
+        image = image.replace(/^\/+/, "");
+
+        while (image.startsWith("uploads/uploads/")) {
+            image = image.replace(/^uploads\//, "");
+        }
+
+        if (image.startsWith("uploads/")) {
+            return `${CDN_URL}/${image}`;
+        }
+
+        return `${CDN_URL}/uploads/${image}`;
     };
 
-
     /* =========================================
-       NORMALIZE PRODUCT IMAGES
+       IMAGE ERROR
     ========================================= */
 
-    const normalizeImages = (images) => {
-        if (Array.isArray(images)) {
-            return images;
-        }
-
-        if (typeof images === "string") {
-            try {
-                return JSON.parse(images);
-            } catch {
-                return [];
-            }
-        }
-
-        return [];
-    };
-
-
-    /* =========================================
-       REFRESH REVIEWS
-    ========================================= */
-
-    const loadReviews = () => {
-        setRefresh((prev) => !prev);
-    };
-
-
-    /* =========================================
-       LOAD PRODUCT
-    ========================================= */
-
-    useEffect(() => {
-        loadProduct();
-    }, [id]);
-
-
-    const loadProduct = async () => {
-        try {
-            setLoading(true);
-
-            const response = await api.get(
-                `/products/${id}`
-            );
-
-            const item =
-                response.data.product ||
-                response.data;
-
-            if (!item) {
-                setProduct(null);
-                return;
-            }
-
-            const images = normalizeImages(item.images);
-
-            const normalizedProduct = {
-                ...item,
-                images
-            };
-
-            setProduct(normalizedProduct);
-
-            if (images.length > 0) {
-                setSelectedImage(images[0]);
-            }
-
-            await Promise.all([
-                loadRelated(),
-                recordProductView()
-            ]);
-
-        } catch (error) {
-            console.error(
-                "LOAD PRODUCT ERROR:",
-                error.response?.data || error.message
-            );
-
-            setProduct(null);
-
-        } finally {
-            setLoading(false);
-        }
-    };
-
-
-    /* =========================================
-       RECORD PRODUCT VIEW
-    ========================================= */
-
-    const recordProductView = async () => {
-        try {
-            await api.post(
-                `/products/${id}/view`
-            );
-
-        } catch (error) {
-            console.log(
-                "VIEW RECORD ERROR:",
-                error.response?.data || error.message
-            );
-        }
-    };
-
-
-    /* =========================================
-       LOAD RELATED PRODUCTS
-    ========================================= */
-
-    const loadRelated = async () => {
-        try {
-            const response = await api.get(
-                `/products/related/${id}`
-            );
-
-            setRelatedProducts(
-                response.data.products || []
-            );
-
-        } catch (error) {
-            console.error(
-                "RELATED PRODUCTS ERROR:",
-                error.response?.data || error.message
-            );
-
-            setRelatedProducts([]);
-        }
-    };
-
-
-    /* =========================================
-       CREATE LEAD
-    ========================================= */
-
-    const createLead = async (
-        type,
-        offerPrice = 0
-    ) => {
-
-        if (!user) {
-            navigate("/login");
-            return false;
-        }
-
-        if (!product) {
-            return false;
-        }
-
-        try {
-
-            await api.post(
-                "/leads",
-                {
-                    productId: product.id,
-                    type,
-                    offerPrice
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
-            );
-
-            return true;
-
-        } catch (error) {
-
-            console.error(
-                "CREATE LEAD ERROR:",
-                error.response?.data || error.message
-            );
-
-            return false;
-        }
-    };
-
-
-    /* =========================================
-       CONTACT SELLER
-    ========================================= */
-
-    const contactSeller = async () => {
-
-        if (!user) {
-            navigate("/login");
+    const handleImageError = (event) => {
+        if (
+            event.currentTarget.dataset.fallback === "true"
+        ) {
             return;
         }
 
-        try {
-
-            const leadCreated =
-                await createLead("Chat");
-
-            if (!leadCreated) {
-                return;
-            }
-
-            const sellerId =
-                product.userId ||
-                product.sellerId ||
-                product.seller?.id;
-
-            if (!sellerId) {
-                alert("Seller information is unavailable.");
-                return;
-            }
-
-            const response = await api.post(
-                "/messages",
-                {
-                    buyerId: user.id,
-                    sellerId,
-                    productId: product.id,
-                    senderId: user.id,
-                    message:
-                        "Hello, I'm interested in this product."
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
-            );
-
-            const conversationId =
-                response.data.conversation?.id ||
-                response.data.conversationId;
-
-            if (conversationId) {
-                navigate(`/chat/${conversationId}`);
-            } else {
-                alert("Conversation created successfully.");
-            }
-
-        } catch (error) {
-
-            console.error(
-                "CONTACT SELLER ERROR:",
-                error.response?.data || error.message
-            );
-
-            alert(
-                error.response?.data?.message ||
-                "Unable to contact seller."
-            );
-        }
+        event.currentTarget.dataset.fallback = "true";
+        event.currentTarget.src = "/default-product.png";
     };
 
-
     /* =========================================
-       ADD TO WISHLIST
+       PRICE
     ========================================= */
 
-    const addWishlist = async () => {
-
-        if (!user) {
-            navigate("/login");
-            return;
-        }
-
-        try {
-
-            await api.post(
-                "/wishlist",
-                {
-                    productId: product.id
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
-            );
-
-            alert("Added to wishlist.");
-
-        } catch (error) {
-
-            console.error(
-                "WISHLIST ERROR:",
-                error.response?.data || error.message
-            );
-
-            alert(
-                error.response?.data?.message ||
-                "Unable to add product to wishlist."
-            );
-        }
-    };
-
+    const formattedPrice = Number(
+        product.price || 0
+    ).toLocaleString("en-GH");
 
     /* =========================================
-       SHARE PRODUCT
+       LOCATION
     ========================================= */
 
-    const shareProduct = async () => {
-
-        try {
-
-            await api.post(
-                `/products/${id}/share`
-            );
-
-        } catch (error) {
-
-            console.log(
-                "SHARE COUNT ERROR:",
-                error.response?.data || error.message
-            );
-        }
-
-        try {
-
-            if (
-                navigator.share &&
-                typeof navigator.share === "function"
-            ) {
-
-                await navigator.share({
-                    title: product.title,
-                    text: product.description,
-                    url: window.location.href
-                });
-
-            } else {
-
-                await navigator.clipboard.writeText(
-                    window.location.href
-                );
-
-                alert("Product link copied.");
-            }
-
-        } catch (error) {
-
-            console.log("SHARE ERROR:", error);
-        }
-    };
-
+    const location =
+        product.location ||
+        product.city ||
+        product.region ||
+        "Location not specified";
 
     /* =========================================
-       INTERESTED
+       CONDITION
     ========================================= */
 
-    const interested = async () => {
-
-        if (
-            await createLead("Interested")
-        ) {
-            alert("Seller has been notified.");
-        }
-    };
-
+    const condition =
+        product.condition ||
+        product.statusText ||
+        product.productCondition ||
+        "Available";
 
     /* =========================================
-       REQUEST PHONE
+       SELLER ID
     ========================================= */
-
-    const requestPhone = async () => {
-
-        if (
-            await createLead("Phone Request")
-        ) {
-            alert(
-                "Your phone number request has been sent to the seller."
-            );
-        }
-    };
-
-
-    /* =========================================
-       REQUEST LOCATION
-    ========================================= */
-
-    const requestLocation = async () => {
-
-        if (
-            await createLead("Location Request")
-        ) {
-            alert(
-                "Your location request has been sent to the seller."
-            );
-        }
-    };
-
-
-    /* =========================================
-       MAKE OFFER
-    ========================================= */
-
-    const makeOffer = async () => {
-
-        const offerAmount = Number(offer);
-
-        if (
-            !offer ||
-            Number.isNaN(offerAmount) ||
-            offerAmount <= 0
-        ) {
-            alert(
-                "Please enter a valid offer amount."
-            );
-
-            return;
-        }
-
-        if (
-            await createLead(
-                "Offer",
-                offerAmount
-            )
-        ) {
-
-            alert("Offer submitted successfully.");
-
-            setOffer("");
-        }
-    };
-
-
-    /* =========================================
-       LOADING
-    ========================================= */
-
-    if (loading) {
-        return (
-            <div className="loading">
-                Loading Product...
-            </div>
-        );
-    }
-
-
-    /* =========================================
-       PRODUCT NOT FOUND
-    ========================================= */
-
-    if (!product) {
-        return (
-            <div className="loading">
-                Product not found.
-            </div>
-        );
-    }
-
-
-    /* =========================================
-       VARIABLES
-    ========================================= */
-
-    const canReview =
-        user &&
-        Number(user.id) !==
-        Number(
-            product.userId ||
-            product.sellerId
-        );
 
     const sellerId =
         product.userId ||
         product.sellerId ||
-        product.seller?.id;
+        product.seller?.id ||
+        product.user?.id;
 
-const productStructuredData = product
-    ? {
-        "@context": "https://schema.org",
-        "@type": "Product",
-
-        name: product.title,
-
-        description:
-            product.description ||
-            `Buy ${product.title} on KAD Marketplace Ghana.`,
-
-        image: product.images?.length
-            ? product.images.map((image) =>
-                getImageUrl(image)
-            )
-            : [],
-
-        sku: String(product.id),
-
-        category: product.category || "General",
-
-        brand: {
-            "@type": "Brand",
-            name: "KAD Marketplace"
-        },
-
-        offers: {
-            "@type": "Offer",
-
-            url: `https://kadmarket.com/product/${id}`,
-
-            priceCurrency: "GHS",
-
-            price: Number(product.price || 0),
-
-            availability:
-                "https://schema.org/InStock",
-
-            itemCondition:
-                product.condition === "New"
-                    ? "https://schema.org/NewCondition"
-                    : "https://schema.org/UsedCondition",
-
-            seller: {
-                "@type": "Organization",
-                name:
-                    product.seller?.name ||
-                    "KAD Marketplace Seller"
-            }
-        }
-    }
-    : null;
     /* =========================================
-       PAGE
+       VIEWS
     ========================================= */
 
+    const views =
+        product.views ??
+        product.viewCount ??
+        0;
+
+    /* =========================================
+       TITLE
+    ========================================= */
+
+    const title =
+        product.title ||
+        product.name ||
+        "Untitled Product";
+
+    /* =========================================
+       SAVE PRODUCT
+    ========================================= */
+
+    const handleSave = () => {
+        /*
+         * Keep this action ready for the wishlist system.
+         * If wishlist functionality already exists,
+         * replace this with the existing handler.
+         */
+
+        const savedProducts =
+            JSON.parse(
+                localStorage.getItem(
+                    "kad_saved_products"
+                ) || "[]"
+            );
+
+        const alreadySaved =
+            savedProducts.includes(productId);
+
+        let updatedProducts;
+
+        if (alreadySaved) {
+            updatedProducts =
+                savedProducts.filter(
+                    (id) => id !== productId
+                );
+        } else {
+            updatedProducts = [
+                ...savedProducts,
+                productId
+            ];
+        }
+
+        localStorage.setItem(
+            "kad_saved_products",
+            JSON.stringify(updatedProducts)
+        );
+
+        window.dispatchEvent(
+            new Event("kadWishlistChanged")
+        );
+    };
+
+    const isSaved = () => {
+        try {
+            const savedProducts =
+                JSON.parse(
+                    localStorage.getItem(
+                        "kad_saved_products"
+                    ) || "[]"
+                );
+
+            return savedProducts.includes(productId);
+        } catch {
+            return false;
+        }
+    };
+
+    /* =========================================
+       SELLER PROFILE
+    ========================================= */
+
+    const handleSellerProfile = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (!sellerId) {
+            return;
+        }
+
+        navigate(`/seller/${sellerId}`);
+    };
+
     return (
-        
+        <article className="product-card">
 
-        <div className="product-details-page">
-<SEO
-    title={
-        product
-            ? `${product.name || product.title || "Product"} | KAD Marketplace`
-            : "Product | KAD Marketplace"
-    }
-    description={
-        product
-            ? (
-                product.description ||
-                `Buy ${product.name || product.title || "this product"} on KAD Marketplace Ghana.`
-            ).substring(0, 160)
-            : "View products for sale on KAD Marketplace Ghana."
-    }
-    keywords={
-        product
-            ? [
-                product.name,
-                product.category,
-                product.subcategory,
-                product.location,
-                "Ghana",
-                "KAD Marketplace"
-            ]
-                .filter(Boolean)
-                .join(", ")
-            : "products, marketplace, Ghana, buy and sell"
-    }
-    image={
-        product?.images?.[0]
-            ? getImageUrl(product.images[0])
-            : undefined
-    }
-    canonical={`https://kadmarket.com/product/${id}`}
-/>
-            <div className="product-container">
+            {/* =================================
+                IMAGE
+            ================================= */}
 
+            <Link
+                to={`/product/${productId}`}
+                className="product-image-link"
+            >
+                <div className="product-image-wrapper">
 
-                {/* IMAGE GALLERY */}
+                    <img
+                        src={getImageUrl()}
+                        alt={title}
+                        className="product-image"
+                        onError={handleImageError}
+                        loading="lazy"
+                    />
 
-                <div className="gallery-section">
-
-                    <div className="main-image">
-
-                        <img
-                            src={getImageUrl(selectedImage)}
-                            alt={product.title || "Product"}
-                        />
-
-                        {product.featured && (
-
-                            <span className="featured-tag">
-                                ⭐ Featured
-                            </span>
-
-                        )}
-
-                        {product.express && (
-
-                            <span className="express-tag">
-                                ⚡ Express
-                            </span>
-
-                        )}
-
-                    </div>
-
-
-                    {/* THUMBNAILS */}
-
-                    {product.images?.length > 0 && (
-
-                        <div className="thumbnail-list">
-
-                            {product.images.map(
-                                (image, index) => (
-
-                                    <img
-                                        key={index}
-                                        src={getImageUrl(image)}
-                                        alt={`${product.title} ${index + 1}`}
-                                        className={
-                                            selectedImage === image
-                                                ? "active-thumb"
-                                                : ""
-                                        }
-                                        onClick={() =>
-                                            setSelectedImage(image)
-                                        }
-                                    />
-
-                                )
-                            )}
-
-                        </div>
-
+                    {/* Featured */}
+                    {product.featured && (
+                        <span className="product-badge featured-badge">
+                            Featured
+                        </span>
                     )}
+
+                    {/* Condition */}
+                    {condition && (
+                        <span className="product-badge condition-badge">
+                            {condition}
+                        </span>
+                    )}
+
+                    {/* Image overlay */}
+                    <div className="image-overlay">
+                        <span>
+                            View Product
+                        </span>
+                    </div>
+                </div>
+            </Link>
+
+            {/* =================================
+                PRODUCT CONTENT
+            ================================= */}
+
+            <div className="product-content">
+
+                {/* CATEGORY */}
+                {product.category && (
+                    <div className="product-category">
+                        {product.category}
+                    </div>
+                )}
+
+                {/* TITLE */}
+                <Link
+                    to={`/product/${productId}`}
+                    className="product-title"
+                >
+                    {title}
+                </Link>
+
+                {/* PRICE */}
+                <div className="product-price">
+                    <span className="currency">
+                        GH₵
+                    </span>
+
+                    <span>
+                        {formattedPrice}
+                    </span>
+                </div>
+
+                {/* LOCATION + CONDITION */}
+                <div className="product-meta">
+
+                    <span
+                        className="product-meta-item"
+                        title={location}
+                    >
+                        <span className="meta-icon">
+                            📍
+                        </span>
+
+                        <span>
+                            {location}
+                        </span>
+                    </span>
+
+                    <span
+                        className="product-meta-item"
+                    >
+                        <span className="meta-icon">
+                            👁
+                        </span>
+
+                        <span>
+                            {views} views
+                        </span>
+                    </span>
 
                 </div>
 
+                {/* =================================
+                    ACTIONS
+                ================================= */}
 
-                {/* PRODUCT DETAILS */}
+                <div className="product-actions">
 
-                <div className="details-section">
-
-                    <h1>
-                        {product.title}
-                    </h1>
-
-
-                    {/* PRICE */}
-
-                    <h2 className="price">
-
-                        GH₵{" "}
-
-                        {Number(
-                            product.price || 0
-                        ).toLocaleString()}
-
-                    </h2>
-
-
-                    {/* BADGES */}
-
-                    <div className="badges">
-
-                        <span className="condition">
-                            {product.condition || "Not specified"}
-                        </span>
-
+                    <Link
+                        to={`/product/${productId}`}
+                        className="product-action primary-action"
+                    >
                         <span>
-                            📦 {product.category || "General"}
+                            View Details
                         </span>
 
-                        <span>
-                            📍 {product.city || "Unknown"},{" "}
-                            {product.region || "Ghana"}
+                        <span className="action-arrow">
+                            →
                         </span>
+                    </Link>
 
-                    </div>
-
-
-                    {/* STATISTICS */}
-
-                    <div className="statistics">
-
-                        <span>
-                            👁 {product.views || 0} Views
-                        </span>
-
-                        <span>
-                            ❤️ {product.favourites || 0}
-                        </span>
-
-                        <span>
-                            ⭐ {Number(
-                                product.sellerRating || 0
-                            ).toFixed(1)}
-                        </span>
-
-                    </div>
-
-
-                    {/* DESCRIPTION */}
-
-                    <div className="description">
-
-                        <h3>
-                            Description
-                        </h3>
-
-                        <p>
-                            {product.description ||
-                                "No description available."}
-                        </p>
-
-                    </div>
-
-
-                    {/* ACTION BUTTONS */}
-
-                    <div className="action-buttons">
-
+                    {sellerId ? (
                         <button
-                            className="contact-btn"
-                            onClick={contactSeller}
-                        >
-                            💬 Chat Seller
-                        </button>
-
-
-                        <button
-                            className="wishlist-btn"
-                            onClick={addWishlist}
-                        >
-                            ❤️ Save
-                        </button>
-
-
-                        <button
-                            className="share-btn"
-                            onClick={shareProduct}
-                        >
-                            📤 Share
-                        </button>
-
-
-                        <button
-                            className="interest-btn"
-                            onClick={interested}
-                        >
-                            ❤️ I'm Interested
-                        </button>
-
-
-                        <button
-                            className="phone-btn"
-                            onClick={requestPhone}
-                        >
-                            📞 Request Phone
-                        </button>
-
-
-                        <button
-                            className="location-btn"
-                            onClick={requestLocation}
-                        >
-                            📍 Request Location
-                        </button>
-
-                    </div>
-
-
-                    {/* MAKE OFFER */}
-
-                    <div className="offer-box">
-
-                        <h3>
-                            Make an Offer
-                        </h3>
-
-                        <input
-                            type="number"
-                            min="1"
-                            placeholder="Enter your offer"
-                            value={offer}
-                            onChange={(e) =>
-                                setOffer(e.target.value)
+                            type="button"
+                            className="product-action seller-action"
+                            onClick={
+                                handleSellerProfile
                             }
-                        />
-
-                        <button
-                            className="offer-btn"
-                            onClick={makeOffer}
                         >
-                            💰 Submit Offer
+                            <span>
+                                View Seller
+                            </span>
                         </button>
+                    ) : (
+                        <span className="product-action seller-action disabled-action">
+                            Seller
+                        </span>
+                    )}
 
-                    </div>
+                    <button
+                        type="button"
+                        className={`save-action ${
+                            isSaved()
+                                ? "saved"
+                                : ""
+                        }`}
+                        onClick={handleSave}
+                        aria-label={
+                            isSaved()
+                                ? "Remove from saved"
+                                : "Save product"
+                        }
+                    >
+                        {isSaved()
+                            ? "♥"
+                            : "♡"}
+                    </button>
 
                 </div>
 
             </div>
 
-
-            {/* SELLER CARD */}
-
-            {sellerId && (
-
-                <SellerCard
-                    sellerId={sellerId}
-                />
-
-            )}
-
-
-            {/* REVIEWS */}
-
-            {canReview && (
-
-                <ReviewForm
-                    productId={product.id}
-                    onReviewAdded={loadReviews}
-                />
-
-            )}
-
-
-            {/* REPORT PRODUCT */}
-
-            <ReportForm
-                productId={product.id}
-            />
-
-
-            {/* REVIEW LIST */}
-
-            <ReviewList
-                productId={product.id}
-                refresh={refresh}
-            />
-
-
-            {/* RELATED PRODUCTS */}
-
-            <section className="related-products">
-
-                <h2>
-                    Related Products
-                </h2>
-
-                {relatedProducts.length === 0 ? (
-
-                    <div className="no-products">
-
-                        <p>
-                            No related products found.
-                        </p>
-
-                    </div>
-
-                ) : (
-
-                    <div className="products">
-
-                        {relatedProducts.map(
-                            (item) => (
-
-                                <ProductCard
-                                    key={item.id}
-                                    product={item}
-                                />
-
-                            )
-                        )}
-
-                    </div>
-
-                )}
-
-            </section>
-
-        </div>
-
+        </article>
     );
 }
 
-export default ProductDetails;
+export default ProductCard;
