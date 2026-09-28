@@ -1,25 +1,21 @@
 /* =========================================================
-   KAD MARKETPLACE - COMPACT PRODUCT CARD
+   PRODUCT CARD
 ========================================================= */
 
 .product-card {
     width: 100%;
-    max-width: 100%;
     min-width: 0;
-
-    box-sizing: border-box;
-
-    display: flex;
-    flex-direction: column;
-
     overflow: hidden;
 
     background: #ffffff;
 
     border: 1px solid #e5e7eb;
-    border-radius: 8px;
+    border-radius: 10px;
 
-    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 7px rgba(0, 0, 0, 0.06);
+
+    display: flex;
+    flex-direction: column;
 
     transition:
         transform 0.2s ease,
@@ -27,89 +23,86 @@
 }
 
 .product-card:hover {
-    transform: translateY(-2px);
-
-    box-shadow:
-        0 5px 14px rgba(0, 0, 0, 0.09);
+    transform: translateY(-3px);
+    box-shadow: 0 7px 18px rgba(0, 0, 0, 0.10);
 }
 
 
 /* =========================================================
-   IMAGE
+   PRODUCT IMAGE
 ========================================================= */
 
 .product-image-container {
     position: relative;
 
     width: 100%;
-    max-width: 100%;
 
-    aspect-ratio: 1 / 0.70;
+    /*
+       Bigger image area without making the
+       entire card excessively tall.
+    */
+    aspect-ratio: 1 / 0.72;
 
     overflow: hidden;
 
     background: #f3f4f6;
 
-    box-sizing: border-box;
+    display: block;
+
+    text-decoration: none;
 }
 
 .product-image {
-    display: block;
-
     width: 100%;
     height: 100%;
 
-    max-width: 100%;
+    display: block;
 
     object-fit: cover;
 
-    transition: transform 0.2s ease;
+    transition: transform 0.25s ease;
 }
 
 .product-card:hover .product-image {
-    transform: scale(1.02);
+    transform: scale(1.03);
 }
 
 
 /* =========================================================
-   BADGES
+   PROMOTION BADGES
 ========================================================= */
 
 .promotion-badges {
     position: absolute;
 
-    top: 4px;
-    left: 4px;
-    right: 4px;
+    top: 6px;
+    left: 6px;
+    right: 6px;
 
     display: flex;
     flex-wrap: wrap;
 
-    gap: 3px;
-
-    max-width: calc(100% - 8px);
+    gap: 4px;
 
     pointer-events: none;
 }
 
 .promotion-badges span {
-    max-width: 100%;
+    display: inline-flex;
 
-    display: inline-block;
+    align-items: center;
+    justify-content: center;
 
-    padding: 2px 4px;
+    padding: 3px 6px;
 
-    border-radius: 4px;
+    border-radius: 5px;
 
-    font-size: 7px;
+    font-size: 9px;
     font-weight: 700;
 
-    line-height: 1.15;
+    line-height: 1.1;
 
     white-space: nowrap;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 
@@ -118,16 +111,12 @@
 ========================================================= */
 
 .product-info {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-
-    box-sizing: border-box;
-
     display: flex;
     flex-direction: column;
 
-    padding: 6px;
+    min-width: 0;
+
+    padding: 8px;
 }
 
 
@@ -139,22 +128,21 @@
     width: fit-content;
     max-width: 100%;
 
-    box-sizing: border-box;
-
     margin-bottom: 3px;
 
-    padding: 2px 4px;
+    padding: 3px 5px;
 
     border-radius: 4px;
 
-    font-size: 7px;
+    font-size: 8px;
     font-weight: 700;
 
-    line-height: 1.15;
+    line-height: 1.1;
 
     white-space: nowrap;
 
     overflow: hidden;
+
     text-overflow: ellipsis;
 }
 
@@ -164,24 +152,12 @@
 ========================================================= */
 
 .product-price {
-    width: 100%;
-    max-width: 100%;
-
-    box-sizing: border-box;
-
     margin: 0 0 3px;
 
-    color: #111827;
-
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 800;
 
     line-height: 1.15;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 
@@ -190,11 +166,6 @@
 ========================================================= */
 
 .product-title {
-    width: 100%;
-    max-width: 100%;
-
-    box-sizing: border-box;
-
     display: -webkit-box;
 
     overflow: hidden;
@@ -203,18 +174,15 @@
 
     color: #111827;
 
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 600;
 
-    line-height: 1.2;
+    line-height: 1.25;
 
     text-decoration: none;
 
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
-
-    overflow-wrap: anywhere;
-    word-break: break-word;
 }
 
 .product-title:hover {
@@ -227,21 +195,13 @@
 ========================================================= */
 
 .product-condition {
-    width: 100%;
-    max-width: 100%;
-
     margin: 0 0 2px;
 
     color: #4b5563;
 
-    font-size: 8px;
+    font-size: 9px;
 
-    line-height: 1.15;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.2;
 }
 
 
@@ -250,81 +210,72 @@
 ========================================================= */
 
 .product-location {
-    width: 100%;
-    max-width: 100%;
+    margin: 0 0 3px;
 
-    margin: 0 0 2px;
+    color: #6b7280;
+
+    font-size: 9px;
+
+    line-height: 1.2;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+
+/* =========================================================
+   VIEWS
+========================================================= */
+
+.product-stats {
+    margin: 0 0 6px;
 
     color: #6b7280;
 
     font-size: 8px;
 
-    line-height: 1.15;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.1;
 }
 
 
 /* =========================================================
-   STATS
-========================================================= */
-
-.product-stats {
-    width: 100%;
-    max-width: 100%;
-
-    margin: 0 0 4px;
-
-    color: #6b7280;
-
-    font-size: 7px;
-
-    line-height: 1.15;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-
-/* =========================================================
-   ACTIONS
+   ACTION BUTTONS
 ========================================================= */
 
 .product-actions {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-
-    box-sizing: border-box;
-
     display: flex;
 
-    gap: 3px;
+    width: 100%;
+
+    gap: 5px;
+
+    margin-top: auto;
 }
 
 .details-btn,
 .store-btn {
     flex: 1 1 0;
 
-    width: 0;
     min-width: 0;
-    max-width: 100%;
 
-    box-sizing: border-box;
+    display: flex;
 
-    padding: 4px 2px;
+    align-items: center;
+    justify-content: center;
 
-    border-radius: 4px;
+    height: 28px;
 
-    font-size: 7px;
+    padding: 0 4px;
+
+    border-radius: 5px;
+
+    font-size: 9px;
     font-weight: 700;
 
-    line-height: 1.15;
+    line-height: 1;
 
     text-align: center;
 
@@ -333,50 +284,8 @@
     white-space: nowrap;
 
     overflow: hidden;
+
     text-overflow: ellipsis;
-}
-
-
-/* =========================================================
-   DESKTOP - 6 CARDS
-========================================================= */
-
-@media (min-width: 1200px) {
-
-    .product-card {
-        border-radius: 8px;
-    }
-
-    .product-image-container {
-        aspect-ratio: 1 / 0.68;
-    }
-
-    .product-info {
-        padding: 6px;
-    }
-
-    .product-price {
-        font-size: 13px;
-    }
-
-    .product-title {
-        font-size: 9px;
-    }
-
-    .product-condition,
-    .product-location {
-        font-size: 7px;
-    }
-
-    .product-stats {
-        font-size: 6.5px;
-    }
-
-    .details-btn,
-    .store-btn {
-        font-size: 6.5px;
-        padding: 4px 2px;
-    }
 }
 
 
@@ -384,85 +293,152 @@
    TABLET
 ========================================================= */
 
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
+
+    .product-card {
+        border-radius: 9px;
+    }
 
     .product-image-container {
         aspect-ratio: 1 / 0.70;
     }
 
     .product-info {
-        padding: 6px;
+        padding: 7px;
     }
 
     .product-price {
-        font-size: 13px;
+        font-size: 15px;
     }
 
     .product-title {
-        font-size: 9px;
+        font-size: 11px;
     }
 
-    .product-condition,
-    .product-location {
-        font-size: 7px;
-    }
-
-    .product-stats {
-        font-size: 6.5px;
+    .details-btn,
+    .store-btn {
+        height: 27px;
+        font-size: 8px;
     }
 }
 
 
 /* =========================================================
-   MOBILE - 2 CARDS
+   MOBILE
 ========================================================= */
 
-@media (max-width: 700px) {
+@media (max-width: 767px) {
 
     .product-card {
-        border-radius: 7px;
+        border-radius: 8px;
+
+        box-shadow:
+            0 1px 5px rgba(0, 0, 0, 0.07);
     }
 
+
+    /*
+       Larger image relative to the card.
+       This makes the product easier to see.
+    */
     .product-image-container {
         aspect-ratio: 1 / 0.68;
     }
 
+
     .product-info {
-        padding: 5px;
+        padding: 6px;
     }
+
 
     .seller-plan {
-        font-size: 6.5px;
-        padding: 2px 3px;
+        font-size: 7px;
+
+        padding: 2px 4px;
+
+        margin-bottom: 3px;
     }
+
 
     .product-price {
-        font-size: 12px;
+        font-size: 14px;
+
+        margin-bottom: 2px;
     }
 
+
     .product-title {
-        font-size: 8.5px;
-        line-height: 1.15;
+        font-size: 10px;
+
+        line-height: 1.2;
+
+        margin-bottom: 3px;
     }
+
 
     .product-condition,
     .product-location {
-        font-size: 7px;
+        font-size: 8px;
+
+        line-height: 1.15;
     }
 
-    .product-stats {
-        font-size: 6px;
+
+    .product-location {
+        margin-bottom: 2px;
     }
+
+
+    .product-stats {
+        font-size: 7px;
+
+        margin-bottom: 5px;
+    }
+
+
+    /*
+       IMPORTANT:
+       Keep both buttons visible on mobile.
+    */
+    .product-actions {
+        display: flex;
+
+        width: 100%;
+
+        gap: 4px;
+    }
+
 
     .details-btn,
     .store-btn {
-        padding: 4px 2px;
-        font-size: 6.5px;
+        display: flex;
+
+        flex: 1 1 50%;
+
+        width: 50%;
+
+        min-width: 0;
+
+        height: 27px;
+
+        padding: 0 3px;
+
+        font-size: 8px;
+
+        border-radius: 4px;
+
+        white-space: nowrap;
+
+        overflow: hidden;
+
+        text-overflow: ellipsis;
     }
 
+
     .promotion-badges span {
-        font-size: 6px;
-        padding: 2px 3px;
+        font-size: 7px;
+
+        padding: 2px 4px;
     }
 }
 
@@ -474,84 +450,110 @@
 @media (max-width: 420px) {
 
     .product-image-container {
+        /*
+           Keep the image visually large.
+        */
+        aspect-ratio: 1 / 0.67;
+    }
+
+
+    .product-info {
+        padding: 5px;
+    }
+
+
+    .seller-plan {
+        font-size: 6.5px;
+
+        padding: 2px 3px;
+    }
+
+
+    .product-price {
+        font-size: 13px;
+    }
+
+
+    .product-title {
+        font-size: 9px;
+
+        line-height: 1.18;
+    }
+
+
+    .product-condition,
+    .product-location {
+        font-size: 7px;
+    }
+
+
+    .product-stats {
+        font-size: 6.5px;
+
+        margin-bottom: 4px;
+    }
+
+
+    /*
+       Buttons remain side-by-side even
+       on very small phones.
+    */
+    .details-btn,
+    .store-btn {
+        height: 25px;
+
+        font-size: 7px;
+
+        padding: 0 2px;
+
+        border-radius: 4px;
+    }
+}
+
+
+/* =========================================================
+   EXTRA SMALL PHONES
+========================================================= */
+
+@media (max-width: 350px) {
+
+    .product-image-container {
         aspect-ratio: 1 / 0.65;
     }
+
 
     .product-info {
         padding: 4px;
     }
 
+
     .product-price {
-        font-size: 11px;
+        font-size: 12px;
     }
+
 
     .product-title {
         font-size: 8px;
     }
+
 
     .product-condition,
     .product-location {
         font-size: 6.5px;
     }
 
+
     .product-stats {
-        font-size: 5.5px;
+        font-size: 6px;
     }
+
 
     .details-btn,
     .store-btn {
-        padding: 4px 1px;
-        font-size: 6px;
-    }
+        height: 24px;
 
-    .seller-plan {
-        font-size: 6px;
-    }
-}
+        font-size: 6.5px;
 
-
-/* =========================================================
-   VERY SMALL PHONES
-========================================================= */
-
-@media (max-width: 360px) {
-
-    .product-image-container {
-        aspect-ratio: 1 / 0.62;
-    }
-
-    .product-info {
-        padding: 3px;
-    }
-
-    .product-price {
-        font-size: 10px;
-    }
-
-    .product-title {
-        font-size: 7.5px;
-    }
-
-    .product-condition,
-    .product-location {
-        font-size: 6px;
-    }
-
-    .product-stats {
-        font-size: 5px;
-    }
-
-    .details-btn,
-    .store-btn {
-        font-size: 5.5px;
-        padding: 3px 1px;
-    }
-
-    .seller-plan {
-        font-size: 5.5px;
-    }
-
-    .promotion-badges span {
-        font-size: 5.5px;
+        padding: 0 1px;
     }
 }
