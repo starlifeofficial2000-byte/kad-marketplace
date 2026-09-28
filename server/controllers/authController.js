@@ -1766,36 +1766,34 @@ exports.login = async (req, res) => {
         );
 
 
-        /* =================================================
-           DETERMINE 2FA REQUIREMENT
-        ================================================= */
+/* =================================================
+   DETERMINE 2FA REQUIREMENT
+================================================= */
 
-        /*
-         * Rules:
-         *
-         * 2FA OFF
-         * ----------------
-         * Nobody receives OTP.
-         *
-         *
-         * 2FA ON +
-         * Require Admin 2FA ON
-         * ----------------
-         * Only administrators receive OTP.
-         *
-         *
-         * 2FA ON +
-         * Require Admin 2FA OFF
-         * ----------------
-         * All users receive OTP.
-         */
+/*
+ * Rules:
+ *
+ * 2FA OFF + Admin 2FA OFF
+ * -----------------------
+ * Nobody receives OTP.
+ *
+ *
+ * 2FA OFF + Admin 2FA ON
+ * ----------------------
+ * Only administrators receive OTP.
+ *
+ *
+ * 2FA ON
+ * ----------------------
+ * All users receive OTP.
+ */
 
-        const requires2FA =
-            twoFactorEnabled &&
-            (
-                !requireAdminTwoFactor ||
-                isAdmin
-            );
+const requires2FA =
+    twoFactorEnabled ||
+    (
+        isAdmin &&
+        requireAdminTwoFactor
+    );
 
 
         console.log(
