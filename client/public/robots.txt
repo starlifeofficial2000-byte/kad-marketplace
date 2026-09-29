@@ -1,0 +1,27 @@
+User-agent: *
+Allow: /
+
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /verify-reset
+Disallow: /reset-password
+Disallow: /verify-login-otp
+Disallow: /dashboard
+Disallow: /sell
+Disallow: /profile
+Disallow: /inbox
+Disallow: /chat/
+Disallow: /notifications
+Disallow: /promotions
+Disallow: /promotion-success
+Disallow: /payment-success
+Disallow: /payment-failed
+Disallow: /edit-product
+Disallow: /seller/leads
+Disallow: /wishlist
+Disallow: /support
+Disallow: /my-tickets
+Disallow: /admin/
+
+Sitemap: https://kadmarket.com/sitemap.xml
