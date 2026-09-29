@@ -9,9 +9,14 @@ import {
 import api from "./config/axios";
 
 /* ==========================================
-   PUBLIC PAGES
+   SEO
 ========================================== */
 import SEO from "./components/SEO";
+import SEOManager from "./components/SEO/SEOManager";
+
+/* ==========================================
+   PUBLIC PAGES
+========================================== */
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -24,7 +29,6 @@ import VerifyLoginOTP from "./pages/VerifyLoginOTP";
 /* ==========================================
    SELLER
 ========================================== */
-
 import SellerDashboard from "./pages/SellerDashboard";
 import Sell from "./pages/Sell";
 import SellerProfile from "./pages/SellerProfile";
@@ -32,31 +36,33 @@ import SellerProfile from "./pages/SellerProfile";
 /* ==========================================
    PRODUCTS
 ========================================== */
-
 import ProductDetails from "./pages/ProductDetails";
 import EditProduct from "./pages/EditProduct";
 
 /* ==========================================
    USER
 ========================================== */
-
 import Profile from "./pages/Profile";
 import Inbox from "./pages/Inbox";
 import Chat from "./pages/Chat";
 import Notifications from "./pages/Notifications";
-
 import Wishlist from "./pages/Wishlist";
 
+/* ==========================================
+   PROMOTIONS
+========================================== */
 import Promotions from "./pages/Promotions";
 import PromotionSuccess from "./pages/PromotionSuccess";
 
+/* ==========================================
+   PAYMENTS
+========================================== */
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFailed from "./pages/PaymentFailed";
 
 /* ==========================================
    SUPPORT
 ========================================== */
-
 import Support from "./pages/Support";
 import MyTickets from "./pages/MyTickets";
 import TicketDetails from "./pages/TicketDetails";
@@ -64,7 +70,6 @@ import TicketDetails from "./pages/TicketDetails";
 /* ==========================================
    OTHER PUBLIC PAGES
 ========================================== */
-
 import SellerLeads from "./pages/SellerLeads";
 import StorePage from "./pages/StorePage";
 import About from "./pages/About";
@@ -77,13 +82,11 @@ import Recommended from "./pages/Recommended";
 /* ==========================================
    ADMIN LAYOUT
 ========================================== */
-
 import AdminLayout from "./layouts/AdminLayout";
 
 /* ==========================================
    ADMIN PAGES
 ========================================== */
-
 import DashboardHome from "./pages/admin/DashboardHome";
 import Users from "./pages/admin/Users";
 import Products from "./pages/admin/Products";
@@ -128,7 +131,7 @@ import LoginHistory from "./pages/admin/LoginHistory";
 
 /* =========================================================
    DYNAMIC FAVICON
-   ========================================================= */
+========================================================= */
 
 function DynamicFavicon() {
 
@@ -144,7 +147,9 @@ function DynamicFavicon() {
                     "[FAVICON] Loading marketplace settings..."
                 );
 
-                const response = await api.get("/settings/public");
+                const response = await api.get(
+                    "/settings/public"
+                );
 
                 console.log(
                     "[FAVICON] Settings response:",
@@ -152,8 +157,10 @@ function DynamicFavicon() {
                 );
 
                 /*
-                 * Support several possible response structures.
+                 * Support multiple possible API
+                 * response structures.
                  */
+
                 const settings =
                     response.data?.settings ||
                     response.data?.data?.settings ||
@@ -161,15 +168,24 @@ function DynamicFavicon() {
                     response.data ||
                     {};
 
+
                 /*
                  * Find favicon URL.
                  */
+
                 const favicon =
-                    settings.favicon ||
-                    settings.faviconUrl ||
-                    settings.branding?.favicon ||
-                    settings.branding?.faviconUrl ||
+                    settings?.favicon ||
+                    settings?.faviconUrl ||
+                    settings?.branding?.favicon ||
+                    settings?.branding?.faviconUrl ||
+                    settings?.configuration?.branding?.favicon ||
+                    settings?.configuration?.branding?.faviconUrl ||
                     "";
+
+
+                /*
+                 * No favicon returned.
+                 */
 
                 if (!favicon) {
 
@@ -180,21 +196,31 @@ function DynamicFavicon() {
                     return;
                 }
 
+
+                /*
+                 * Component was unmounted.
+                 */
+
                 if (cancelled) {
                     return;
                 }
 
+
                 /*
-                 * Find existing favicon link.
+                 * Find existing favicon.
                  */
+
                 let faviconLink =
                     document.querySelector(
                         'link[rel="icon"]'
                     );
 
+
                 /*
-                 * Create favicon link if it does not exist.
+                 * Create favicon link
+                 * if it doesn't exist.
                  */
+
                 if (!faviconLink) {
 
                     faviconLink =
@@ -205,83 +231,100 @@ function DynamicFavicon() {
                     document.head.appendChild(
                         faviconLink
                     );
+
                 }
 
+
                 /*
-                 * Determine favicon MIME type.
+                 * Determine MIME type.
                  */
+
                 let mimeType = "image/png";
 
                 const lowerUrl =
-                    favicon.toLowerCase();
+                    String(favicon).toLowerCase();
+
 
                 if (
                     lowerUrl.includes(".ico")
                 ) {
-                    mimeType = "image/x-icon";
-                }
 
-                if (
+                    mimeType =
+                        "image/x-icon";
+
+                } else if (
                     lowerUrl.includes(".svg")
                 ) {
-                    mimeType = "image/svg+xml";
-                }
 
-                if (
+                    mimeType =
+                        "image/svg+xml";
+
+                } else if (
                     lowerUrl.includes(".jpg") ||
                     lowerUrl.includes(".jpeg")
                 ) {
-                    mimeType = "image/jpeg";
-                }
 
-                if (
+                    mimeType =
+                        "image/jpeg";
+
+                } else if (
                     lowerUrl.includes(".webp")
                 ) {
-                    mimeType = "image/webp";
-                }
 
-                if (
+                    mimeType =
+                        "image/webp";
+
+                } else if (
                     lowerUrl.includes(".gif")
                 ) {
-                    mimeType = "image/gif";
+
+                    mimeType =
+                        "image/gif";
+
                 }
+
 
                 faviconLink.type = mimeType;
 
+
                 /*
-                 * Cache-busting.
-                 *
-                 * This is important because browsers cache
-                 * favicons very aggressively.
+                 * Cache busting.
                  */
+
                 const separator =
                     favicon.includes("?")
                         ? "&"
                         : "?";
 
+
                 faviconLink.href =
                     `${favicon}${separator}v=${Date.now()}`;
 
+
                 /*
-                 * Remove old shortcut favicon.
+                 * Remove shortcut icon.
                  */
+
                 const shortcutIcon =
                     document.querySelector(
                         'link[rel="shortcut icon"]'
                     );
 
+
                 if (shortcutIcon) {
                     shortcutIcon.remove();
                 }
 
+
                 /*
-                 * Also remove any duplicate icon links
-                 * except the active one.
+                 * Remove duplicate favicon links.
                  */
+
                 const allIcons =
                     document.querySelectorAll(
                         'link[rel="icon"]'
                     );
+
 
                 allIcons.forEach((icon) => {
 
@@ -290,6 +333,7 @@ function DynamicFavicon() {
                     }
 
                 });
+
 
                 console.log(
                     "[FAVICON] Active favicon:",
@@ -300,48 +344,82 @@ function DynamicFavicon() {
 
                 console.error(
                     "[FAVICON] Failed to load favicon:",
-                    error.response?.data ||
-                    error.message ||
+                    error?.response?.data ||
+                    error?.message ||
                     error
                 );
 
             }
+
         };
+
 
         loadFavicon();
 
+
         return () => {
+
             cancelled = true;
+
         };
 
     }, []);
 
+
     return null;
 }
 
+
 /* =========================================================
    APP
-   ========================================================= */
+========================================================= */
 
 function App() {
 
     return (
 
         <>
+
             {/* ==========================================
-                DYNAMIC MARKETPLACE FAVICON
+                DYNAMIC FAVICON
             ========================================== */}
 
             <DynamicFavicon />
 
+
+            {/* ==========================================
+                SEO MANAGER
+
+                IMPORTANT:
+                Do NOT pass `settings={settings}`
+                because `settings` is not defined here.
+
+                SEOManager should load the public SEO
+                configuration itself.
+            ========================================== */}
+
+            <SEOManager />
+
+
+            {/* ==========================================
+                DEFAULT SEO
+            ========================================== */}
+
             <SEO />
+
+
+            {/* ==========================================
+                ROUTER
+            ========================================== */}
+
             <BrowserRouter>
 
                 <Routes>
 
-                    {/* ==========================================
+
+                    {/* =================================================
                         PUBLIC PAGES
-                    ========================================== */}
+                    ================================================= */}
 
                     <Route
                         path="/"
@@ -359,9 +437,9 @@ function App() {
                     />
 
 
-                    {/* ==========================================
+                    {/* =================================================
                         PASSWORD RESET
-                    ========================================== */}
+                    ================================================= */}
 
                     <Route
                         path="/forgot-password"
@@ -384,9 +462,9 @@ function App() {
                     />
 
 
-                    {/* ==========================================
+                    {/* =================================================
                         STORE
-                    ========================================== */}
+                    ================================================= */}
 
                     <Route
                         path="/store/:storeSlug"
@@ -394,9 +472,9 @@ function App() {
                     />
 
 
-                    {/* ==========================================
+                    {/* =================================================
                         SELLER
-                    ========================================== */}
+                    ================================================= */}
 
                     <Route
                         path="/dashboard"
@@ -419,9 +497,9 @@ function App() {
                     />
 
 
-                    {/* ==========================================
+                    {/* =================================================
                         PRODUCTS
-                    ========================================== */}
+                    ================================================= */}
 
                     <Route
                         path="/product/:id"
@@ -434,9 +512,9 @@ function App() {
                     />
 
 
-                    {/* ==========================================
+                    {/* =================================================
                         PUBLIC INFORMATION
-                    ========================================== */}
+                    ================================================= */}
 
                     <Route
                         path="/about"
@@ -469,9 +547,9 @@ function App() {
                     />
 
 
-                    {/* ==========================================
+                    {/* =================================================
                         PROFILE
-                    ========================================== */}
+                    ================================================= */}
 
                     <Route
                         path="/profile"
@@ -484,9 +562,9 @@ function App() {
                     />
 
 
-                    {/* ==========================================
+                    {/* =================================================
                         CHAT
-                    ========================================== */}
+                    ================================================= */}
 
                     <Route
                         path="/inbox"
@@ -499,9 +577,9 @@ function App() {
                     />
 
 
-                    {/* ==========================================
+                    {/* =================================================
                         NOTIFICATIONS
-                    ========================================== */}
+                    ================================================= */}
 
                     <Route
                         path="/notifications"
@@ -509,9 +587,9 @@ function App() {
                     />
 
 
-                    {/* ==========================================
+                    {/* =================================================
                         SUPPORT
-                    ========================================== */}
+                    ================================================= */}
 
                     <Route
                         path="/support"
@@ -529,9 +607,9 @@ function App() {
                     />
 
 
-                    {/* ==========================================
+                    {/* =================================================
                         PROMOTIONS
-                    ========================================== */}
+                    ================================================= */}
 
                     <Route
                         path="/promotions"
@@ -544,9 +622,9 @@ function App() {
                     />
 
 
-                    {/* ==========================================
+                    {/* =================================================
                         PAYMENTS
-                    ========================================== */}
+                    ================================================= */}
 
                     <Route
                         path="/payment-success"
@@ -559,9 +637,9 @@ function App() {
                     />
 
 
-                    {/* ==========================================
+                    {/* =================================================
                         ADMIN CONTACT MESSAGES
-                    ========================================== */}
+                    ================================================= */}
 
                     <Route
                         path="/admin/contact-messages"
@@ -569,9 +647,9 @@ function App() {
                     />
 
 
-                    {/* ==========================================
+                    {/* =================================================
                         ADMIN SECURITY
-                    ========================================== */}
+                    ================================================= */}
 
                     <Route
                         path="/admin/security"
@@ -649,7 +727,7 @@ function App() {
 
 
                         {/* ==========================================
-                            AUDIT / LOGIN HISTORY
+                            AUDIT LOGS
                         ========================================== */}
 
                         <Route
@@ -805,6 +883,7 @@ function App() {
         </>
 
     );
+
 }
 
 
