@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import api from "../../config/axios";
+import api from "../config/axios";
 import ProductCard from "../components/ProductCard";
-import categories from "../../data/categories";
+import categories from "../data/categories";
 import "./SearchPage.css";
 
 function SearchPage() {
