@@ -6,10 +6,18 @@ const User = require("../models/User");
    CREATE REVIEW
    POST /api/reviews
 ========================================================= */
-
 exports.createReview = async (req, res) => {
     try {
-        const { productId, rating, title, comment } = req.body;
+        const {
+            productId,
+            rating,
+            title,
+            comment
+        } = req.body;
+
+        /* =========================================
+           VALIDATE PRODUCT
+        ========================================= */
 
         if (!productId) {
             return res.status(400).json({
@@ -17,6 +25,10 @@ exports.createReview = async (req, res) => {
                 message: "Product ID is required."
             });
         }
+
+        /* =========================================
+           VALIDATE RATING
+        ========================================= */
 
         const numericRating = Number(rating);
 
@@ -31,12 +43,20 @@ exports.createReview = async (req, res) => {
             });
         }
 
+        /* =========================================
+           VALIDATE COMMENT
+        ========================================= */
+
         if (!comment || !String(comment).trim()) {
             return res.status(400).json({
                 success: false,
                 message: "Review comment is required."
             });
         }
+
+        /* =========================================
+           FIND PRODUCT
+        ========================================= */
 
         const product = await Product.findByPk(productId);
 
@@ -46,6 +66,10 @@ exports.createReview = async (req, res) => {
                 message: "Product not found."
             });
         }
+
+        /* =========================================
+           CHECK DUPLICATE REVIEW
+        ========================================= */
 
         const existingReview = await Review.findOne({
             where: {
@@ -61,28 +85,61 @@ exports.createReview = async (req, res) => {
             });
         }
 
+        /* =========================================
+           TITLE
+           
+           Database requires title NOT NULL.
+           If frontend does not provide one,
+           automatically create a safe default.
+        ========================================= */
+
+        const reviewTitle =
+            title && String(title).trim()
+                ? String(title).trim()
+                : "Customer Review";
+
+        /* =========================================
+           CREATE REVIEW
+        ========================================= */
+
         const review = await Review.create({
             buyerId: req.user.id,
+
             sellerId: product.userId,
+
             productId,
+
             rating: numericRating,
-            title: title ? String(title).trim() : null,
+
+            title: reviewTitle,
+
             comment: String(comment).trim()
         });
 
-        const createdReview = await Review.findByPk(review.id, {
-            include: [
-                {
-                    model: User,
-                    as: "buyer",
-                    attributes: [
-                        "id",
-                        "name",
-                        "profileImage"
-                    ]
-                }
-            ]
-        });
+        /* =========================================
+           LOAD CREATED REVIEW WITH BUYER
+        ========================================= */
+
+        const createdReview = await Review.findByPk(
+            review.id,
+            {
+                include: [
+                    {
+                        model: User,
+                        as: "buyer",
+                        attributes: [
+                            "id",
+                            "name",
+                            "profileImage"
+                        ]
+                    }
+                ]
+            }
+        );
+
+        /* =========================================
+           RESPONSE
+        ========================================= */
 
         return res.status(201).json({
             success: true,
@@ -91,15 +148,20 @@ exports.createReview = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("CREATE REVIEW ERROR:", error);
+
+        console.error(
+            "CREATE REVIEW ERROR:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
-            message: error.message || "Unable to create review."
+            message:
+                error.message ||
+                "Unable to create review."
         });
     }
 };
-
 
 /* =========================================================
    GET PRODUCT REVIEWS
