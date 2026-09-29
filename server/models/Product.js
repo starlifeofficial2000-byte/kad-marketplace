@@ -5,12 +5,14 @@ const Product = sequelize.define(
     "Product",
     {
 
-        id: {
+        /* =====================================
+           PRIMARY KEY
+        ===================================== */
 
+        id: {
             type: DataTypes.INTEGER,
             autoIncrement: true,
             primaryKey: true
-
         },
 
 
@@ -19,17 +21,13 @@ const Product = sequelize.define(
         ===================================== */
 
         userId: {
-
             type: DataTypes.INTEGER,
             allowNull: false
-
         },
 
         subscriptionPlanId: {
-
             type: DataTypes.INTEGER,
             allowNull: true
-
         },
 
 
@@ -38,61 +36,58 @@ const Product = sequelize.define(
         ===================================== */
 
         title: {
-
             type: DataTypes.STRING,
             allowNull: false
-
         },
 
         slug: {
-
             type: DataTypes.STRING,
             allowNull: false,
             unique: true
-
         },
 
         description: {
-
             type: DataTypes.TEXT,
             allowNull: false
-
         },
+
+        /* MAIN CATEGORY */
 
         category: {
-
             type: DataTypes.STRING,
             allowNull: false
-
         },
 
-        condition: {
+        /* SUBCATEGORY */
 
+        subcategory: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
+
+        /* PRODUCT CONDITION */
+
+        condition: {
             type: DataTypes.ENUM(
                 "New",
                 "Used"
             ),
-
             allowNull: false,
-
             defaultValue: "Used"
-
         },
+
+        /* PRICE */
 
         price: {
-
             type: DataTypes.DECIMAL(10, 2),
-
             allowNull: false
-
         },
 
+        /* IMAGES */
+
         images: {
-
             type: DataTypes.TEXT,
-
             allowNull: true
-
         },
 
 
@@ -101,114 +96,71 @@ const Product = sequelize.define(
         ===================================== */
 
         location: {
-
             type: DataTypes.STRING,
-
             allowNull: false
-
         },
 
         region: {
-
             type: DataTypes.STRING,
-
             allowNull: false
-
         },
 
         city: {
-
             type: DataTypes.STRING,
-
             allowNull: false
-
         },
 
 
         /* =====================================
            ADMIN APPROVAL STATUS
-           
-           IMPORTANT:
-           This status is controlled by the
-           administrator approval workflow.
-           
-           Seller must NOT be allowed to
-           change this directly.
+
+           Controlled by administrator.
         ===================================== */
 
         status: {
-
             type: DataTypes.ENUM(
                 "Pending",
                 "Approved",
                 "Rejected"
             ),
-
             allowNull: false,
-
             defaultValue: "Pending"
-
         },
 
         rejectionReason: {
-
             type: DataTypes.TEXT,
-
             allowNull: true
-
         },
 
         approvedAt: {
-
             type: DataTypes.DATE,
-
             allowNull: true
-
         },
 
         approvedBy: {
-
             type: DataTypes.INTEGER,
-
             allowNull: true
-
         },
 
 
         /* =====================================
            SELLER AVAILABILITY STATUS
-           
-           This is separate from admin approval.
-           
-           Seller can control:
-           - Active
-           - Inactive
-           - Sold
-           - Out of Stock
         ===================================== */
 
         sellerStatus: {
-
             type: DataTypes.ENUM(
                 "Active",
                 "Inactive",
                 "Sold",
                 "Out of Stock"
             ),
-
             allowNull: false,
-
             defaultValue: "Active"
-
         },
 
-
         soldAt: {
-
             type: DataTypes.DATE,
-
             allowNull: true
-
         },
 
 
@@ -217,74 +169,49 @@ const Product = sequelize.define(
         ===================================== */
 
         deleted: {
-
             type: DataTypes.BOOLEAN,
-
             allowNull: false,
-
             defaultValue: false
-
         },
 
 
         /* =====================================
-           SUBSCRIPTION
+           SUBSCRIPTION / PROMOTION
         ===================================== */
 
         promotionType: {
-
             type: DataTypes.STRING,
-
             defaultValue: "Basic"
-
         },
 
         listingPriority: {
-
             type: DataTypes.INTEGER,
-
             defaultValue: 1
-
         },
 
         homepagePriority: {
-
             type: DataTypes.INTEGER,
-
             defaultValue: 1
-
         },
 
         searchPriority: {
-
             type: DataTypes.INTEGER,
-
             defaultValue: 1
-
         },
 
         listingScore: {
-
             type: DataTypes.INTEGER,
-
             defaultValue: 100
-
         },
 
         qualityScore: {
-
             type: DataTypes.INTEGER,
-
             defaultValue: 100
-
         },
 
         displayDate: {
-
             type: DataTypes.DATE,
-
             defaultValue: DataTypes.NOW
-
         },
 
 
@@ -293,43 +220,28 @@ const Product = sequelize.define(
         ===================================== */
 
         boosted: {
-
             type: DataTypes.BOOLEAN,
-
             defaultValue: false
-
         },
 
         boostCount: {
-
             type: DataTypes.INTEGER,
-
             defaultValue: 0
-
         },
 
         lastBoost: {
-
             type: DataTypes.DATE,
-
             allowNull: true
-
         },
 
         nextBoost: {
-
             type: DataTypes.DATE,
-
             allowNull: true
-
         },
 
         boostExpiresAt: {
-
             type: DataTypes.DATE,
-
             allowNull: true
-
         },
 
 
@@ -338,19 +250,13 @@ const Product = sequelize.define(
         ===================================== */
 
         featured: {
-
             type: DataTypes.BOOLEAN,
-
             defaultValue: false
-
         },
 
         featuredUntil: {
-
             type: DataTypes.DATE,
-
             allowNull: true
-
         },
 
 
@@ -359,19 +265,13 @@ const Product = sequelize.define(
         ===================================== */
 
         express: {
-
             type: DataTypes.BOOLEAN,
-
             defaultValue: false
-
         },
 
         expressUntil: {
-
             type: DataTypes.DATE,
-
             allowNull: true
-
         },
 
 
@@ -380,27 +280,18 @@ const Product = sequelize.define(
         ===================================== */
 
         aiRecommended: {
-
             type: DataTypes.BOOLEAN,
-
             defaultValue: false
-
         },
 
         aiScore: {
-
             type: DataTypes.FLOAT,
-
             defaultValue: 0
-
         },
 
         keywords: {
-
             type: DataTypes.TEXT,
-
             allowNull: true
-
         },
 
 
@@ -409,11 +300,8 @@ const Product = sequelize.define(
         ===================================== */
 
         verifiedStore: {
-
             type: DataTypes.BOOLEAN,
-
             defaultValue: false
-
         },
 
 
@@ -422,43 +310,28 @@ const Product = sequelize.define(
         ===================================== */
 
         views: {
-
             type: DataTypes.INTEGER,
-
             defaultValue: 0
-
         },
 
         favourites: {
-
             type: DataTypes.INTEGER,
-
             defaultValue: 0
-
         },
 
         chatCount: {
-
             type: DataTypes.INTEGER,
-
             defaultValue: 0
-
         },
 
         shares: {
-
             type: DataTypes.INTEGER,
-
             defaultValue: 0
-
         },
 
         reports: {
-
             type: DataTypes.INTEGER,
-
             defaultValue: 0
-
         },
 
 
@@ -467,19 +340,13 @@ const Product = sequelize.define(
         ===================================== */
 
         sellerRating: {
-
             type: DataTypes.FLOAT,
-
             defaultValue: 5
-
         },
 
         sellerSales: {
-
             type: DataTypes.INTEGER,
-
             defaultValue: 0
-
         },
 
 
@@ -488,19 +355,13 @@ const Product = sequelize.define(
         ===================================== */
 
         metaTitle: {
-
             type: DataTypes.STRING,
-
             allowNull: true
-
         },
 
         metaDescription: {
-
             type: DataTypes.TEXT,
-
             allowNull: true
-
         },
 
 
@@ -509,42 +370,28 @@ const Product = sequelize.define(
         ===================================== */
 
         isTrending: {
-
             type: DataTypes.BOOLEAN,
-
             defaultValue: false
-
         },
 
         isFeatured: {
-
             type: DataTypes.BOOLEAN,
-
             defaultValue: false
-
         },
 
         isRecommended: {
-
             type: DataTypes.BOOLEAN,
-
             defaultValue: false
-
         },
 
         displayOrder: {
-
             type: DataTypes.INTEGER,
-
             defaultValue: 0
-
         }
 
     },
     {
-
         timestamps: true
-
     }
 );
 

@@ -291,16 +291,17 @@ function generateSlug(title) {
 =========================================================== */
 
 function validateProduct(data) {
-    const required = [
-        "title",
-        "description",
-        "price",
-        "category",
-        "condition",
-        "location",
-        "region",
-        "city"
-    ];
+  const required = [
+    "title",
+    "description",
+    "price",
+    "category",
+    "subcategory",
+    "condition",
+    "location",
+    "region",
+    "city"
+];
 
     for (const field of required) {
         if (
@@ -1144,6 +1145,8 @@ exports.createProduct =
                         category:
                             req.body.category,
 
+                             subcategory:
+            req.body.subcategory,
 
                         condition:
                             req.body.condition,

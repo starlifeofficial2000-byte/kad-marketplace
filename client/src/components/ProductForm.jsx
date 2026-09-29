@@ -1,31 +1,247 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import api from "../config/axios";
 import { ghanaLocations } from "../data/ghanaLocations";
 
 function ProductForm() {
+    const categories = useMemo(() => [
+        {
+            name: "Phones & Tablets",
+            subcategories: [
+                "Mobile Phones",
+                "iPhone",
+                "Samsung",
+                "Tecno",
+                "Infinix",
+                "Tablets",
+                "other",
+                "Phone Accessories"
+            ]
+        },
+        {
+            name: "Land & Property",
+            subcategories: [
+                "Land for Sale",
+                "Land for Rent",
+                "Houses for Sale",
+                "Houses for Rent",
+                "Apartments for Sale",
+                "Apartments for Rent",
+                "Commercial Property",
+                "Office Spaces",
+                "Shops & Stores",
+                "Buildings",
+                "Farms & Agricultural Land"
+            ]
+        },
+        {
+            name: "Computers & Laptops",
+            subcategories: [
+                "Laptops",
+                "Desktop Computers",
+                "Monitors",
+                "Printers",
+                "Computer Accessories"
+            ]
+        },
+        {
+            name: "Electronics",
+            subcategories: [
+                "Televisions",
+                "Radios",
+                "Speakers",
+                "Headphones",
+                "Home Electronics"
+            ]
+        },
+        {
+            name: "Music & Entertainment",
+            subcategories: [
+                "DJ Equipment",
+                "Musical Instruments",
+                "Studio Equipment",
+                "Speakers",
+                "Music Accessories"
+            ]
+        },
+        {
+            name: "Food & Groceries",
+            subcategories: [
+                "Food Stuff",
+                "Drinks",
+                "Snacks",
+                "Grains",
+                "Household Groceries"
+            ]
+        },
+        {
+            name: "Fashion & Clothing",
+            subcategories: [
+                "Men's Clothing",
+                "Women's Clothing",
+                "Children's Clothing",
+                "Shoes",
+                "Fashion Accessories"
+            ]
+        },
+        {
+            name: "Bags & Accessories",
+            subcategories: [
+                "Bags",
+                "Watches",
+                "Jewellery",
+                "Wallets",
+                "Accessories"
+            ]
+        },
+        {
+            name: "Cars & Vehicles",
+            subcategories: [
+                "Cars",
+                "Trucks",
+                "Buses",
+                "Car Spare Parts",
+                "Car Accessories"
+            ]
+        },
+        {
+            name: "Motorcycles",
+            subcategories: [
+                "Motorcycles",
+                "Motorbike Parts",
+                "Motorbike Accessories",
+                "Helmets"
+            ]
+        },
+        {
+            name: "Home & Furniture",
+            subcategories: [
+                "Beds",
+                "Sofas",
+                "Tables",
+                "Chairs",
+                "Wardrobes",
+                "Home Appliances"
+            ]
+        },
+        {
+            name: "Tools & Equipment",
+            subcategories: [
+                "Power Tools",
+                "Hand Tools",
+                "Construction Equipment",
+                "Workshop Equipment"
+            ]
+        },
+        {
+            name: "Sports & Fitness",
+            subcategories: [
+                "Football",
+                "Gym Equipment",
+                "Fitness Equipment",
+                "Bicycles",
+                "Sports Accessories"
+            ]
+        },
+        {
+            name: "Cameras & Photography",
+            subcategories: [
+                "Digital Cameras",
+                "DSLR Cameras",
+                "Mirrorless Cameras",
+                "Lenses",
+                "Camera Accessories"
+            ]
+        },
+        {
+            name: "Baby & Kids",
+            subcategories: [
+                "Baby Clothes",
+                "Baby Equipment",
+                "Toys",
+                "Children's Products"
+            ]
+        },
+        {
+            name: "Books & Education",
+            subcategories: [
+                "Textbooks",
+                "Novels",
+                "School Supplies",
+                "Educational Materials"
+            ]
+        },
+        {
+            name: "Solar & Power",
+            subcategories: [
+                "Solar Panels",
+                "Inverters",
+                "Batteries",
+                "Generators",
+                "Solar Accessories"
+            ]
+        },
+        {
+            name: "Building & Construction",
+            subcategories: [
+                "Building Materials",
+                "Plumbing",
+                "Electrical Materials",
+                "Construction Equipment"
+            ]
+        },
+        {
+            name: "Gaming",
+            subcategories: [
+                "PlayStation",
+                "Xbox",
+                "Nintendo",
+                "Gaming PCs",
+                "Gaming Accessories"
+            ]
+        },
+        {
+            name: "Jobs & Services",
+            subcategories: [
+                "Employment Opportunities",
+                "Freelance Services",
+                "Professional Services",
+                "Repairs",
+                "Cleaning Services"
+            ]
+        }
+    ], []);
+
     const [title, setTitle] = useState("");
-    const [category, setCategory] = useState("Mobile Phones");
+    const [category, setCategory] = useState("Phones & Tablets");
+    const [subcategory, setSubcategory] = useState("Mobile Phones");
     const [price, setPrice] = useState("");
     const [condition, setCondition] = useState("New");
-
     const [region, setRegion] = useState("");
     const [city, setCity] = useState("");
-
     const [description, setDescription] = useState("");
     const [images, setImages] = useState([]);
-
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
 
-    /* =========================================
-       VALIDATE FORM
-    ========================================= */
+    const currentSubcategories =
+        categories.find(
+            (item) => item.name === category
+        )?.subcategories || [];
 
     const validateForm = () => {
         const newErrors = {};
 
         if (!title.trim()) {
             newErrors.title = "Product title is required.";
+        }
+
+        if (!category) {
+            newErrors.category = "Please select a category.";
+        }
+
+        if (!subcategory) {
+            newErrors.subcategory =
+                "Please select a subcategory.";
         }
 
         if (!price || Number(price) <= 0) {
@@ -41,7 +257,8 @@ function ProductForm() {
         }
 
         if (!description.trim()) {
-            newErrors.description = "Description is required.";
+            newErrors.description =
+                "Description is required.";
         } else if (description.trim().length < 20) {
             newErrors.description =
                 "Description must be at least 20 characters.";
@@ -62,15 +279,34 @@ function ProductForm() {
         return Object.keys(newErrors).length === 0;
     };
 
-    /* =========================================
-       HANDLE IMAGE CHANGE
-    ========================================= */
+    const handleCategoryChange = (e) => {
+        const selectedCategory = e.target.value;
+
+        setCategory(selectedCategory);
+
+        const selected = categories.find(
+            (item) => item.name === selectedCategory
+        );
+
+        setSubcategory(
+            selected?.subcategories?.[0] || ""
+        );
+
+        setErrors((prev) => ({
+            ...prev,
+            category: "",
+            subcategory: ""
+        }));
+    };
 
     const handleImageChange = (e) => {
-        const selectedFiles = Array.from(e.target.files);
+        const selectedFiles = Array.from(
+            e.target.files || []
+        );
 
         if (selectedFiles.length > 5) {
             alert("Maximum 5 images allowed.");
+            e.target.value = "";
             return;
         }
 
@@ -82,19 +318,11 @@ function ProductForm() {
         }));
     };
 
-    /* =========================================
-       REMOVE IMAGE
-    ========================================= */
-
     const removeImage = (index) => {
-        setImages((prevImages) =>
-            prevImages.filter((_, i) => i !== index)
+        setImages((prev) =>
+            prev.filter((_, i) => i !== index)
         );
     };
-
-    /* =========================================
-       SUBMIT PRODUCT
-    ========================================= */
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -108,13 +336,40 @@ function ProductForm() {
 
             const formData = new FormData();
 
-            formData.append("title", title.trim());
-            formData.append("category", category);
-            formData.append("price", price);
-            formData.append("condition", condition);
+            formData.append(
+                "title",
+                title.trim()
+            );
 
-            formData.append("region", region);
-            formData.append("city", city);
+            formData.append(
+                "category",
+                category
+            );
+
+            formData.append(
+                "subcategory",
+                subcategory
+            );
+
+            formData.append(
+                "price",
+                price
+            );
+
+            formData.append(
+                "condition",
+                condition
+            );
+
+            formData.append(
+                "region",
+                region
+            );
+
+            formData.append(
+                "city",
+                city
+            );
 
             formData.append(
                 "location",
@@ -127,7 +382,10 @@ function ProductForm() {
             );
 
             images.forEach((image) => {
-                formData.append("images", image);
+                formData.append(
+                    "images",
+                    image
+                );
             });
 
             const response = await api.post(
@@ -135,44 +393,39 @@ function ProductForm() {
                 formData,
                 {
                     headers: {
-                        "Content-Type": "multipart/form-data"
+                        "Content-Type":
+                            "multipart/form-data"
                     }
                 }
             );
 
             alert(
-                response.data.message ||
+                response.data?.message ||
                 "Product submitted successfully."
             );
 
-            /* RESET FORM */
-
             setTitle("");
-            setCategory("Mobile Phones");
+            setCategory("Phones & Tablets");
+            setSubcategory("Mobile Phones");
             setPrice("");
             setCondition("New");
-
             setRegion("");
             setCity("");
-
             setDescription("");
             setImages([]);
             setErrors({});
-        }
-
-        catch (error) {
+        } catch (error) {
             console.error(
                 "PRODUCT UPLOAD ERROR:",
-                error.response?.data || error.message
+                error.response?.data ||
+                error.message
             );
 
             alert(
                 error.response?.data?.message ||
                 "Unable to upload product."
             );
-        }
-
-        finally {
+        } finally {
             setLoading(false);
         }
     };
@@ -182,17 +435,11 @@ function ProductForm() {
             className="sell-form"
             onSubmit={handleSubmit}
         >
-
-            {/* =====================================
-               BASIC INFORMATION
-            ===================================== */}
-
             <h2 className="section-title">
                 Basic Information
             </h2>
 
             <div className="form-group">
-
                 <label>
                     Product Title *
                 </label>
@@ -211,73 +458,112 @@ function ProductForm() {
                         {errors.title}
                     </span>
                 )}
-
             </div>
-
 
             <div className="form-row">
 
                 <div className="form-group">
-
                     <label>
                         Category *
                     </label>
 
                     <select
                         value={category}
-                        onChange={(e) =>
-                            setCategory(e.target.value)
+                        onChange={
+                            handleCategoryChange
                         }
                     >
+                        <option value="">
+                            Select Category
+                        </option>
 
-                        <option>Mobile Phones</option>
-                        <option>Laptops</option>
-                        <option>TV</option>
-                        <option>Radio</option>
-                        <option>Music Equipment</option>
-                        <option>Food Stuff</option>
-                        <option>Clothes</option>
-                        <option>Accessories</option>
-                        <option>Cars</option>
-                        <option>Motorcycles</option>
-                        <option>Employment Opportunities</option>
-
+                        {categories.map(
+                            (item) => (
+                                <option
+                                    key={item.name}
+                                    value={item.name}
+                                >
+                                    {item.name}
+                                </option>
+                            )
+                        )}
                     </select>
 
+                    {errors.category && (
+                        <span className="error">
+                            {errors.category}
+                        </span>
+                    )}
                 </div>
 
-
                 <div className="form-group">
-
                     <label>
-                        Condition *
+                        Subcategory *
                     </label>
 
                     <select
-                        value={condition}
+                        value={subcategory}
                         onChange={(e) =>
-                            setCondition(e.target.value)
+                            setSubcategory(
+                                e.target.value
+                            )
+                        }
+                        disabled={
+                            !category ||
+                            currentSubcategories.length === 0
                         }
                     >
+                        <option value="">
+                            Select Subcategory
+                        </option>
 
-                        <option>New</option>
-                        <option>Used</option>
-
+                        {currentSubcategories.map(
+                            (item) => (
+                                <option
+                                    key={item}
+                                    value={item}
+                                >
+                                    {item}
+                                </option>
+                            )
+                        )}
                     </select>
 
+                    {errors.subcategory && (
+                        <span className="error">
+                            {errors.subcategory}
+                        </span>
+                    )}
                 </div>
 
             </div>
 
+            <div className="form-group">
+                <label>
+                    Condition *
+                </label>
 
-            {/* =====================================
-               PRICE AND LOCATION
-            ===================================== */}
+                <select
+                    value={condition}
+                    onChange={(e) =>
+                        setCondition(
+                            e.target.value
+                        )
+                    }
+                >
+                    <option value="New">
+                        New
+                    </option>
+
+                    <option value="Used">
+                        Used
+                    </option>
+                </select>
+            </div>
 
             <div className="form-row">
 
                 <div className="form-group">
-
                     <label>
                         Price (GH₵) *
                     </label>
@@ -289,7 +575,9 @@ function ProductForm() {
                         min="0"
                         step="0.01"
                         onChange={(e) =>
-                            setPrice(e.target.value)
+                            setPrice(
+                                e.target.value
+                            )
                         }
                     />
 
@@ -298,12 +586,9 @@ function ProductForm() {
                             {errors.price}
                         </span>
                     )}
-
                 </div>
 
-
                 <div className="form-group">
-
                     <label>
                         Region *
                     </label>
@@ -311,26 +596,26 @@ function ProductForm() {
                     <select
                         value={region}
                         onChange={(e) => {
-                            setRegion(e.target.value);
+                            setRegion(
+                                e.target.value
+                            );
                             setCity("");
                         }}
                     >
-
                         <option value="">
                             Select Region
                         </option>
 
-                        {Object.keys(ghanaLocations).map(
-                            (item) => (
-                                <option
-                                    key={item}
-                                    value={item}
-                                >
-                                    {item}
-                                </option>
-                            )
-                        )}
-
+                        {Object.keys(
+                            ghanaLocations
+                        ).map((item) => (
+                            <option
+                                key={item}
+                                value={item}
+                            >
+                                {item}
+                            </option>
+                        ))}
                     </select>
 
                     {errors.region && (
@@ -338,14 +623,11 @@ function ProductForm() {
                             {errors.region}
                         </span>
                     )}
-
                 </div>
 
             </div>
 
-
             <div className="form-group">
-
                 <label>
                     City *
                 </label>
@@ -354,26 +636,26 @@ function ProductForm() {
                     value={city}
                     disabled={!region}
                     onChange={(e) =>
-                        setCity(e.target.value)
+                        setCity(
+                            e.target.value
+                        )
                     }
                 >
-
                     <option value="">
                         Select City
                     </option>
 
                     {region &&
-                        ghanaLocations[region]?.map(
-                            (item) => (
-                                <option
-                                    key={item}
-                                    value={item}
-                                >
-                                    {item}
-                                </option>
-                            )
-                        )}
-
+                        ghanaLocations[
+                            region
+                        ]?.map((item) => (
+                            <option
+                                key={item}
+                                value={item}
+                            >
+                                {item}
+                            </option>
+                        ))}
                 </select>
 
                 {errors.city && (
@@ -381,60 +663,53 @@ function ProductForm() {
                         {errors.city}
                     </span>
                 )}
-
             </div>
-
-
-            {/* =====================================
-               DESCRIPTION
-            ===================================== */}
 
             <h2 className="section-title">
                 Description
             </h2>
 
-            <textarea
-                rows="6"
-                maxLength="1000"
-                placeholder="Describe your product..."
-                value={description}
-                onChange={(e) =>
-                    setDescription(e.target.value)
-                }
-            />
+            <div className="form-group">
+                <textarea
+                    rows="6"
+                    maxLength="1000"
+                    placeholder="Describe your product..."
+                    value={description}
+                    onChange={(e) =>
+                        setDescription(
+                            e.target.value
+                        )
+                    }
+                />
 
-            <small>
-                {description.length}/1000 Characters
-            </small>
+                <small>
+                    {description.length}/1000 Characters
+                </small>
 
-            {errors.description && (
-                <span className="error">
-                    {errors.description}
-                </span>
-            )}
-
-
-            {/* =====================================
-               PRODUCT IMAGES
-            ===================================== */}
+                {errors.description && (
+                    <span className="error">
+                        {errors.description}
+                    </span>
+                )}
+            </div>
 
             <h2 className="section-title">
                 Product Images
             </h2>
 
             <div className="upload-box">
-
                 <input
                     type="file"
                     multiple
                     accept="image/*"
-                    onChange={handleImageChange}
+                    onChange={
+                        handleImageChange
+                    }
                 />
 
                 <p>
                     📷 Upload up to 5 Images
                 </p>
-
             </div>
 
             {errors.images && (
@@ -443,65 +718,54 @@ function ProductForm() {
                 </span>
             )}
 
-
-            {/* =====================================
-               IMAGE PREVIEW
-            ===================================== */}
-
             <div className="preview-images">
-
-                {images.map((image, index) => (
-
-                    <div
-                        className="preview-card"
-                        key={`${image.name}-${index}`}
-                    >
-
-                        <img
-                            className="preview-image"
-                            src={URL.createObjectURL(image)}
-                            alt={`Preview ${index + 1}`}
-                        />
-
-                        {index === 0 && (
-                            <span className="cover-badge">
-                                Cover
-                            </span>
-                        )}
-
-                        <button
-                            type="button"
-                            className="remove-image"
-                            onClick={() =>
-                                removeImage(index)
-                            }
+                {images.map(
+                    (image, index) => (
+                        <div
+                            className="preview-card"
+                            key={`${image.name}-${index}`}
                         >
-                            ✕
-                        </button>
+                            <img
+                                className="preview-image"
+                                src={URL.createObjectURL(
+                                    image
+                                )}
+                                alt={`Preview ${
+                                    index + 1
+                                }`}
+                            />
 
-                    </div>
+                            {index === 0 && (
+                                <span className="cover-badge">
+                                    Cover
+                                </span>
+                            )}
 
-                ))}
-
+                            <button
+                                type="button"
+                                className="remove-image"
+                                onClick={() =>
+                                    removeImage(
+                                        index
+                                    )
+                                }
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    )
+                )}
             </div>
-
-
-            {/* =====================================
-               SUBMIT BUTTON
-            ===================================== */}
 
             <button
                 type="submit"
                 className="submit-btn"
                 disabled={loading}
             >
-
                 {loading
                     ? "Uploading..."
                     : "Submit For Approval"}
-
             </button>
-
         </form>
     );
 }
