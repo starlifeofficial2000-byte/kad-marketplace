@@ -1,3 +1,19 @@
+/* ============================================================
+   KAD MARKETPLACE — GLOBAL STYLES
+   BRAND COLORS
+   Navy  : #0B2A5B
+   Blue  : #123F7A
+   Orange: #FF7A00
+   Gold  : #FF9800
+   Light  : #FFF7ED
+   Soft   : #F5F8FC
+============================================================ */
+
+
+/* ============================================================
+   RESET
+============================================================ */
+
 * {
     margin: 0;
     padding: 0;
@@ -15,11 +31,29 @@ body {
     width: 100%;
     min-width: 320px;
     min-height: 100vh;
-    font-family: Arial, sans-serif;
-    background: #f5f5f5;
-    color: #222;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background:
+        linear-gradient(
+            180deg,
+            #F8FAFD 0%,
+            #F5F8FC 45%,
+            #FFFFFF 100%
+        );
+
+    color: #172033;
+
     overflow-x: hidden;
 }
+
+
+/* ============================================================
+   GLOBAL ELEMENTS
+============================================================ */
 
 img,
 svg,
@@ -45,31 +79,605 @@ a {
     color: inherit;
 }
 
-.navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    background: #ffffff;
+button {
+    cursor: pointer;
 }
 
+
+/* ============================================================
+   SELECTION
+============================================================ */
+
+::selection {
+    background: #FF7A00;
+    color: #FFFFFF;
+}
+
+
+/* ============================================================
+   SCROLLBAR
+============================================================ */
+
+::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+}
+
+::-webkit-scrollbar-track {
+    background: #EEF2F7;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #0B2A5B;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #FF7A00;
+}
+
+
+/* ============================================================
+   NAVBAR
+============================================================ */
+
+.navbar {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 14px 24px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #FFFFFF 0%,
+            #F8FAFD 100%
+        );
+
+    border-bottom: 1px solid #E1E7EF;
+
+    box-shadow:
+        0 3px 15px rgba(11, 42, 91, 0.08);
+
+    position: relative;
+    z-index: 1000;
+}
+
+
+/* ============================================================
+   LOGO
+============================================================ */
+
 .logo {
+    display: flex;
+    align-items: center;
+
+    color: #0B2A5B;
+
     font-size: 25px;
+    font-weight: 900;
+
+    letter-spacing: -0.5px;
+
+    text-decoration: none;
+}
+
+.logo span {
+    color: #FF7A00;
+}
+
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+
+.nav-links {
+    display: flex;
+    align-items: center;
+
+    gap: 28px;
 }
 
 .nav-links a {
-    color: rgb(22, 21, 21);
+    position: relative;
+
+    color: #0B2A5B;
+
     text-decoration: none;
-    margin-left: 35px;
-    font-size: 18px;
+
+    font-size: 15px;
+    font-weight: 700;
+
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.nav-links a::after {
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    bottom: -7px;
+
+    width: 0;
+    height: 2px;
+
+    background: #FF7A00;
+
+    border-radius: 10px;
+
+    transition: width 0.2s ease;
 }
 
 .nav-links a:hover {
-    color: #00ff99;
+    color: #FF7A00;
+
+    transform: translateY(-1px);
 }
 
+.nav-links a:hover::after {
+    width: 100%;
+}
+
+
+/* ============================================================
+   PRIMARY BUTTON
+============================================================ */
+
+.primary-btn,
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 42px;
+
+    padding: 0 18px;
+
+    border: 1px solid #FF7A00;
+    border-radius: 8px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #FF7A00,
+            #FF9800
+        );
+
+    color: #FFFFFF;
+
+    font-size: 14px;
+    font-weight: 800;
+
+    text-decoration: none;
+
+    box-shadow:
+        0 5px 14px rgba(255, 122, 0, 0.20);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.primary-btn:hover,
+.btn-primary:hover {
+    background:
+        linear-gradient(
+            135deg,
+            #E96500,
+            #FF7A00
+        );
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 8px 18px rgba(255, 122, 0, 0.27);
+}
+
+
+/* ============================================================
+   SECONDARY BUTTON
+============================================================ */
+
+.secondary-btn,
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 42px;
+
+    padding: 0 18px;
+
+    border: 1px solid #B8C7DA;
+    border-radius: 8px;
+
+    background: #FFFFFF;
+
+    color: #0B2A5B;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    text-decoration: none;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.secondary-btn:hover,
+.btn-secondary:hover {
+    background: #FFF7ED;
+
+    border-color: #FFB366;
+
+    color: #FF7A00;
+}
+
+
+/* ============================================================
+   PAGE CONTAINER
+============================================================ */
+
+.page-container {
+    width: 100%;
+    max-width: 1440px;
+
+    margin: 0 auto;
+
+    padding: 0 24px;
+}
+
+
+/* ============================================================
+   GENERAL SECTION
+============================================================ */
+
+.section {
+    width: 100%;
+
+    padding: 30px 0;
+}
+
+
+/* ============================================================
+   SECTION HEADER
+============================================================ */
+
+.section-title {
+    color: #0B2A5B;
+
+    font-size: 26px;
+    font-weight: 900;
+
+    line-height: 1.2;
+}
+
+.section-subtitle {
+    margin-top: 6px;
+
+    color: #667085;
+
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+
+/* ============================================================
+   CARDS
+============================================================ */
+
+.card {
+    background: #FFFFFF;
+
+    border: 1px solid #E1E7EF;
+    border-radius: 10px;
+
+    box-shadow:
+        0 3px 14px rgba(11, 42, 91, 0.06);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.card:hover {
+    border-color: #C9D6E6;
+
+    box-shadow:
+        0 7px 20px rgba(11, 42, 91, 0.09);
+}
+
+
+/* ============================================================
+   INPUTS
+============================================================ */
+
+input,
+select,
+textarea {
+    color: #172033;
+
+    background: #FFFFFF;
+
+    border: 1px solid #C9D4E2;
+
+    border-radius: 8px;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: #FF7A00;
+
+    box-shadow:
+        0 0 0 3px rgba(255, 122, 0, 0.10);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #98A2B3;
+}
+
+
+/* ============================================================
+   BRAND ACCENT CLASSES
+============================================================ */
+
+.text-primary {
+    color: #0B2A5B !important;
+}
+
+.text-accent {
+    color: #FF7A00 !important;
+}
+
+.bg-primary {
+    background: #0B2A5B !important;
+}
+
+.bg-accent {
+    background: #FF7A00 !important;
+}
+
+.bg-light {
+    background: #F5F8FC !important;
+}
+
+.bg-orange-light {
+    background: #FFF7ED !important;
+}
+
+
+/* ============================================================
+   BRAND DIVIDER
+============================================================ */
+
+.brand-divider {
+    width: 100%;
+    height: 3px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #0B2A5B 0%,
+            #0B2A5B 55%,
+            #FF7A00 55%,
+            #FF7A00 100%
+        );
+
+    border: none;
+}
+
+
+/* ============================================================
+   ORANGE ACCENT LINE
+============================================================ */
+
+.orange-line {
+    width: 55px;
+    height: 4px;
+
+    margin-top: 8px;
+
+    background: #FF7A00;
+
+    border-radius: 20px;
+}
+
+
+/* ============================================================
+   BADGES
+============================================================ */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 24px;
+
+    padding: 3px 8px;
+
+    border-radius: 999px;
+
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.badge-primary {
+    background: #EAF0F8;
+    color: #0B2A5B;
+}
+
+.badge-orange {
+    background: #FFF0E0;
+    color: #E96500;
+}
+
+
+/* ============================================================
+   LINKS
+============================================================ */
+
+.text-link {
+    color: #0B2A5B;
+
+    font-weight: 700;
+
+    text-decoration: none;
+
+    transition: color 0.2s ease;
+}
+
+.text-link:hover {
+    color: #FF7A00;
+}
+
+
+/* ============================================================
+   MOBILE NAVBAR
+============================================================ */
+
+@media (max-width: 800px) {
+
+    .navbar {
+        padding: 12px 16px;
+    }
+
+    .nav-links {
+        gap: 16px;
+    }
+
+    .nav-links a {
+        font-size: 13px;
+    }
+
+    .logo {
+        font-size: 21px;
+    }
+}
+
+
+/* ============================================================
+   MOBILE
+============================================================ */
+
 @media (max-width: 600px) {
+
     body {
         font-size: 15px;
+
+        background:
+            linear-gradient(
+                180deg,
+                #F8FAFD 0%,
+                #FFFFFF 100%
+            );
+    }
+
+    .navbar {
+        padding: 11px 12px;
+    }
+
+    .logo {
+        font-size: 20px;
+    }
+
+    .nav-links {
+        gap: 10px;
+    }
+
+    .nav-links a {
+        font-size: 12px;
+    }
+
+    .page-container {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .section {
+        padding: 22px 0;
+    }
+
+    .section-title {
+        font-size: 21px;
+    }
+
+    .section-subtitle {
+        font-size: 12px;
+    }
+}
+
+
+/* ============================================================
+   SMALL PHONES
+============================================================ */
+
+@media (max-width: 400px) {
+
+    .navbar {
+        padding: 10px;
+    }
+
+    .logo {
+        font-size: 18px;
+    }
+
+    .nav-links {
+        gap: 8px;
+    }
+
+    .nav-links a {
+        font-size: 11px;
+    }
+
+    .page-container {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+}
+
+
+/* ============================================================
+   VERY SMALL PHONES
+============================================================ */
+
+@media (max-width: 340px) {
+
+    body {
+        min-width: 320px;
+    }
+
+    .navbar {
+        padding: 9px 8px;
+    }
+
+    .logo {
+        font-size: 17px;
+    }
+
+    .nav-links {
+        gap: 6px;
+    }
+
+    .nav-links a {
+        font-size: 10px;
     }
 }
