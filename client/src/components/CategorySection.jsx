@@ -1,3 +1,4 @@
+import { useState } from "react";
 import "./CategorySection.css";
 
 const categories = [
@@ -83,7 +84,16 @@ const categories = [
     }
 ];
 
-function CategorySection({ setCategory, products = [] }) {
+function CategorySection({
+    setCategory,
+    products = []
+}) {
+
+    const [open, setOpen] = useState(false);
+
+    const [selectedCategory, setSelectedCategory] = useState(
+        categories[0]
+    );
 
     const getProductCount = (categoryName) => {
 
@@ -92,13 +102,23 @@ function CategorySection({ setCategory, products = [] }) {
         }
 
         return products.filter(
-            product =>
+            (product) =>
                 product.category?.toLowerCase() ===
                 categoryName.toLowerCase()
         ).length;
     };
 
+    const handleCategorySelect = (category) => {
+
+        setSelectedCategory(category);
+
+        setCategory(category.name);
+
+        setOpen(false);
+    };
+
     return (
+
         <section className="category-section">
 
             <div className="category-section-header">
@@ -114,102 +134,200 @@ function CategorySection({ setCategory, products = [] }) {
                     </h2>
 
                     <p>
-                        Find products and services from trusted sellers
-                        across Ghana.
+                        Find products and services from trusted
+                        sellers across Ghana.
                     </p>
 
                 </div>
 
+            </div>
+
+
+            <div className="category-selector-wrapper">
+
                 <button
                     type="button"
-                    className="category-view-all"
-                    onClick={() => setCategory("All")}
+                    className={`category-selector ${
+                        open ? "category-selector-open" : ""
+                    }`}
+                    onClick={() => setOpen(!open)}
+                    aria-expanded={open}
                 >
-                    View All
-                    <span>→</span>
+
+                    <div className="selected-category">
+
+                        <div className="selected-category-icon">
+
+                            {selectedCategory.icon}
+
+                        </div>
+
+                        <div className="selected-category-info">
+
+                            <span className="selected-category-label">
+                                CATEGORY
+                            </span>
+
+                            <strong>
+                                {selectedCategory.name}
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div className="category-selector-right">
+
+                        <span className="selected-product-count">
+
+                            {getProductCount(
+                                selectedCategory.name
+                            )}
+
+                            {" "}
+
+                            {getProductCount(
+                                selectedCategory.name
+                            ) === 1
+                                ? "Product"
+                                : "Products"}
+
+                        </span>
+
+                        <span
+                            className={`category-chevron ${
+                                open ? "rotate" : ""
+                            }`}
+                        >
+                            ▼
+                        </span>
+
+                    </div>
+
                 </button>
+
+
+                {open && (
+
+                    <div className="category-dropdown">
+
+                        <div className="category-dropdown-header">
+
+                            <span>
+                                SELECT CATEGORY
+                            </span>
+
+                        </div>
+
+
+                        <div className="category-dropdown-list">
+
+                            {categories.map((category) => {
+
+                                const count =
+                                    getProductCount(
+                                        category.name
+                                    );
+
+                                const selected =
+                                    selectedCategory.name ===
+                                    category.name;
+
+                                return (
+
+                                    <button
+                                        type="button"
+                                        key={category.name}
+                                        className={`category-option ${
+                                            selected
+                                                ? "category-option-selected"
+                                                : ""
+                                        }`}
+                                        onClick={() =>
+                                            handleCategorySelect(
+                                                category
+                                            )
+                                        }
+                                    >
+
+                                        <div className="category-option-icon">
+
+                                            {category.icon}
+
+                                        </div>
+
+
+                                        <div className="category-option-content">
+
+                                            <strong>
+                                                {category.name}
+                                            </strong>
+
+                                            <span>
+                                                {category.description}
+                                            </span>
+
+                                        </div>
+
+
+                                        <div className="category-option-count">
+
+                                            {count}
+
+                                        </div>
+
+
+                                        {selected && (
+
+                                            <span className="category-check">
+                                                ✓
+                                            </span>
+
+                                        )}
+
+                                    </button>
+
+                                );
+
+                            })}
+
+                        </div>
+
+                    </div>
+
+                )}
 
             </div>
 
 
-            <div className="category-grid">
+            <div className="category-results-info">
 
-                {categories.map((category) => {
+                <span>
+                    Showing
+                </span>
 
-                    const productCount =
-                        getProductCount(category.name);
+                <strong>
+                    {" "}
+                    {selectedCategory.name}
+                </strong>
 
-                    const isAll =
-                        category.name === "All";
-
-                    return (
-
-                        <button
-                            type="button"
-                            key={category.name}
-                            className={`category-card ${
-                                isAll
-                                    ? "category-card-all"
-                                    : ""
-                            }`}
-                            onClick={() =>
-                                setCategory(category.name)
-                            }
-                        >
-
-                            <div className="category-card-top">
-
-                                <div className="category-icon">
-
-                                    <span>
-                                        {category.icon}
-                                    </span>
-
-                                </div>
-
-                                <span className="category-arrow">
-                                    →
-                                </span>
-
-                            </div>
-
-
-                            <div className="category-card-content">
-
-                                <h3>
-                                    {category.name}
-                                </h3>
-
-                                <p>
-                                    {category.description}
-                                </p>
-
-                            </div>
-
-
-                            <div className="category-card-footer">
-
-                                <span>
-                                    {productCount}
-                                </span>
-
-                                <span>
-                                    {productCount === 1
-                                        ? "Product"
-                                        : "Products"}
-                                </span>
-
-                            </div>
-
-                        </button>
-
-                    );
-
-                })}
+                <span>
+                    {" "}•{" "}
+                    {getProductCount(
+                        selectedCategory.name
+                    )}{" "}
+                    {getProductCount(
+                        selectedCategory.name
+                    ) === 1
+                        ? "product"
+                        : "products"}
+                </span>
 
             </div>
 
         </section>
+
     );
 }
 
