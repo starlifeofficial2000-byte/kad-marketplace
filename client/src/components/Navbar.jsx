@@ -23,7 +23,9 @@ import {
     FaHeadset,
     FaTicketAlt,
     FaSignOutAlt,
-    FaUserCircle
+    FaUserCircle,
+    FaSearch,
+    FaThLarge
 } from "react-icons/fa";
 
 import "./Navbar.css";
@@ -34,12 +36,18 @@ import getImageUrl from "../utils/imageUrl";
 
 import localLogo from "../assets/KADMARKETPLACE.png";
 
+import categories from "../data/categories";
+
+
 
 function Navbar() {
 
     const navigate = useNavigate();
     const location = useLocation();
+
     const dropdownRef = useRef(null);
+    const categoryRef = useRef(null);
+
 
 
     /* =========================================================
@@ -51,6 +59,9 @@ function Navbar() {
     const [showProfileMenu, setShowProfileMenu] =
         useState(false);
 
+    const [showCategories, setShowCategories] =
+        useState(false);
+
     const [user, setUser] = useState(null);
 
     const [marketplaceName, setMarketplaceName] =
@@ -59,9 +70,13 @@ function Navbar() {
     const [marketplaceLogo, setMarketplaceLogo] =
         useState("");
 
+    const [searchKeyword, setSearchKeyword] =
+        useState("");
+
+
 
     /* =========================================================
-       LOAD MARKETPLACE NAME + LOGO
+       LOAD MARKETPLACE BRANDING
     ========================================================= */
 
     useEffect(() => {
@@ -72,22 +87,12 @@ function Navbar() {
 
             try {
 
-                console.log(
-                    "[NAVBAR] Loading marketplace name and logo..."
-                );
-
                 const response = await api.get(
                     "/settings/public"
                 );
 
-                console.log(
-                    "[NAVBAR] Public settings:",
-                    response.data
-                );
-
                 const settings =
                     response.data?.settings || {};
-
 
                 if (!cancelled) {
 
@@ -124,30 +129,6 @@ function Navbar() {
     }, []);
 
 
-    /* =========================================================
-       LOGO ERROR FALLBACK
-    ========================================================= */
-
-    const handleLogoError = (event) => {
-
-        const image = event.currentTarget;
-
-        if (
-            image.dataset.fallbackApplied === "true"
-        ) {
-            return;
-        }
-
-        image.dataset.fallbackApplied = "true";
-
-        image.src = localLogo;
-
-        console.warn(
-            "[NAVBAR] Dynamic logo failed. Using local fallback."
-        );
-
-    };
-
 
     /* =========================================================
        LOAD USER
@@ -167,6 +148,7 @@ function Navbar() {
                     setUser(null);
 
                     return;
+
                 }
 
                 const parsedUser =
@@ -177,7 +159,7 @@ function Navbar() {
             } catch (error) {
 
                 console.error(
-                    "NAVBAR USER PARSE ERROR:",
+                    "[NAVBAR] USER PARSE ERROR:",
                     error
                 );
 
@@ -186,7 +168,6 @@ function Navbar() {
             }
 
         };
-
 
         loadUser();
 
@@ -199,7 +180,6 @@ function Navbar() {
             "userUpdated",
             loadUser
         );
-
 
         return () => {
 
@@ -216,6 +196,29 @@ function Navbar() {
         };
 
     }, []);
+
+
+
+    /* =========================================================
+       LOGO FALLBACK
+    ========================================================= */
+
+    const handleLogoError = (event) => {
+
+        const image = event.currentTarget;
+
+        if (
+            image.dataset.fallbackApplied === "true"
+        ) {
+            return;
+        }
+
+        image.dataset.fallbackApplied = "true";
+
+        image.src = localLogo;
+
+    };
+
 
 
     /* =========================================================
@@ -253,8 +256,9 @@ function Navbar() {
     }, [user]);
 
 
+
     /* =========================================================
-       PROFILE IMAGE ERROR
+       PROFILE IMAGE FALLBACK
     ========================================================= */
 
     const handleProfileImageError = (event) => {
@@ -282,6 +286,58 @@ function Navbar() {
     };
 
 
+
+    /* =========================================================
+       SEARCH
+    ========================================================= */
+
+    const handleSearch = (event) => {
+
+        event.preventDefault();
+
+        const keyword =
+            searchKeyword.trim();
+
+        if (keyword) {
+
+            navigate(
+                `/search?keyword=${encodeURIComponent(
+                    keyword
+                )}`
+            );
+
+        } else {
+
+            navigate("/search");
+
+        }
+
+        setSearchKeyword("");
+
+        closeAllMenus();
+
+    };
+
+
+
+    /* =========================================================
+       CATEGORY SEARCH
+    ========================================================= */
+
+    const handleCategorySearch = (category) => {
+
+        navigate(
+            `/search?category=${encodeURIComponent(
+                category
+            )}`
+        );
+
+        closeAllMenus();
+
+    };
+
+
+
     /* =========================================================
        LOGOUT
     ========================================================= */
@@ -289,12 +345,12 @@ function Navbar() {
     const logout = () => {
 
         localStorage.removeItem("token");
+
         localStorage.removeItem("user");
 
         setUser(null);
 
-        setMenuOpen(false);
-        setShowProfileMenu(false);
+        closeAllMenus();
 
         window.dispatchEvent(
             new Event("userUpdated")
@@ -305,8 +361,25 @@ function Navbar() {
     };
 
 
+
     /* =========================================================
-       CLOSE DROPDOWN
+       CLOSE MENUS
+    ========================================================= */
+
+    const closeAllMenus = () => {
+
+        setMenuOpen(false);
+
+        setShowProfileMenu(false);
+
+        setShowCategories(false);
+
+    };
+
+
+
+    /* =========================================================
+       CLOSE OUTSIDE DROPDOWNS
     ========================================================= */
 
     useEffect(() => {
@@ -321,6 +394,17 @@ function Navbar() {
             ) {
 
                 setShowProfileMenu(false);
+
+            }
+
+            if (
+                categoryRef.current &&
+                !categoryRef.current.contains(
+                    event.target
+                )
+            ) {
+
+                setShowCategories(false);
 
             }
 
@@ -343,6 +427,7 @@ function Navbar() {
     }, []);
 
 
+
     /* =========================================================
        CLOSE MENUS WHEN ROUTE CHANGES
     ========================================================= */
@@ -350,20 +435,13 @@ function Navbar() {
     useEffect(() => {
 
         setMenuOpen(false);
+
         setShowProfileMenu(false);
 
-    }, [location.pathname]);
+        setShowCategories(false);
 
+    }, [location.pathname, location.search]);
 
-    /* =========================================================
-       CLOSE MOBILE MENU
-    ========================================================= */
-
-    const closeMobileMenu = () => {
-
-        setMenuOpen(false);
-
-    };
 
 
     /* =========================================================
@@ -371,10 +449,10 @@ function Navbar() {
     ========================================================= */
 
     const navClass = ({ isActive }) =>
-
         isActive
             ? "nav-link active"
             : "nav-link";
+
 
 
     /* =========================================================
@@ -389,7 +467,7 @@ function Navbar() {
 
 
                 {/* =================================================
-                    LOGO + MARKETPLACE NAME
+                    BRAND
                 ================================================= */}
 
                 <div className="navbar-brand">
@@ -397,7 +475,7 @@ function Navbar() {
                     <Link
                         to="/"
                         className="brand-link"
-                        onClick={closeMobileMenu}
+                        onClick={closeAllMenus}
                     >
 
                         <img
@@ -427,6 +505,41 @@ function Navbar() {
                 </div>
 
 
+
+                {/* =================================================
+                    DESKTOP SEARCH
+                ================================================= */}
+
+                <form
+                    className="navbar-search"
+                    onSubmit={handleSearch}
+                >
+
+                    <FaSearch className="navbar-search-icon" />
+
+                    <input
+                        type="text"
+                        value={searchKeyword}
+                        onChange={(event) =>
+                            setSearchKeyword(
+                                event.target.value
+                            )
+                        }
+                        placeholder="Search products..."
+                        aria-label="Search marketplace"
+                    />
+
+                    <button
+                        type="submit"
+                        aria-label="Search"
+                    >
+                        Search
+                    </button>
+
+                </form>
+
+
+
                 {/* =================================================
                     NAVIGATION
                 ================================================= */}
@@ -442,12 +555,12 @@ function Navbar() {
                     <div className="mobile-menu-header">
 
                         <span>
-                            Menu
+                            Marketplace Menu
                         </span>
 
                         <button
                             type="button"
-                            onClick={closeMobileMenu}
+                            onClick={closeAllMenus}
                             aria-label="Close menu"
                         >
                             <FaTimes />
@@ -456,10 +569,179 @@ function Navbar() {
                     </div>
 
 
+
+                    {/* MOBILE SEARCH */}
+
+                    <form
+                        className="mobile-search"
+                        onSubmit={handleSearch}
+                    >
+
+                        <div className="mobile-search-input">
+
+                            <FaSearch />
+
+                            <input
+                                type="text"
+                                value={searchKeyword}
+                                onChange={(event) =>
+                                    setSearchKeyword(
+                                        event.target.value
+                                    )
+                                }
+                                placeholder="Search products..."
+                            />
+
+                        </div>
+
+                        <button type="submit">
+                            Search
+                        </button>
+
+                    </form>
+
+
+
+                    {/* SEARCH PAGE */}
+
+                    <NavLink
+                        to="/search"
+                        className={navClass}
+                        onClick={closeAllMenus}
+                    >
+
+                        <FaSearch />
+
+                        <span>
+                            Search
+                        </span>
+
+                    </NavLink>
+
+
+
+                    {/* =================================================
+                        CATEGORIES
+                    ================================================= */}
+
+                    <div
+                        className="categories-dropdown"
+                        ref={categoryRef}
+                    >
+
+                        <button
+                            type="button"
+                            className={
+                                showCategories
+                                    ? "categories-trigger open"
+                                    : "categories-trigger"
+                            }
+                            onClick={() =>
+                                setShowCategories(
+                                    previous =>
+                                        !previous
+                                )
+                            }
+                        >
+
+                            <FaThLarge />
+
+                            <span>
+                                Categories
+                            </span>
+
+                            <FaChevronDown
+                                className="categories-chevron"
+                            />
+
+                        </button>
+
+
+
+                        {showCategories && (
+
+                            <div className="categories-menu">
+
+                                <div className="categories-menu-title">
+
+                                    <strong>
+                                        Browse Categories
+                                    </strong>
+
+                                    <span>
+                                        Find what you need
+                                    </span>
+
+                                </div>
+
+
+
+                                <div className="categories-list">
+
+                                    {categories.map(
+                                        (category) => (
+
+                                            <button
+                                                key={
+                                                    category.name
+                                                }
+                                                type="button"
+                                                className="category-item"
+                                                onClick={() =>
+                                                    handleCategorySearch(
+                                                        category.name
+                                                    )
+                                                }
+                                            >
+
+                                                <span className="category-icon">
+
+                                                    {
+                                                        category.icon
+                                                    }
+
+                                                </span>
+
+                                                <span className="category-name">
+
+                                                    {
+                                                        category.name
+                                                    }
+
+                                                </span>
+
+                                                <span className="category-count">
+
+                                                    {
+                                                        category
+                                                            .subcategories
+                                                            ?.length ||
+                                                        0
+                                                    }
+
+                                                </span>
+
+                                            </button>
+
+                                        )
+                                    )}
+
+                                </div>
+
+                            </div>
+
+                        )}
+
+                    </div>
+
+
+
+                    {/* SELL */}
+
                     <NavLink
                         to="/sell"
                         className="sell-btn"
-                        onClick={closeMobileMenu}
+                        onClick={closeAllMenus}
                     >
 
                         <FaPlusCircle />
@@ -471,10 +753,13 @@ function Navbar() {
                     </NavLink>
 
 
+
+                    {/* DASHBOARD */}
+
                     <NavLink
                         to="/dashboard"
                         className={navClass}
-                        onClick={closeMobileMenu}
+                        onClick={closeAllMenus}
                     >
 
                         <FaTachometerAlt />
@@ -486,12 +771,15 @@ function Navbar() {
                     </NavLink>
 
 
+
+                    {/* SUPPORT */}
+
                     {user && (
 
                         <NavLink
                             to="/support"
                             className={navClass}
-                            onClick={closeMobileMenu}
+                            onClick={closeAllMenus}
                         >
 
                             <FaHeadset />
@@ -505,12 +793,15 @@ function Navbar() {
                     )}
 
 
+
+                    {/* TICKETS */}
+
                     {user && (
 
                         <NavLink
                             to="/my-tickets"
                             className={navClass}
-                            onClick={closeMobileMenu}
+                            onClick={closeAllMenus}
                         >
 
                             <FaTicketAlt />
@@ -524,12 +815,15 @@ function Navbar() {
                     )}
 
 
+
+                    {/* LOGIN */}
+
                     {!user && (
 
                         <NavLink
                             to="/login"
                             className={navClass}
-                            onClick={closeMobileMenu}
+                            onClick={closeAllMenus}
                         >
 
                             <FaUser />
@@ -543,12 +837,15 @@ function Navbar() {
                     )}
 
 
+
+                    {/* ADMIN */}
+
                     {user?.role === "admin" && (
 
                         <NavLink
                             to="/admin"
                             className={navClass}
-                            onClick={closeMobileMenu}
+                            onClick={closeAllMenus}
                         >
 
                             <span>
@@ -562,6 +859,7 @@ function Navbar() {
                 </div>
 
 
+
                 {/* =================================================
                     RIGHT SIDE
                 ================================================= */}
@@ -571,6 +869,8 @@ function Navbar() {
                     {user ? (
 
                         <>
+
+                            {/* NOTIFICATIONS */}
 
                             <Link
                                 to="/notifications"
@@ -585,6 +885,9 @@ function Navbar() {
 
                             </Link>
 
+
+
+                            {/* PROFILE */}
 
                             <div
                                 className="profile-dropdown"
@@ -645,6 +948,7 @@ function Navbar() {
                                 </button>
 
 
+
                                 {showProfileMenu && (
 
                                     <div className="profile-menu">
@@ -662,7 +966,6 @@ function Navbar() {
                                                 />
 
                                             </div>
-
 
                                             <div className="profile-menu-user">
 
@@ -692,9 +995,7 @@ function Navbar() {
                                                         {
                                                             user.role ===
                                                             "admin"
-
                                                                 ? "Administrator"
-
                                                                 : "Marketplace Member"
                                                         }
 
@@ -707,12 +1008,15 @@ function Navbar() {
                                         </div>
 
 
+
                                         <div className="profile-menu-links">
 
                                             <Link
                                                 to="/profile"
                                                 onClick={() =>
-                                                    setShowProfileMenu(false)
+                                                    setShowProfileMenu(
+                                                        false
+                                                    )
                                                 }
                                             >
 
@@ -725,10 +1029,13 @@ function Navbar() {
                                             </Link>
 
 
+
                                             <Link
                                                 to="/dashboard"
                                                 onClick={() =>
-                                                    setShowProfileMenu(false)
+                                                    setShowProfileMenu(
+                                                        false
+                                                    )
                                                 }
                                             >
 
@@ -741,10 +1048,13 @@ function Navbar() {
                                             </Link>
 
 
+
                                             <Link
                                                 to="/support"
                                                 onClick={() =>
-                                                    setShowProfileMenu(false)
+                                                    setShowProfileMenu(
+                                                        false
+                                                    )
                                                 }
                                             >
 
@@ -757,10 +1067,13 @@ function Navbar() {
                                             </Link>
 
 
+
                                             <Link
                                                 to="/my-tickets"
                                                 onClick={() =>
-                                                    setShowProfileMenu(false)
+                                                    setShowProfileMenu(
+                                                        false
+                                                    )
                                                 }
                                             >
 
@@ -773,10 +1086,13 @@ function Navbar() {
                                             </Link>
 
 
+
                                             <Link
                                                 to="/notifications"
                                                 onClick={() =>
-                                                    setShowProfileMenu(false)
+                                                    setShowProfileMenu(
+                                                        false
+                                                    )
                                                 }
                                             >
 
@@ -789,6 +1105,7 @@ function Navbar() {
                                             </Link>
 
                                         </div>
+
 
 
                                         <div className="profile-menu-footer">
@@ -827,7 +1144,6 @@ function Navbar() {
                                 Login
                             </Link>
 
-
                             <Link
                                 to="/register"
                                 className="register-btn"
@@ -840,6 +1156,7 @@ function Navbar() {
                     )}
 
                 </div>
+
 
 
                 {/* =================================================
@@ -878,6 +1195,7 @@ function Navbar() {
     );
 
 }
+
 
 
 export default Navbar;

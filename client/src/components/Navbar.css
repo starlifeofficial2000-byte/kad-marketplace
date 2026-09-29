@@ -11,11 +11,12 @@
     position: sticky;
     top: 0;
     left: 0;
+
     z-index: 1000;
 
     width: 100%;
 
-    background: rgba(255, 255, 255, 0.97);
+    background: rgba(255, 255, 255, 0.98);
 
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
@@ -23,7 +24,7 @@
     border-bottom: 1px solid #e5e7eb;
 
     box-shadow:
-        0 4px 18px rgba(15, 23, 42, 0.06);
+        0 4px 18px rgba(15, 23, 42, 0.07);
 }
 
 
@@ -32,21 +33,19 @@
 ========================================================= */
 
 .navbar-inner {
-    width: min(1400px, 100%);
+    width: min(1500px, 100%);
 
     min-height: 76px;
 
     margin: 0 auto;
 
-    padding: 0 24px;
+    padding: 0 22px;
 
     display: flex;
 
     align-items: center;
 
-    justify-content: space-between;
-
-    gap: 18px;
+    gap: 15px;
 }
 
 
@@ -56,6 +55,7 @@
 
 .navbar-brand {
     flex-shrink: 0;
+
     min-width: 0;
 }
 
@@ -64,7 +64,7 @@
 
     align-items: center;
 
-    gap: 11px;
+    gap: 10px;
 
     text-decoration: none;
 
@@ -95,7 +95,7 @@
 }
 
 .brand-name {
-    max-width: 240px;
+    max-width: 210px;
 
     overflow: hidden;
 
@@ -115,15 +115,130 @@
 .brand-tagline {
     margin-top: 4px;
 
-    font-size: 10px;
+    font-size: 9px;
 
-    font-weight: 600;
+    font-weight: 700;
 
     letter-spacing: 0.8px;
 
     text-transform: uppercase;
 
     color: #6b7280;
+}
+
+
+/* =========================================================
+   NAVBAR SEARCH
+========================================================= */
+
+.navbar-search {
+    display: flex;
+
+    align-items: center;
+
+    flex: 1;
+
+    min-width: 180px;
+
+    max-width: 430px;
+
+    height: 44px;
+
+    margin-left: 5px;
+
+    overflow: hidden;
+
+    background: #f8fafc;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 12px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.navbar-search:focus-within {
+    background: #ffffff;
+
+    border-color: #0a66c2;
+
+    box-shadow:
+        0 0 0 3px rgba(10, 102, 194, 0.10);
+}
+
+.navbar-search-icon {
+    flex-shrink: 0;
+
+    margin-left: 13px;
+
+    color: #6b7280;
+
+    font-size: 14px;
+}
+
+.navbar-search input {
+    width: 100%;
+
+    min-width: 0;
+
+    height: 100%;
+
+    padding: 0 10px;
+
+    border: 0;
+
+    outline: none;
+
+    background: transparent;
+
+    color: #111827;
+
+    font-family: inherit;
+
+    font-size: 13px;
+}
+
+.navbar-search input::placeholder {
+    color: #9ca3af;
+}
+
+.navbar-search button {
+    height: 34px;
+
+    flex-shrink: 0;
+
+    margin-right: 5px;
+
+    padding: 0 14px;
+
+    border: 0;
+
+    border-radius: 8px;
+
+    background: #0a66c2;
+
+    color: #ffffff;
+
+    cursor: pointer;
+
+    font-family: inherit;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.navbar-search button:hover {
+    background: #084f96;
+
+    transform: translateY(-1px);
 }
 
 
@@ -138,7 +253,7 @@
 
     justify-content: center;
 
-    gap: 5px;
+    gap: 4px;
 
     flex: 1;
 
@@ -146,7 +261,8 @@
 }
 
 .nav-link,
-.sell-btn {
+.sell-btn,
+.categories-trigger {
     position: relative;
 
     display: inline-flex;
@@ -159,13 +275,15 @@
 
     min-height: 42px;
 
-    padding: 0 12px;
+    padding: 0 10px;
 
     border-radius: 10px;
 
     text-decoration: none;
 
-    font-size: 14px;
+    font-family: inherit;
+
+    font-size: 13px;
 
     font-weight: 650;
 
@@ -179,12 +297,7 @@
         transform 0.2s ease;
 }
 
-.nav-link:hover {
-    color: #111827;
-
-    background: #f3f4f6;
-}
-
+.nav-link:hover,
 .nav-link.active {
     color: #111827;
 
@@ -192,7 +305,259 @@
 }
 
 .nav-link svg {
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   CATEGORIES DROPDOWN
+========================================================= */
+
+.categories-dropdown {
+    position: relative;
+
+    flex-shrink: 0;
+}
+
+.categories-trigger {
+    border: 0;
+
+    background: transparent;
+
+    cursor: pointer;
+}
+
+.categories-trigger:hover,
+.categories-trigger.open {
+    color: #111827;
+
+    background: #f3f4f6;
+}
+
+.categories-trigger svg:first-child {
     font-size: 14px;
+}
+
+.categories-chevron {
+    font-size: 9px !important;
+
+    color: #6b7280;
+
+    transition:
+        transform 0.2s ease;
+}
+
+.categories-trigger.open .categories-chevron {
+    transform: rotate(180deg);
+}
+
+
+/* =========================================================
+   CATEGORIES MENU
+========================================================= */
+
+.categories-menu {
+    position: absolute;
+
+    top: calc(100% + 12px);
+
+    left: 50%;
+
+    width: 420px;
+
+    max-width: calc(100vw - 30px);
+
+    transform: translateX(-50%);
+
+    overflow: hidden;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 20px 50px rgba(15, 23, 42, 0.17);
+
+    animation:
+        categoriesMenuIn 0.18s ease-out;
+
+    z-index: 1200;
+}
+
+@keyframes categoriesMenuIn {
+
+    from {
+        opacity: 0;
+
+        transform:
+            translateX(-50%)
+            translateY(-7px)
+            scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+
+        transform:
+            translateX(-50%)
+            translateY(0)
+            scale(1);
+    }
+
+}
+
+
+/* =========================================================
+   CATEGORY MENU TITLE
+========================================================= */
+
+.categories-menu-title {
+    display: flex;
+
+    flex-direction: column;
+
+    padding: 16px 18px;
+
+    border-bottom: 1px solid #eef0f3;
+
+    background:
+        linear-gradient(
+            135deg,
+            #f8fafc,
+            #ffffff
+        );
+}
+
+.categories-menu-title strong {
+    color: #111827;
+
+    font-size: 14px;
+}
+
+.categories-menu-title span {
+    margin-top: 3px;
+
+    color: #6b7280;
+
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   CATEGORY LIST
+========================================================= */
+
+.categories-list {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    max-height: 480px;
+
+    padding: 8px;
+
+    overflow-y: auto;
+}
+
+.category-item {
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    min-width: 0;
+
+    width: 100%;
+
+    min-height: 48px;
+
+    padding: 7px 9px;
+
+    border: 0;
+
+    border-radius: 10px;
+
+    background: transparent;
+
+    color: #374151;
+
+    cursor: pointer;
+
+    font-family: inherit;
+
+    text-align: left;
+
+    transition:
+        background 0.18s ease,
+        color 0.18s ease;
+}
+
+.category-item:hover {
+    background: #f3f4f6;
+
+    color: #111827;
+}
+
+.category-icon {
+    width: 32px;
+    height: 32px;
+
+    flex: 0 0 32px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 9px;
+
+    background: #f3f4f6;
+
+    font-size: 17px;
+}
+
+.category-name {
+    min-width: 0;
+
+    flex: 1;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    font-size: 12px;
+
+    font-weight: 650;
+}
+
+.category-count {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-width: 20px;
+
+    height: 20px;
+
+    padding: 0 5px;
+
+    border-radius: 999px;
+
+    background: #eef2f7;
+
+    color: #6b7280;
+
+    font-size: 9px;
+
+    font-weight: 700;
 }
 
 
@@ -240,8 +605,13 @@
         );
 }
 
-.sell-btn svg {
-    font-size: 15px;
+
+/* =========================================================
+   MOBILE SEARCH
+========================================================= */
+
+.mobile-search {
+    display: none;
 }
 
 
@@ -263,7 +633,7 @@
 
 
 /* =========================================================
-   NOTIFICATION
+   NOTIFICATIONS
 ========================================================= */
 
 .notification-btn {
@@ -437,8 +807,7 @@
         transform 0.2s ease;
 }
 
-.profile-trigger.open
-.profile-chevron {
+.profile-trigger.open .profile-chevron {
     transform: rotate(180deg);
 }
 
@@ -478,6 +847,8 @@
     animation:
         profileMenuIn
         0.18s ease-out;
+
+    z-index: 1200;
 }
 
 @keyframes profileMenuIn {
@@ -607,7 +978,7 @@
 
 
 /* =========================================================
-   PROFILE MENU LINKS
+   PROFILE LINKS
 ========================================================= */
 
 .profile-menu-links {
@@ -656,7 +1027,7 @@
 
 
 /* =========================================================
-   PROFILE MENU FOOTER
+   PROFILE FOOTER
 ========================================================= */
 
 .profile-menu-footer {
@@ -704,12 +1075,6 @@
     background: #fef2f2;
 }
 
-.profile-menu-footer button svg {
-    width: 16px;
-
-    flex-shrink: 0;
-}
-
 
 /* =========================================================
    GUEST ACTIONS
@@ -743,10 +1108,6 @@
     font-weight: 700;
 
     border-radius: 9px;
-
-    transition:
-        background 0.2s ease,
-        color 0.2s ease;
 }
 
 .login-link:hover {
@@ -777,10 +1138,6 @@
     font-size: 13px;
 
     font-weight: 700;
-
-    transition:
-        background 0.2s ease,
-        transform 0.2s ease;
 }
 
 .register-btn:hover {
@@ -828,30 +1185,25 @@
     font-size: 18px;
 
     cursor: pointer;
-
-    transition:
-        background 0.2s ease,
-        border-color 0.2s ease;
 }
 
 .menu-btn1:hover {
     background: #f3f4f6;
-
-    border-color: #d1d5db;
 }
 
 
 /* =========================================================
-   LARGE TABLETS
+   TABLET
 ========================================================= */
 
-@media (max-width: 1150px) {
+@media (max-width: 1200px) {
 
     .navbar-inner {
-        padding-left: 18px;
-        padding-right: 18px;
+        padding-left: 16px;
 
-        gap: 12px;
+        padding-right: 16px;
+
+        gap: 9px;
     }
 
     .brand-tagline {
@@ -859,73 +1211,58 @@
     }
 
     .brand-name {
-        font-size: 16px;
+        max-width: 170px;
 
-        max-width: 180px;
+        font-size: 16px;
     }
 
-    .nav-links {
-        gap: 2px;
+    .navbar-search {
+        max-width: 300px;
     }
 
     .nav-link,
-    .sell-btn {
-        padding-left: 9px;
-        padding-right: 9px;
+    .sell-btn,
+    .categories-trigger {
+        padding-left: 7px;
 
-        font-size: 13px;
+        padding-right: 7px;
+
+        font-size: 12px;
     }
 
     .profile-name {
-        max-width: 85px;
+        max-width: 75px;
     }
 
 }
 
 
 /* =========================================================
-   TABLETS
+   SMALL TABLETS
 ========================================================= */
 
-@media (max-width: 950px) {
-
-    .navbar-inner {
-        min-height: 70px;
-
-        padding-left: 14px;
-        padding-right: 14px;
-
-        gap: 8px;
-    }
+@media (max-width: 1000px) {
 
     .navbar-logo {
         width: 44px;
+
         height: 44px;
 
         flex-basis: 44px;
     }
 
     .brand-name {
-        font-size: 15px;
+        max-width: 140px;
 
-        max-width: 155px;
+        font-size: 14px;
     }
 
-    .nav-links {
-        gap: 0;
+    .navbar-search {
+        max-width: 240px;
     }
 
-    .nav-link,
-    .sell-btn {
-        padding-left: 7px;
-        padding-right: 7px;
-
-        font-size: 12px;
-    }
-
-    .nav-link svg,
-    .sell-btn svg {
-        font-size: 12px;
+    .navbar-search button {
+        padding: 0 10px;
     }
 
     .profile-name {
@@ -948,8 +1285,9 @@
     .navbar-inner {
         min-height: 68px;
 
-        padding:
-            0 14px;
+        padding: 0 14px;
+
+        gap: 7px;
     }
 
     .navbar-brand {
@@ -958,21 +1296,14 @@
         min-width: 0;
     }
 
-    .brand-link {
-        max-width: 100%;
-    }
-
-    .navbar-logo {
-        width: 42px;
-        height: 42px;
-
-        flex-basis: 42px;
-    }
-
     .brand-name {
-        max-width: calc(100vw - 170px);
+        max-width: calc(100vw - 180px);
 
         font-size: 15px;
+    }
+
+    .navbar-search {
+        display: none;
     }
 
     .navbar-actions {
@@ -990,18 +1321,21 @@
         display: flex;
     }
 
+
+    /* MOBILE SLIDE MENU */
+
     .nav-links {
         position: fixed;
 
         top: 0;
+
         left: 0;
 
-        width: min(330px, 86vw);
+        width: min(350px, 88vw);
 
         height: 100dvh;
 
-        padding:
-            18px 14px;
+        padding: 18px 14px;
 
         flex-direction: column;
 
@@ -1021,11 +1355,10 @@
                 15,
                 23,
                 42,
-                0.12
+                0.13
             );
 
-        transform:
-            translateX(-105%);
+        transform: translateX(-105%);
 
         transition:
             transform 0.25s
@@ -1042,9 +1375,11 @@
     }
 
     .nav-links.active {
-        transform:
-            translateX(0);
+        transform: translateX(0);
     }
+
+
+    /* MENU HEADER */
 
     .mobile-menu-header {
         display: flex;
@@ -1053,13 +1388,11 @@
 
         justify-content: space-between;
 
-        padding:
-            5px 5px 16px;
+        padding: 5px 5px 16px;
 
         margin-bottom: 5px;
 
-        border-bottom:
-            1px solid #eef0f3;
+        border-bottom: 1px solid #eef0f3;
 
         font-size: 16px;
 
@@ -1070,6 +1403,7 @@
 
     .mobile-menu-header button {
         width: 38px;
+
         height: 38px;
 
         display: flex;
@@ -1089,16 +1423,98 @@
         cursor: pointer;
     }
 
+
+    /* MOBILE SEARCH */
+
+    .mobile-search {
+        display: flex;
+
+        flex-direction: column;
+
+        gap: 8px;
+
+        margin-bottom: 6px;
+
+        padding-bottom: 10px;
+
+        border-bottom: 1px solid #eef0f3;
+    }
+
+    .mobile-search-input {
+        display: flex;
+
+        align-items: center;
+
+        height: 44px;
+
+        padding: 0 12px;
+
+        gap: 9px;
+
+        border: 1px solid #e5e7eb;
+
+        border-radius: 10px;
+
+        background: #f8fafc;
+    }
+
+    .mobile-search-input svg {
+        color: #6b7280;
+
+        flex-shrink: 0;
+    }
+
+    .mobile-search-input input {
+        width: 100%;
+
+        height: 100%;
+
+        min-width: 0;
+
+        border: 0;
+
+        outline: none;
+
+        background: transparent;
+
+        font-family: inherit;
+
+        font-size: 13px;
+    }
+
+    .mobile-search > button {
+        height: 42px;
+
+        border: 0;
+
+        border-radius: 9px;
+
+        background: #0a66c2;
+
+        color: #ffffff;
+
+        cursor: pointer;
+
+        font-family: inherit;
+
+        font-size: 13px;
+
+        font-weight: 700;
+    }
+
+
+    /* MOBILE NAV LINKS */
+
     .nav-link,
-    .sell-btn {
+    .sell-btn,
+    .categories-trigger {
         width: 100%;
 
         justify-content: flex-start;
 
         min-height: 48px;
 
-        padding:
-            0 14px;
+        padding: 0 14px;
 
         border-radius: 10px;
 
@@ -1106,11 +1522,65 @@
     }
 
     .nav-link svg,
-    .sell-btn svg {
+    .sell-btn svg,
+    .categories-trigger svg {
         font-size: 15px;
     }
 
+    .categories-trigger {
+        border: 0;
+
+        background: transparent;
+    }
+
+
+    /* MOBILE CATEGORIES */
+
+    .categories-dropdown {
+        width: 100%;
+    }
+
+    .categories-menu {
+        position: static;
+
+        width: 100%;
+
+        max-width: none;
+
+        transform: none;
+
+        margin-top: 2px;
+
+        border-radius: 12px;
+
+        box-shadow: none;
+
+        background: #f8fafc;
+
+        animation: none;
+    }
+
+    .categories-menu-title {
+        padding: 12px;
+
+        background: transparent;
+    }
+
+    .categories-list {
+        grid-template-columns: 1fr;
+
+        max-height: 310px;
+
+        padding: 5px;
+    }
+
+    .category-item {
+        min-height: 45px;
+    }
+
     .sell-btn {
+        margin-top: 4px;
+
         margin-bottom: 4px;
     }
 
@@ -1118,20 +1588,18 @@
 
 
 /* =========================================================
-   SMALL TABLETS / LARGE PHONES
+   SMALL PHONES
 ========================================================= */
 
 @media (max-width: 650px) {
 
     .navbar-inner {
-        padding:
-            0 11px;
-
-        gap: 6px;
+        padding: 0 10px;
     }
 
     .navbar-logo {
         width: 40px;
+
         height: 40px;
 
         flex-basis: 40px;
@@ -1147,17 +1615,15 @@
         font-size: 14px;
     }
 
-    .navbar-actions {
-        gap: 4px;
-    }
-
     .notification-btn {
         width: 39px;
+
         height: 39px;
     }
 
     .profile-trigger {
         width: 42px;
+
         height: 42px;
 
         padding: 2px;
@@ -1166,18 +1632,16 @@
     .profile-avatar-wrapper,
     .profile-avatar {
         width: 36px;
+
         height: 36px;
     }
 
     .menu-btn1 {
         width: 40px;
+
         height: 40px;
 
         flex-basis: 40px;
-    }
-
-    .guest-actions {
-        gap: 4px;
     }
 
 }
@@ -1192,12 +1656,12 @@
     .navbar-inner {
         min-height: 64px;
 
-        padding:
-            0 9px;
+        padding: 0 8px;
     }
 
     .navbar-logo {
         width: 38px;
+
         height: 38px;
 
         flex-basis: 38px;
@@ -1208,31 +1672,33 @@
     }
 
     .brand-name {
-        max-width: calc(100vw - 145px);
+        max-width: calc(100vw - 140px);
 
         font-size: 13px;
-
-        letter-spacing: -0.2px;
     }
 
     .notification-btn {
         width: 37px;
+
         height: 37px;
     }
 
     .profile-trigger {
         width: 40px;
+
         height: 40px;
     }
 
     .profile-avatar-wrapper,
     .profile-avatar {
         width: 34px;
+
         height: 34px;
     }
 
     .menu-btn1 {
         width: 38px;
+
         height: 38px;
 
         flex-basis: 38px;
@@ -1247,8 +1713,7 @@
     .register-btn {
         min-height: 36px;
 
-        padding:
-            0 10px;
+        padding: 0 10px;
 
         font-size: 11px;
     }
@@ -1257,10 +1722,10 @@
         position: fixed;
 
         top: 64px;
+
         right: 8px;
 
-        width:
-            calc(100vw - 16px);
+        width: calc(100vw - 16px);
 
         max-width: 350px;
 
@@ -1277,14 +1742,14 @@
 @media (max-width: 400px) {
 
     .navbar-inner {
-        padding:
-            0 7px;
+        padding: 0 7px;
 
         gap: 4px;
     }
 
     .navbar-logo {
         width: 35px;
+
         height: 35px;
 
         flex-basis: 35px;
@@ -1295,7 +1760,7 @@
     }
 
     .brand-name {
-        max-width: calc(100vw - 132px);
+        max-width: calc(100vw - 130px);
 
         font-size: 12px;
     }
@@ -1306,22 +1771,26 @@
 
     .notification-btn {
         width: 35px;
+
         height: 35px;
     }
 
     .profile-trigger {
         width: 36px;
+
         height: 36px;
     }
 
     .profile-avatar-wrapper,
     .profile-avatar {
         width: 31px;
+
         height: 31px;
     }
 
     .menu-btn1 {
         width: 35px;
+
         height: 35px;
 
         flex-basis: 35px;
@@ -1334,8 +1803,7 @@
     .register-btn {
         min-height: 34px;
 
-        padding:
-            0 8px;
+        padding: 0 8px;
 
         font-size: 10px;
     }
@@ -1350,18 +1818,18 @@
 @media (max-width: 340px) {
 
     .navbar-inner {
-        padding:
-            0 6px;
+        padding: 0 6px;
     }
 
     .brand-name {
-        max-width: 105px;
+        max-width: 100px;
 
         font-size: 11px;
     }
 
     .navbar-logo {
         width: 33px;
+
         height: 33px;
 
         flex-basis: 33px;
@@ -1369,22 +1837,26 @@
 
     .notification-btn {
         width: 33px;
+
         height: 33px;
     }
 
     .profile-trigger {
         width: 34px;
+
         height: 34px;
     }
 
     .profile-avatar-wrapper,
     .profile-avatar {
         width: 29px;
+
         height: 29px;
     }
 
     .menu-btn1 {
         width: 33px;
+
         height: 33px;
 
         flex-basis: 33px;

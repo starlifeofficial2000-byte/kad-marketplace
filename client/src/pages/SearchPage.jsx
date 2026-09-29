@@ -1,481 +1,518 @@
 import { useEffect, useState } from "react";
 import api from "../../config/axios";
 import ProductCard from "../components/ProductCard";
+import categories from "../../data/categories";
 import "./SearchPage.css";
 
 function SearchPage() {
-
     const [products, setProducts] = useState([]);
 
     const [loading, setLoading] = useState(true);
-
     const [error, setError] = useState("");
 
     const [keyword, setKeyword] = useState("");
-
     const [category, setCategory] = useState("");
+    const [subcategory, setSubcategory] = useState("");
 
     const [condition, setCondition] = useState("");
-
     const [region, setRegion] = useState("");
-
     const [city, setCity] = useState("");
 
     const [minPrice, setMinPrice] = useState("");
-
     const [maxPrice, setMaxPrice] = useState("");
 
     const [sort, setSort] = useState("newest");
 
-
-    /* ==========================================
-       LOAD / SEARCH PRODUCTS
-    ========================================== */
+    const selectedCategory = categories.find(
+        (item) => item.name === category
+    );
 
     const searchProducts = async () => {
-
         try {
-
             setLoading(true);
-
             setError("");
 
+            const params = {
+                keyword: keyword.trim(),
+                category,
+                subcategory,
+                condition,
+                region,
+                city,
+                minPrice,
+                maxPrice,
+                sort
+            };
+
             const res = await api.get(
-
                 "/products/search",
-
                 {
-                    params: {
-
-                        keyword,
-                        category,
-                        condition,
-                        region,
-                        city,
-                        minPrice,
-                        maxPrice,
-                        sort
-
-                    }
+                    params
                 }
-
             );
-
 
             console.log(
                 "SEARCH RESPONSE:",
                 res.data
             );
 
-
             const productsData =
-
                 res.data?.products ||
-
                 res.data?.data ||
-
                 (
-
                     Array.isArray(res.data)
-
                         ? res.data
-
                         : []
-
                 );
-
 
             setProducts(productsData);
 
-        }
-
-        catch (error) {
-
+        } catch (error) {
             console.error(
-
                 "SEARCH ERROR:",
-
-                error.response?.data || error.message
-
+                error.response?.data ||
+                error.message ||
+                error
             );
-
 
             setError(
-
                 error.response?.data?.message ||
-
                 "Failed to search products."
-
             );
-
 
             setProducts([]);
 
-        }
-
-        finally {
-
+        } finally {
             setLoading(false);
-
         }
-
     };
-
-
-    /* ==========================================
-       INITIAL LOAD
-    ========================================== */
 
     useEffect(() => {
-
         searchProducts();
-
     }, []);
 
-
-    /* ==========================================
-       HANDLE ENTER KEY
-    ========================================== */
-
-    const handleKeyDown = (e) => {
-
-        if (e.key === "Enter") {
-
+    const handleKeyDown = (event) => {
+        if (event.key === "Enter") {
             searchProducts();
-
         }
-
     };
 
+    const handleCategoryChange = (event) => {
+        setCategory(event.target.value);
+        setSubcategory("");
+    };
+
+    const clearFilters = () => {
+        setKeyword("");
+        setCategory("");
+        setSubcategory("");
+        setCondition("");
+        setRegion("");
+        setCity("");
+        setMinPrice("");
+        setMaxPrice("");
+        setSort("newest");
+
+        setTimeout(() => {
+            searchProducts();
+        }, 0);
+    };
 
     return (
+        <main className="search-page">
 
-        <div className="search-page">
+            <section className="search-header">
 
-            <h1>
+                <div>
+                    <span className="search-eyebrow">
+                        KAD MARKETPLACE
+                    </span>
 
-                Marketplace Search
+                    <h1>
+                        Find What You Need
+                    </h1>
 
-            </h1>
+                    <p>
+                        Search products, services and listings
+                        across the marketplace.
+                    </p>
+                </div>
+
+            </section>
 
 
-            {/* ==============================
-                SEARCH FILTERS
-            ============================== */}
+            {/* SEARCH FILTERS */}
 
-            <div className="filters">
-
+            <section className="filters">
 
                 {/* KEYWORD */}
 
-                <input
+                <div className="filter-group filter-keyword">
 
-                    type="text"
+                    <label>
+                        Search
+                    </label>
 
-                    placeholder="Search products..."
+                    <input
+                        type="text"
+                        placeholder="What are you looking for?"
+                        value={keyword}
+                        onChange={(event) =>
+                            setKeyword(event.target.value)
+                        }
+                        onKeyDown={handleKeyDown}
+                    />
 
-                    value={keyword}
-
-                    onChange={(e) =>
-                        setKeyword(e.target.value)
-                    }
-
-                    onKeyDown={handleKeyDown}
-
-                />
+                </div>
 
 
                 {/* CATEGORY */}
 
-                <input
+                <div className="filter-group">
 
-                    type="text"
+                    <label>
+                        Category
+                    </label>
 
-                    placeholder="Category"
+                    <select
+                        value={category}
+                        onChange={handleCategoryChange}
+                    >
 
-                    value={category}
+                        <option value="">
+                            All Categories
+                        </option>
 
-                    onChange={(e) =>
-                        setCategory(e.target.value)
-                    }
+                        {categories.map((item) => (
+                            <option
+                                key={item.name}
+                                value={item.name}
+                            >
+                                {item.icon} {item.name}
+                            </option>
+                        ))}
 
-                />
+                    </select>
+
+                </div>
+
+
+                {/* SUBCATEGORY */}
+
+                <div className="filter-group">
+
+                    <label>
+                        Subcategory
+                    </label>
+
+                    <select
+                        value={subcategory}
+                        onChange={(event) =>
+                            setSubcategory(event.target.value)
+                        }
+                        disabled={!selectedCategory}
+                    >
+
+                        <option value="">
+                            {selectedCategory
+                                ? "All Subcategories"
+                                : "Select Category First"}
+                        </option>
+
+                        {selectedCategory?.subcategories?.map(
+                            (item) => (
+                                <option
+                                    key={item}
+                                    value={item}
+                                >
+                                    {item}
+                                </option>
+                            )
+                        )}
+
+                    </select>
+
+                </div>
 
 
                 {/* MIN PRICE */}
 
-                <input
+                <div className="filter-group">
 
-                    type="number"
+                    <label>
+                        Minimum Price
+                    </label>
 
-                    placeholder="Minimum Price"
+                    <input
+                        type="number"
+                        min="0"
+                        placeholder="GH₵ Minimum"
+                        value={minPrice}
+                        onChange={(event) =>
+                            setMinPrice(event.target.value)
+                        }
+                    />
 
-                    min="0"
-
-                    value={minPrice}
-
-                    onChange={(e) =>
-                        setMinPrice(e.target.value)
-                    }
-
-                />
+                </div>
 
 
                 {/* MAX PRICE */}
 
-                <input
+                <div className="filter-group">
 
-                    type="number"
+                    <label>
+                        Maximum Price
+                    </label>
 
-                    placeholder="Maximum Price"
+                    <input
+                        type="number"
+                        min="0"
+                        placeholder="GH₵ Maximum"
+                        value={maxPrice}
+                        onChange={(event) =>
+                            setMaxPrice(event.target.value)
+                        }
+                    />
 
-                    min="0"
-
-                    value={maxPrice}
-
-                    onChange={(e) =>
-                        setMaxPrice(e.target.value)
-                    }
-
-                />
+                </div>
 
 
                 {/* CONDITION */}
 
-                <select
+                <div className="filter-group">
 
-                    value={condition}
+                    <label>
+                        Condition
+                    </label>
 
-                    onChange={(e) =>
-                        setCondition(e.target.value)
-                    }
+                    <select
+                        value={condition}
+                        onChange={(event) =>
+                            setCondition(event.target.value)
+                        }
+                    >
 
-                >
+                        <option value="">
+                            All Conditions
+                        </option>
 
-                    <option value="">
-                        All Conditions
-                    </option>
+                        <option value="New">
+                            New
+                        </option>
 
-                    <option value="New">
-                        New
-                    </option>
+                        <option value="Used">
+                            Used
+                        </option>
 
-                    <option value="Used">
-                        Used
-                    </option>
+                    </select>
 
-                </select>
+                </div>
 
 
                 {/* REGION */}
 
-                <input
+                <div className="filter-group">
 
-                    type="text"
+                    <label>
+                        Region
+                    </label>
 
-                    placeholder="Region"
+                    <input
+                        type="text"
+                        placeholder="e.g. Ashanti"
+                        value={region}
+                        onChange={(event) =>
+                            setRegion(event.target.value)
+                        }
+                    />
 
-                    value={region}
-
-                    onChange={(e) =>
-                        setRegion(e.target.value)
-                    }
-
-                />
+                </div>
 
 
                 {/* CITY */}
 
-                <input
+                <div className="filter-group">
 
-                    type="text"
+                    <label>
+                        City / Town
+                    </label>
 
-                    placeholder="City / Town"
+                    <input
+                        type="text"
+                        placeholder="e.g. Kumasi"
+                        value={city}
+                        onChange={(event) =>
+                            setCity(event.target.value)
+                        }
+                    />
 
-                    value={city}
-
-                    onChange={(e) =>
-                        setCity(e.target.value)
-                    }
-
-                />
+                </div>
 
 
                 {/* SORT */}
 
-                <select
+                <div className="filter-group">
 
-                    value={sort}
+                    <label>
+                        Sort By
+                    </label>
 
-                    onChange={(e) =>
-                        setSort(e.target.value)
-                    }
+                    <select
+                        value={sort}
+                        onChange={(event) =>
+                            setSort(event.target.value)
+                        }
+                    >
 
-                >
+                        <option value="newest">
+                            Newest
+                        </option>
 
-                    <option value="newest">
-                        Newest
-                    </option>
+                        <option value="oldest">
+                            Oldest
+                        </option>
 
-                    <option value="oldest">
-                        Oldest
-                    </option>
+                        <option value="lowPrice">
+                            Lowest Price
+                        </option>
 
-                    <option value="lowPrice">
-                        Lowest Price
-                    </option>
+                        <option value="highPrice">
+                            Highest Price
+                        </option>
 
-                    <option value="highPrice">
-                        Highest Price
-                    </option>
+                        <option value="popular">
+                            Most Viewed
+                        </option>
 
-                    <option value="popular">
-                        Most Viewed
-                    </option>
+                    </select>
 
-                </select>
+                </div>
 
 
-                {/* SEARCH BUTTON */}
+                {/* ACTIONS */}
 
-                <button
+                <div className="filter-actions">
 
-                    onClick={searchProducts}
-
-                    disabled={loading}
-
-                >
-
-                    {
-
-                        loading
-
+                    <button
+                        type="button"
+                        className="search-button"
+                        onClick={searchProducts}
+                        disabled={loading}
+                    >
+                        {loading
                             ? "Searching..."
+                            : "Search Products"}
+                    </button>
 
-                            : "Search"
+                    <button
+                        type="button"
+                        className="clear-button"
+                        onClick={clearFilters}
+                    >
+                        Clear
+                    </button>
 
-                    }
+                </div>
 
-                </button>
-
-            </div>
-
-
-            {/* ==============================
-                ERROR MESSAGE
-            ============================== */}
-
-            {
-
-                error && (
-
-                    <div className="search-error">
-
-                        {error}
-
-                    </div>
-
-                )
-
-            }
+            </section>
 
 
-            {/* ==============================
-                RESULTS
-            ============================== */}
+            {/* ERROR */}
 
-            {
+            {error && (
+                <div className="search-error">
+                    {error}
+                </div>
+            )}
 
-                loading
 
-                    ?
+            {/* RESULTS HEADER */}
 
-                    (
+            {!loading && !error && (
+                <div className="results-header">
 
-                        <h2 className="loading">
-
-                            Loading products...
-
+                    <div>
+                        <h2>
+                            Search Results
                         </h2>
 
-                    )
+                        <p>
+                            {products.length} product
+                            {products.length !== 1
+                                ? "s"
+                                : ""}{" "}
+                            found
+                        </p>
+                    </div>
 
-                    :
-
-                    products.length === 0
-
-                        ?
-
-                        (
-
-                            <div className="no-results">
-
-                                <h2>
-
-                                    No products found
-
-                                </h2>
-
-                                <p>
-
-                                    Try changing your search filters.
-
-                                </p>
-
-                            </div>
-
-                        )
-
-                        :
-
-                        (
-
-                            <>
-
-                                <p className="results-count">
-
-                                    {products.length} product
-
-                                    {products.length !== 1 ? "s" : ""}
-
-                                    {" "}found
-
-                                </p>
+                </div>
+            )}
 
 
-                                <div className="products-grid">
+            {/* LOADING */}
 
-                                    {
+            {loading && (
+                <div className="search-loading">
 
-                                        products.map((product) => (
+                    <div className="search-spinner" />
 
-                                            <ProductCard
+                    <p>
+                        Finding products...
+                    </p>
 
-                                                key={
-                                                    product.id ||
-                                                    product._id
-                                                }
+                </div>
+            )}
 
-                                                product={product}
 
-                                            />
+            {/* NO RESULTS */}
 
-                                        ))
+            {!loading && products.length === 0 && !error && (
+                <div className="empty-search">
 
-                                    }
+                    <div className="empty-search-icon">
+                        🔍
+                    </div>
 
-                                </div>
+                    <h2>
+                        No products found
+                    </h2>
 
-                            </>
+                    <p>
+                        Try changing your search keyword,
+                        category, location or price range.
+                    </p>
 
-                        )
+                    <button
+                        type="button"
+                        onClick={clearFilters}
+                    >
+                        Clear Filters
+                    </button>
 
-            }
+                </div>
+            )}
 
-        </div>
 
+            {/* PRODUCTS */}
+
+            {!loading && products.length > 0 && (
+                <div className="products-grid">
+
+                    {products.map((product) => (
+                        <ProductCard
+                            key={
+                                product.id ||
+                                product._id
+                            }
+                            product={product}
+                        />
+                    ))}
+
+                </div>
+            )}
+
+        </main>
     );
-
 }
 
 export default SearchPage;
