@@ -4,15 +4,13 @@ import "./MyStore.css";
 
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 
-const API_ORIGIN = API_URL.replace(/\/api\/?$/, "");
-
-const getToken = () => {
-    return localStorage.getItem("token");
-};
+const getToken = () => localStorage.getItem("token");
 
 const getApiOrigin = () => {
-    if (API_ORIGIN && API_ORIGIN !== "/api") {
-        return API_ORIGIN.replace(/\/$/, "");
+    const cleanApi = API_URL.replace(/\/api\/?$/, "");
+
+    if (cleanApi && cleanApi !== "/api") {
+        return cleanApi.replace(/\/$/, "");
     }
 
     if (typeof window !== "undefined") {
@@ -23,11 +21,6 @@ const getApiOrigin = () => {
 };
 
 function MyStore() {
-
-    /* ==========================================
-       STATES
-    ========================================== */
-
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
@@ -37,15 +30,9 @@ function MyStore() {
     const [success, setSuccess] = useState("");
     const [error, setError] = useState("");
 
-
-    /* ==========================================
-       STORE DATA
-    ========================================== */
-
     const [store, setStore] = useState({
         storeName: "",
         description: "",
-
         phone: "",
         email: "",
         website: "",
@@ -64,8 +51,8 @@ function MyStore() {
         x: "",
         whatsapp: "",
 
-        accentColor: "#0A66C2",
-        coverColor: "#2563eb",
+        accentColor: "#0D8ABC",
+        coverColor: "#075985",
 
         logo: "",
         banner: "",
@@ -73,16 +60,14 @@ function MyStore() {
         totalProducts: 0,
         totalViews: 0,
         followers: 0,
-        rating: 5
+        rating: 5,
     });
 
-
-    /* ==========================================
+    /* =========================================================
        IMAGE URL
-    ========================================== */
+    ========================================================= */
 
     const getImageUrl = (imagePath) => {
-
         if (!imagePath || typeof imagePath !== "string") {
             return null;
         }
@@ -93,7 +78,6 @@ function MyStore() {
             return null;
         }
 
-        // Already a complete URL
         if (
             value.startsWith("http://") ||
             value.startsWith("https://") ||
@@ -104,57 +88,42 @@ function MyStore() {
 
         const origin = getApiOrigin();
 
-        // Already starts with /
         if (value.startsWith("/")) {
             return `${origin}${value}`;
         }
 
-        // uploads/...
         if (value.startsWith("uploads/")) {
             return `${origin}/${value}`;
         }
 
-        // Store images saved only as filename
         return `${origin}/uploads/stores/${value}`;
     };
 
-
-    /* ==========================================
+    /* =========================================================
        LOAD STORE
-    ========================================== */
+    ========================================================= */
 
     const loadStore = async () => {
-
         try {
-
             setLoading(true);
             setError("");
 
-            const response = await api.get(
-                "/store/my-store"
-            );
+            const response = await api.get("/store/my-store");
 
-            console.log(
-                "STORE DATA:",
-                response.data
-            );
+            console.log("STORE DATA:", response.data);
 
             const storeData =
                 response.data?.store ||
                 response.data?.data ||
                 response.data;
 
-            if (storeData) {
-
+            if (storeData && typeof storeData === "object") {
                 setStore((prev) => ({
                     ...prev,
-                    ...storeData
+                    ...storeData,
                 }));
-
             }
-
         } catch (err) {
-
             console.error(
                 "LOAD STORE ERROR:",
                 err.response?.data || err.message
@@ -165,116 +134,72 @@ function MyStore() {
                 err.message ||
                 "Unable to load your store."
             );
-
         } finally {
-
             setLoading(false);
-
         }
-
     };
 
-
-    /* ==========================================
-       LOAD ON START
-    ========================================== */
-
     useEffect(() => {
-
         loadStore();
-
     }, []);
 
+    /* =========================================================
+       INPUT CHANGE
+    ========================================================= */
 
-    /* ==========================================
-       HANDLE INPUT CHANGE
-    ========================================== */
-
-    const handleChange = (e) => {
-
-        const { name, value } = e.target;
+    const handleChange = (event) => {
+        const { name, value } = event.target;
 
         setStore((prev) => ({
             ...prev,
-            [name]: value
+            [name]: value,
         }));
-
     };
 
-
-    /* ==========================================
+    /* =========================================================
        SAVE STORE
-    ========================================== */
+    ========================================================= */
 
     const saveStore = async () => {
-
         try {
-
             setSaving(true);
-
             setSuccess("");
             setError("");
 
-            /*
-             * Only send fields that the seller is
-             * actually allowed to edit.
-             *
-             * Do not send calculated fields such as:
-             * totalProducts
-             * totalViews
-             * followers
-             * rating
-             */
-
             const payload = {
-
                 storeName: store.storeName || "",
-
                 description: store.description || "",
-
                 phone: store.phone || "",
-
                 email: store.email || "",
-
                 website: store.website || "",
 
                 businessCategory:
                     store.businessCategory || "",
 
                 region: store.region || "",
-
                 city: store.city || "",
-
                 address: store.address || "",
 
                 businessHours:
                     store.businessHours || "",
 
                 facebook: store.facebook || "",
-
                 instagram: store.instagram || "",
-
                 tiktok: store.tiktok || "",
-
                 x: store.x || "",
-
                 whatsapp: store.whatsapp || "",
 
                 accentColor:
-                    store.accentColor || "#0A66C2",
+                    store.accentColor || "#0D8ABC",
 
                 coverColor:
-                    store.coverColor || "#2563eb",
+                    store.coverColor || "#075985",
 
                 logo: store.logo || "",
-
-                banner: store.banner || ""
+                banner: store.banner || "",
             };
 
-            console.log(
-                "SAVING STORE:",
-                payload
-            );
+            console.log("SAVING STORE:", payload);
 
             const response = await api.put(
                 "/store/my-store",
@@ -294,12 +219,10 @@ function MyStore() {
                 updatedStore &&
                 typeof updatedStore === "object"
             ) {
-
                 setStore((prev) => ({
                     ...prev,
-                    ...updatedStore
+                    ...updatedStore,
                 }));
-
             }
 
             setSuccess(
@@ -308,15 +231,12 @@ function MyStore() {
 
             window.scrollTo({
                 top: 0,
-                behavior: "smooth"
+                behavior: "smooth",
             });
-
         } catch (err) {
-
             console.error(
                 "SAVE STORE ERROR:",
-                err.response?.data ||
-                err.message
+                err.response?.data || err.message
             );
 
             setError(
@@ -324,65 +244,49 @@ function MyStore() {
                 err.message ||
                 "Failed to save your store."
             );
-
         } finally {
-
             setSaving(false);
-
         }
-
     };
 
+    /* =========================================================
+       LOGO UPLOAD
+    ========================================================= */
 
-    /* ==========================================
-       UPLOAD LOGO
-    ========================================== */
-
-    const uploadLogo = async (e) => {
-
-        const file = e.target.files?.[0];
+    const uploadLogo = async (event) => {
+        const file = event.target.files?.[0];
 
         if (!file) {
             return;
         }
 
-        // Reset input so selecting the same image
-        // again will trigger onChange.
-        e.target.value = "";
+        event.target.value = "";
 
         if (!file.type.startsWith("image/")) {
-
             setError(
                 "Please select a valid image for the store logo."
             );
-
             return;
         }
 
         if (file.size > 10 * 1024 * 1024) {
-
             setError(
                 "Store logo must be smaller than 10MB."
             );
-
             return;
         }
 
         const token = getToken();
 
         if (!token) {
-
             setError(
                 "Your session has expired. Please log in again."
             );
-
             return;
         }
 
         try {
-
             setUploadingLogo(true);
-
             setError("");
             setSuccess("");
 
@@ -394,44 +298,25 @@ function MyStore() {
                 file.name
             );
 
-            console.log(
-                "Uploading store logo:",
-                {
-                    name: file.name,
-                    type: file.type,
-                    size: file.size
-                }
-            );
-
-            /*
-             * IMPORTANT:
-             *
-             * Do NOT manually set:
-             *
-             * Content-Type: multipart/form-data
-             *
-             * The browser creates the correct
-             * multipart boundary automatically.
-             */
+            console.log("Uploading store logo:", {
+                name: file.name,
+                type: file.type,
+                size: file.size,
+            });
 
             const response = await fetch(
                 `${API_URL}/store/upload-logo`,
                 {
                     method: "POST",
-
                     headers: {
-                        Authorization:
-                            `Bearer ${token}`
+                        Authorization: `Bearer ${token}`,
                     },
-
-                    body: formData
+                    body: formData,
                 }
             );
 
             const data =
-                await response
-                    .json()
-                    .catch(() => ({}));
+                await response.json().catch(() => ({}));
 
             console.log(
                 "LOGO UPLOAD RESPONSE:",
@@ -439,12 +324,10 @@ function MyStore() {
             );
 
             if (!response.ok) {
-
                 throw new Error(
                     data?.message ||
                     `Logo upload failed (${response.status}).`
                 );
-
             }
 
             const newLogo =
@@ -453,24 +336,20 @@ function MyStore() {
                 data?.data?.logo;
 
             if (!newLogo) {
-
                 throw new Error(
                     "Logo upload succeeded, but the server did not return the logo path."
                 );
-
             }
 
             setStore((prev) => ({
                 ...prev,
-                logo: newLogo
+                logo: newLogo,
             }));
 
             setSuccess(
                 "Store logo uploaded successfully."
             );
-
         } catch (err) {
-
             console.error(
                 "LOGO UPLOAD ERROR:",
                 err
@@ -480,63 +359,49 @@ function MyStore() {
                 err.message ||
                 "Unable to upload store logo."
             );
-
         } finally {
-
             setUploadingLogo(false);
-
         }
-
     };
 
+    /* =========================================================
+       BANNER UPLOAD
+    ========================================================= */
 
-    /* ==========================================
-       UPLOAD BANNER
-    ========================================== */
-
-    const uploadBanner = async (e) => {
-
-        const file = e.target.files?.[0];
+    const uploadBanner = async (event) => {
+        const file = event.target.files?.[0];
 
         if (!file) {
             return;
         }
 
-        e.target.value = "";
+        event.target.value = "";
 
         if (!file.type.startsWith("image/")) {
-
             setError(
                 "Please select a valid image for the store banner."
             );
-
             return;
         }
 
         if (file.size > 10 * 1024 * 1024) {
-
             setError(
                 "Store banner must be smaller than 10MB."
             );
-
             return;
         }
 
         const token = getToken();
 
         if (!token) {
-
             setError(
                 "Your session has expired. Please log in again."
             );
-
             return;
         }
 
         try {
-
             setUploadingBanner(true);
-
             setError("");
             setSuccess("");
 
@@ -548,38 +413,25 @@ function MyStore() {
                 file.name
             );
 
-            console.log(
-                "Uploading store banner:",
-                {
-                    name: file.name,
-                    type: file.type,
-                    size: file.size
-                }
-            );
-
-            /*
-             * Same rule as logo:
-             * Do NOT manually set Content-Type.
-             */
+            console.log("Uploading store banner:", {
+                name: file.name,
+                type: file.type,
+                size: file.size,
+            });
 
             const response = await fetch(
                 `${API_URL}/store/upload-banner`,
                 {
                     method: "POST",
-
                     headers: {
-                        Authorization:
-                            `Bearer ${token}`
+                        Authorization: `Bearer ${token}`,
                     },
-
-                    body: formData
+                    body: formData,
                 }
             );
 
             const data =
-                await response
-                    .json()
-                    .catch(() => ({}));
+                await response.json().catch(() => ({}));
 
             console.log(
                 "BANNER UPLOAD RESPONSE:",
@@ -587,12 +439,10 @@ function MyStore() {
             );
 
             if (!response.ok) {
-
                 throw new Error(
                     data?.message ||
                     `Banner upload failed (${response.status}).`
                 );
-
             }
 
             const newBanner =
@@ -601,24 +451,20 @@ function MyStore() {
                 data?.data?.banner;
 
             if (!newBanner) {
-
                 throw new Error(
                     "Banner upload succeeded, but the server did not return the banner path."
                 );
-
             }
 
             setStore((prev) => ({
                 ...prev,
-                banner: newBanner
+                banner: newBanner,
             }));
 
             setSuccess(
                 "Store banner uploaded successfully."
             );
-
         } catch (err) {
-
             console.error(
                 "BANNER UPLOAD ERROR:",
                 err
@@ -628,72 +474,48 @@ function MyStore() {
                 err.message ||
                 "Unable to upload store banner."
             );
-
         } finally {
-
             setUploadingBanner(false);
-
         }
-
     };
 
-
-    /* ==========================================
+    /* =========================================================
        LOADING
-    ========================================== */
+    ========================================================= */
 
     if (loading) {
-
         return (
-
             <div className="loading-spinner">
-
                 Loading Store...
-
             </div>
-
         );
-
     }
 
-
-    /* ==========================================
+    /* =========================================================
        PAGE
-    ========================================== */
+    ========================================================= */
 
     return (
-
         <div className="store-page">
 
             {success && (
-
                 <div className="success-box">
-
                     {success}
-
                 </div>
-
             )}
-
 
             {error && (
-
                 <div className="error-box">
-
                     {error}
-
                 </div>
-
             )}
 
-
-            {/* ==========================================
-                STORE HEADER / BANNER
-            ========================================== */}
+            {/* =================================================
+                STORE HEADER
+            ================================================= */}
 
             <div
                 className="store-banner"
-
                 style={{
                     backgroundImage:
                         store.banner
@@ -702,9 +524,9 @@ function MyStore() {
                             )}")`
                             : `linear-gradient(
                                 135deg,
-                                ${store.coverColor || "#0A66C2"},
-                                ${store.accentColor || "#1E3A8A"}
-                            )`
+                                ${store.coverColor || "#075985"},
+                                ${store.accentColor || "#0D8ABC"}
+                            )`,
                 }}
             >
 
@@ -721,21 +543,14 @@ function MyStore() {
                     htmlFor="bannerUpload"
                     className="change-banner"
                 >
-
                     {uploadingBanner
                         ? "Uploading..."
-                        : "📷 Change Banner"
-                    }
-
+                        : "📷 Change Banner"}
                 </label>
-
 
                 <div className="store-header">
 
-
-                    {/* ==========================================
-                        STORE LOGO
-                    ========================================== */}
+                    {/* STORE LOGO */}
 
                     <div className="store-logo">
 
@@ -748,24 +563,18 @@ function MyStore() {
                                     : `https://ui-avatars.com/api/?name=${encodeURIComponent(
                                         store.storeName ||
                                         "Store"
-                                    )}&background=0A66C2&color=fff`
+                                    )}&background=0D8ABC&color=fff`
                             }
-
                             alt="Store Logo"
-
                             className="logo-image"
-
                             onError={(event) => {
-
                                 event.currentTarget.onerror =
                                     null;
 
                                 event.currentTarget.src =
                                     "/images/product-placeholder.png";
-
                             }}
                         />
-
 
                         <input
                             type="file"
@@ -776,145 +585,95 @@ function MyStore() {
                             disabled={uploadingLogo}
                         />
 
-
                         <label
                             htmlFor="logoUpload"
                             className="change-logo"
                         >
-
                             {uploadingLogo
                                 ? "..."
-                                : "📷"
-                            }
-
+                                : "📷"}
                         </label>
 
                     </div>
 
-
-                    {/* ==========================================
-                        STORE HEADER INFO
-                    ========================================== */}
+                    {/* STORE INFORMATION */}
 
                     <div className="store-header-info">
 
                         <h1>
-
                             {store.storeName ||
                                 "My Store"}
-
                         </h1>
 
-
                         <div className="seller-badge">
-
                             🏪 Store Owner
-
                         </div>
 
-
                         <p>
-
                             📍{" "}
-
                             {store.city ||
                                 "City"}
-
                             {", "}
-
                             {store.region ||
                                 "Region"}
-
                         </p>
-
 
                         <div className="store-stats">
 
-
                             <div>
-
                                 <strong>
-
                                     {store.totalProducts ||
                                         0}
-
                                 </strong>
 
                                 <span>
-
                                     Products
-
                                 </span>
-
                             </div>
 
-
                             <div>
-
                                 <strong>
-
                                     {store.totalViews ||
                                         0}
-
                                 </strong>
 
                                 <span>
-
                                     Views
-
                                 </span>
-
                             </div>
 
-
                             <div>
-
                                 <strong>
-
                                     {store.followers ||
                                         0}
-
                                 </strong>
 
                                 <span>
-
                                     Followers
-
                                 </span>
-
                             </div>
-
 
                             <div>
-
                                 <strong>
-
                                     {store.rating ||
                                         5}
-
                                 </strong>
 
                                 <span>
-
                                     Rating
-
                                 </span>
-
                             </div>
-
 
                         </div>
 
                     </div>
 
                 </div>
-
             </div>
 
-
-            {/* ==========================================
+            {/* =================================================
                 BASIC INFORMATION
-            ========================================== */}
+            ================================================= */}
 
             <div className="store-card">
 
@@ -922,9 +681,7 @@ function MyStore() {
                     🏪 Basic Store Information
                 </h2>
 
-
                 <div className="store-grid">
-
 
                     <div className="input-group">
 
@@ -936,15 +693,13 @@ function MyStore() {
                             type="text"
                             name="storeName"
                             value={
-                                store.storeName ||
-                                ""
+                                store.storeName || ""
                             }
                             onChange={handleChange}
                             placeholder="Enter store name"
                         />
 
                     </div>
-
 
                     <div className="input-group">
 
@@ -965,7 +720,6 @@ function MyStore() {
 
                     </div>
 
-
                     <div className="input-group">
 
                         <label>
@@ -976,15 +730,13 @@ function MyStore() {
                             type="text"
                             name="phone"
                             value={
-                                store.phone ||
-                                ""
+                                store.phone || ""
                             }
                             onChange={handleChange}
                             placeholder="024XXXXXXX"
                         />
 
                     </div>
-
 
                     <div className="input-group">
 
@@ -996,15 +748,13 @@ function MyStore() {
                             type="email"
                             name="email"
                             value={
-                                store.email ||
-                                ""
+                                store.email || ""
                             }
                             onChange={handleChange}
                             placeholder="store@email.com"
                         />
 
                     </div>
-
 
                     <div className="input-group full-width">
 
@@ -1016,8 +766,7 @@ function MyStore() {
                             type="text"
                             name="website"
                             value={
-                                store.website ||
-                                ""
+                                store.website || ""
                             }
                             onChange={handleChange}
                             placeholder="https://example.com"
@@ -1026,7 +775,6 @@ function MyStore() {
                     </div>
 
                 </div>
-
 
                 <div className="input-group full-width">
 
@@ -1037,8 +785,7 @@ function MyStore() {
                     <textarea
                         name="description"
                         value={
-                            store.description ||
-                            ""
+                            store.description || ""
                         }
                         onChange={handleChange}
                         rows="6"
@@ -1049,10 +796,9 @@ function MyStore() {
 
             </div>
 
-
-            {/* ==========================================
+            {/* =================================================
                 LOCATION
-            ========================================== */}
+            ================================================= */}
 
             <div className="store-card">
 
@@ -1060,9 +806,7 @@ function MyStore() {
                     📍 Business Location
                 </h2>
 
-
                 <div className="store-grid">
-
 
                     <div className="input-group">
 
@@ -1074,15 +818,13 @@ function MyStore() {
                             type="text"
                             name="region"
                             value={
-                                store.region ||
-                                ""
+                                store.region || ""
                             }
                             onChange={handleChange}
                             placeholder="Greater Accra"
                         />
 
                     </div>
-
 
                     <div className="input-group">
 
@@ -1094,8 +836,7 @@ function MyStore() {
                             type="text"
                             name="city"
                             value={
-                                store.city ||
-                                ""
+                                store.city || ""
                             }
                             onChange={handleChange}
                             placeholder="Accra"
@@ -1104,7 +845,6 @@ function MyStore() {
                     </div>
 
                 </div>
-
 
                 <div className="input-group full-width">
 
@@ -1115,8 +855,7 @@ function MyStore() {
                     <textarea
                         name="address"
                         value={
-                            store.address ||
-                            ""
+                            store.address || ""
                         }
                         onChange={handleChange}
                         rows="3"
@@ -1127,17 +866,15 @@ function MyStore() {
 
             </div>
 
-
-            {/* ==========================================
+            {/* =================================================
                 BUSINESS HOURS
-            ========================================== */}
+            ================================================= */}
 
             <div className="store-card">
 
                 <h2>
                     🕒 Business Hours
                 </h2>
-
 
                 <div className="input-group full-width">
 
@@ -1162,10 +899,9 @@ Sunday: Closed`}
 
             </div>
 
-
-            {/* ==========================================
+            {/* =================================================
                 SOCIAL MEDIA
-            ========================================== */}
+            ================================================= */}
 
             <div className="store-card">
 
@@ -1173,9 +909,7 @@ Sunday: Closed`}
                     🌐 Social Media & Contact Links
                 </h2>
 
-
                 <div className="store-grid">
-
 
                     <div className="input-group">
 
@@ -1187,15 +921,13 @@ Sunday: Closed`}
                             type="text"
                             name="facebook"
                             value={
-                                store.facebook ||
-                                ""
+                                store.facebook || ""
                             }
                             onChange={handleChange}
                             placeholder="Facebook URL"
                         />
 
                     </div>
-
 
                     <div className="input-group">
 
@@ -1207,15 +939,13 @@ Sunday: Closed`}
                             type="text"
                             name="instagram"
                             value={
-                                store.instagram ||
-                                ""
+                                store.instagram || ""
                             }
                             onChange={handleChange}
                             placeholder="Instagram URL"
                         />
 
                     </div>
-
 
                     <div className="input-group">
 
@@ -1227,15 +957,13 @@ Sunday: Closed`}
                             type="text"
                             name="tiktok"
                             value={
-                                store.tiktok ||
-                                ""
+                                store.tiktok || ""
                             }
                             onChange={handleChange}
                             placeholder="TikTok URL"
                         />
 
                     </div>
-
 
                     <div className="input-group">
 
@@ -1247,15 +975,13 @@ Sunday: Closed`}
                             type="text"
                             name="x"
                             value={
-                                store.x ||
-                                ""
+                                store.x || ""
                             }
                             onChange={handleChange}
                             placeholder="X profile URL"
                         />
 
                     </div>
-
 
                     <div className="input-group full-width">
 
@@ -1267,8 +993,7 @@ Sunday: Closed`}
                             type="text"
                             name="whatsapp"
                             value={
-                                store.whatsapp ||
-                                ""
+                                store.whatsapp || ""
                             }
                             onChange={handleChange}
                             placeholder="233XXXXXXXXX"
@@ -1280,10 +1005,9 @@ Sunday: Closed`}
 
             </div>
 
-
-            {/* ==========================================
+            {/* =================================================
                 STORE APPEARANCE
-            ========================================== */}
+            ================================================= */}
 
             <div className="store-card">
 
@@ -1291,9 +1015,7 @@ Sunday: Closed`}
                     🎨 Store Appearance
                 </h2>
 
-
                 <div className="store-grid">
-
 
                     <div className="input-group">
 
@@ -1306,13 +1028,12 @@ Sunday: Closed`}
                             name="accentColor"
                             value={
                                 store.accentColor ||
-                                "#0A66C2"
+                                "#0D8ABC"
                             }
                             onChange={handleChange}
                         />
 
                     </div>
-
 
                     <div className="input-group">
 
@@ -1325,7 +1046,7 @@ Sunday: Closed`}
                             name="coverColor"
                             value={
                                 store.coverColor ||
-                                "#2563eb"
+                                "#075985"
                             }
                             onChange={handleChange}
                         />
@@ -1336,10 +1057,9 @@ Sunday: Closed`}
 
             </div>
 
-
-            {/* ==========================================
-                SAVE BUTTON
-            ========================================== */}
+            {/* =================================================
+                SAVE
+            ================================================= */}
 
             <div className="store-save-section">
 
@@ -1349,18 +1069,14 @@ Sunday: Closed`}
                     onClick={saveStore}
                     disabled={saving}
                 >
-
                     {saving
                         ? "Saving Changes..."
-                        : "💾 Save All Changes"
-                    }
-
+                        : "💾 Save All Changes"}
                 </button>
 
             </div>
 
         </div>
-
     );
 }
 
