@@ -1,10 +1,10 @@
-const {
-    Store,
-    User,
-    Product,
-    StoreFollow,
-    Review
-} = require("../models");
+const Store = require("../models/Store");
+const Product = require("../models/Product");
+const User = require("../models/User");
+const Subscription = require("../models/Subscription");
+const Review = require("../models/Review");
+
+const sanitize = require("../services/sanitizeService");
 
 const {
     getR2PublicUrl,
@@ -12,151 +12,81 @@ const {
 } = require("../config/r2");
 
 
-/* =====================================================
-   CREATE STORE SLUG
-===================================================== */
+/* ============================================================
+   KAD MARKETPLACE — STORE CONTROLLER
+   ============================================================
 
-const createSlug = (name) => {
-    return String(name || "")
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
-};
+   IMPORTANT:
+
+   Store images are stored in Cloudflare R2.
+
+   Database:
+       logo   -> uploads/stores/xxxxx.png
+       banner -> uploads/stores/xxxxx.jpg
+
+   API response:
+       logo   -> https://cdn....../uploads/stores/xxxxx.png
+       banner -> https://cdn....../uploads/stores/xxxxx.jpg
+
+   This keeps the database clean while allowing the frontend
+   to receive a directly usable image URL.
+============================================================ */
 
 
-/* =====================================================
-   IMAGE HELPERS
-===================================================== */
+/* ============================================================
+   SAFE SANITIZER
+============================================================ */
 
-/*
- * Returns the R2 key when possible.
- *
- * New records:
- *   uploads/stores/xxxxx.jpg
- *
- * Older records may contain:
- *   /uploads/stores/xxxxx.jpg
- *
- * We keep the old value recognizable so existing
- * images are not immediately broken.
- */
+function clean(value) {
+    if (value === undefined || value === null) {
+        return value;
+    }
 
-const getStoredImageKey = (image) => {
-    if (!image) return null;
+    try {
+        return sanitize(value);
+    } catch (error) {
+        return value;
+    }
+}
+
+
+/* ============================================================
+   NORMALIZE STORED IMAGE VALUE
+============================================================ */
+
+function getStoredImageValue(image) {
+    if (!image) {
+        return null;
+    }
 
     if (typeof image === "object") {
-        image =
+        return (
             image.r2Key ||
             image.key ||
             image.url ||
             image.location ||
             image.path ||
-            image.filename;
+            image.filename ||
+            null
+        );
     }
 
-    if (!image) return null;
-
-    let value = String(image).trim();
-
-    if (!value) return null;
-
-    /*
-     * Full R2 URL
-     */
-    if (
-        value.startsWith("http://") ||
-        value.startsWith("https://")
-    ) {
-        try {
-            const parsed = new URL(value);
-
-            const pathname =
-                parsed.pathname
-                    .replace(/^\/+/, "");
-
-            /*
-             * Only treat it as an R2 key when it
-             * belongs to our configured R2 public URL.
-             */
-            const r2PublicUrl =
-                process.env.R2_PUBLIC_URL
-                    ?.trim()
-                    .replace(/\/+$/, "");
-
-            if (
-                r2PublicUrl &&
-                value.startsWith(r2PublicUrl)
-            ) {
-                return decodeURIComponent(pathname);
-            }
-
-            return null;
-        } catch {
-            return null;
-        }
-    }
-
-    value = value
-        .replace(/\\/g, "/")
-        .replace(/^\/+/, "");
-
-    return value;
-};
+    return String(image).trim() || null;
+}
 
 
-/*
- * Convert a stored image value to a public URL.
- *
- * New R2 objects:
- *   uploads/stores/abc.jpg
- *
- * become:
- *   https://your-r2-domain/.../uploads/stores/abc.jpg
- *
- * Old Railway records are returned unchanged as a
- * relative /uploads/... path so we don't break old
- * data while migration is taking place.
- */
+/* ============================================================
+   CONVERT STORED IMAGE TO PUBLIC URL
+============================================================ */
 
-/* =====================================================
-   RESOLVE STORE IMAGE URL
-===================================================== */
-
-const resolveStoreImageUrl = (image) => {
-    if (!image) {
-        return null;
-    }
-
-    /*
-     * Handle object values.
-     */
-    if (typeof image === "object") {
-        image =
-            image.url ||
-            image.location ||
-            image.r2Key ||
-            image.key ||
-            image.path ||
-            image.filename;
-    }
-
-    if (!image) {
-        return null;
-    }
-
-    let value = String(image).trim();
+function resolveStoreImageUrl(image) {
+    const value = getStoredImageValue(image);
 
     if (!value) {
         return null;
     }
 
-    /*
-     * Already a complete URL.
-     *
-     * Example:
-     * https://cdn.kadmarket.com/...
-     */
+    /* Already a full URL */
     if (
         value.startsWith("http://") ||
         value.startsWith("https://")
@@ -164,67 +94,54 @@ const resolveStoreImageUrl = (image) => {
         return value;
     }
 
-    /*
-     * Normalize Windows paths / leading slashes.
-     */
-    const normalized = value
+    const normalized = String(value)
         .replace(/\\/g, "/")
         .replace(/^\/+/, "");
 
     /*
-     * R2 store image.
+     * R2 object.
      *
-     * Example:
-     * uploads/stores/logo-123.png
+     * Current Store uploads use:
+     *
+     * uploads/stores/filename.ext
      */
-    if (
-        normalized.startsWith(
-            "uploads/stores/"
-        )
-    ) {
-        const r2Url =
-            getR2PublicUrl(normalized);
+    if (normalized.startsWith("uploads/stores/")) {
+        try {
+            return getR2PublicUrl(normalized);
+        } catch (error) {
+            console.error(
+                "R2 PUBLIC URL ERROR:",
+                error.message
+            );
 
-        if (r2Url) {
-            return r2Url;
-        }
-
-        /*
-         * Fallback directly to R2_PUBLIC_URL.
-         */
-        const publicUrl =
-            process.env.R2_PUBLIC_URL
-                ?.trim()
-                .replace(/\/+$/, "");
-
-        if (publicUrl) {
-            return `${publicUrl}/${normalized}`;
+            return null;
         }
     }
 
     /*
-     * Legacy local Railway image.
+     * Legacy local upload.
      *
-     * Retained for old database records.
+     * This is retained only so old store records
+     * do not immediately break.
      */
-    if (
-        normalized.startsWith("uploads/")
-    ) {
+    if (normalized.startsWith("uploads/")) {
         return `/${normalized}`;
     }
 
     /*
-     * Final fallback.
+     * If an old record contains only a filename,
+     * don't assume it is an R2 key unless it is
+     * explicitly inside uploads/stores.
      */
     return `/${normalized}`;
-};
+}
 
 
-/* =====================================================
-   FORMAT STORE
-===================================================== */
+/* ============================================================
+   FORMAT STORE RESPONSE
+============================================================ */
 
-const formatStore = (store) => {
+function formatStore(store) {
     if (!store) {
         return null;
     }
@@ -234,40 +151,25 @@ const formatStore = (store) => {
             ? store.toJSON()
             : { ...store };
 
-    const logo =
-        resolveStoreImageUrl(
-            plain.logo
-        );
-
-    const banner =
-        resolveStoreImageUrl(
-            plain.banner
-        );
-
     return {
         ...plain,
 
-        /*
-         * Keep original fields.
-         */
-        logo: logo || "",
-        banner: banner || "",
+        logo: resolveStoreImageUrl(
+            plain.logo
+        ),
 
-        /*
-         * Also provide explicit URL fields
-         * for the React frontend.
-         */
-        logoUrl: logo || "",
-        bannerUrl: banner || ""
+        banner: resolveStoreImageUrl(
+            plain.banner
+        )
     };
-};
+}
 
 
-/* =====================================================
+/* ============================================================
    PARSE PRODUCT IMAGES
-===================================================== */
+============================================================ */
 
-const parseImages = (images) => {
+function parseImages(images) {
     if (!images) {
         return [];
     }
@@ -278,27 +180,25 @@ const parseImages = (images) => {
 
     if (typeof images === "string") {
         try {
-            const parsed =
-                JSON.parse(images);
+            const parsed = JSON.parse(images);
 
             return Array.isArray(parsed)
                 ? parsed
                 : [images];
-
         } catch {
             return [images];
         }
     }
 
     return [images];
-};
+}
 
 
-/* =====================================================
+/* ============================================================
    FORMAT PRODUCT
-===================================================== */
+============================================================ */
 
-const formatProduct = (product) => {
+function formatProduct(product) {
     if (!product) {
         return null;
     }
@@ -308,8 +208,9 @@ const formatProduct = (product) => {
             ? product.toJSON()
             : { ...product };
 
-    const images =
-        parseImages(plain.images);
+    const images = parseImages(
+        plain.images
+    );
 
     return {
         ...plain,
@@ -318,189 +219,180 @@ const formatProduct = (product) => {
             .map(resolveStoreImageUrl)
             .filter(Boolean)
     };
-};
+}
 
 
-/* =====================================================
+/* ============================================================
    FORMAT PRODUCTS
-===================================================== */
+============================================================ */
 
-const formatProducts = (products) => {
+function formatProducts(products) {
     return (products || [])
         .map(formatProduct)
         .filter(Boolean);
-};
+}
 
 
-/* =====================================================
+/* ============================================================
    GET R2 KEY FROM STORED IMAGE
-===================================================== */
+============================================================ */
 
-const getR2KeyFromStoredImage = (image) => {
-    if (!image) {
-        return null;
-    }
-
-    if (typeof image === "object") {
-        image =
-            image.r2Key ||
-            image.key ||
-            image.url ||
-            image.location;
-    }
-
-    if (!image) {
-        return null;
-    }
-
-    let value =
-        String(image).trim();
+function getR2KeyFromStoredImage(image) {
+    const value = getStoredImageValue(image);
 
     if (!value) {
         return null;
     }
 
+    let normalized = String(value)
+        .trim()
+        .replace(/\\/g, "/")
+        .replace(/^\/+/, "");
+
     /*
-     * R2 public URL.
-     *
-     * Example:
-     * https://cdn.kadmarket.com/uploads/stores/logo.png
+     * Full R2 public URL
      */
     if (
-        value.startsWith("http://") ||
-        value.startsWith("https://")
+        normalized.startsWith("http://") ||
+        normalized.startsWith("https://")
     ) {
-        const publicUrl =
-            process.env.R2_PUBLIC_URL
-                ?.trim()
-                .replace(/\/+$/, "");
+        try {
+            const publicUrl =
+                process.env.R2_PUBLIC_URL
+                    ?.trim()
+                    .replace(/\/+$/, "");
 
-        if (
-            publicUrl &&
-            value.startsWith(publicUrl)
-        ) {
-            try {
+            if (
+                publicUrl &&
+                normalized.startsWith(publicUrl)
+            ) {
                 const parsed =
-                    new URL(value);
+                    new URL(normalized);
 
-                return decodeURIComponent(
-                    parsed.pathname
-                        .replace(/^\/+/, "")
-                );
+                const key =
+                    decodeURIComponent(
+                        parsed.pathname
+                    )
+                    .replace(/^\/+/, "");
 
-            } catch {
-                return null;
+                if (
+                    key.startsWith(
+                        "uploads/stores/"
+                    )
+                ) {
+                    return key;
+                }
             }
+        } catch {
+            return null;
         }
 
         return null;
     }
 
     /*
-     * Normalize stored key.
-     */
-    value = value
-        .replace(/\\/g, "/")
-        .replace(/^\/+/, "");
-
-    /*
-     * Only allow store images to be
-     * deleted from R2.
+     * Only delete files that are definitely
+     * inside the Store R2 directory.
      */
     if (
-        value.startsWith(
+        normalized.startsWith(
             "uploads/stores/"
         )
     ) {
-        return value;
+        return normalized;
     }
 
     return null;
-};
+}
 
 
-/*
- * Safely delete a previous R2 Store image.
- */
+/* ============================================================
+   DELETE OLD STORE IMAGE SAFELY
+============================================================ */
 
-const deleteOldStoreImage = async (image) => {
+async function deleteOldStoreImage(image) {
     const key =
         getR2KeyFromStoredImage(image);
 
-    if (!key) return;
+    if (!key) {
+        return;
+    }
 
     try {
         await deleteFromR2(key);
 
         console.log(
-            "OLD STORE R2 IMAGE DELETED:",
+            "[R2] Deleted old store image:",
             key
         );
     } catch (error) {
         /*
-         * Don't make a successful database update
-         * fail simply because cleanup failed.
+         * Do not fail the database update just
+         * because deleting the previous image failed.
          */
         console.error(
-            "FAILED TO DELETE OLD STORE R2 IMAGE:",
-            key,
+            "[R2] Failed to delete old store image:",
             error.message
         );
     }
-};
+}
 
 
-/* =====================================================
-   GET MY STORE
-===================================================== */
+/* ============================================================
+   FIND MY STORE
+============================================================ */
+
+async function findMyStore(userId) {
+    if (!userId) {
+        return null;
+    }
+
+    return Store.findOne({
+        where: {
+            userId
+        }
+    });
+}
+
+
+/* ============================================================
+   MY STORE
+============================================================ */
 
 exports.getMyStore = async (req, res) => {
     try {
-        let store =
-            await Store.findOne({
-                where: {
-                    userId: req.user.id
-                }
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message: "Authentication required."
             });
-
-        if (!store) {
-            const storeName =
-                `${req.user.name}'s Store`;
-
-            let storeSlug =
-                createSlug(storeName);
-
-            storeSlug =
-                `${storeSlug}-${req.user.id}`;
-
-            store =
-                await Store.create({
-                    userId:
-                        req.user.id,
-
-                    storeName,
-
-                    storeSlug,
-
-                    email:
-                        req.user.email,
-
-                    phone:
-                        req.user.phone ||
-                        null,
-
-                    status:
-                        "Active"
-                });
         }
 
-        return res.status(200).json({
+        const store =
+            await findMyStore(req.user.id);
+
+        if (!store) {
+            return res.status(404).json({
+                success: false,
+                message: "Store not found."
+            });
+        }
+
+        const formattedStore =
+            formatStore(store);
+
+        console.log(
+            "MY STORE:",
+            formattedStore
+        );
+
+        return res.json({
             success: true,
-            store:
-                formatStore(store)
+            store: formattedStore
         });
 
     } catch (error) {
+
         console.error(
             "GET MY STORE ERROR:",
             error
@@ -509,94 +401,227 @@ exports.getMyStore = async (req, res) => {
         return res.status(500).json({
             success: false,
             message:
-                "Failed to load store.",
-            error:
-                error.message
+                error.message ||
+                "Failed to load your store."
         });
     }
 };
 
 
-/* =====================================================
+/* ============================================================
    UPDATE STORE
-===================================================== */
+============================================================ */
 
 exports.updateStore = async (req, res) => {
     try {
-        const store =
-            await Store.findOne({
-                where: {
-                    userId:
-                        req.user.id
-                }
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message: "Authentication required."
             });
+        }
+
+        const store =
+            await findMyStore(req.user.id);
 
         if (!store) {
             return res.status(404).json({
                 success: false,
-                message:
-                    "Store not found."
+                message: "Store not found."
             });
         }
 
-        const allowedFields = [
-            "storeName",
-            "description",
-            "phone",
-            "email",
-            "website",
-            "businessCategory",
-            "businessHours",
-            "facebook",
-            "instagram",
-            "tiktok",
-            "x",
-            "whatsapp",
-            "accentColor",
-            "coverColor",
-            "region",
-            "city",
-            "address",
-            "metaTitle",
-            "metaDescription"
-        ];
+        const {
+            storeName,
+            description,
+            phone,
+            email,
+            website,
+            businessHours,
+            facebook,
+            instagram,
+            tiktok,
+            x,
+            whatsapp,
+            region,
+            city,
+            address,
+            location,
+            accentColor,
+            metaTitle,
+            metaDescription
+        } = req.body;
 
-        allowedFields.forEach(
-            (field) => {
-                if (
-                    req.body[field] !==
-                    undefined
-                ) {
-                    store[field] =
-                        req.body[field];
-                }
-            }
-        );
 
-        if (req.body.storeName) {
-            let newSlug =
-                createSlug(
-                    req.body.storeName
-                );
+        /* ====================================================
+           VALIDATION
+        ==================================================== */
 
-            newSlug =
-                `${newSlug}-${req.user.id}`;
-
-            store.storeSlug =
-                newSlug;
+        if (
+            storeName !== undefined &&
+            !String(storeName).trim()
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Store name is required."
+            });
         }
 
-        await store.save();
 
-        return res.status(200).json({
+        /* ====================================================
+           BUILD UPDATE OBJECT
+
+           IMPORTANT:
+           logo and banner are deliberately NOT included.
+
+           This prevents a normal "Save Store" request from
+           accidentally erasing the R2 image values.
+        ==================================================== */
+
+        const updateData = {};
+
+
+        if (storeName !== undefined) {
+            updateData.storeName =
+                clean(storeName);
+        }
+
+        if (description !== undefined) {
+            updateData.description =
+                clean(description);
+        }
+
+        if (phone !== undefined) {
+            updateData.phone = phone;
+        }
+
+        if (email !== undefined) {
+            updateData.email = email;
+        }
+
+        if (website !== undefined) {
+            updateData.website =
+                clean(website);
+        }
+
+        if (businessHours !== undefined) {
+            updateData.businessHours =
+                businessHours;
+        }
+
+        if (facebook !== undefined) {
+            updateData.facebook =
+                clean(facebook);
+        }
+
+        if (instagram !== undefined) {
+            updateData.instagram =
+                clean(instagram);
+        }
+
+        if (tiktok !== undefined) {
+            updateData.tiktok =
+                clean(tiktok);
+        }
+
+        if (x !== undefined) {
+            updateData.x =
+                clean(x);
+        }
+
+        if (whatsapp !== undefined) {
+            updateData.whatsapp =
+                clean(whatsapp);
+        }
+
+        if (region !== undefined) {
+            updateData.region =
+                region;
+        }
+
+        if (city !== undefined) {
+            updateData.city =
+                city;
+        }
+
+        if (address !== undefined) {
+            updateData.address =
+                clean(address);
+        }
+
+        /*
+         * Some frontend versions use location instead
+         * of address.
+         */
+        if (
+            location !== undefined &&
+            address === undefined
+        ) {
+            updateData.location =
+                clean(location);
+        }
+
+        if (accentColor !== undefined) {
+            updateData.accentColor =
+                accentColor;
+        }
+
+        if (metaTitle !== undefined) {
+            updateData.metaTitle =
+                clean(metaTitle);
+        }
+
+        if (metaDescription !== undefined) {
+            updateData.metaDescription =
+                clean(metaDescription);
+        }
+
+
+        /* ====================================================
+           UPDATE DATABASE
+        ==================================================== */
+
+        await store.update(
+            updateData
+        );
+
+
+        /* ====================================================
+           RELOAD STORE
+
+           This guarantees that the response contains the
+           values actually stored in the database.
+        ==================================================== */
+
+        const updatedStore =
+            await Store.findByPk(
+                store.id
+            );
+
+        const formattedStore =
+            formatStore(updatedStore);
+
+
+        console.log(
+            "UPDATING STORE:",
+            updateData
+        );
+
+        console.log(
+            "UPDATE STORE RESPONSE:",
+            formattedStore
+        );
+
+
+        return res.json({
             success: true,
             message:
                 "Store updated successfully.",
-            store:
-                formatStore(store)
+            store: formattedStore
         });
 
     } catch (error) {
+
         console.error(
             "UPDATE STORE ERROR:",
             error
@@ -605,260 +630,384 @@ exports.updateStore = async (req, res) => {
         return res.status(500).json({
             success: false,
             message:
-                "Failed to update store.",
-            error:
-                error.message
+                error.message ||
+                "Failed to update store."
         });
     }
 };
 
 
-/* =====================================================
-   UPLOAD STORE LOGO
-===================================================== */
+/* ============================================================
+   UPLOAD LOGO
+============================================================ */
 
 exports.uploadLogo = async (req, res) => {
     try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message: "Authentication required."
+            });
+        }
+
+
+        /* ====================================================
+           CHECK FILE
+        ==================================================== */
+
         if (!req.file) {
             return res.status(400).json({
                 success: false,
-                message:
-                    "No logo file uploaded."
+                message: "Please upload a logo."
             });
         }
 
-        const store =
-            await Store.findOne({
-                where: {
-                    userId:
-                        req.user.id
-                }
-            });
 
-        if (!store) {
-            /*
-             * Since the middleware already uploaded
-             * the object to R2, clean it up if there
-             * is no Store.
-             */
-            await deleteOldStoreImage(
-                req.file.r2Key
-            );
+        /* ====================================================
+           CHECK R2 UPLOAD
 
-            return res.status(404).json({
-                success: false,
-                message:
-                    "Store not found."
-            });
-        }
+           storeUpload.js should have already uploaded
+           the file to Cloudflare R2.
+        ==================================================== */
 
-        const newKey =
+        const r2Key =
             req.file.r2Key ||
             req.file.key;
 
-        if (!newKey) {
+        const r2Url =
+            req.file.url ||
+            req.file.location;
+
+
+        if (!r2Key) {
             return res.status(500).json({
                 success: false,
                 message:
-                    "R2 upload did not return an object key."
+                    "Logo was received but no Cloudflare R2 key was generated."
             });
         }
+
+
+        /* ====================================================
+           FIND STORE
+        ==================================================== */
+
+        const store =
+            await findMyStore(req.user.id);
+
+        if (!store) {
+            return res.status(404).json({
+                success: false,
+                message: "Store not found."
+            });
+        }
+
+
+        /* ====================================================
+           SAVE OLD LOGO
+        ==================================================== */
 
         const oldLogo =
             store.logo;
 
-        store.logo =
-            newKey;
 
-        try {
-            await store.save();
-        } catch (databaseError) {
-            /*
-             * DB failed, remove the new R2
-             * object so we don't leave an orphan.
-             */
+        /* ====================================================
+           SAVE R2 KEY
+
+           IMPORTANT:
+
+           Do NOT save req.file.filename here.
+
+           Save the complete R2 object key.
+        ==================================================== */
+
+        await store.update({
+            logo: r2Key
+        });
+
+
+        /* ====================================================
+           DELETE PREVIOUS R2 IMAGE
+
+           Only after the new image has successfully
+           been uploaded and saved.
+        ==================================================== */
+
+        if (
+            oldLogo &&
+            oldLogo !== r2Key
+        ) {
             await deleteOldStoreImage(
-                newKey
+                oldLogo
             );
-
-            throw databaseError;
         }
 
-        /*
-         * Only after the database update succeeds
-         * remove the previous R2 object.
-         */
-        await deleteOldStoreImage(
-            oldLogo
-        );
 
-        const logoUrl =
-            resolveStoreImageUrl(
-                newKey
+        /* ====================================================
+           RELOAD STORE
+        ==================================================== */
+
+        const updatedStore =
+            await Store.findByPk(
+                store.id
             );
 
-        return res.status(200).json({
+        const formattedStore =
+            formatStore(updatedStore);
+
+
+        console.log(
+            "[STORE LOGO] R2 KEY:",
+            r2Key
+        );
+
+        console.log(
+            "[STORE LOGO] R2 URL:",
+            r2Url ||
+                resolveStoreImageUrl(
+                    r2Key
+                )
+        );
+
+
+        return res.json({
             success: true,
             message:
-                "Logo uploaded successfully.",
+                "Store logo uploaded successfully.",
             logo:
-                logoUrl,
+                formattedStore.logo,
+            r2Key,
             store:
-                formatStore(store)
+                formattedStore
         });
 
     } catch (error) {
+
         console.error(
-            "UPLOAD LOGO ERROR:",
+            "UPLOAD STORE LOGO ERROR:",
             error
         );
 
         return res.status(500).json({
             success: false,
             message:
-                "Failed to upload logo.",
-            error:
-                error.message
+                error.message ||
+                "Failed to upload store logo."
         });
     }
 };
 
 
-/* =====================================================
-   UPLOAD STORE BANNER
-===================================================== */
+/* ============================================================
+   UPLOAD BANNER
+============================================================ */
 
 exports.uploadBanner = async (req, res) => {
     try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message: "Authentication required."
+            });
+        }
+
+
+        /* ====================================================
+           CHECK FILE
+        ==================================================== */
+
         if (!req.file) {
             return res.status(400).json({
                 success: false,
                 message:
-                    "No banner file uploaded."
+                    "Please upload a banner."
             });
         }
 
-        const store =
-            await Store.findOne({
-                where: {
-                    userId:
-                        req.user.id
-                }
-            });
 
-        if (!store) {
-            await deleteOldStoreImage(
-                req.file.r2Key
-            );
+        /* ====================================================
+           CHECK R2
+        ==================================================== */
 
-            return res.status(404).json({
-                success: false,
-                message:
-                    "Store not found."
-            });
-        }
-
-        const newKey =
+        const r2Key =
             req.file.r2Key ||
             req.file.key;
 
-        if (!newKey) {
+        const r2Url =
+            req.file.url ||
+            req.file.location;
+
+
+        if (!r2Key) {
             return res.status(500).json({
                 success: false,
                 message:
-                    "R2 upload did not return an object key."
+                    "Banner was received but no Cloudflare R2 key was generated."
             });
         }
+
+
+        /* ====================================================
+           FIND STORE
+        ==================================================== */
+
+        const store =
+            await findMyStore(req.user.id);
+
+        if (!store) {
+            return res.status(404).json({
+                success: false,
+                message: "Store not found."
+            });
+        }
+
+
+        /* ====================================================
+           OLD BANNER
+        ==================================================== */
 
         const oldBanner =
             store.banner;
 
-        store.banner =
-            newKey;
 
-        try {
-            await store.save();
-        } catch (databaseError) {
+        /* ====================================================
+           SAVE R2 KEY
+        ==================================================== */
+
+        await store.update({
+            banner: r2Key
+        });
+
+
+        /* ====================================================
+           DELETE OLD BANNER
+        ==================================================== */
+
+        if (
+            oldBanner &&
+            oldBanner !== r2Key
+        ) {
             await deleteOldStoreImage(
-                newKey
+                oldBanner
             );
-
-            throw databaseError;
         }
 
-        await deleteOldStoreImage(
-            oldBanner
-        );
 
-        const bannerUrl =
-            resolveStoreImageUrl(
-                newKey
+        /* ====================================================
+           RELOAD
+        ==================================================== */
+
+        const updatedStore =
+            await Store.findByPk(
+                store.id
             );
 
-        return res.status(200).json({
+        const formattedStore =
+            formatStore(updatedStore);
+
+
+        console.log(
+            "[STORE BANNER] R2 KEY:",
+            r2Key
+        );
+
+        console.log(
+            "[STORE BANNER] R2 URL:",
+            r2Url ||
+                resolveStoreImageUrl(
+                    r2Key
+                )
+        );
+
+
+        return res.json({
             success: true,
             message:
-                "Banner uploaded successfully.",
+                "Store banner uploaded successfully.",
             banner:
-                bannerUrl,
+                formattedStore.banner,
+            r2Key,
             store:
-                formatStore(store)
+                formattedStore
         });
 
     } catch (error) {
+
         console.error(
-            "UPLOAD BANNER ERROR:",
+            "UPLOAD STORE BANNER ERROR:",
             error
         );
 
         return res.status(500).json({
             success: false,
             message:
-                "Failed to upload banner.",
-            error:
-                error.message
+                error.message ||
+                "Failed to upload store banner."
         });
     }
 };
 
 
-/* =====================================================
-   GET FEATURED STORES
-===================================================== */
+/* ============================================================
+   FEATURED STORES
+============================================================ */
 
 exports.getFeaturedStores = async (
     req,
     res
 ) => {
     try {
+
         const stores =
             await Store.findAll({
                 where: {
-                    featured: true,
                     status: "Active"
                 },
 
+                include: [
+                    {
+                        model: User,
+                        as: "owner",
+                        attributes: [
+                            "id",
+                            "name"
+                        ]
+                    }
+                ],
+
                 order: [
                     [
-                        "listingPriority",
+                        "featured",
                         "DESC"
                     ],
                     [
-                        "createdAt",
+                        "followers",
+                        "DESC"
+                    ],
+                    [
+                        "rating",
                         "DESC"
                     ]
                 ],
 
-                limit: 10
+                limit: 8
             });
 
-        return res.status(200).json({
+
+        const formattedStores =
+            stores.map(
+                formatStore
+            );
+
+
+        return res.json({
             success: true,
             stores:
-                stores.map(formatStore)
+                formattedStores
         });
 
     } catch (error) {
+
         console.error(
             "GET FEATURED STORES ERROR:",
             error
@@ -867,24 +1016,27 @@ exports.getFeaturedStores = async (
         return res.status(500).json({
             success: false,
             message:
+                error.message ||
                 "Failed to load featured stores."
         });
     }
 };
 
 
-/* =====================================================
-   GET PUBLIC STORE
-===================================================== */
+/* ============================================================
+   PUBLIC STORE
+============================================================ */
 
 exports.getPublicStore = async (
     req,
     res
 ) => {
     try {
+
         const {
             storeSlug
         } = req.params;
+
 
         if (!storeSlug) {
             return res.status(400).json({
@@ -894,12 +1046,28 @@ exports.getPublicStore = async (
             });
         }
 
+
         const store =
             await Store.findOne({
                 where: {
-                    storeSlug
-                }
+                    storeSlug,
+                    status: "Active"
+                },
+
+                include: [
+                    {
+                        model: User,
+                        as: "owner",
+                        attributes: [
+                            "id",
+                            "name",
+                            "profileImage",
+                            "createdAt"
+                        ]
+                    }
+                ]
             });
+
 
         if (!store) {
             return res.status(404).json({
@@ -909,6 +1077,7 @@ exports.getPublicStore = async (
             });
         }
 
+
         const products =
             await Product.findAll({
                 where: {
@@ -916,31 +1085,42 @@ exports.getPublicStore = async (
                         store.userId,
 
                     status:
-                        "Approved",
-
-                    deleted:
-                        false
+                        "Approved"
                 },
 
                 order: [
                     [
-                        "displayDate",
+                        "createdAt",
                         "DESC"
                     ]
                 ]
             });
 
-        return res.status(200).json({
+
+        const formattedStore =
+            formatStore(store);
+
+        const formattedProducts =
+            formatProducts(
+                products
+            );
+
+
+        return res.json({
             success: true,
 
             store:
-                formatStore(store),
+                formattedStore,
 
             products:
-                formatProducts(products)
+                formattedProducts,
+
+            seller:
+                store.owner || null
         });
 
     } catch (error) {
+
         console.error(
             "GET PUBLIC STORE ERROR:",
             error
@@ -949,27 +1129,40 @@ exports.getPublicStore = async (
         return res.status(500).json({
             success: false,
             message:
-                "Failed to load store.",
-            error:
-                error.message
+                error.message ||
+                "Failed to load store."
         });
     }
 };
 
 
-/* =====================================================
+/* ============================================================
    FOLLOW STORE
-===================================================== */
+============================================================ */
 
 exports.followStore = async (
     req,
     res
 ) => {
     try {
+
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message:
+                    "Authentication required."
+            });
+        }
+
+
         const store =
-            await Store.findByPk(
-                req.params.id
-            );
+            await Store.findOne({
+                where: {
+                    userId:
+                        req.params.id
+                }
+            });
+
 
         if (!store) {
             return res.status(404).json({
@@ -979,9 +1172,14 @@ exports.followStore = async (
             });
         }
 
+
+        /*
+         * Prevent owner from following their own store.
+         */
+
         if (
-            Number(store.userId) ===
-            Number(req.user.id)
+            String(store.userId) ===
+            String(req.user.id)
         ) {
             return res.status(400).json({
                 success: false,
@@ -990,52 +1188,25 @@ exports.followStore = async (
             });
         }
 
-        const existingFollow =
-            await StoreFollow.findOne({
-                where: {
-                    userId:
-                        req.user.id,
 
-                    storeId:
-                        store.id
-                }
-            });
+        await store.increment(
+            "followers"
+        );
 
-        if (existingFollow) {
-            return res.status(400).json({
-                success: false,
-                message:
-                    "You already follow this store."
-            });
-        }
 
-        await StoreFollow.create({
-            userId:
-                req.user.id,
+        await store.reload();
 
-            storeId:
-                store.id
-        });
 
-        store.followers =
-            await StoreFollow.count({
-                where: {
-                    storeId:
-                        store.id
-                }
-            });
-
-        await store.save();
-
-        return res.status(200).json({
+        return res.json({
             success: true,
             message:
                 "Store followed successfully.",
             followers:
-                store.followers
+                store.followers || 0
         });
 
     } catch (error) {
+
         console.error(
             "FOLLOW STORE ERROR:",
             error
@@ -1044,27 +1215,40 @@ exports.followStore = async (
         return res.status(500).json({
             success: false,
             message:
-                "Failed to follow store.",
-            error:
-                error.message
+                error.message ||
+                "Failed to follow store."
         });
     }
 };
 
 
-/* =====================================================
+/* ============================================================
    UNFOLLOW STORE
-===================================================== */
+============================================================ */
 
 exports.unfollowStore = async (
     req,
     res
 ) => {
     try {
+
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message:
+                    "Authentication required."
+            });
+        }
+
+
         const store =
-            await Store.findByPk(
-                req.params.id
-            );
+            await Store.findOne({
+                where: {
+                    userId:
+                        req.params.id
+                }
+            });
+
 
         if (!store) {
             return res.status(404).json({
@@ -1074,46 +1258,30 @@ exports.unfollowStore = async (
             });
         }
 
-        const follow =
-            await StoreFollow.findOne({
-                where: {
-                    userId:
-                        req.user.id,
 
-                    storeId:
-                        store.id
-                }
-            });
-
-        if (!follow) {
-            return res.status(400).json({
-                success: false,
-                message:
-                    "You are not following this store."
-            });
+        if (
+            Number(store.followers || 0) >
+            0
+        ) {
+            await store.decrement(
+                "followers"
+            );
         }
 
-        await follow.destroy();
 
-        store.followers =
-            await StoreFollow.count({
-                where: {
-                    storeId:
-                        store.id
-                }
-            });
+        await store.reload();
 
-        await store.save();
 
-        return res.status(200).json({
+        return res.json({
             success: true,
             message:
                 "Store unfollowed successfully.",
             followers:
-                store.followers
+                store.followers || 0
         });
 
     } catch (error) {
+
         console.error(
             "UNFOLLOW STORE ERROR:",
             error
@@ -1122,78 +1290,80 @@ exports.unfollowStore = async (
         return res.status(500).json({
             success: false,
             message:
-                "Failed to unfollow store.",
-            error:
-                error.message
+                error.message ||
+                "Failed to unfollow store."
         });
     }
 };
 
 
-/* =====================================================
-   GET STORE REVIEWS
-===================================================== */
-
-exports.getStoreReviews = async (
-    req,
-    res
-) => {
-    try {
-        if (!Review) {
-            return res.status(200).json({
-                success: true,
-                reviews: []
-            });
-        }
-
-        const reviews =
-            await Review.findAll({
-                where: {
-                    storeId:
-                        req.params.id
-                },
-
-                order: [
-                    [
-                        "createdAt",
-                        "DESC"
-                    ]
-                ]
-            });
-
-        return res.status(200).json({
-            success: true,
-            reviews
-        });
-
-    } catch (error) {
-        console.error(
-            "GET STORE REVIEWS ERROR:",
-            error
-        );
-
-        return res.status(500).json({
-            success: false,
-            message:
-                "Failed to load reviews."
-        });
-    }
-};
-
-
-/* =====================================================
-   GET STORE PRODUCTS
-===================================================== */
+/* ============================================================
+   STORE PRODUCTS
+============================================================ */
 
 exports.getStoreProducts = async (
     req,
     res
 ) => {
     try {
-        const store =
-            await Store.findByPk(
-                req.params.id
-            );
+
+        const identifier =
+            req.params.id;
+
+
+        if (!identifier) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Store identifier is required."
+            });
+        }
+
+
+        /*
+         * Your current route is:
+         *
+         * GET /products/:id
+         *
+         * Older controller code incorrectly treated
+         * req.params.id as storeSlug.
+         *
+         * We support BOTH:
+         *
+         * /products/1
+         * /products/asante-daniel-s-store-1
+         */
+
+
+        let store = null;
+
+
+        /* Try database ID first */
+
+        if (
+            /^\d+$/.test(
+                String(identifier)
+            )
+        ) {
+            store =
+                await Store.findByPk(
+                    Number(identifier)
+                );
+        }
+
+
+        /* Try store slug */
+
+        if (!store) {
+            store =
+                await Store.findOne({
+                    where: {
+                        storeSlug:
+                            identifier
+                    }
+                });
+        }
+
 
         if (!store) {
             return res.status(404).json({
@@ -1203,6 +1373,7 @@ exports.getStoreProducts = async (
             });
         }
 
+
         const products =
             await Product.findAll({
                 where: {
@@ -1210,10 +1381,7 @@ exports.getStoreProducts = async (
                         store.userId,
 
                     status:
-                        "Approved",
-
-                    deleted:
-                        false
+                        "Approved"
                 },
 
                 order: [
@@ -1224,13 +1392,21 @@ exports.getStoreProducts = async (
                 ]
             });
 
-        return res.status(200).json({
+
+        const formattedProducts =
+            formatProducts(
+                products
+            );
+
+
+        return res.json({
             success: true,
             products:
-                formatProducts(products)
+                formattedProducts
         });
 
     } catch (error) {
+
         console.error(
             "GET STORE PRODUCTS ERROR:",
             error
@@ -1239,7 +1415,104 @@ exports.getStoreProducts = async (
         return res.status(500).json({
             success: false,
             message:
+                error.message ||
                 "Failed to load store products."
         });
     }
 };
+
+
+/* ============================================================
+   STORE REVIEWS
+============================================================ */
+
+exports.getStoreReviews = async (
+    req,
+    res
+) => {
+    try {
+
+        const sellerId =
+            req.params.id;
+
+
+        if (!sellerId) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Seller ID is required."
+            });
+        }
+
+
+        const reviews =
+            await Review.findAll({
+                where: {
+                    sellerId
+                },
+
+                include: [
+                    {
+                        model: User,
+                        as: "buyer",
+                        attributes: [
+                            "id",
+                            "name"
+                        ]
+                    }
+                ],
+
+                order: [
+                    [
+                        "createdAt",
+                        "DESC"
+                    ]
+                ]
+            });
+
+
+        return res.json({
+            success: true,
+            reviews
+        });
+
+    } catch (error) {
+
+        console.error(
+            "GET STORE REVIEWS ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message:
+                error.message ||
+                "Failed to load store reviews."
+        });
+    }
+};
+
+
+/* ============================================================
+   EXPORT IMAGE HELPERS
+============================================================ */
+
+/*
+ * These are exported only if another controller/service
+ * needs them.
+ */
+
+exports.resolveStoreImageUrl =
+    resolveStoreImageUrl;
+
+exports.formatStore =
+    formatStore;
+
+exports.formatProduct =
+    formatProduct;
+
+exports.formatProducts =
+    formatProducts;
+
+exports.getR2KeyFromStoredImage =
+    getR2KeyFromStoredImage;
