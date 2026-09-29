@@ -1,4 +1,6 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+
 import api from "../config/axios";
 
 import Layout from "../components/Layout";
@@ -10,28 +12,84 @@ import CategorySection from "../components/CategorySection";
 import ProductCard from "../components/ProductCard";
 
 import { ghanaLocations } from "../data/ghanaLocations";
+import categories from "../data/categories";
 
 import "./Home.css";
 
+
 function Home() {
+
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    const [search, setSearch] = useState("");
-    const [category, setCategory] = useState("All");
-    const [region, setRegion] = useState("All");
-    const [city, setCity] = useState("All");
-    const [condition, setCondition] = useState("All");
+    const [keyword, setKeyword] = useState(
+        searchParams.get("keyword") || ""
+    );
 
-    const token = localStorage.getItem("token");
+    const [category, setCategory] = useState(
+        searchParams.get("category") || ""
+    );
+
+    const [subcategory, setSubcategory] = useState(
+        searchParams.get("subcategory") || ""
+    );
+
+    const [condition, setCondition] = useState(
+        searchParams.get("condition") || ""
+    );
+
+    const [region, setRegion] = useState(
+        searchParams.get("region") || ""
+    );
+
+    const [city, setCity] = useState(
+        searchParams.get("city") || ""
+    );
+
+    const [minPrice, setMinPrice] = useState(
+        searchParams.get("minPrice") || ""
+    );
+
+    const [maxPrice, setMaxPrice] = useState(
+        searchParams.get("maxPrice") || ""
+    );
+
+    const [sort, setSort] = useState(
+        searchParams.get("sort") || "newest"
+    );
 
     const productsSectionRef = useRef(null);
 
+    const searchSectionRef = useRef(null);
 
-    /* ==========================================
-       FETCH PRODUCTS
-    ========================================== */
+    const token = localStorage.getItem("token");
+
+
+    /*
+    ============================================================
+    SELECTED CATEGORY
+    ============================================================
+    */
+
+    const selectedCategory = useMemo(() => {
+
+        return categories.find(
+            (item) =>
+                String(item.name).toLowerCase() ===
+                String(category).toLowerCase()
+        );
+
+    }, [category]);
+
+
+    /*
+    ============================================================
+    FETCH PRODUCTS
+    ============================================================
+    */
 
     useEffect(() => {
 
@@ -46,6 +104,8 @@ function Home() {
 
             setLoading(true);
 
+            setError("");
+
             const response = await api.get("/products");
 
             console.log(
@@ -53,24 +113,34 @@ function Home() {
                 response.data
             );
 
-            setProducts(
-                response.data.products || response.data || []
-            );
+            const productsData =
+                response.data?.products ||
+                response.data?.data ||
+                (
+                    Array.isArray(response.data)
+                        ? response.data
+                        : []
+                );
 
-        }
+            setProducts(productsData);
 
-        catch (error) {
+        } catch (error) {
 
             console.error(
-                "PRODUCT LOAD ERROR:",
-                error.response?.data || error.message
+                "HOME PRODUCT LOAD ERROR:",
+                error.response?.data ||
+                error.message ||
+                error
+            );
+
+            setError(
+                error.response?.data?.message ||
+                "Failed to load products."
             );
 
             setProducts([]);
 
-        }
-
-        finally {
+        } finally {
 
             setLoading(false);
 
@@ -79,136 +149,79 @@ function Home() {
     };
 
 
-    /* ==========================================
-       CATEGORY CLICK
-    ========================================== */
+    /*
+    ============================================================
+    UPDATE URL
+    ============================================================
+    */
 
-    const handleCategorySelect = (selectedCategory) => {
+    const updateSearchUrl = () => {
 
-        setCategory(selectedCategory);
+        const params = {};
 
-        setTimeout(() => {
+        if (keyword.trim()) {
+            params.keyword = keyword.trim();
+        }
 
-            productsSectionRef.current?.scrollIntoView({
+        if (category) {
+            params.category = category;
+        }
 
-                behavior: "smooth",
+        if (subcategory) {
+            params.subcategory = subcategory;
+        }
 
-                block: "start"
+        if (condition) {
+            params.condition = condition;
+        }
 
-            });
+        if (region) {
+            params.region = region;
+        }
 
-        }, 100);
+        if (city) {
+            params.city = city;
+        }
+
+        if (minPrice) {
+            params.minPrice = minPrice;
+        }
+
+        if (maxPrice) {
+            params.maxPrice = maxPrice;
+        }
+
+        if (sort && sort !== "newest") {
+            params.sort = sort;
+        }
+
+        setSearchParams(params);
 
     };
 
 
-    /* ==========================================
-       FILTER PRODUCTS
-    ========================================== */
-
-    const filteredProducts = products.filter((product) => {
-
-        const title = product.title || "";
-        const description = product.description || "";
-        const productCategory = product.category || "";
-        const productLocation = product.location || "";
-        const productRegion = product.region || "";
-        const productCity = product.city || "";
-        const productCondition = product.condition || "";
-
-        const keyword = search.toLowerCase().trim();
-
-
-        /* SEARCH */
-
-        const matchesSearch =
-
-            title.toLowerCase().includes(keyword) ||
-
-            description.toLowerCase().includes(keyword) ||
-
-            productCategory.toLowerCase().includes(keyword) ||
-
-            productLocation.toLowerCase().includes(keyword) ||
-
-            productRegion.toLowerCase().includes(keyword) ||
-
-            productCity.toLowerCase().includes(keyword);
-
-
-        /* CATEGORY */
-
-        const matchesCategory =
-
-            category === "All" ||
-
-            productCategory.toLowerCase() ===
-            category.toLowerCase();
-
-
-        /* REGION */
-
-        const matchesRegion =
-
-            region === "All" ||
-
-            productRegion.toLowerCase() ===
-            region.toLowerCase();
-
-
-        /* CITY */
-
-        const matchesCity =
-
-            city === "All" ||
-
-            productCity.toLowerCase() ===
-            city.toLowerCase();
-
-
-        /* CONDITION */
-
-        const matchesCondition =
-
-            condition === "All" ||
-
-            productCondition.toLowerCase() ===
-            condition.toLowerCase();
-
-
-        return (
-
-            matchesSearch &&
-
-            matchesCategory &&
-
-            matchesRegion &&
-
-            matchesCity &&
-
-            matchesCondition
-
-        );
-
-    });
-
-
-    /* ==========================================
-       SAVE SEARCH HISTORY
-    ========================================== */
+    /*
+    ============================================================
+    SAVE SEARCH HISTORY
+    ============================================================
+    */
 
     const saveSearch = async () => {
 
-        if (!search.trim()) return;
+        if (!keyword.trim()) {
+            return;
+        }
 
-        if (!token) return;
+        if (!token) {
+            return;
+        }
 
         try {
 
             await api.post(
                 "/search/save",
                 {
-                    keyword: search.trim()
+                    keyword: keyword.trim()
                 },
                 {
                     headers: {
@@ -217,13 +230,12 @@ function Home() {
                 }
             );
 
-        }
-
-        catch (error) {
+        } catch (error) {
 
             console.log(
                 "SAVE SEARCH ERROR:",
-                error.response?.data || error.message
+                error.response?.data ||
+                error.message
             );
 
         }
@@ -231,92 +243,498 @@ function Home() {
     };
 
 
-    /* ==========================================
-       SEARCH BUTTON
-    ========================================== */
+    /*
+    ============================================================
+    SEARCH
+    ============================================================
+    */
 
     const handleSearch = async () => {
 
+        updateSearchUrl();
+
         await saveSearch();
 
-        productsSectionRef.current?.scrollIntoView({
+        setTimeout(() => {
 
-            behavior: "smooth",
+            productsSectionRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
 
-            block: "start"
+        }, 100);
+
+    };
+
+
+    /*
+    ============================================================
+    ENTER KEY
+    ============================================================
+    */
+
+    const handleKeyDown = (event) => {
+
+        if (event.key === "Enter") {
+
+            event.preventDefault();
+
+            handleSearch();
+
+        }
+
+    };
+
+
+    /*
+    ============================================================
+    CATEGORY CHANGE
+    ============================================================
+    */
+
+    const handleCategoryChange = (event) => {
+
+        const value = event.target.value;
+
+        setCategory(value);
+
+        setSubcategory("");
+
+    };
+
+
+    /*
+    ============================================================
+    CATEGORY SECTION
+    ============================================================
+    */
+
+    const handleCategorySelect = (selectedCategoryName) => {
+
+        setCategory(selectedCategoryName);
+
+        setSubcategory("");
+
+        setTimeout(() => {
+
+            productsSectionRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
+
+        }, 100);
+
+    };
+
+
+    /*
+    ============================================================
+    REGION CHANGE
+    ============================================================
+    */
+
+    const handleRegionChange = (event) => {
+
+        setRegion(event.target.value);
+
+        setCity("");
+
+    };
+
+
+    /*
+    ============================================================
+    CLEAR FILTERS
+    ============================================================
+    */
+
+    const clearFilters = () => {
+
+        setKeyword("");
+        setCategory("");
+        setSubcategory("");
+        setCondition("");
+        setRegion("");
+        setCity("");
+        setMinPrice("");
+        setMaxPrice("");
+        setSort("newest");
+
+        setSearchParams({});
+
+        setTimeout(() => {
+
+            productsSectionRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
+
+        }, 100);
+
+    };
+
+
+    /*
+    ============================================================
+    FILTER PRODUCTS
+    ============================================================
+    */
+
+    const filteredProducts = useMemo(() => {
+
+        let result = [...products];
+
+
+        /*
+        --------------------------------------------------------
+        KEYWORD
+        --------------------------------------------------------
+        */
+
+        const normalizedKeyword =
+            keyword.trim().toLowerCase();
+
+        if (normalizedKeyword) {
+
+            result = result.filter((product) => {
+
+                const title =
+                    String(product.title || "").toLowerCase();
+
+                const description =
+                    String(product.description || "").toLowerCase();
+
+                const productCategory =
+                    String(product.category || "").toLowerCase();
+
+                const productSubcategory =
+                    String(product.subcategory || "").toLowerCase();
+
+                const location =
+                    String(product.location || "").toLowerCase();
+
+                const productRegion =
+                    String(product.region || "").toLowerCase();
+
+                const productCity =
+                    String(product.city || "").toLowerCase();
+
+                return (
+                    title.includes(normalizedKeyword) ||
+                    description.includes(normalizedKeyword) ||
+                    productCategory.includes(normalizedKeyword) ||
+                    productSubcategory.includes(normalizedKeyword) ||
+                    location.includes(normalizedKeyword) ||
+                    productRegion.includes(normalizedKeyword) ||
+                    productCity.includes(normalizedKeyword)
+                );
+
+            });
+
+        }
+
+
+        /*
+        --------------------------------------------------------
+        CATEGORY
+        --------------------------------------------------------
+        */
+
+        if (category) {
+
+            result = result.filter((product) => {
+
+                return String(product.category || "")
+                    .toLowerCase() ===
+                    category.toLowerCase();
+
+            });
+
+        }
+
+
+        /*
+        --------------------------------------------------------
+        SUBCATEGORY
+        --------------------------------------------------------
+        */
+
+        if (subcategory) {
+
+            result = result.filter((product) => {
+
+                return String(product.subcategory || "")
+                    .toLowerCase() ===
+                    subcategory.toLowerCase();
+
+            });
+
+        }
+
+
+        /*
+        --------------------------------------------------------
+        CONDITION
+        --------------------------------------------------------
+        */
+
+        if (condition) {
+
+            result = result.filter((product) => {
+
+                return String(product.condition || "")
+                    .toLowerCase() ===
+                    condition.toLowerCase();
+
+            });
+
+        }
+
+
+        /*
+        --------------------------------------------------------
+        REGION
+        --------------------------------------------------------
+        */
+
+        if (region) {
+
+            result = result.filter((product) => {
+
+                return String(product.region || "")
+                    .toLowerCase() ===
+                    region.toLowerCase();
+
+            });
+
+        }
+
+
+        /*
+        --------------------------------------------------------
+        CITY
+        --------------------------------------------------------
+        */
+
+        if (city) {
+
+            result = result.filter((product) => {
+
+                return String(product.city || "")
+                    .toLowerCase() ===
+                    city.toLowerCase();
+
+            });
+
+        }
+
+
+        /*
+        --------------------------------------------------------
+        MINIMUM PRICE
+        --------------------------------------------------------
+        */
+
+        if (minPrice !== "") {
+
+            const minimum = Number(minPrice);
+
+            result = result.filter((product) => {
+
+                const price =
+                    Number(product.price || 0);
+
+                return price >= minimum;
+
+            });
+
+        }
+
+
+        /*
+        --------------------------------------------------------
+        MAXIMUM PRICE
+        --------------------------------------------------------
+        */
+
+        if (maxPrice !== "") {
+
+            const maximum = Number(maxPrice);
+
+            result = result.filter((product) => {
+
+                const price =
+                    Number(product.price || 0);
+
+                return price <= maximum;
+
+            });
+
+        }
+
+
+        /*
+        --------------------------------------------------------
+        SORTING
+        --------------------------------------------------------
+        */
+
+        result.sort((a, b) => {
+
+            if (sort === "lowPrice") {
+
+                return (
+                    Number(a.price || 0) -
+                    Number(b.price || 0)
+                );
+
+            }
+
+            if (sort === "highPrice") {
+
+                return (
+                    Number(b.price || 0) -
+                    Number(a.price || 0)
+                );
+
+            }
+
+            if (sort === "oldest") {
+
+                return (
+                    new Date(a.createdAt || 0) -
+                    new Date(b.createdAt || 0)
+                );
+
+            }
+
+            if (sort === "popular") {
+
+                return (
+                    Number(b.views || 0) -
+                    Number(a.views || 0)
+                );
+
+            }
+
+            return (
+                new Date(b.createdAt || 0) -
+                new Date(a.createdAt || 0)
+            );
 
         });
 
-    };
+        return result;
+
+    }, [
+        products,
+        keyword,
+        category,
+        subcategory,
+        condition,
+        region,
+        city,
+        minPrice,
+        maxPrice,
+        sort
+    ]);
 
 
-    /* ==========================================
-       RESET FILTERS
-    ========================================== */
+    /*
+    ============================================================
+    ACTIVE FILTER COUNT
+    ============================================================
+    */
 
-    const resetFilters = () => {
+    const activeFilterCount = [
+        keyword,
+        category,
+        subcategory,
+        condition,
+        region,
+        city,
+        minPrice,
+        maxPrice
+    ].filter(
+        (value) =>
+            String(value).trim() !== ""
+    ).length;
 
-        setSearch("");
-        setCategory("All");
-        setRegion("All");
-        setCity("All");
-        setCondition("All");
 
-    };
+    /*
+    ============================================================
+    RESULT TITLE
+    ============================================================
+    */
 
+    const resultTitle = useMemo(() => {
+
+        if (keyword.trim()) {
+            return `Results for "${keyword.trim()}"`;
+        }
+
+        if (subcategory) {
+            return subcategory;
+        }
+
+        if (category) {
+            return category;
+        }
+
+        return "Latest Products";
+
+    }, [
+        keyword,
+        category,
+        subcategory
+    ]);
+
+
+    /*
+    ============================================================
+    RENDER
+    ============================================================
+    */
 
     return (
 
         <Layout>
 
-            {/* ======================================
-                ADVERTISEMENT BANNER
-            ====================================== */}
-
             <BannerSlider />
 
-
-            {/* ======================================
-                FEATURED PRODUCTS
-            ====================================== */}
 
             <FeaturedProducts />
 
 
-            {/* ======================================
-                BROWSE CATEGORIES
-            ====================================== */}
-
             <CategorySection
-
-                selectedCategory={category}
-
-                setCategory={handleCategorySelect}
-
+                selectedCategory={
+                    category || "All"
+                }
+                setCategory={
+                    handleCategorySelect
+                }
                 products={products}
-
             />
 
 
-            {/* ======================================
-                HOME SEARCH INTRO
-            ====================================== */}
-
-            <section className="home-search">
+            <section
+                className="home-search"
+                ref={searchSectionRef}
+            >
 
                 <div className="home-search-content">
 
+                    <span className="search-eyebrow">
+                        KAD MARKETPLACE
+                    </span>
+
                     <h1>
-
-                        Buy & Sell Anything In Ghana
-
+                        Find What You Need
                     </h1>
 
                     <p>
-
-                        Find thousands of products from trusted sellers
-                        across Ghana.
-
+                        Search products, services and listings
+                        from trusted sellers across Ghana.
                     </p>
 
                 </div>
@@ -324,271 +742,372 @@ function Home() {
             </section>
 
 
-            {/* ======================================
-                FILTERS
-            ====================================== */}
-
             <section className="market-filters-container">
 
                 <div className="market-filters">
 
 
-                    {/* SEARCH */}
+                    <div className="filter-group filter-keyword">
 
-                    <div className="search-box">
+                        <label>
+                            Search
+                        </label>
 
                         <input
-
                             type="text"
-
-                            placeholder="Search for products..."
-
-                            value={search}
-
-                            onChange={(e) =>
-                                setSearch(e.target.value)
+                            placeholder="What are you looking for?"
+                            value={keyword}
+                            onChange={(event) =>
+                                setKeyword(
+                                    event.target.value
+                                )
                             }
-
-                            onKeyDown={(e) => {
-
-                                if (e.key === "Enter") {
-
-                                    handleSearch();
-
-                                }
-
-                            }}
-
+                            onKeyDown={handleKeyDown}
                         />
-
-                        <button
-                            onClick={handleSearch}
-                        >
-
-                            🔍 Search
-
-                        </button>
 
                     </div>
 
 
-                    {/* CATEGORY */}
+                    <div className="filter-group">
 
-                    <select
+                        <label>
+                            Category
+                        </label>
 
-                        value={category}
+                        <select
+                            value={category}
+                            onChange={
+                                handleCategoryChange
+                            }
+                        >
 
-                        onChange={(e) =>
-                            setCategory(e.target.value)
-                        }
+                            <option value="">
+                                All Categories
+                            </option>
 
-                    >
+                            {categories.map((item) => (
 
-                        <option value="All">
-                            All Categories
-                        </option>
+                                <option
+                                    key={item.name}
+                                    value={item.name}
+                                >
 
-                        <option value="Mobile Phones">
-                            📱 Mobile Phones
-                        </option>
+                                    {item.icon
+                                        ? `${item.icon} `
+                                        : ""}
 
-                        <option value="Laptops">
-                            💻 Laptops
-                        </option>
+                                    {item.name}
 
-                        <option value="TV">
-                            📺 TV
-                        </option>
+                                </option>
 
-                        <option value="Radio">
-                            📻 Radio
-                        </option>
+                            ))}
 
-                        <option value="Music Equipment">
-                            🎵 Music Equipment
-                        </option>
+                        </select>
 
-                        <option value="Food Stuff">
-                            🍎 Food Stuff
-                        </option>
-
-                        <option value="Clothes">
-                            👕 Clothes
-                        </option>
-
-                        <option value="Accessories">
-                            👜 Accessories
-                        </option>
-
-                        <option value="Cars">
-                            🚗 Cars
-                        </option>
-
-                        <option value="Motorcycles">
-                            🏍 Motorcycles
-                        </option>
-
-                        <option value="Employment Opportunities">
-                            💼 Jobs
-                        </option>
-
-                    </select>
+                    </div>
 
 
-                    {/* REGION */}
+                    <div className="filter-group">
 
-                    <select
+                        <label>
+                            Subcategory
+                        </label>
 
-                        value={region}
+                        <select
+                            value={subcategory}
+                            onChange={(event) =>
+                                setSubcategory(
+                                    event.target.value
+                                )
+                            }
+                            disabled={!selectedCategory}
+                        >
 
-                        onChange={(e) => {
+                            <option value="">
 
-                            setRegion(e.target.value);
+                                {selectedCategory
+                                    ? "All Subcategories"
+                                    : "Select Category First"}
 
-                            setCity("All");
+                            </option>
 
-                        }}
-
-                    >
-
-                        <option value="All">
-                            🌍 All Regions
-                        </option>
-
-                        {
-
-                            Object.keys(ghanaLocations).map(
+                            {selectedCategory?.subcategories?.map(
                                 (item) => (
 
                                     <option
                                         key={item}
                                         value={item}
                                     >
-
                                         {item}
-
                                     </option>
 
                                 )
-                            )
+                            )}
 
-                        }
+                        </select>
 
-                    </select>
+                    </div>
 
 
-                    {/* CITY */}
+                    <div className="filter-group">
 
-                    <select
+                        <label>
+                            Minimum Price
+                        </label>
 
-                        value={city}
+                        <input
+                            type="number"
+                            min="0"
+                            placeholder="GH₵ Minimum"
+                            value={minPrice}
+                            onChange={(event) =>
+                                setMinPrice(
+                                    event.target.value
+                                )
+                            }
+                        />
 
-                        onChange={(e) =>
-                            setCity(e.target.value)
-                        }
+                    </div>
 
-                        disabled={region === "All"}
 
-                    >
+                    <div className="filter-group">
 
-                        <option value="All">
-                            🏙 All Cities
-                        </option>
+                        <label>
+                            Maximum Price
+                        </label>
 
-                        {
+                        <input
+                            type="number"
+                            min="0"
+                            placeholder="GH₵ Maximum"
+                            value={maxPrice}
+                            onChange={(event) =>
+                                setMaxPrice(
+                                    event.target.value
+                                )
+                            }
+                        />
 
-                            region !== "All" &&
+                    </div>
 
-                            ghanaLocations[region]?.map(
-                                (item) => (
+
+                    <div className="filter-group">
+
+                        <label>
+                            Condition
+                        </label>
+
+                        <select
+                            value={condition}
+                            onChange={(event) =>
+                                setCondition(
+                                    event.target.value
+                                )
+                            }
+                        >
+
+                            <option value="">
+                                All Conditions
+                            </option>
+
+                            <option value="New">
+                                New
+                            </option>
+
+                            <option value="Used">
+                                Used
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div className="filter-group">
+
+                        <label>
+                            Region
+                        </label>
+
+                        <select
+                            value={region}
+                            onChange={
+                                handleRegionChange
+                            }
+                        >
+
+                            <option value="">
+                                All Regions
+                            </option>
+
+                            {Object.keys(
+                                ghanaLocations
+                            ).map((item) => (
+
+                                <option
+                                    key={item}
+                                    value={item}
+                                >
+                                    {item}
+                                </option>
+
+                            ))}
+
+                        </select>
+
+                    </div>
+
+
+                    <div className="filter-group">
+
+                        <label>
+                            City / Town
+                        </label>
+
+                        <select
+                            value={city}
+                            onChange={(event) =>
+                                setCity(
+                                    event.target.value
+                                )
+                            }
+                            disabled={!region}
+                        >
+
+                            <option value="">
+
+                                {region
+                                    ? "All Cities"
+                                    : "Select Region First"}
+
+                            </option>
+
+                            {region &&
+                                ghanaLocations[
+                                    region
+                                ]?.map((item) => (
 
                                     <option
                                         key={item}
                                         value={item}
                                     >
-
                                         {item}
-
                                     </option>
 
+                                ))
+                            }
+
+                        </select>
+
+                    </div>
+
+
+                    <div className="filter-group">
+
+                        <label>
+                            Sort By
+                        </label>
+
+                        <select
+                            value={sort}
+                            onChange={(event) =>
+                                setSort(
+                                    event.target.value
                                 )
-                            )
+                            }
+                        >
 
-                        }
+                            <option value="newest">
+                                Newest
+                            </option>
 
-                    </select>
+                            <option value="oldest">
+                                Oldest
+                            </option>
 
+                            <option value="lowPrice">
+                                Lowest Price
+                            </option>
 
-                    {/* CONDITION */}
+                            <option value="highPrice">
+                                Highest Price
+                            </option>
 
-                    <select
+                            <option value="popular">
+                                Most Viewed
+                            </option>
 
-                        value={condition}
+                        </select>
 
-                        onChange={(e) =>
-                            setCondition(e.target.value)
-                        }
-
-                    >
-
-                        <option value="All">
-                            All Conditions
-                        </option>
-
-                        <option value="New">
-                            ✨ New
-                        </option>
-
-                        <option value="Used">
-                            ♻️ Used
-                        </option>
-
-                    </select>
+                    </div>
 
 
-                    {/* RESET */}
+                    <div className="filter-actions">
 
-                    <button
+                        <button
+                            type="button"
+                            className="search-button"
+                            onClick={handleSearch}
+                            disabled={loading}
+                        >
 
-                        className="reset-filter-btn"
+                            {loading
+                                ? "Searching..."
+                                : "🔍 Search Products"}
 
-                        onClick={resetFilters}
+                        </button>
 
-                    >
 
-                        Reset
+                        <button
+                            type="button"
+                            className="clear-button"
+                            onClick={clearFilters}
+                        >
+                            Clear
+                        </button>
 
-                    </button>
+                    </div>
+
+                </div>
+
+
+                <div className="search-status">
+
+                    <span>
+
+                        {activeFilterCount > 0
+                            ? `${activeFilterCount} active filter${
+                                activeFilterCount !== 1
+                                    ? "s"
+                                    : ""
+                            }`
+                            : "Browse all marketplace listings"}
+
+                    </span>
+
+                    <span>
+
+                        {filteredProducts.length} result
+                        {filteredProducts.length !== 1
+                            ? "s"
+                            : ""}
+
+                    </span>
 
                 </div>
 
             </section>
 
 
-            {/* ======================================
-                TRENDING PRODUCTS
-            ====================================== */}
-
             <TrendingProducts />
 
-
-            {/* ======================================
-                RECOMMENDED PRODUCTS
-            ====================================== */}
 
             <RecommendedProducts />
 
 
-            {/* ======================================
-                LATEST PRODUCTS
-            ====================================== */}
-
             <section
-
                 className="products-section"
-
                 ref={productsSectionRef}
-
             >
 
                 <div className="section-header">
@@ -596,21 +1115,12 @@ function Home() {
                     <div>
 
                         <h2>
-
-                            {category === "All"
-
-                                ? "Latest Products"
-
-                                : category
-
-                            }
-
+                            {resultTitle}
                         </h2>
 
                         <p>
-
-                            Browse the latest listings available now.
-
+                            Browse marketplace listings
+                            available now.
                         </p>
 
                     </div>
@@ -623,42 +1133,73 @@ function Home() {
                         {" "}
 
                         Product
+                        {filteredProducts.length !== 1
+                            ? "s"
+                            : ""}
 
-                        {filteredProducts.length !== 1 ? "s" : ""}
-
-                        {" "} Found
+                        {" "}Found
 
                     </span>
 
                 </div>
 
 
-                {
+                {error && (
 
-                    loading ? (
+                    <div className="empty-products">
 
-                        <div className="empty-products">
-
-                            <div className="loading-spinner"></div>
-
-                            <h2>
-                                Loading products...
-                            </h2>
-
+                        <div className="empty-icon">
+                            ⚠️
                         </div>
 
-                    )
+                        <h2>
+                            Unable to load products
+                        </h2>
 
-                    :
+                        <p>
+                            {error}
+                        </p>
 
-                    filteredProducts.length === 0 ? (
+                        <button
+                            type="button"
+                            onClick={fetchProducts}
+                        >
+                            Try Again
+                        </button>
+
+                    </div>
+
+                )}
+
+
+                {!error && loading && (
+
+                    <div className="empty-products">
+
+                        <div className="loading-spinner"></div>
+
+                        <h2>
+                            Finding products...
+                        </h2>
+
+                        <p>
+                            Please wait while we load
+                            marketplace listings.
+                        </p>
+
+                    </div>
+
+                )}
+
+
+                {!error &&
+                    !loading &&
+                    filteredProducts.length === 0 && (
 
                         <div className="empty-products">
 
                             <div className="empty-icon">
-
-                                📦
-
+                                🔍
                             </div>
 
                             <h2>
@@ -666,52 +1207,46 @@ function Home() {
                             </h2>
 
                             <p>
-
-                                We couldn't find products matching
-                                your filters.
-
+                                Try changing your keyword,
+                                category, location or price range.
                             </p>
 
                             <button
-                                onClick={resetFilters}
+                                type="button"
+                                onClick={clearFilters}
                             >
-
                                 Clear Filters
-
                             </button>
 
                         </div>
 
                     )
+                }
 
-                    :
 
-                    (
+                {!error &&
+                    !loading &&
+                    filteredProducts.length > 0 && (
 
                         <div className="products">
 
-                            {
+                            {filteredProducts.map(
+                                (product) => (
 
-                                filteredProducts.map(
-                                    (product) => (
+                                    <ProductCard
+                                        key={
+                                            product.id ||
+                                            product._id
+                                        }
+                                        product={product}
+                                    />
 
-                                        <ProductCard
-
-                                            key={product.id}
-
-                                            product={product}
-
-                                        />
-
-                                    )
                                 )
-
-                            }
+                            )}
 
                         </div>
 
                     )
-
                 }
 
             </section>
@@ -721,5 +1256,6 @@ function Home() {
     );
 
 }
+
 
 export default Home;

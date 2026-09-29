@@ -24,7 +24,6 @@ import {
     FaTicketAlt,
     FaSignOutAlt,
     FaUserCircle,
-    FaSearch,
     FaThLarge
 } from "react-icons/fa";
 
@@ -39,7 +38,6 @@ import localLogo from "../assets/KADMARKETPLACE.png";
 import categories from "../data/categories";
 
 
-
 function Navbar() {
 
     const navigate = useNavigate();
@@ -47,8 +45,6 @@ function Navbar() {
 
     const dropdownRef = useRef(null);
     const categoryRef = useRef(null);
-
-
 
     /* =========================================================
        STATE
@@ -69,10 +65,6 @@ function Navbar() {
 
     const [marketplaceLogo, setMarketplaceLogo] =
         useState("");
-
-    const [searchKeyword, setSearchKeyword] =
-        useState("");
-
 
 
     /* =========================================================
@@ -127,7 +119,6 @@ function Navbar() {
         };
 
     }, []);
-
 
 
     /* =========================================================
@@ -198,7 +189,6 @@ function Navbar() {
     }, []);
 
 
-
     /* =========================================================
        LOGO FALLBACK
     ========================================================= */
@@ -218,7 +208,6 @@ function Navbar() {
         image.src = localLogo;
 
     };
-
 
 
     /* =========================================================
@@ -256,7 +245,6 @@ function Navbar() {
     }, [user]);
 
 
-
     /* =========================================================
        PROFILE IMAGE FALLBACK
     ========================================================= */
@@ -286,40 +274,6 @@ function Navbar() {
     };
 
 
-
-    /* =========================================================
-       SEARCH
-    ========================================================= */
-
-    const handleSearch = (event) => {
-
-        event.preventDefault();
-
-        const keyword =
-            searchKeyword.trim();
-
-        if (keyword) {
-
-            navigate(
-                `/search?keyword=${encodeURIComponent(
-                    keyword
-                )}`
-            );
-
-        } else {
-
-            navigate("/search");
-
-        }
-
-        setSearchKeyword("");
-
-        closeAllMenus();
-
-    };
-
-
-
     /* =========================================================
        CATEGORY SEARCH
     ========================================================= */
@@ -335,7 +289,6 @@ function Navbar() {
         closeAllMenus();
 
     };
-
 
 
     /* =========================================================
@@ -361,7 +314,6 @@ function Navbar() {
     };
 
 
-
     /* =========================================================
        CLOSE MENUS
     ========================================================= */
@@ -375,7 +327,6 @@ function Navbar() {
         setShowCategories(false);
 
     };
-
 
 
     /* =========================================================
@@ -427,7 +378,6 @@ function Navbar() {
     }, []);
 
 
-
     /* =========================================================
        CLOSE MENUS WHEN ROUTE CHANGES
     ========================================================= */
@@ -440,8 +390,10 @@ function Navbar() {
 
         setShowCategories(false);
 
-    }, [location.pathname, location.search]);
-
+    }, [
+        location.pathname,
+        location.search
+    ]);
 
 
     /* =========================================================
@@ -452,7 +404,6 @@ function Navbar() {
         isActive
             ? "nav-link active"
             : "nav-link";
-
 
 
     /* =========================================================
@@ -505,41 +456,6 @@ function Navbar() {
                 </div>
 
 
-
-                {/* =================================================
-                    DESKTOP SEARCH
-                ================================================= */}
-
-                <form
-                    className="navbar-search"
-                    onSubmit={handleSearch}
-                >
-
-                    <FaSearch className="navbar-search-icon" />
-
-                    <input
-                        type="text"
-                        value={searchKeyword}
-                        onChange={(event) =>
-                            setSearchKeyword(
-                                event.target.value
-                            )
-                        }
-                        placeholder="Search products..."
-                        aria-label="Search marketplace"
-                    />
-
-                    <button
-                        type="submit"
-                        aria-label="Search"
-                    >
-                        Search
-                    </button>
-
-                </form>
-
-
-
                 {/* =================================================
                     NAVIGATION
                 ================================================= */}
@@ -551,6 +467,8 @@ function Navbar() {
                             : "nav-links"
                     }
                 >
+
+                    {/* MOBILE MENU HEADER */}
 
                     <div className="mobile-menu-header">
 
@@ -567,57 +485,6 @@ function Navbar() {
                         </button>
 
                     </div>
-
-
-
-                    {/* MOBILE SEARCH */}
-
-                    <form
-                        className="mobile-search"
-                        onSubmit={handleSearch}
-                    >
-
-                        <div className="mobile-search-input">
-
-                            <FaSearch />
-
-                            <input
-                                type="text"
-                                value={searchKeyword}
-                                onChange={(event) =>
-                                    setSearchKeyword(
-                                        event.target.value
-                                    )
-                                }
-                                placeholder="Search products..."
-                            />
-
-                        </div>
-
-                        <button type="submit">
-                            Search
-                        </button>
-
-                    </form>
-
-
-
-                    {/* SEARCH PAGE */}
-
-                    <NavLink
-                        to="/search"
-                        className={navClass}
-                        onClick={closeAllMenus}
-                    >
-
-                        <FaSearch />
-
-                        <span>
-                            Search
-                        </span>
-
-                    </NavLink>
-
 
 
                     {/* =================================================
@@ -657,7 +524,6 @@ function Navbar() {
                         </button>
 
 
-
                         {showCategories && (
 
                             <div className="categories-menu">
@@ -673,7 +539,6 @@ function Navbar() {
                                     </span>
 
                                 </div>
-
 
 
                                 <div className="categories-list">
@@ -735,8 +600,9 @@ function Navbar() {
                     </div>
 
 
-
-                    {/* SELL */}
+                    {/* =================================================
+                        SELL
+                    ================================================= */}
 
                     <NavLink
                         to="/sell"
@@ -753,8 +619,9 @@ function Navbar() {
                     </NavLink>
 
 
-
-                    {/* DASHBOARD */}
+                    {/* =================================================
+                        DASHBOARD
+                    ================================================= */}
 
                     <NavLink
                         to="/dashboard"
@@ -771,8 +638,9 @@ function Navbar() {
                     </NavLink>
 
 
-
-                    {/* SUPPORT */}
+                    {/* =================================================
+                        SUPPORT
+                    ================================================= */}
 
                     {user && (
 
@@ -793,8 +661,9 @@ function Navbar() {
                     )}
 
 
-
-                    {/* TICKETS */}
+                    {/* =================================================
+                        TICKETS
+                    ================================================= */}
 
                     {user && (
 
@@ -815,8 +684,9 @@ function Navbar() {
                     )}
 
 
-
-                    {/* LOGIN */}
+                    {/* =================================================
+                        LOGIN
+                    ================================================= */}
 
                     {!user && (
 
@@ -837,8 +707,9 @@ function Navbar() {
                     )}
 
 
-
-                    {/* ADMIN */}
+                    {/* =================================================
+                        ADMIN
+                    ================================================= */}
 
                     {user?.role === "admin" && (
 
@@ -857,7 +728,6 @@ function Navbar() {
                     )}
 
                 </div>
-
 
 
                 {/* =================================================
@@ -884,7 +754,6 @@ function Navbar() {
                                 <span className="notification-dot" />
 
                             </Link>
-
 
 
                             {/* PROFILE */}
@@ -948,7 +817,6 @@ function Navbar() {
                                 </button>
 
 
-
                                 {showProfileMenu && (
 
                                     <div className="profile-menu">
@@ -1008,7 +876,6 @@ function Navbar() {
                                         </div>
 
 
-
                                         <div className="profile-menu-links">
 
                                             <Link
@@ -1029,7 +896,6 @@ function Navbar() {
                                             </Link>
 
 
-
                                             <Link
                                                 to="/dashboard"
                                                 onClick={() =>
@@ -1046,7 +912,6 @@ function Navbar() {
                                                 </span>
 
                                             </Link>
-
 
 
                                             <Link
@@ -1067,7 +932,6 @@ function Navbar() {
                                             </Link>
 
 
-
                                             <Link
                                                 to="/my-tickets"
                                                 onClick={() =>
@@ -1084,7 +948,6 @@ function Navbar() {
                                                 </span>
 
                                             </Link>
-
 
 
                                             <Link
@@ -1105,7 +968,6 @@ function Navbar() {
                                             </Link>
 
                                         </div>
-
 
 
                                         <div className="profile-menu-footer">
@@ -1158,7 +1020,6 @@ function Navbar() {
                 </div>
 
 
-
                 {/* =================================================
                     MOBILE MENU BUTTON
                 ================================================= */}
@@ -1195,7 +1056,6 @@ function Navbar() {
     );
 
 }
-
 
 
 export default Navbar;

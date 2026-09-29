@@ -124,7 +124,7 @@ import PermissionsPage from "./pages/admin/PermissionsPage";
 
 import AuditLogs from "./pages/admin/AuditLogs";
 import LoginHistory from "./pages/admin/LoginHistory";
-import SearchPage from "./pages/SearchPage";
+
 
 /* =========================================================
    DYNAMIC FAVICON
@@ -357,10 +357,7 @@ function App() {
                         path="/register"
                         element={<Register />}
                     />
-<Route
-    path="/search"
-    element={<SearchPage />}
-/>
+
 
                     {/* ==========================================
                         PASSWORD RESET

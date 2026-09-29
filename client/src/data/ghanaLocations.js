@@ -36,6 +36,7 @@ export const ghanaLocations = {
         "Tafo",
         "Kwadaso",
         "Asawase",
+        "tepa",
         "Nhyiaeso",
         "Manhyia",
         "Mankranso",
