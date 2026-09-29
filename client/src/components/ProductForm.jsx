@@ -1,27 +1,39 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../config/axios";
+import { ghanaLocations } from "../data/ghanaLocations";
 import "./ProductForm.css";
 
 /*
 |--------------------------------------------------------------------------
 | KAD MARKETPLACE - PRODUCT FORM
 |--------------------------------------------------------------------------
-| Features:
-| - Main category + subcategory
+| Main features:
+| - Complete marketplace categories
+| - Category + subcategory
+| - Ghana regions from ghanaLocations.js
+| - Cities/towns dynamically loaded from selected region
 | - Product title
-| - Price
+| - Price in GHS
 | - Condition
-| - Region / City / Location
+| - Specific location
 | - Description
-| - Up to 5 images
+| - 2-5 product images
 | - Image previews
 | - Validation
 | - Multipart upload
-| - Authentication through existing axios configuration
+| - Existing authentication/API structure preserved
+|--------------------------------------------------------------------------
+*/
+
+
+/*
+|--------------------------------------------------------------------------
+| CATEGORY DATA
 |--------------------------------------------------------------------------
 */
 
 const CATEGORY_DATA = {
+
     "Mobile Phones": [
         "Android Phones",
         "iPhones",
@@ -125,16 +137,6 @@ const CATEGORY_DATA = {
         "Other Motorcycles"
     ],
 
-    "Employment Opportunities": [
-        "Full-Time Jobs",
-        "Part-Time Jobs",
-        "Remote Jobs",
-        "Internships",
-        "Apprenticeships",
-        "Freelance Jobs",
-        "Other Employment"
-    ],
-
     "Land & Property": [
         "Land for Sale",
         "Residential Land",
@@ -150,254 +152,301 @@ const CATEGORY_DATA = {
         "Offices",
         "Warehouses",
         "Other Property"
+    ],
+
+    "Electronics": [
+        "Home Electronics",
+        "Computer Electronics",
+        "Audio Electronics",
+        "Cameras",
+        "Gaming Electronics",
+        "Electrical Appliances",
+        "Other Electronics"
+    ],
+
+    "Furniture": [
+        "Beds",
+        "Sofas",
+        "Tables",
+        "Chairs",
+        "Wardrobes",
+        "Office Furniture",
+        "Kitchen Furniture",
+        "Other Furniture"
+    ],
+
+    "Agriculture": [
+        "Farm Equipment",
+        "Farming Tools",
+        "Seeds",
+        "Fertilizers",
+        "Livestock",
+        "Poultry",
+        "Animal Feed",
+        "Farm Produce",
+        "Other Agriculture"
+    ],
+
+    "Construction": [
+        "Building Materials",
+        "Cement",
+        "Iron Rods",
+        "Blocks",
+        "Roofing Materials",
+        "Plumbing Materials",
+        "Electrical Materials",
+        "Construction Equipment",
+        "Tools",
+        "Other Construction"
+    ],
+
+    "Services": [
+        "Cleaning Services",
+        "Repair Services",
+        "Transport Services",
+        "Photography",
+        "Web Development",
+        "Graphic Design",
+        "Tutoring",
+        "Event Services",
+        "Security Services",
+        "Other Services"
+    ],
+
+    "Employment Opportunities": [
+        "Full-Time Jobs",
+        "Part-Time Jobs",
+        "Remote Jobs",
+        "Internships",
+        "Apprenticeships",
+        "Freelance Jobs",
+        "Temporary Jobs",
+        "Other Employment"
     ]
+
 };
 
-const GHANA_REGIONS = {
-    "Ahafo": [
-        "Goaso",
-        "Duayaw Nkwanta",
-        "Bechem",
-        "Kenyasi"
-    ],
 
-    "Ashanti": [
-        "Kumasi",
-        "Obuasi",
-        "Ejisu",
-        "Mampong",
-        "Konongo",
-        "Bekwai",
-        "Tepa",
-        "Offinso"
-    ],
+/*
+|--------------------------------------------------------------------------
+| INITIAL FORM
+|--------------------------------------------------------------------------
+*/
 
-    "Bono": [
-        "Sunyani",
-        "Berekum",
-        "Dormaa Ahenkro",
-        "Wenchi"
-    ],
-
-    "Bono East": [
-        "Techiman",
-        "Kintampo",
-        "Nkoranza",
-        "Atebubu"
-    ],
-
-    "Central": [
-        "Cape Coast",
-        "Kasoa",
-        "Winneba",
-        "Elmina",
-        "Mankessim",
-        "Swedru"
-    ],
-
-    "Eastern": [
-        "Koforidua",
-        "Nkawkaw",
-        "Akropong",
-        "Suhum",
-        "Nsawam",
-        "Akim Oda"
-    ],
-
-    "Greater Accra": [
-        "Accra",
-        "Tema",
-        "Madina",
-        "Adenta",
-        "Teshie",
-        "Nungua",
-        "Dansoman",
-        "Kasoa"
-    ],
-
-    "North East": [
-        "Nalerigu",
-        "Walewale",
-        "Gambaga"
-    ],
-
-    "Northern": [
-        "Tamale",
-        "Yendi",
-        "Savelugu",
-        "Bimbilla"
-    ],
-
-    "Oti": [
-        "Dambai",
-        "Jasikan",
-        "Kete Krachi",
-        "Nkwanta"
-    ],
-
-    "Savannah": [
-        "Damongo",
-        "Salaga",
-        "Bole"
-    ],
-
-    "Upper East": [
-        "Bolgatanga",
-        "Navrongo",
-        "Bawku"
-    ],
-
-    "Upper West": [
-        "Wa",
-        "Lawra",
-        "Tumu"
-    ],
-
-    "Volta": [
-        "Ho",
-        "Hohoe",
-        "Keta",
-        "Aflao",
-        "Kpando"
-    ],
-
-    "Western": [
-        "Sekondi-Takoradi",
-        "Tarkwa",
-        "Axim",
-        "Prestea",
-        "Bogoso"
-    ],
-
-    "Western North": [
-        "Sefwi Wiawso",
-        "Bibiani",
-        "Enchi"
-    ]
+const INITIAL_FORM = {
+    title: "",
+    description: "",
+    price: "",
+    category: "",
+    subcategory: "",
+    condition: "Used",
+    region: "",
+    city: "",
+    location: ""
 };
+
+
+/*
+|--------------------------------------------------------------------------
+| PRODUCT FORM
+|--------------------------------------------------------------------------
+*/
 
 function ProductForm() {
 
-    /* ============================================================
-       FORM STATE
-    ============================================================ */
-
-    const [form, setForm] = useState({
-        title: "",
-        description: "",
-        price: "",
-        category: "",
-        subcategory: "",
-        condition: "Used",
-        region: "",
-        city: "",
-        location: ""
-    });
+    const [form, setForm] = useState(INITIAL_FORM);
 
     const [images, setImages] = useState([]);
+
     const [previews, setPreviews] = useState([]);
 
     const [loading, setLoading] = useState(false);
 
     const [error, setError] = useState("");
+
     const [success, setSuccess] = useState("");
 
-    /* ============================================================
-       AUTHENTICATION
-    ============================================================ */
+
+    /*
+    |--------------------------------------------------------------------------
+    | AUTH CHECK
+    |--------------------------------------------------------------------------
+    */
 
     useEffect(() => {
 
         const token = localStorage.getItem("token");
 
         if (!token) {
-            setError("Please login before creating a listing.");
+
+            setError(
+                "Please login before creating a listing."
+            );
+
         }
 
     }, []);
 
-    /* ============================================================
-       CATEGORY OPTIONS
-    ============================================================ */
+
+    /*
+    |--------------------------------------------------------------------------
+    | SUBCATEGORIES
+    |--------------------------------------------------------------------------
+    */
 
     const subcategories = useMemo(() => {
 
         if (!form.category) {
+
             return [];
+
         }
 
         return CATEGORY_DATA[form.category] || [];
 
     }, [form.category]);
 
-    /* ============================================================
-       CITY OPTIONS
-    ============================================================ */
+
+    /*
+    |--------------------------------------------------------------------------
+    | GHANA CITIES / TOWNS
+    |--------------------------------------------------------------------------
+    | IMPORTANT:
+    | We now use the existing ghanaLocations.js.
+    | There is NO second location database here.
+    |--------------------------------------------------------------------------
+    */
 
     const cities = useMemo(() => {
 
         if (!form.region) {
+
             return [];
+
         }
 
-        return GHANA_REGIONS[form.region] || [];
+        return ghanaLocations[form.region] || [];
 
     }, [form.region]);
 
-    /* ============================================================
-       INPUT HANDLER
-    ============================================================ */
+
+    /*
+    |--------------------------------------------------------------------------
+    | REGIONS
+    |--------------------------------------------------------------------------
+    */
+
+    const regions = useMemo(() => {
+
+        return Object.keys(ghanaLocations);
+
+    }, []);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | NORMALIZE CITY LIST
+    |--------------------------------------------------------------------------
+    | Removes accidental duplicate cities while preserving order.
+    |--------------------------------------------------------------------------
+    */
+
+    const uniqueCities = useMemo(() => {
+
+        return [
+            ...new Set(cities)
+        ];
+
+    }, [cities]);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | HANDLE NORMAL INPUT
+    |--------------------------------------------------------------------------
+    */
 
     const handleChange = (e) => {
 
-        const { name, value } = e.target;
+        const {
+            name,
+            value
+        } = e.target;
 
         setForm((previous) => ({
+
             ...previous,
+
             [name]: value
+
         }));
 
         setError("");
+
         setSuccess("");
+
     };
 
-    /* ============================================================
-       CATEGORY CHANGE
-    ============================================================ */
+
+    /*
+    |--------------------------------------------------------------------------
+    | CATEGORY CHANGE
+    |--------------------------------------------------------------------------
+    */
 
     const handleCategoryChange = (e) => {
 
         const category = e.target.value;
 
         setForm((previous) => ({
+
             ...previous,
+
             category,
+
             subcategory: ""
+
         }));
 
         setError("");
+
+        setSuccess("");
+
     };
 
-    /* ============================================================
-       REGION CHANGE
-    ============================================================ */
+
+    /*
+    |--------------------------------------------------------------------------
+    | REGION CHANGE
+    |--------------------------------------------------------------------------
+    */
 
     const handleRegionChange = (e) => {
 
         const region = e.target.value;
 
         setForm((previous) => ({
+
             ...previous,
+
             region,
+
             city: ""
+
         }));
 
         setError("");
+
+        setSuccess("");
+
     };
 
-    /* ============================================================
-       IMAGE SELECTION
-    ============================================================ */
+
+    /*
+    |--------------------------------------------------------------------------
+    | IMAGE SELECTION
+    |--------------------------------------------------------------------------
+    */
 
     const handleImageChange = (e) => {
 
@@ -406,12 +455,19 @@ function ProductForm() {
         );
 
         if (!selectedFiles.length) {
+
             return;
+
         }
 
         setError("");
 
-        const availableSlots = 5 - images.length;
+        setSuccess("");
+
+
+        const availableSlots =
+            5 - images.length;
+
 
         if (availableSlots <= 0) {
 
@@ -420,8 +476,11 @@ function ProductForm() {
             );
 
             e.target.value = "";
+
             return;
+
         }
+
 
         const filesToAdd =
             selectedFiles.slice(
@@ -429,22 +488,25 @@ function ProductForm() {
                 availableSlots
             );
 
-        const invalidFile = filesToAdd.find(
-            (file) => {
 
-                const validTypes = [
-                    "image/jpeg",
-                    "image/jpg",
-                    "image/png",
-                    "image/webp"
-                ];
+        const validTypes = [
+            "image/jpeg",
+            "image/jpg",
+            "image/png",
+            "image/webp"
+        ];
+
+
+        const invalidFile =
+            filesToAdd.find((file) => {
 
                 return (
                     !validTypes.includes(file.type) ||
                     file.size > 5 * 1024 * 1024
                 );
-            }
-        );
+
+            });
+
 
         if (invalidFile) {
 
@@ -453,101 +515,128 @@ function ProductForm() {
             );
 
             e.target.value = "";
+
             return;
+
         }
 
-        const newPreviews = filesToAdd.map(
-            (file) => URL.createObjectURL(file)
-        );
+
+        const newPreviews =
+            filesToAdd.map((file) => {
+
+                return URL.createObjectURL(file);
+
+            });
+
 
         setImages((previous) => [
+
             ...previous,
+
             ...filesToAdd
+
         ]);
+
 
         setPreviews((previous) => [
+
             ...previous,
+
             ...newPreviews
+
         ]);
 
+
         e.target.value = "";
+
     };
 
-    /* ============================================================
-       REMOVE IMAGE
-    ============================================================ */
+
+    /*
+    |--------------------------------------------------------------------------
+    | REMOVE IMAGE
+    |--------------------------------------------------------------------------
+    */
 
     const removeImage = (index) => {
 
-        setImages((previous) =>
-            previous.filter(
+        setImages((previous) => {
+
+            return previous.filter(
                 (_, imageIndex) =>
                     imageIndex !== index
-            )
-        );
+            );
+
+        });
+
 
         setPreviews((previous) => {
 
             const previewToRemove =
                 previous[index];
 
+
             if (previewToRemove) {
+
                 URL.revokeObjectURL(
                     previewToRemove
                 );
+
             }
+
 
             return previous.filter(
                 (_, imageIndex) =>
                     imageIndex !== index
             );
+
         });
 
+
         setError("");
+
     };
 
-    /* ============================================================
-       VALIDATION
-    ============================================================ */
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE FORM
+    |--------------------------------------------------------------------------
+    */
 
     const validateForm = () => {
 
-        const required = [
-            "title",
-            "description",
-            "price",
-            "category",
-            "condition",
-            "location",
-            "region",
-            "city"
-        ];
+        if (!form.title.trim()) {
 
-        for (const field of required) {
+            return "Please enter a product title.";
 
-            if (!String(form[field] || "").trim()) {
-
-                return `Please enter ${field.replace(
-                    /([A-Z])/g,
-                    " $1"
-                )}.`;
-            }
         }
 
-        if (!form.subcategory.trim()) {
+
+        if (!form.category) {
+
+            return "Please select a category.";
+
+        }
+
+
+        if (!form.subcategory) {
 
             return "Please select a subcategory.";
+
         }
 
-        if (
-            form.description.trim().length < 20
-        ) {
 
-            return "Description must contain at least 20 characters.";
+        if (!form.price) {
+
+            return "Please enter a price.";
+
         }
+
 
         const numericPrice =
             Number(form.price);
+
 
         if (
             !Number.isFinite(numericPrice) ||
@@ -555,34 +644,98 @@ function ProductForm() {
         ) {
 
             return "Please enter a valid price.";
+
         }
+
+
+        if (!form.condition) {
+
+            return "Please select the product condition.";
+
+        }
+
+
+        if (!form.region) {
+
+            return "Please select a region.";
+
+        }
+
+
+        if (!form.city) {
+
+            return "Please select a city or town.";
+
+        }
+
+
+        if (!form.location.trim()) {
+
+            return "Please enter the specific location.";
+
+        }
+
+
+        if (!form.description.trim()) {
+
+            return "Please enter a product description.";
+
+        }
+
+
+        if (
+            form.description.trim().length < 20
+        ) {
+
+            return (
+                "Description must contain at least 20 characters."
+            );
+
+        }
+
 
         if (images.length < 2) {
 
-            return "Please upload at least 2 product images.";
+            return (
+                "Please upload at least 2 product images."
+            );
+
         }
+
 
         if (images.length > 5) {
 
-            return "You can upload a maximum of 5 images.";
+            return (
+                "You can upload a maximum of 5 images."
+            );
+
         }
 
+
         return null;
+
     };
 
-    /* ============================================================
-       SUBMIT PRODUCT
-    ============================================================ */
+
+    /*
+    |--------------------------------------------------------------------------
+    | SUBMIT PRODUCT
+    |--------------------------------------------------------------------------
+    */
 
     const handleSubmit = async (e) => {
 
         e.preventDefault();
 
+
         setError("");
+
         setSuccess("");
+
 
         const token =
             localStorage.getItem("token");
+
 
         if (!token) {
 
@@ -591,74 +744,117 @@ function ProductForm() {
             );
 
             return;
+
         }
+
 
         const validationError =
             validateForm();
+
 
         if (validationError) {
 
             setError(validationError);
 
             return;
+
         }
+
 
         try {
 
             setLoading(true);
 
+
             const formData =
                 new FormData();
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | BASIC PRODUCT INFORMATION
+            |--------------------------------------------------------------------------
+            */
 
             formData.append(
                 "title",
                 form.title.trim()
             );
 
+
             formData.append(
                 "description",
                 form.description.trim()
             );
 
+
             formData.append(
                 "price",
-                String(Number(form.price))
+                String(
+                    Number(form.price)
+                )
             );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | CATEGORY
+            |--------------------------------------------------------------------------
+            */
 
             formData.append(
                 "category",
                 form.category
             );
 
+
             formData.append(
                 "subcategory",
                 form.subcategory
             );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | CONDITION
+            |--------------------------------------------------------------------------
+            */
 
             formData.append(
                 "condition",
                 form.condition
             );
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | LOCATION
+            |--------------------------------------------------------------------------
+            */
+
             formData.append(
                 "region",
                 form.region
             );
+
 
             formData.append(
                 "city",
                 form.city
             );
 
+
             formData.append(
                 "location",
                 form.location.trim()
             );
 
+
             /*
-             * DO NOT send userId.
-             * The backend gets it from req.user.id.
-             */
+            |--------------------------------------------------------------------------
+            | IMAGES
+            |--------------------------------------------------------------------------
+            */
 
             images.forEach((image) => {
 
@@ -668,6 +864,13 @@ function ProductForm() {
                 );
 
             });
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | API REQUEST
+            |--------------------------------------------------------------------------
+            */
 
             const response =
                 await api.post(
@@ -681,6 +884,13 @@ function ProductForm() {
                     }
                 );
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | API RESPONSE VALIDATION
+            |--------------------------------------------------------------------------
+            */
+
             if (
                 response.data?.success === false
             ) {
@@ -689,37 +899,65 @@ function ProductForm() {
                     response.data?.message ||
                     "Unable to create listing."
                 );
+
             }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | SUCCESS
+            |--------------------------------------------------------------------------
+            */
 
             setSuccess(
                 response.data?.message ||
                 "Product submitted successfully."
             );
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | RESET FORM
+            |--------------------------------------------------------------------------
+            */
+
             setForm({
-                title: "",
-                description: "",
-                price: "",
-                category: "",
-                subcategory: "",
-                condition: "Used",
-                region: "",
-                city: "",
-                location: ""
+                ...INITIAL_FORM
             });
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | CLEAN PREVIEWS
+            |--------------------------------------------------------------------------
+            */
 
             previews.forEach((preview) => {
 
-                URL.revokeObjectURL(preview);
+                URL.revokeObjectURL(
+                    preview
+                );
 
             });
 
+
             setImages([]);
+
             setPreviews([]);
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | SCROLL TO MESSAGE
+            |--------------------------------------------------------------------------
+            */
+
             window.scrollTo({
+
                 top: 0,
+
                 behavior: "smooth"
+
             });
 
         }
@@ -732,10 +970,12 @@ function ProductForm() {
                 error
             );
 
+
             const message =
                 error.response?.data?.message ||
                 error.message ||
                 "Unable to submit product.";
+
 
             setError(message);
 
@@ -745,11 +985,15 @@ function ProductForm() {
             setLoading(false);
 
         }
+
     };
 
-    /* ============================================================
-       CLEANUP PREVIEWS
-    ============================================================ */
+
+    /*
+    |--------------------------------------------------------------------------
+    | CLEANUP PREVIEW URLS
+    |--------------------------------------------------------------------------
+    */
 
     useEffect(() => {
 
@@ -757,7 +1001,9 @@ function ProductForm() {
 
             previews.forEach((preview) => {
 
-                URL.revokeObjectURL(preview);
+                URL.revokeObjectURL(
+                    preview
+                );
 
             });
 
@@ -765,9 +1011,12 @@ function ProductForm() {
 
     }, []);
 
-    /* ============================================================
-       RENDER
-    ============================================================ */
+
+    /*
+    |--------------------------------------------------------------------------
+    | RENDER
+    |--------------------------------------------------------------------------
+    */
 
     return (
 
@@ -776,25 +1025,42 @@ function ProductForm() {
             onSubmit={handleSubmit}
         >
 
+
+            {/* =========================================================
+               ERROR MESSAGE
+            ========================================================= */}
+
             {error && (
 
-                <div className="product-form-message error">
+                <div
+                    className="product-form-message error"
+                    role="alert"
+                >
                     {error}
                 </div>
 
             )}
 
+
+            {/* =========================================================
+               SUCCESS MESSAGE
+            ========================================================= */}
+
             {success && (
 
-                <div className="product-form-message success">
+                <div
+                    className="product-form-message success"
+                    role="status"
+                >
                     {success}
                 </div>
 
             )}
 
-            {/* ==================================================
-               BASIC INFORMATION
-            ================================================== */}
+
+            {/* =========================================================
+               PRODUCT INFORMATION
+            ========================================================= */}
 
             <div className="form-section">
 
@@ -811,7 +1077,11 @@ function ProductForm() {
 
                 </div>
 
+
                 <div className="form-grid">
+
+
+                    {/* PRODUCT TITLE */}
 
                     <div className="form-group full-width">
 
@@ -828,10 +1098,13 @@ function ProductForm() {
                             placeholder="e.g. Samsung Galaxy S24 Ultra"
                             maxLength={150}
                             disabled={loading}
+                            required
                         />
 
                     </div>
 
+
+                    {/* CATEGORY */}
 
                     <div className="form-group">
 
@@ -845,11 +1118,13 @@ function ProductForm() {
                             value={form.category}
                             onChange={handleCategoryChange}
                             disabled={loading}
+                            required
                         >
 
                             <option value="">
                                 Select Category
                             </option>
+
 
                             {Object.keys(
                                 CATEGORY_DATA
@@ -869,6 +1144,8 @@ function ProductForm() {
                     </div>
 
 
+                    {/* SUBCATEGORY */}
+
                     <div className="form-group">
 
                         <label htmlFor="subcategory">
@@ -884,13 +1161,17 @@ function ProductForm() {
                                 loading ||
                                 !form.category
                             }
+                            required
                         >
 
                             <option value="">
+
                                 {form.category
                                     ? "Select Subcategory"
                                     : "Select Category First"}
+
                             </option>
+
 
                             {subcategories.map(
                                 (subcategory) => (
@@ -910,6 +1191,8 @@ function ProductForm() {
                     </div>
 
 
+                    {/* CONDITION */}
+
                     <div className="form-group">
 
                         <label htmlFor="condition">
@@ -922,6 +1205,7 @@ function ProductForm() {
                             value={form.condition}
                             onChange={handleChange}
                             disabled={loading}
+                            required
                         >
 
                             <option value="New">
@@ -936,6 +1220,8 @@ function ProductForm() {
 
                     </div>
 
+
+                    {/* PRICE */}
 
                     <div className="form-group">
 
@@ -953,6 +1239,7 @@ function ProductForm() {
                             onChange={handleChange}
                             placeholder="0.00"
                             disabled={loading}
+                            required
                         />
 
                     </div>
@@ -962,9 +1249,9 @@ function ProductForm() {
             </div>
 
 
-            {/* ==================================================
+            {/* =========================================================
                LOCATION
-            ================================================== */}
+            ========================================================= */}
 
             <div className="form-section">
 
@@ -975,12 +1262,17 @@ function ProductForm() {
                     </h2>
 
                     <p>
-                        Tell buyers where the item is located.
+                        Select the correct Ghana region and
+                        city/town for your listing.
                     </p>
 
                 </div>
 
+
                 <div className="form-grid">
+
+
+                    {/* REGION */}
 
                     <div className="form-group">
 
@@ -994,15 +1286,15 @@ function ProductForm() {
                             value={form.region}
                             onChange={handleRegionChange}
                             disabled={loading}
+                            required
                         >
 
                             <option value="">
                                 Select Region
                             </option>
 
-                            {Object.keys(
-                                GHANA_REGIONS
-                            ).map((region) => (
+
+                            {regions.map((region) => (
 
                                 <option
                                     key={region}
@@ -1017,6 +1309,8 @@ function ProductForm() {
 
                     </div>
 
+
+                    {/* CITY */}
 
                     <div className="form-group">
 
@@ -1033,15 +1327,19 @@ function ProductForm() {
                                 loading ||
                                 !form.region
                             }
+                            required
                         >
 
                             <option value="">
+
                                 {form.region
                                     ? "Select City / Town"
                                     : "Select Region First"}
+
                             </option>
 
-                            {cities.map((city) => (
+
+                            {uniqueCities.map((city) => (
 
                                 <option
                                     key={city}
@@ -1056,6 +1354,8 @@ function ProductForm() {
 
                     </div>
 
+
+                    {/* SPECIFIC LOCATION */}
 
                     <div className="form-group full-width">
 
@@ -1072,6 +1372,7 @@ function ProductForm() {
                             placeholder="e.g. Adum, Kumasi"
                             maxLength={150}
                             disabled={loading}
+                            required
                         />
 
                     </div>
@@ -1081,9 +1382,9 @@ function ProductForm() {
             </div>
 
 
-            {/* ==================================================
+            {/* =========================================================
                DESCRIPTION
-            ================================================== */}
+            ========================================================= */}
 
             <div className="form-section">
 
@@ -1100,11 +1401,13 @@ function ProductForm() {
 
                 </div>
 
+
                 <div className="form-group full-width">
 
                     <label htmlFor="description">
                         Product Description *
                     </label>
+
 
                     <textarea
                         id="description"
@@ -1115,7 +1418,9 @@ function ProductForm() {
                         rows={7}
                         maxLength={3000}
                         disabled={loading}
+                        required
                     />
+
 
                     <div className="character-count">
 
@@ -1128,9 +1433,9 @@ function ProductForm() {
             </div>
 
 
-            {/* ==================================================
+            {/* =========================================================
                IMAGES
-            ================================================== */}
+            ========================================================= */}
 
             <div className="form-section">
 
@@ -1146,6 +1451,7 @@ function ProductForm() {
                     </p>
 
                 </div>
+
 
                 <div className="image-upload-area">
 
@@ -1172,6 +1478,7 @@ function ProductForm() {
 
                     </label>
 
+
                     <input
                         id="product-images"
                         type="file"
@@ -1187,6 +1494,8 @@ function ProductForm() {
 
                 </div>
 
+
+                {/* IMAGE PREVIEWS */}
 
                 {previews.length > 0 && (
 
@@ -1205,9 +1514,13 @@ function ProductForm() {
                                         alt={`Product preview ${index + 1}`}
                                     />
 
+
                                     <span className="image-number">
+
                                         {index + 1}
+
                                     </span>
+
 
                                     <button
                                         type="button"
@@ -1218,7 +1531,9 @@ function ProductForm() {
                                         disabled={loading}
                                         aria-label={`Remove image ${index + 1}`}
                                     >
+
                                         ×
+
                                     </button>
 
                                 </div>
@@ -1233,15 +1548,16 @@ function ProductForm() {
             </div>
 
 
-            {/* ==================================================
-               SUBMISSION NOTICE
-            ================================================== */}
+            {/* =========================================================
+               APPROVAL NOTICE
+            ========================================================= */}
 
             <div className="product-approval-notice">
 
                 <div className="notice-icon">
                     ✓
                 </div>
+
 
                 <div>
 
@@ -1260,9 +1576,9 @@ function ProductForm() {
             </div>
 
 
-            {/* ==================================================
+            {/* =========================================================
                SUBMIT
-            ================================================== */}
+            ========================================================= */}
 
             <div className="product-form-actions">
 
@@ -1273,15 +1589,27 @@ function ProductForm() {
                 >
 
                     {loading ? (
+
                         <>
+
                             <span className="submit-spinner"></span>
+
                             Submitting...
+
                         </>
+
                     ) : (
+
                         <>
+
                             Publish Listing
-                            <span>→</span>
+
+                            <span>
+                                →
+                            </span>
+
                         </>
+
                     )}
 
                 </button>
@@ -1291,6 +1619,8 @@ function ProductForm() {
         </form>
 
     );
+
 }
+
 
 export default ProductForm;

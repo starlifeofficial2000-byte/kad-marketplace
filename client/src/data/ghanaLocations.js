@@ -1,10 +1,8 @@
 export const ghanaLocations = {
-
     "Greater Accra": [
         "Accra",
         "Tema",
         "Madina",
-        "Kasoa",
         "Adenta",
         "Teshie",
         "Ashaiman",
@@ -15,19 +13,10 @@ export const ghanaLocations = {
         "Dome",
         "Ashaley Botwe",
         "Weija",
-        "Ga West",
-        "Ga East",
-        "Ga South",
-        "La",
-        "La Nkwantanang",
-        "La Dade Kotopon",
         "Amasaman",
         "Bortianor",
-        "circle",
         "Kaneshie",
         "Kpone"
-       
-
     ],
 
     "Ashanti": [
@@ -36,7 +25,6 @@ export const ghanaLocations = {
         "Ejisu",
         "Konongo",
         "Mampong",
-        "Asante Mampong",
         "Bekwai",
         "Offinso",
         "Ejura",
@@ -48,16 +36,14 @@ export const ghanaLocations = {
         "Tafo",
         "Kwadaso",
         "Asawase",
-        "obuasi",
         "Nhyiaeso",
         "Manhyia",
-        "mankranso",
+        "Mankranso",
         "Atonsu",
         "Aboabo",
         "Nsuta",
         "Kotei",
         "Agona"
-
     ],
 
     "Central": [
@@ -84,7 +70,8 @@ export const ghanaLocations = {
         "Breman Kuntanase",
         "Breman Manso",
         "Breman Nkwanta",
-        "Breman Oda"
+        "Breman Oda",
+        "Kasoa"
     ],
 
     "Eastern": [
@@ -95,16 +82,8 @@ export const ghanaLocations = {
         "Akim Tafo",
         "Akim Swedru",
         "Akim Manso",
-        "Akim Asamankese",
-        "Akim Apapam",
-         "Akim Akwapim",
-        "Akim Akwapim North",
-        "Akim Akwapim South",
-        "Akim Akwapim West",
-        "Akim Akwapim East",
-        "Akim Akwapim Central"
-        
-
+        "Asamankese",
+        "Apapam"
     ],
 
     "Western": [
@@ -113,9 +92,7 @@ export const ghanaLocations = {
         "Tarkwa",
         "Sekondi",
         "Shama",
-        "Dunkwa", 
         "Bawdie",
-        "Bonsu",
         "Bonsu Nkwanta",
         "Bonsu Manso"
     ],
@@ -129,7 +106,7 @@ export const ghanaLocations = {
         "Sefwi Juaboso",
         "Sefwi Asempanaye",
         "Sefwi Anhwiaso",
-        "Sefwi Asawinso" 
+        "Sefwi Asawinso"
     ],
 
     "Volta": [
@@ -140,53 +117,42 @@ export const ghanaLocations = {
         "Aflao",
         "Sogakope",
         "Kpando",
-        "Denu",
         "Dzodze",
         "Anloga",
-        "Avenor",
         "Woe",
         "Tafi Atome",
         "Tafi Adidome",
         "Tafi Agorve"
-
     ],
 
     "Oti": [
         "Dambai",
         "Nkwanta",
         "Kadjebi",
-        "Kete Krachi",  
-        "Bimbilla",
-        "Salaga",
-        "Yendi",
-        "Gushiegu",
-        "Karaga",
-        "Wulensi"
+        "Kete Krachi"
     ],
 
     "Northern": [
         "Tamale",
         "Yendi",
         "Savelugu",
-        "Gushiegu",
-        "Karaga", 
-        
+        "Gushegu",
+        "Karaga"
     ],
 
     "North East": [
         "Nalerigu",
         "Gambaga",
-        "Bimbilla",
-        "Yendi",
-        "Gushiegu",
-        "Karaga"
+        "Walewale",
+        "Bunkpurugu",
+        "Chereponi"
     ],
 
     "Savannah": [
         "Damongo",
         "Bole",
         "Sawla",
-        "Salaga",
+        "Salaga"
     ],
 
     "Upper East": [
@@ -194,7 +160,7 @@ export const ghanaLocations = {
         "Navrongo",
         "Bawku",
         "Zuarungu",
-        "Paga",
+        "Paga"
     ],
 
     "Upper West": [
@@ -202,9 +168,7 @@ export const ghanaLocations = {
         "Jirapa",
         "Lawra",
         "Nandom",
-        "Lambussie",
-        "Sissala East",
-        "Sissala West"
+        "Lambussie"
     ],
 
     "Bono": [
@@ -212,14 +176,8 @@ export const ghanaLocations = {
         "Berekum",
         "Dormaa Ahenkro",
         "Nsoatre",
-        "duayaw-nkwanta",
         "Sampa",
         "Banda",
-        "Buipe",
-        "brosankoro",
-        "tepa",
-        "bomaa",
-        "yamfo",
         "Drobo"
     ],
 
@@ -228,19 +186,12 @@ export const ghanaLocations = {
         "Kintampo",
         "Nkoranza",
         "Wenchi"
-       
     ],
 
     "Ahafo": [
         "Goaso",
         "Bechem",
-        "Manso Nkwanta",
         "Kukuom",
-        "Manso Adubia",
-        "Manso Banso",
-        "Manso Gyedu",
-        "maabang",
-        "Ntotroso",
-
+        "Ntotroso"
     ]
 };
