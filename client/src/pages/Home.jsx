@@ -430,7 +430,7 @@ const handleSearch = async () => {
 
     const params = buildSearchParams();
 
-    updateSearchUrl();
+    setSearchParams(params);
 
     await saveSearch();
 
@@ -445,7 +445,9 @@ const handleSearch = async () => {
 
     }, 100);
 
-};    /*
+};
+
+/*
     ============================================================
     ENTER KEY
     ============================================================
