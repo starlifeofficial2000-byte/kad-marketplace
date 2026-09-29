@@ -1,5 +1,24 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import {
+    useEffect,
+    useMemo,
+    useRef,
+    useState
+} from "react";
+
+import {
+    useSearchParams
+} from "react-router-dom";
+
+import {
+    FaSearch,
+    FaSlidersH,
+    FaTimes,
+    FaChevronDown,
+    FaMapMarkerAlt,
+    FaTag,
+    FaMoneyBillWave,
+    FaSortAmountDown
+} from "react-icons/fa";
 
 import api from "../config/axios";
 
@@ -11,7 +30,10 @@ import RecommendedProducts from "../components/home/RecommendedProducts";
 import CategorySection from "../components/CategorySection";
 import ProductCard from "../components/ProductCard";
 
-import { ghanaLocations } from "../data/ghanaLocations";
+import {
+    ghanaLocations
+} from "../data/ghanaLocations";
+
 import categories from "../data/categories";
 
 import "./Home.css";
@@ -19,53 +41,102 @@ import "./Home.css";
 
 function Home() {
 
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams, setSearchParams] =
+        useSearchParams();
 
-    const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+    const productsSectionRef =
+        useRef(null);
 
-    const [keyword, setKeyword] = useState(
-        searchParams.get("keyword") || ""
-    );
 
-    const [category, setCategory] = useState(
-        searchParams.get("category") || ""
-    );
+    /*
+    ============================================================
+    PRODUCTS
+    ============================================================
+    */
 
-    const [subcategory, setSubcategory] = useState(
-        searchParams.get("subcategory") || ""
-    );
+    const [products, setProducts] =
+        useState([]);
 
-    const [condition, setCondition] = useState(
-        searchParams.get("condition") || ""
-    );
+    const [loading, setLoading] =
+        useState(true);
 
-    const [region, setRegion] = useState(
-        searchParams.get("region") || ""
-    );
+    const [error, setError] =
+        useState("");
 
-    const [city, setCity] = useState(
-        searchParams.get("city") || ""
-    );
 
-    const [minPrice, setMinPrice] = useState(
-        searchParams.get("minPrice") || ""
-    );
+    /*
+    ============================================================
+    SEARCH STATE
+    ============================================================
+    */
 
-    const [maxPrice, setMaxPrice] = useState(
-        searchParams.get("maxPrice") || ""
-    );
+    const [keyword, setKeyword] =
+        useState(
+            searchParams.get("keyword") || ""
+        );
 
-    const [sort, setSort] = useState(
-        searchParams.get("sort") || "newest"
-    );
+    const [category, setCategory] =
+        useState(
+            searchParams.get("category") || ""
+        );
 
-    const productsSectionRef = useRef(null);
+    const [subcategory, setSubcategory] =
+        useState(
+            searchParams.get("subcategory") || ""
+        );
 
-    const searchSectionRef = useRef(null);
+    const [condition, setCondition] =
+        useState(
+            searchParams.get("condition") || ""
+        );
 
-    const token = localStorage.getItem("token");
+    const [region, setRegion] =
+        useState(
+            searchParams.get("region") || ""
+        );
+
+    const [city, setCity] =
+        useState(
+            searchParams.get("city") || ""
+        );
+
+    const [minPrice, setMinPrice] =
+        useState(
+            searchParams.get("minPrice") || ""
+        );
+
+    const [maxPrice, setMaxPrice] =
+        useState(
+            searchParams.get("maxPrice") || ""
+        );
+
+    const [sort, setSort] =
+        useState(
+            searchParams.get("sort") || "newest"
+        );
+
+
+    /*
+    ============================================================
+    UI STATE
+    ============================================================
+    */
+
+    const [showFilters, setShowFilters] =
+        useState(false);
+
+    const [searching, setSearching] =
+        useState(false);
+
+
+    /*
+    ============================================================
+    AUTH
+    ============================================================
+    */
+
+    const token =
+        localStorage.getItem("token");
 
 
     /*
@@ -87,26 +158,69 @@ function Home() {
 
     /*
     ============================================================
-    FETCH PRODUCTS
+    GET SEARCH PARAMETERS
     ============================================================
     */
 
-    useEffect(() => {
+const buildSearchParams = () => {
 
-        fetchProducts();
+    const params = {};
 
-    }, []);
+    if (keyword.trim()) {
+        params.keyword = keyword.trim();
+    }
 
+    if (category) {
+        params.category = category;
+    }
 
-    const fetchProducts = async () => {
+    if (subcategory) {
+        params.subcategory = subcategory;
+    }
+
+    if (condition) {
+        params.condition = condition;
+    }
+
+    if (region) {
+        params.region = region;
+    }
+
+    if (city) {
+        params.city = city;
+    }
+
+    if (minPrice !== "") {
+        params.minPrice = minPrice;
+    }
+
+    if (maxPrice !== "") {
+        params.maxPrice = maxPrice;
+    }
+
+    if (sort) {
+        params.sort = sort;
+    }
+
+    return params;
+
+};
+
+    /*
+    ============================================================
+    FETCH ALL PRODUCTS
+    ============================================================
+    */
+
+    const fetchAllProducts = async () => {
 
         try {
 
             setLoading(true);
-
             setError("");
 
-            const response = await api.get("/products");
+            const response =
+                await api.get("/products");
 
             console.log(
                 "HOME PRODUCTS RESPONSE:",
@@ -149,55 +263,123 @@ function Home() {
     };
 
 
+const searchProducts = async (customParams = null) => {
+
+    try {
+
+        setSearching(true);
+        setLoading(true);
+        setError("");
+
+        const params =
+            customParams || buildSearchParams();
+
+        console.log(
+            "HOME SEARCH PARAMETERS:",
+            params
+        );
+
+        const response = await api.get(
+            "/products/search",
+            {
+                params
+            }
+        );
+
+        console.log(
+            "HOME SEARCH RESPONSE:",
+            response.data
+        );
+
+        const productsData =
+            response.data?.products ||
+            response.data?.data ||
+            (
+                Array.isArray(response.data)
+                    ? response.data
+                    : []
+            );
+
+        setProducts(productsData);
+
+    } catch (error) {
+
+        console.error(
+            "HOME SEARCH ERROR:",
+            error.response?.data ||
+            error.message ||
+            error
+        );
+
+        setError(
+            error.response?.data?.message ||
+            "Failed to search products."
+        );
+
+        setProducts([]);
+
+    } finally {
+
+        setSearching(false);
+        setLoading(false);
+
+    }
+
+};
+
     /*
     ============================================================
-    UPDATE URL
+    INITIAL LOAD
     ============================================================
     */
 
-    const updateSearchUrl = () => {
+    useEffect(() => {
 
-        const params = {};
+        const hasSearchParams =
+            searchParams.get("keyword") ||
+            searchParams.get("category") ||
+            searchParams.get("subcategory") ||
+            searchParams.get("condition") ||
+            searchParams.get("region") ||
+            searchParams.get("city") ||
+            searchParams.get("minPrice") ||
+            searchParams.get("maxPrice") ||
+            searchParams.get("sort");
 
-        if (keyword.trim()) {
-            params.keyword = keyword.trim();
+        if (hasSearchParams) {
+
+            const params = {};
+
+            [
+                "keyword",
+                "category",
+                "subcategory",
+                "condition",
+                "region",
+                "city",
+                "minPrice",
+                "maxPrice",
+                "sort"
+            ].forEach((key) => {
+
+                const value =
+                    searchParams.get(key);
+
+                if (value) {
+                    params[key] = value;
+                }
+
+            });
+
+            searchProducts(params);
+
+        } else {
+
+            fetchAllProducts();
+
         }
 
-        if (category) {
-            params.category = category;
-        }
-
-        if (subcategory) {
-            params.subcategory = subcategory;
-        }
-
-        if (condition) {
-            params.condition = condition;
-        }
-
-        if (region) {
-            params.region = region;
-        }
-
-        if (city) {
-            params.city = city;
-        }
-
-        if (minPrice) {
-            params.minPrice = minPrice;
-        }
-
-        if (maxPrice) {
-            params.maxPrice = maxPrice;
-        }
-
-        if (sort && sort !== "newest") {
-            params.sort = sort;
-        }
-
-        setSearchParams(params);
-
-    };
+    }, []);
 
 
     /*
@@ -221,11 +403,13 @@ function Home() {
             await api.post(
                 "/search/save",
                 {
-                    keyword: keyword.trim()
+                    keyword:
+                        keyword.trim()
                 },
                 {
                     headers: {
-                        Authorization: `Bearer ${token}`
+                        Authorization:
+                            `Bearer ${token}`
                     }
                 }
             );
@@ -242,32 +426,26 @@ function Home() {
 
     };
 
+const handleSearch = async () => {
 
-    /*
-    ============================================================
-    SEARCH
-    ============================================================
-    */
+    const params = buildSearchParams();
 
-    const handleSearch = async () => {
+    updateSearchUrl();
 
-        updateSearchUrl();
+    await saveSearch();
 
-        await saveSearch();
+    await searchProducts(params);
 
-        setTimeout(() => {
+    setTimeout(() => {
 
-            productsSectionRef.current?.scrollIntoView({
-                behavior: "smooth",
-                block: "start"
-            });
+        productsSectionRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
 
-        }, 100);
+    }, 100);
 
-    };
-
-
-    /*
+};    /*
     ============================================================
     ENTER KEY
     ============================================================
@@ -294,7 +472,8 @@ function Home() {
 
     const handleCategoryChange = (event) => {
 
-        const value = event.target.value;
+        const value =
+            event.target.value;
 
         setCategory(value);
 
@@ -305,26 +484,40 @@ function Home() {
 
     /*
     ============================================================
-    CATEGORY SECTION
+    CATEGORY SECTION CLICK
     ============================================================
     */
 
-    const handleCategorySelect = (selectedCategoryName) => {
+    const handleCategorySelect =
+        async (selectedCategoryName) => {
 
-        setCategory(selectedCategoryName);
+            setCategory(
+                selectedCategoryName
+            );
 
-        setSubcategory("");
+            setSubcategory("");
 
-        setTimeout(() => {
+            const params = {
+                category:
+                    selectedCategoryName,
+                sort:
+                    "newest"
+            };
 
-            productsSectionRef.current?.scrollIntoView({
-                behavior: "smooth",
-                block: "start"
-            });
+            setSearchParams(params);
 
-        }, 100);
+            await searchProducts(params);
 
-    };
+            setTimeout(() => {
+
+                productsSectionRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
+
+            }, 150);
+
+        };
 
 
     /*
@@ -333,13 +526,16 @@ function Home() {
     ============================================================
     */
 
-    const handleRegionChange = (event) => {
+    const handleRegionChange =
+        (event) => {
 
-        setRegion(event.target.value);
+            setRegion(
+                event.target.value
+            );
 
-        setCity("");
+            setCity("");
 
-    };
+        };
 
 
     /*
@@ -348,7 +544,7 @@ function Home() {
     ============================================================
     */
 
-    const clearFilters = () => {
+    const clearFilters = async () => {
 
         setKeyword("");
         setCategory("");
@@ -362,6 +558,10 @@ function Home() {
 
         setSearchParams({});
 
+        setShowFilters(false);
+
+        await fetchAllProducts();
+
         setTimeout(() => {
 
             productsSectionRef.current?.scrollIntoView({
@@ -369,275 +569,9 @@ function Home() {
                 block: "start"
             });
 
-        }, 100);
+        }, 150);
 
     };
-
-
-    /*
-    ============================================================
-    FILTER PRODUCTS
-    ============================================================
-    */
-
-    const filteredProducts = useMemo(() => {
-
-        let result = [...products];
-
-
-        /*
-        --------------------------------------------------------
-        KEYWORD
-        --------------------------------------------------------
-        */
-
-        const normalizedKeyword =
-            keyword.trim().toLowerCase();
-
-        if (normalizedKeyword) {
-
-            result = result.filter((product) => {
-
-                const title =
-                    String(product.title || "").toLowerCase();
-
-                const description =
-                    String(product.description || "").toLowerCase();
-
-                const productCategory =
-                    String(product.category || "").toLowerCase();
-
-                const productSubcategory =
-                    String(product.subcategory || "").toLowerCase();
-
-                const location =
-                    String(product.location || "").toLowerCase();
-
-                const productRegion =
-                    String(product.region || "").toLowerCase();
-
-                const productCity =
-                    String(product.city || "").toLowerCase();
-
-                return (
-                    title.includes(normalizedKeyword) ||
-                    description.includes(normalizedKeyword) ||
-                    productCategory.includes(normalizedKeyword) ||
-                    productSubcategory.includes(normalizedKeyword) ||
-                    location.includes(normalizedKeyword) ||
-                    productRegion.includes(normalizedKeyword) ||
-                    productCity.includes(normalizedKeyword)
-                );
-
-            });
-
-        }
-
-
-        /*
-        --------------------------------------------------------
-        CATEGORY
-        --------------------------------------------------------
-        */
-
-        if (category) {
-
-            result = result.filter((product) => {
-
-                return String(product.category || "")
-                    .toLowerCase() ===
-                    category.toLowerCase();
-
-            });
-
-        }
-
-
-        /*
-        --------------------------------------------------------
-        SUBCATEGORY
-        --------------------------------------------------------
-        */
-
-        if (subcategory) {
-
-            result = result.filter((product) => {
-
-                return String(product.subcategory || "")
-                    .toLowerCase() ===
-                    subcategory.toLowerCase();
-
-            });
-
-        }
-
-
-        /*
-        --------------------------------------------------------
-        CONDITION
-        --------------------------------------------------------
-        */
-
-        if (condition) {
-
-            result = result.filter((product) => {
-
-                return String(product.condition || "")
-                    .toLowerCase() ===
-                    condition.toLowerCase();
-
-            });
-
-        }
-
-
-        /*
-        --------------------------------------------------------
-        REGION
-        --------------------------------------------------------
-        */
-
-        if (region) {
-
-            result = result.filter((product) => {
-
-                return String(product.region || "")
-                    .toLowerCase() ===
-                    region.toLowerCase();
-
-            });
-
-        }
-
-
-        /*
-        --------------------------------------------------------
-        CITY
-        --------------------------------------------------------
-        */
-
-        if (city) {
-
-            result = result.filter((product) => {
-
-                return String(product.city || "")
-                    .toLowerCase() ===
-                    city.toLowerCase();
-
-            });
-
-        }
-
-
-        /*
-        --------------------------------------------------------
-        MINIMUM PRICE
-        --------------------------------------------------------
-        */
-
-        if (minPrice !== "") {
-
-            const minimum = Number(minPrice);
-
-            result = result.filter((product) => {
-
-                const price =
-                    Number(product.price || 0);
-
-                return price >= minimum;
-
-            });
-
-        }
-
-
-        /*
-        --------------------------------------------------------
-        MAXIMUM PRICE
-        --------------------------------------------------------
-        */
-
-        if (maxPrice !== "") {
-
-            const maximum = Number(maxPrice);
-
-            result = result.filter((product) => {
-
-                const price =
-                    Number(product.price || 0);
-
-                return price <= maximum;
-
-            });
-
-        }
-
-
-        /*
-        --------------------------------------------------------
-        SORTING
-        --------------------------------------------------------
-        */
-
-        result.sort((a, b) => {
-
-            if (sort === "lowPrice") {
-
-                return (
-                    Number(a.price || 0) -
-                    Number(b.price || 0)
-                );
-
-            }
-
-            if (sort === "highPrice") {
-
-                return (
-                    Number(b.price || 0) -
-                    Number(a.price || 0)
-                );
-
-            }
-
-            if (sort === "oldest") {
-
-                return (
-                    new Date(a.createdAt || 0) -
-                    new Date(b.createdAt || 0)
-                );
-
-            }
-
-            if (sort === "popular") {
-
-                return (
-                    Number(b.views || 0) -
-                    Number(a.views || 0)
-                );
-
-            }
-
-            return (
-                new Date(b.createdAt || 0) -
-                new Date(a.createdAt || 0)
-            );
-
-        });
-
-        return result;
-
-    }, [
-        products,
-        keyword,
-        category,
-        subcategory,
-        condition,
-        region,
-        city,
-        minPrice,
-        maxPrice,
-        sort
-    ]);
 
 
     /*
@@ -647,7 +581,7 @@ function Home() {
     */
 
     const activeFilterCount = [
-        keyword,
+
         category,
         subcategory,
         condition,
@@ -655,6 +589,7 @@ function Home() {
         city,
         minPrice,
         maxPrice
+
     ].filter(
         (value) =>
             String(value).trim() !== ""
@@ -663,22 +598,28 @@ function Home() {
 
     /*
     ============================================================
-    RESULT TITLE
+    SEARCH RESULT TITLE
     ============================================================
     */
 
     const resultTitle = useMemo(() => {
 
         if (keyword.trim()) {
+
             return `Results for "${keyword.trim()}"`;
+
         }
 
         if (subcategory) {
+
             return subcategory;
+
         }
 
         if (category) {
+
             return category;
+
         }
 
         return "Latest Products";
@@ -692,6 +633,16 @@ function Home() {
 
     /*
     ============================================================
+    CURRENT RESULT COUNT
+    ============================================================
+    */
+
+    const resultCount =
+        products.length;
+
+
+    /*
+    ============================================================
     RENDER
     ============================================================
     */
@@ -700,27 +651,44 @@ function Home() {
 
         <Layout>
 
+            {/* =================================================
+                BANNER
+            ================================================= */}
+
             <BannerSlider />
 
+
+            {/* =================================================
+                FEATURED
+            ================================================= */}
 
             <FeaturedProducts />
 
 
+            {/* =================================================
+                CATEGORIES
+            ================================================= */}
+
             <CategorySection
+
                 selectedCategory={
                     category || "All"
                 }
+
                 setCategory={
                     handleCategorySelect
                 }
+
                 products={products}
+
             />
 
 
-            <section
-                className="home-search"
-                ref={searchSectionRef}
-            >
+            {/* =================================================
+                COMPACT SEARCH AREA
+            ================================================= */}
+
+            <section className="home-search">
 
                 <div className="home-search-content">
 
@@ -739,53 +707,65 @@ function Home() {
 
                 </div>
 
-            </section>
 
+                {/* =================================================
+                    MAIN SEARCH BAR
+                ================================================= */}
 
-            <section className="market-filters-container">
+                <div className="home-search-box">
 
-                <div className="market-filters">
+                    <div className="home-search-input">
 
-
-                    <div className="filter-group filter-keyword">
-
-                        <label>
-                            Search
-                        </label>
+                        <FaSearch />
 
                         <input
                             type="text"
-                            placeholder="What are you looking for?"
                             value={keyword}
+                            placeholder="Search for phones, laptops, cars, clothes..."
                             onChange={(event) =>
                                 setKeyword(
                                     event.target.value
                                 )
                             }
-                            onKeyDown={handleKeyDown}
+                            onKeyDown={
+                                handleKeyDown
+                            }
                         />
+
+                        {keyword && (
+
+                            <button
+                                type="button"
+                                className="search-clear"
+                                onClick={() =>
+                                    setKeyword("")
+                                }
+                                aria-label="Clear search"
+                            >
+
+                                <FaTimes />
+
+                            </button>
+
+                        )}
 
                     </div>
 
 
-                    <div className="filter-group">
+                    <select
+                        className="home-search-category"
+                        value={category}
+                        onChange={
+                            handleCategoryChange
+                        }
+                    >
 
-                        <label>
-                            Category
-                        </label>
+                        <option value="">
+                            All Categories
+                        </option>
 
-                        <select
-                            value={category}
-                            onChange={
-                                handleCategoryChange
-                            }
-                        >
-
-                            <option value="">
-                                All Categories
-                            </option>
-
-                            {categories.map((item) => (
+                        {categories.map(
+                            (item) => (
 
                                 <option
                                     key={item.name}
@@ -800,310 +780,561 @@ function Home() {
 
                                 </option>
 
-                            ))}
+                            )
+                        )}
 
-                        </select>
-
-                    </div>
+                    </select>
 
 
-                    <div className="filter-group">
+                    <button
+                        type="button"
+                        className="home-search-button"
+                        onClick={handleSearch}
+                        disabled={searching}
+                    >
 
-                        <label>
-                            Subcategory
-                        </label>
+                        <FaSearch />
 
-                        <select
-                            value={subcategory}
-                            onChange={(event) =>
-                                setSubcategory(
-                                    event.target.value
-                                )
-                            }
-                            disabled={!selectedCategory}
-                        >
+                        {searching
+                            ? "Searching..."
+                            : "Search"}
 
-                            <option value="">
+                    </button>
 
-                                {selectedCategory
-                                    ? "All Subcategories"
-                                    : "Select Category First"}
 
-                            </option>
+                    <button
+                        type="button"
+                        className={
+                            showFilters
+                                ? "home-filter-button active"
+                                : "home-filter-button"
+                        }
+                        onClick={() =>
+                            setShowFilters(
+                                (previous) =>
+                                    !previous
+                            )
+                        }
+                    >
 
-                            {selectedCategory?.subcategories?.map(
-                                (item) => (
+                        <FaSlidersH />
 
-                                    <option
-                                        key={item}
-                                        value={item}
+                        <span>
+                            Filters
+                        </span>
+
+                        {activeFilterCount > 0 && (
+
+                            <span className="filter-badge">
+
+                                {
+                                    activeFilterCount
+                                }
+
+                            </span>
+
+                        )}
+
+                    </button>
+
+                </div>
+
+
+                {/* =================================================
+                    ACTIVE SEARCH SUMMARY
+                ================================================= */}
+
+                {(keyword ||
+                    category ||
+                    activeFilterCount > 0) && (
+
+                    <div className="home-search-summary">
+
+                        <div className="search-summary-left">
+
+                            {keyword && (
+
+                                <span className="search-chip">
+
+                                    <FaSearch />
+
+                                    {keyword}
+
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setKeyword("")
+                                        }
                                     >
-                                        {item}
-                                    </option>
 
-                                )
+                                        <FaTimes />
+
+                                    </button>
+
+                                </span>
+
                             )}
 
-                        </select>
+                            {category && (
 
-                    </div>
+                                <span className="search-chip">
 
+                                    <FaTag />
 
-                    <div className="filter-group">
+                                    {category}
 
-                        <label>
-                            Minimum Price
-                        </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
 
-                        <input
-                            type="number"
-                            min="0"
-                            placeholder="GH₵ Minimum"
-                            value={minPrice}
-                            onChange={(event) =>
-                                setMinPrice(
-                                    event.target.value
-                                )
-                            }
-                        />
+                                            setCategory("");
+                                            setSubcategory("");
 
-                    </div>
-
-
-                    <div className="filter-group">
-
-                        <label>
-                            Maximum Price
-                        </label>
-
-                        <input
-                            type="number"
-                            min="0"
-                            placeholder="GH₵ Maximum"
-                            value={maxPrice}
-                            onChange={(event) =>
-                                setMaxPrice(
-                                    event.target.value
-                                )
-                            }
-                        />
-
-                    </div>
-
-
-                    <div className="filter-group">
-
-                        <label>
-                            Condition
-                        </label>
-
-                        <select
-                            value={condition}
-                            onChange={(event) =>
-                                setCondition(
-                                    event.target.value
-                                )
-                            }
-                        >
-
-                            <option value="">
-                                All Conditions
-                            </option>
-
-                            <option value="New">
-                                New
-                            </option>
-
-                            <option value="Used">
-                                Used
-                            </option>
-
-                        </select>
-
-                    </div>
-
-
-                    <div className="filter-group">
-
-                        <label>
-                            Region
-                        </label>
-
-                        <select
-                            value={region}
-                            onChange={
-                                handleRegionChange
-                            }
-                        >
-
-                            <option value="">
-                                All Regions
-                            </option>
-
-                            {Object.keys(
-                                ghanaLocations
-                            ).map((item) => (
-
-                                <option
-                                    key={item}
-                                    value={item}
-                                >
-                                    {item}
-                                </option>
-
-                            ))}
-
-                        </select>
-
-                    </div>
-
-
-                    <div className="filter-group">
-
-                        <label>
-                            City / Town
-                        </label>
-
-                        <select
-                            value={city}
-                            onChange={(event) =>
-                                setCity(
-                                    event.target.value
-                                )
-                            }
-                            disabled={!region}
-                        >
-
-                            <option value="">
-
-                                {region
-                                    ? "All Cities"
-                                    : "Select Region First"}
-
-                            </option>
-
-                            {region &&
-                                ghanaLocations[
-                                    region
-                                ]?.map((item) => (
-
-                                    <option
-                                        key={item}
-                                        value={item}
+                                        }}
                                     >
-                                        {item}
+
+                                        <FaTimes />
+
+                                    </button>
+
+                                </span>
+
+                            )}
+
+                            {region && (
+
+                                <span className="search-chip">
+
+                                    <FaMapMarkerAlt />
+
+                                    {region}
+
+                                    {city
+                                        ? `, ${city}`
+                                        : ""}
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+
+                                            setRegion("");
+                                            setCity("");
+
+                                        }}
+                                    >
+
+                                        <FaTimes />
+
+                                    </button>
+
+                                </span>
+
+                            )}
+
+                            {minPrice && (
+
+                                <span className="search-chip">
+
+                                    <FaMoneyBillWave />
+
+                                    From GH₵
+                                    {minPrice}
+
+                                </span>
+
+                            )}
+
+                            {maxPrice && (
+
+                                <span className="search-chip">
+
+                                    Up to GH₵
+                                    {maxPrice}
+
+                                </span>
+
+                            )}
+
+                        </div>
+
+
+                        <button
+                            type="button"
+                            className="clear-search-button"
+                            onClick={
+                                clearFilters
+                            }
+                        >
+
+                            Clear all
+
+                        </button>
+
+                    </div>
+
+                )}
+
+
+                {/* =================================================
+                    ADVANCED FILTERS
+                ================================================= */}
+
+                {showFilters && (
+
+                    <div className="advanced-search-panel">
+
+                        <div className="advanced-search-header">
+
+                            <div>
+
+                                <h3>
+                                    Refine Your Search
+                                </h3>
+
+                                <p>
+                                    Use filters to find exactly
+                                    what you are looking for.
+                                </p>
+
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setShowFilters(false)
+                                }
+                                aria-label="Close filters"
+                            >
+
+                                <FaTimes />
+
+                            </button>
+
+                        </div>
+
+
+                        <div className="advanced-search-grid">
+
+                            {/* SUBCATEGORY */}
+
+                            <div className="filter-group">
+
+                                <label>
+                                    Category Type
+                                </label>
+
+                                <select
+                                    value={
+                                        subcategory
+                                    }
+                                    onChange={(event) =>
+                                        setSubcategory(
+                                            event.target.value
+                                        )
+                                    }
+                                    disabled={
+                                        !selectedCategory
+                                    }
+                                >
+
+                                    <option value="">
+
+                                        {selectedCategory
+                                            ? "All Subcategories"
+                                            : "Select Category First"}
+
                                     </option>
 
-                                ))
-                            }
+                                    {selectedCategory?.subcategories?.map(
+                                        (item) => (
 
-                        </select>
+                                            <option
+                                                key={item}
+                                                value={item}
+                                            >
+                                                {item}
+                                            </option>
+
+                                        )
+                                    )}
+
+                                </select>
+
+                            </div>
+
+
+                            {/* MIN PRICE */}
+
+                            <div className="filter-group">
+
+                                <label>
+                                    Minimum Price
+                                </label>
+
+                                <input
+                                    type="number"
+                                    min="0"
+                                    placeholder="GH₵ Minimum"
+                                    value={minPrice}
+                                    onChange={(event) =>
+                                        setMinPrice(
+                                            event.target.value
+                                        )
+                                    }
+                                />
+
+                            </div>
+
+
+                            {/* MAX PRICE */}
+
+                            <div className="filter-group">
+
+                                <label>
+                                    Maximum Price
+                                </label>
+
+                                <input
+                                    type="number"
+                                    min="0"
+                                    placeholder="GH₵ Maximum"
+                                    value={maxPrice}
+                                    onChange={(event) =>
+                                        setMaxPrice(
+                                            event.target.value
+                                        )
+                                    }
+                                />
+
+                            </div>
+
+
+                            {/* CONDITION */}
+
+                            <div className="filter-group">
+
+                                <label>
+                                    Condition
+                                </label>
+
+                                <select
+                                    value={
+                                        condition
+                                    }
+                                    onChange={(event) =>
+                                        setCondition(
+                                            event.target.value
+                                        )
+                                    }
+                                >
+
+                                    <option value="">
+                                        All Conditions
+                                    </option>
+
+                                    <option value="New">
+                                        New
+                                    </option>
+
+                                    <option value="Used">
+                                        Used
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                            {/* REGION */}
+
+                            <div className="filter-group">
+
+                                <label>
+                                    Region
+                                </label>
+
+                                <select
+                                    value={region}
+                                    onChange={
+                                        handleRegionChange
+                                    }
+                                >
+
+                                    <option value="">
+                                        All Regions
+                                    </option>
+
+                                    {Object.keys(
+                                        ghanaLocations
+                                    ).map(
+                                        (item) => (
+
+                                            <option
+                                                key={item}
+                                                value={item}
+                                            >
+                                                {item}
+                                            </option>
+
+                                        )
+                                    )}
+
+                                </select>
+
+                            </div>
+
+
+                            {/* CITY */}
+
+                            <div className="filter-group">
+
+                                <label>
+                                    City / Town
+                                </label>
+
+                                <select
+                                    value={city}
+                                    onChange={(event) =>
+                                        setCity(
+                                            event.target.value
+                                        )
+                                    }
+                                    disabled={!region}
+                                >
+
+                                    <option value="">
+
+                                        {region
+                                            ? "All Cities"
+                                            : "Select Region First"}
+
+                                    </option>
+
+                                    {region &&
+                                        ghanaLocations[
+                                            region
+                                        ]?.map(
+                                            (item) => (
+
+                                                <option
+                                                    key={item}
+                                                    value={item}
+                                                >
+                                                    {item}
+                                                </option>
+
+                                            )
+                                        )
+                                    }
+
+                                </select>
+
+                            </div>
+
+
+                            {/* SORT */}
+
+                            <div className="filter-group">
+
+                                <label>
+                                    Sort By
+                                </label>
+
+                                <select
+                                    value={sort}
+                                    onChange={(event) =>
+                                        setSort(
+                                            event.target.value
+                                        )
+                                    }
+                                >
+
+                                    <option value="newest">
+                                        Newest
+                                    </option>
+
+                                    <option value="oldest">
+                                        Oldest
+                                    </option>
+
+                                    <option value="lowPrice">
+                                        Lowest Price
+                                    </option>
+
+                                    <option value="highPrice">
+                                        Highest Price
+                                    </option>
+
+                                    <option value="popular">
+                                        Most Viewed
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
+
+                        {/* FILTER ACTIONS */}
+
+                        <div className="advanced-search-actions">
+
+                            <button
+                                type="button"
+                                className="clear-button"
+                                onClick={
+                                    clearFilters
+                                }
+                            >
+
+                                Clear Filters
+
+                            </button>
+
+                            <button
+                                type="button"
+                                className="search-button"
+                                onClick={
+                                    handleSearch
+                                }
+                                disabled={searching}
+                            >
+
+                                <FaSearch />
+
+                                {searching
+                                    ? "Searching..."
+                                    : "Apply Filters"}
+
+                            </button>
+
+                        </div>
 
                     </div>
 
-
-                    <div className="filter-group">
-
-                        <label>
-                            Sort By
-                        </label>
-
-                        <select
-                            value={sort}
-                            onChange={(event) =>
-                                setSort(
-                                    event.target.value
-                                )
-                            }
-                        >
-
-                            <option value="newest">
-                                Newest
-                            </option>
-
-                            <option value="oldest">
-                                Oldest
-                            </option>
-
-                            <option value="lowPrice">
-                                Lowest Price
-                            </option>
-
-                            <option value="highPrice">
-                                Highest Price
-                            </option>
-
-                            <option value="popular">
-                                Most Viewed
-                            </option>
-
-                        </select>
-
-                    </div>
-
-
-                    <div className="filter-actions">
-
-                        <button
-                            type="button"
-                            className="search-button"
-                            onClick={handleSearch}
-                            disabled={loading}
-                        >
-
-                            {loading
-                                ? "Searching..."
-                                : "🔍 Search Products"}
-
-                        </button>
-
-
-                        <button
-                            type="button"
-                            className="clear-button"
-                            onClick={clearFilters}
-                        >
-                            Clear
-                        </button>
-
-                    </div>
-
-                </div>
-
-
-                <div className="search-status">
-
-                    <span>
-
-                        {activeFilterCount > 0
-                            ? `${activeFilterCount} active filter${
-                                activeFilterCount !== 1
-                                    ? "s"
-                                    : ""
-                            }`
-                            : "Browse all marketplace listings"}
-
-                    </span>
-
-                    <span>
-
-                        {filteredProducts.length} result
-                        {filteredProducts.length !== 1
-                            ? "s"
-                            : ""}
-
-                    </span>
-
-                </div>
+                )}
 
             </section>
 
 
+            {/* =================================================
+                TRENDING
+            ================================================= */}
+
             <TrendingProducts />
 
 
+            {/* =================================================
+                RECOMMENDED
+            ================================================= */}
+
             <RecommendedProducts />
 
+
+            {/* =================================================
+                PRODUCTS
+            ================================================= */}
 
             <section
                 className="products-section"
@@ -1119,30 +1350,45 @@ function Home() {
                         </h2>
 
                         <p>
-                            Browse marketplace listings
-                            available now.
+
+                            {keyword ||
+                            category ||
+                            activeFilterCount > 0
+
+                                ? "Marketplace results matching your search."
+
+                                : "Browse the latest marketplace listings available now."}
+
                         </p>
 
                     </div>
 
 
-                    <span className="product-count">
+                    {!loading && !error && (
 
-                        {filteredProducts.length}
+                        <span className="product-count">
 
-                        {" "}
+                            {resultCount}
 
-                        Product
-                        {filteredProducts.length !== 1
-                            ? "s"
-                            : ""}
+                            {" "}
 
-                        {" "}Found
+                            Product
+                            {resultCount !== 1
+                                ? "s"
+                                : ""}
 
-                    </span>
+                            {" "}Found
+
+                        </span>
+
+                    )}
 
                 </div>
 
+
+                {/* =================================================
+                    ERROR
+                ================================================= */}
 
                 {error && (
 
@@ -1162,7 +1408,13 @@ function Home() {
 
                         <button
                             type="button"
-                            onClick={fetchProducts}
+                            onClick={() =>
+                                keyword ||
+                                category ||
+                                activeFilterCount > 0
+                                    ? searchProducts()
+                                    : fetchAllProducts()
+                            }
                         >
                             Try Again
                         </button>
@@ -1172,19 +1424,25 @@ function Home() {
                 )}
 
 
+                {/* =================================================
+                    LOADING
+                ================================================= */}
+
                 {!error && loading && (
 
                     <div className="empty-products">
 
-                        <div className="loading-spinner"></div>
+                        <div className="loading-spinner" />
 
                         <h2>
-                            Finding products...
+                            {searching
+                                ? "Searching marketplace..."
+                                : "Loading products..."}
                         </h2>
 
                         <p>
-                            Please wait while we load
-                            marketplace listings.
+                            Please wait while we find
+                            the best listings for you.
                         </p>
 
                     </div>
@@ -1192,9 +1450,13 @@ function Home() {
                 )}
 
 
+                {/* =================================================
+                    NO RESULTS
+                ================================================= */}
+
                 {!error &&
                     !loading &&
-                    filteredProducts.length === 0 && (
+                    products.length === 0 && (
 
                         <div className="empty-products">
 
@@ -1213,7 +1475,9 @@ function Home() {
 
                             <button
                                 type="button"
-                                onClick={clearFilters}
+                                onClick={
+                                    clearFilters
+                                }
                             >
                                 Clear Filters
                             </button>
@@ -1224,13 +1488,17 @@ function Home() {
                 }
 
 
+                {/* =================================================
+                    RESULTS
+                ================================================= */}
+
                 {!error &&
                     !loading &&
-                    filteredProducts.length > 0 && (
+                    products.length > 0 && (
 
                         <div className="products">
 
-                            {filteredProducts.map(
+                            {products.map(
                                 (product) => (
 
                                     <ProductCard
@@ -1238,7 +1506,9 @@ function Home() {
                                             product.id ||
                                             product._id
                                         }
-                                        product={product}
+                                        product={
+                                            product
+                                        }
                                     />
 
                                 )
@@ -1246,8 +1516,7 @@ function Home() {
 
                         </div>
 
-                    )
-                }
+                    )}
 
             </section>
 

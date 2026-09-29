@@ -1780,168 +1780,446 @@ exports.getProductById = async (req, res) => {
 
 };
 
-/* ===========================================================
+
+/* ============================================================
    SEARCH PRODUCTS
-=========================================================== */
+============================================================ */
 
-exports.searchProducts =
-    async (req, res) => {
+exports.searchProducts = async (req, res) => {
 
-        try {
+    try {
 
-            const {
-                keyword,
-                category,
-                region,
-                city,
-                minPrice,
-                maxPrice
-            } = req.query;
+        const {
+            keyword = "",
+            category = "",
+            subcategory = "",
+            condition = "",
+            region = "",
+            city = "",
+            minPrice = "",
+            maxPrice = "",
+            sort = "newest"
+        } = req.query;
 
-            const
-             where = {
-                status:
-                    "Approved",
 
-                sellerStatus: "Active",
+        /* ======================================================
+           BASE CONDITIONS
 
-                deleted:
-                    false
+           Only approved and non-deleted products are searchable.
+        ====================================================== */
+
+        const where = {
+
+            status: "Approved",
+
+            deleted: false,
+
+            sellerStatus: {
+                [Op.not]: "Sold"
+            }
+
+        };
+
+
+        /* ======================================================
+           KEYWORD SEARCH
+        ====================================================== */
+
+        const cleanKeyword =
+            String(keyword || "").trim();
+
+
+        if (cleanKeyword) {
+
+            where[Op.or] = [
+
+                {
+                    title: {
+                        [Op.like]: `%${cleanKeyword}%`
+                    }
+                },
+
+                {
+                    description: {
+                        [Op.like]: `%${cleanKeyword}%`
+                    }
+                },
+
+                {
+                    category: {
+                        [Op.like]: `%${cleanKeyword}%`
+                    }
+                },
+
+                {
+                    subcategory: {
+                        [Op.like]: `%${cleanKeyword}%`
+                    }
+                },
+
+                {
+                    location: {
+                        [Op.like]: `%${cleanKeyword}%`
+                    }
+                },
+
+                {
+                    region: {
+                        [Op.like]: `%${cleanKeyword}%`
+                    }
+                },
+
+                {
+                    city: {
+                        [Op.like]: `%${cleanKeyword}%`
+                    }
+                },
+
+                {
+                    keywords: {
+                        [Op.like]: `%${cleanKeyword}%`
+                    }
+                },
+
+                {
+                    metaTitle: {
+                        [Op.like]: `%${cleanKeyword}%`
+                    }
+                },
+
+                {
+                    metaDescription: {
+                        [Op.like]: `%${cleanKeyword}%`
+                    }
+                }
+
+            ];
+
+        }
+
+
+        /* ======================================================
+           CATEGORY
+        ====================================================== */
+
+        if (String(category).trim()) {
+
+            where.category = {
+
+                [Op.like]:
+                    String(category).trim()
 
             };
 
-            if (keyword) {
+        }
 
-                where[Op.or] = [
 
-                    {
-                        title: {
-                            [Op.like]:
-                                `%${keyword}%`
-                        }
-                    },
+        /* ======================================================
+           SUBCATEGORY
+        ====================================================== */
 
-                    {
-                        description: {
-                            [Op.like]:
-                                `%${keyword}%`
-                        }
-                    }
+        if (String(subcategory).trim()) {
 
-                ];
+            where.subcategory = {
+
+                [Op.like]:
+                    String(subcategory).trim()
+
+            };
+
+        }
+
+
+        /* ======================================================
+           CONDITION
+        ====================================================== */
+
+        if (String(condition).trim()) {
+
+            where.condition = {
+
+                [Op.like]:
+                    String(condition).trim()
+
+            };
+
+        }
+
+
+        /* ======================================================
+           REGION
+        ====================================================== */
+
+        if (String(region).trim()) {
+
+            where.region = {
+
+                [Op.like]:
+                    String(region).trim()
+
+            };
+
+        }
+
+
+        /* ======================================================
+           CITY
+        ====================================================== */
+
+        if (String(city).trim()) {
+
+            where.city = {
+
+                [Op.like]:
+                    String(city).trim()
+
+            };
+
+        }
+
+
+        /* ======================================================
+           PRICE RANGE
+        ====================================================== */
+
+        if (
+            minPrice !== "" ||
+            maxPrice !== ""
+        ) {
+
+            const priceCondition = {};
+
+
+            if (minPrice !== "") {
+
+                const minimum =
+                    Number(minPrice);
+
+                if (!Number.isNaN(minimum)) {
+
+                    priceCondition[Op.gte] =
+                        minimum;
+
+                }
+
             }
 
-            if (category) {
-                where.category =
-                    category;
+
+            if (maxPrice !== "") {
+
+                const maximum =
+                    Number(maxPrice);
+
+                if (!Number.isNaN(maximum)) {
+
+                    priceCondition[Op.lte] =
+                        maximum;
+
+                }
+
             }
 
-            if (region) {
-                where.region =
-                    region;
-            }
-
-            if (city) {
-                where.city =
-                    city;
-            }
 
             if (
-                minPrice !== undefined ||
-                maxPrice !== undefined
+                Object.keys(priceCondition)
+                    .length > 0
             ) {
 
-                where.price = {};
+                where.price =
+                    priceCondition;
 
-                if (
-                    minPrice !== undefined &&
-                    minPrice !== ""
-                ) {
-
-                    where.price[Op.gte] =
-                        Number(minPrice);
-                }
-
-                if (
-                    maxPrice !== undefined &&
-                    maxPrice !== ""
-                ) {
-
-                    where.price[Op.lte] =
-                        Number(maxPrice);
-                }
             }
 
-            const products =
-                await Product.findAll({
-
-                    where,
-
-                    order: [
-
-                        [
-                            "homepagePriority",
-                            "DESC"
-                        ],
-
-                        [
-                            "featured",
-                            "DESC"
-                        ],
-
-                        [
-                            "express",
-                            "DESC"
-                        ],
-
-                        [
-                            "listingPriority",
-                            "DESC"
-                        ],
-
-                        [
-                            "qualityScore",
-                            "DESC"
-                        ],
-
-                        [
-                            "views",
-                            "DESC"
-                        ],
-
-                        [
-                            "createdAt",
-                            "DESC"
-                        ]
-                    ]
-                });
-
-            return res.json({
-                success: true,
-
-                total:
-                    products.length,
-
-                products:
-                    formatProducts(
-                        products
-                    )
-            });
-
-        } catch (error) {
-
-            console.error(
-                "SEARCH PRODUCTS ERROR:",
-                error
-            );
-
-            return res.status(500).json({
-                success: false,
-                message:
-                    error.message
-            });
         }
-    };
+
+
+        /* ======================================================
+           SORTING
+        ====================================================== */
+
+        let order = [];
+
+
+        switch (sort) {
+
+
+            /* --------------------------------------------------
+               NEWEST
+            -------------------------------------------------- */
+
+            case "newest":
+
+                order = [
+
+                    ["boosted", "DESC"],
+
+                    ["searchPriority", "DESC"],
+
+                    ["listingScore", "DESC"],
+
+                    ["displayDate", "DESC"],
+
+                    ["createdAt", "DESC"]
+
+                ];
+
+                break;
+
+
+            /* --------------------------------------------------
+               OLDEST
+            -------------------------------------------------- */
+
+            case "oldest":
+
+                order = [
+
+                    ["createdAt", "ASC"]
+
+                ];
+
+                break;
+
+
+            /* --------------------------------------------------
+               LOWEST PRICE
+            -------------------------------------------------- */
+
+            case "lowPrice":
+
+                order = [
+
+                    ["price", "ASC"],
+
+                    ["searchPriority", "DESC"],
+
+                    ["createdAt", "DESC"]
+
+                ];
+
+                break;
+
+
+            /* --------------------------------------------------
+               HIGHEST PRICE
+            -------------------------------------------------- */
+
+            case "highPrice":
+
+                order = [
+
+                    ["price", "DESC"],
+
+                    ["searchPriority", "DESC"],
+
+                    ["createdAt", "DESC"]
+
+                ];
+
+                break;
+
+
+            /* --------------------------------------------------
+               MOST VIEWED
+            -------------------------------------------------- */
+
+            case "popular":
+
+                order = [
+
+                    ["views", "DESC"],
+
+                    ["favourites", "DESC"],
+
+                    ["chatCount", "DESC"],
+
+                    ["createdAt", "DESC"]
+
+                ];
+
+                break;
+
+
+            /* --------------------------------------------------
+               DEFAULT
+            -------------------------------------------------- */
+
+            default:
+
+                order = [
+
+                    ["boosted", "DESC"],
+
+                    ["searchPriority", "DESC"],
+
+                    ["listingScore", "DESC"],
+
+                    ["displayDate", "DESC"],
+
+                    ["createdAt", "DESC"]
+
+                ];
+
+                break;
+
+        }
+
+
+        /* ======================================================
+           DATABASE SEARCH
+        ====================================================== */
+
+        const products =
+            await Product.findAll({
+
+                where,
+
+                order
+
+            });
+
+
+        /* ======================================================
+           RESPONSE
+        ====================================================== */
+
+        return res.status(200).json({
+
+            success: true,
+
+            count: products.length,
+
+            products
+
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "SEARCH PRODUCTS ERROR:",
+            error
+        );
+
+
+        return res.status(500).json({
+
+            success: false,
+
+            message:
+                "Failed to search products.",
+
+            error:
+                process.env.NODE_ENV ===
+                "development"
+                    ? error.message
+                    : undefined
+
+        });
+
+    }
+
+};
 
 
 /* ===========================================================
