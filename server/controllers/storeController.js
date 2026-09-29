@@ -119,9 +119,18 @@ const getStoredImageKey = (image) => {
  * data while migration is taking place.
  */
 
-const resolveStoreImageUrl = (image) => {
-    if (!image) return null;
+/* =====================================================
+   RESOLVE STORE IMAGE URL
+===================================================== */
 
+const resolveStoreImageUrl = (image) => {
+    if (!image) {
+        return null;
+    }
+
+    /*
+     * Handle object values.
+     */
     if (typeof image === "object") {
         image =
             image.url ||
@@ -132,14 +141,21 @@ const resolveStoreImageUrl = (image) => {
             image.filename;
     }
 
-    if (!image) return null;
+    if (!image) {
+        return null;
+    }
 
-    const value = String(image).trim();
+    let value = String(image).trim();
 
-    if (!value) return null;
+    if (!value) {
+        return null;
+    }
 
     /*
      * Already a complete URL.
+     *
+     * Example:
+     * https://cdn.kadmarket.com/...
      */
     if (
         value.startsWith("http://") ||
@@ -149,14 +165,22 @@ const resolveStoreImageUrl = (image) => {
     }
 
     /*
-     * R2 object key.
+     * Normalize Windows paths / leading slashes.
      */
     const normalized = value
         .replace(/\\/g, "/")
         .replace(/^\/+/, "");
 
+    /*
+     * R2 store image.
+     *
+     * Example:
+     * uploads/stores/logo-123.png
+     */
     if (
-        normalized.startsWith("uploads/stores/")
+        normalized.startsWith(
+            "uploads/stores/"
+        )
     ) {
         const r2Url =
             getR2PublicUrl(normalized);
@@ -164,13 +188,24 @@ const resolveStoreImageUrl = (image) => {
         if (r2Url) {
             return r2Url;
         }
+
+        /*
+         * Fallback directly to R2_PUBLIC_URL.
+         */
+        const publicUrl =
+            process.env.R2_PUBLIC_URL
+                ?.trim()
+                .replace(/\/+$/, "");
+
+        if (publicUrl) {
+            return `${publicUrl}/${normalized}`;
+        }
     }
 
     /*
-     * Legacy Railway/local image.
+     * Legacy local Railway image.
      *
-     * This is intentionally retained for OLD
-     * database records only.
+     * Retained for old database records.
      */
     if (
         normalized.startsWith("uploads/")
@@ -178,44 +213,64 @@ const resolveStoreImageUrl = (image) => {
         return `/${normalized}`;
     }
 
+    /*
+     * Final fallback.
+     */
     return `/${normalized}`;
 };
 
 
-/*
- * Format a Store without changing the database
- * representation.
- */
+/* =====================================================
+   FORMAT STORE
+===================================================== */
 
 const formatStore = (store) => {
-    if (!store) return null;
+    if (!store) {
+        return null;
+    }
 
     const plain =
         typeof store.toJSON === "function"
             ? store.toJSON()
             : { ...store };
 
+    const logo =
+        resolveStoreImageUrl(
+            plain.logo
+        );
+
+    const banner =
+        resolveStoreImageUrl(
+            plain.banner
+        );
+
     return {
         ...plain,
 
-        logo: resolveStoreImageUrl(
-            plain.logo
-        ),
+        /*
+         * Keep original fields.
+         */
+        logo: logo || "",
+        banner: banner || "",
 
-        banner: resolveStoreImageUrl(
-            plain.banner
-        )
+        /*
+         * Also provide explicit URL fields
+         * for the React frontend.
+         */
+        logoUrl: logo || "",
+        bannerUrl: banner || ""
     };
 };
 
 
-/*
- * Format products so Store pages use the same
- * image architecture.
- */
+/* =====================================================
+   PARSE PRODUCT IMAGES
+===================================================== */
 
 const parseImages = (images) => {
-    if (!images) return [];
+    if (!images) {
+        return [];
+    }
 
     if (Array.isArray(images)) {
         return images;
@@ -229,6 +284,7 @@ const parseImages = (images) => {
             return Array.isArray(parsed)
                 ? parsed
                 : [images];
+
         } catch {
             return [images];
         }
@@ -238,8 +294,14 @@ const parseImages = (images) => {
 };
 
 
+/* =====================================================
+   FORMAT PRODUCT
+===================================================== */
+
 const formatProduct = (product) => {
-    if (!product) return null;
+    if (!product) {
+        return null;
+    }
 
     const plain =
         typeof product.toJSON === "function"
@@ -259,18 +321,25 @@ const formatProduct = (product) => {
 };
 
 
+/* =====================================================
+   FORMAT PRODUCTS
+===================================================== */
+
 const formatProducts = (products) => {
     return (products || [])
-        .map(formatProduct);
+        .map(formatProduct)
+        .filter(Boolean);
 };
 
 
-/*
- * Determine whether an image belongs to R2.
- */
+/* =====================================================
+   GET R2 KEY FROM STORED IMAGE
+===================================================== */
 
 const getR2KeyFromStoredImage = (image) => {
-    if (!image) return null;
+    if (!image) {
+        return null;
+    }
 
     if (typeof image === "object") {
         image =
@@ -280,15 +349,22 @@ const getR2KeyFromStoredImage = (image) => {
             image.location;
     }
 
-    if (!image) return null;
+    if (!image) {
+        return null;
+    }
 
     let value =
         String(image).trim();
 
-    if (!value) return null;
+    if (!value) {
+        return null;
+    }
 
     /*
      * R2 public URL.
+     *
+     * Example:
+     * https://cdn.kadmarket.com/uploads/stores/logo.png
      */
     if (
         value.startsWith("http://") ||
@@ -311,6 +387,7 @@ const getR2KeyFromStoredImage = (image) => {
                     parsed.pathname
                         .replace(/^\/+/, "")
                 );
+
             } catch {
                 return null;
             }
@@ -319,13 +396,16 @@ const getR2KeyFromStoredImage = (image) => {
         return null;
     }
 
+    /*
+     * Normalize stored key.
+     */
     value = value
         .replace(/\\/g, "/")
         .replace(/^\/+/, "");
 
     /*
-     * Only delete objects that are clearly
-     * inside the Store R2 directory.
+     * Only allow store images to be
+     * deleted from R2.
      */
     if (
         value.startsWith(
