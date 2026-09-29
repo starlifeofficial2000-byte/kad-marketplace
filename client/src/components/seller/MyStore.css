@@ -1,10 +1,7 @@
 /* ============================================================
-   KAD MARKETPLACE — MY STORE
-   Complete responsive stylesheet
-   Brand: KAD Marketplace
-   Primary: #0D8ABC
-   Dark: #075985
-   Accent: #12A8D8
+   KAD MARKETPLACE
+   MY STORE — MATCHING CSS
+   Brand: #0D8ABC
 ============================================================ */
 
 .my-store-page {
@@ -13,7 +10,29 @@
     padding: 30px 20px 60px;
     background: #f5f5f5;
     color: #222;
+    box-sizing: border-box;
 }
+
+.my-store-page *,
+.my-store-page *::before,
+.my-store-page *::after {
+    box-sizing: border-box;
+}
+
+.my-store-page img {
+    max-width: 100%;
+}
+
+.my-store-page button,
+.my-store-page input,
+.my-store-page textarea,
+.my-store-page select {
+    font: inherit;
+}
+
+/* ============================================================
+   CONTAINER
+============================================================ */
 
 .my-store-container {
     width: 100%;
@@ -26,6 +45,7 @@
 ============================================================ */
 
 .my-store-header {
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -33,7 +53,21 @@
     margin-bottom: 24px;
 }
 
-.my-store-title-area h1 {
+.my-store-header > div:first-child {
+    min-width: 0;
+}
+
+.store-eyebrow {
+    display: inline-block;
+    margin-bottom: 7px;
+    color: #0d8abc;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+.my-store-header h1 {
     margin: 0;
     color: #075985;
     font-size: 30px;
@@ -41,337 +75,24 @@
     line-height: 1.2;
 }
 
-.my-store-title-area p {
+.my-store-header p {
     margin: 7px 0 0;
     color: #64748b;
     font-size: 14px;
     line-height: 1.5;
 }
 
-.my-store-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
 /* ============================================================
-   BUTTONS
+   STORE STATUS
 ============================================================ */
 
-.my-store-btn {
-    min-height: 42px;
+.store-status {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: 8px;
-    padding: 0 16px;
-    border-radius: 9px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: 0.2s ease;
-    text-decoration: none;
-    border: 1px solid transparent;
-}
-
-.my-store-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.my-store-btn-primary {
-    background: #0d8abc;
-    border-color: #0d8abc;
-    color: #fff;
-}
-
-.my-store-btn-primary:hover:not(:disabled) {
-    background: #075985;
-    border-color: #075985;
-}
-
-.my-store-btn-secondary {
-    background: #fff;
-    border-color: #cfe4ec;
-    color: #075985;
-}
-
-.my-store-btn-secondary:hover:not(:disabled) {
-    background: #eaf8fc;
-    border-color: #0d8abc;
-}
-
-.my-store-btn-danger {
-    background: #fff;
-    border-color: #fecaca;
-    color: #dc2626;
-}
-
-.my-store-btn-danger:hover:not(:disabled) {
-    background: #fef2f2;
-    border-color: #ef4444;
-}
-
-/* ============================================================
-   MAIN STORE CARD
-============================================================ */
-
-.my-store-card {
-    width: 100%;
-    overflow: hidden;
-    background: #fff;
-    border: 1px solid #dceff6;
-    border-radius: 16px;
-    box-shadow: 0 8px 30px rgba(13, 138, 188, 0.08);
-}
-
-/* ============================================================
-   STORE BANNER
-============================================================ */
-
-.my-store-banner {
-    position: relative;
-    width: 100%;
-    height: 280px;
-    overflow: hidden;
-    background:
-        linear-gradient(
-            135deg,
-            #075985,
-            #0d8abc,
-            #12a8d8
-        );
-}
-
-.my-store-banner img {
-    width: 100%;
-    height: 100%;
-    display: block;
-    object-fit: cover;
-}
-
-.my-store-banner::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: linear-gradient(
-        180deg,
-        rgba(0, 0, 0, 0.05),
-        rgba(0, 0, 0, 0.35)
-    );
-}
-
-.my-store-banner-empty {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 10px;
-    color: #fff;
-}
-
-.my-store-banner-empty svg {
-    font-size: 42px;
-}
-
-.my-store-banner-empty span {
-    font-size: 14px;
-    font-weight: 700;
-}
-
-/* ============================================================
-   BANNER UPLOAD BUTTON
-============================================================ */
-
-.my-store-banner-upload {
-    position: absolute;
-    z-index: 3;
-    right: 18px;
-    bottom: 18px;
-
-    min-height: 40px;
-    padding: 0 14px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-
-    border: 1px solid rgba(255, 255, 255, 0.7);
-    border-radius: 9px;
-
-    background: rgba(0, 0, 0, 0.55);
-    color: #fff;
-
-    font-size: 12px;
-    font-weight: 700;
-
-    cursor: pointer;
-    backdrop-filter: blur(8px);
-    transition: 0.2s ease;
-}
-
-.my-store-banner-upload:hover {
-    background: rgba(7, 89, 133, 0.9);
-}
-
-.my-store-banner-upload input {
-    display: none;
-}
-
-/* ============================================================
-   STORE PROFILE AREA
-============================================================ */
-
-.my-store-profile {
-    position: relative;
-    display: flex;
-    align-items: flex-end;
-    gap: 20px;
-
-    padding: 0 28px 24px;
-    min-height: 145px;
-}
-
-/* ============================================================
-   STORE LOGO
-============================================================ */
-
-.my-store-logo-wrapper {
-    position: relative;
-    width: 130px;
-    height: 130px;
     flex-shrink: 0;
-    margin-top: -65px;
-    z-index: 5;
-}
 
-.my-store-logo {
-    width: 130px;
-    height: 130px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    overflow: hidden;
-
-    background: #fff;
-    border: 5px solid #fff;
-    border-radius: 50%;
-
-    box-shadow:
-        0 8px 25px rgba(15, 23, 42, 0.15);
-}
-
-.my-store-logo img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.my-store-logo-placeholder {
-    width: 100%;
-    height: 100%;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    background: #eaf8fc;
-    color: #0d8abc;
-
-    font-size: 42px;
-    font-weight: 800;
-}
-
-/* ============================================================
-   LOGO UPLOAD
-============================================================ */
-
-.my-store-logo-upload {
-    position: absolute;
-    right: 2px;
-    bottom: 4px;
-
-    width: 38px;
-    height: 38px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border: 3px solid #fff;
-    border-radius: 50%;
-
-    background: #0d8abc;
-    color: #fff;
-
-    cursor: pointer;
-
-    box-shadow: 0 4px 12px rgba(13, 138, 188, 0.25);
-    transition: 0.2s ease;
-}
-
-.my-store-logo-upload:hover {
-    background: #075985;
-    transform: scale(1.05);
-}
-
-.my-store-logo-upload input {
-    display: none;
-}
-
-/* ============================================================
-   STORE INFORMATION
-============================================================ */
-
-.my-store-info {
-    min-width: 0;
-    flex: 1;
-    padding-bottom: 4px;
-}
-
-.my-store-name {
-    margin: 0;
-    color: #075985;
-    font-size: 25px;
-    font-weight: 800;
-    line-height: 1.25;
-    word-break: break-word;
-}
-
-.my-store-slug {
-    margin-top: 5px;
-    color: #64748b;
-    font-size: 12px;
-}
-
-.my-store-description {
-    max-width: 700px;
-    margin: 9px 0 0;
-    color: #475569;
-    font-size: 13px;
-    line-height: 1.6;
-}
-
-.my-store-meta {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 11px;
-}
-
-.my-store-meta-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-
-    padding: 5px 9px;
+    padding: 9px 13px;
 
     border: 1px solid #c7eaf5;
     border-radius: 999px;
@@ -379,43 +100,124 @@
     background: #eaf8fc;
     color: #075985;
 
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
 }
 
-.my-store-meta-item svg {
-    color: #0d8abc;
+.status-dot {
+    width: 9px;
+    height: 9px;
+    display: inline-block;
+    flex-shrink: 0;
+
+    border-radius: 50%;
+    background: #94a3b8;
+}
+
+.status-dot.active {
+    background: #16a34a;
+    box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.12);
 }
 
 /* ============================================================
-   STORE ACTIONS
+   ALERTS
 ============================================================ */
 
-.my-store-profile-actions {
+.store-alert {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+
+    margin-bottom: 18px;
+    padding: 14px 16px;
+
+    border-radius: 10px;
+
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.store-alert > div {
+    flex: 1;
+    min-width: 0;
+}
+
+.store-alert strong {
+    display: block;
+    margin-bottom: 3px;
+}
+
+.store-alert p {
+    margin: 0;
+}
+
+.store-alert button {
+    width: 28px;
+    height: 28px;
+
     display: flex;
     align-items: center;
-    gap: 9px;
+    justify-content: center;
+
     flex-shrink: 0;
-    padding-bottom: 4px;
+
+    border: none;
+    border-radius: 50%;
+
+    background: transparent;
+    color: inherit;
+
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.store-alert button:hover {
+    background: rgba(0, 0, 0, 0.07);
+}
+
+.store-alert.error {
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.store-alert.success {
+    border: 1px solid #bbf7d0;
+    background: #f0fdf4;
+    color: #166534;
 }
 
 /* ============================================================
-   EDIT STORE SECTION
+   MAIN CONTENT
 ============================================================ */
 
-.my-store-edit-section {
-    margin-top: 20px;
+.my-store-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
-.my-store-section-card {
+/* ============================================================
+   STORE CARDS
+============================================================ */
+
+.store-card {
+    width: 100%;
     padding: 24px;
-    background: #fff;
+
+    background: #ffffff;
+
     border: 1px solid #dceff6;
-    border-radius: 14px;
-    box-shadow: 0 6px 24px rgba(13, 138, 188, 0.06);
+    border-radius: 16px;
+
+    box-shadow:
+        0 8px 30px rgba(13, 138, 188, 0.07);
 }
 
-.my-store-section-header {
+.store-card-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -427,14 +229,14 @@
     border-bottom: 1px solid #e2eef2;
 }
 
-.my-store-section-header h2 {
+.store-card-header h2 {
     margin: 0;
     color: #075985;
-    font-size: 18px;
+    font-size: 19px;
     font-weight: 800;
 }
 
-.my-store-section-header p {
+.store-card-header p {
     margin: 5px 0 0;
     color: #64748b;
     font-size: 12px;
@@ -442,90 +244,324 @@
 }
 
 /* ============================================================
-   FORM
+   BRANDING
 ============================================================ */
 
-.my-store-form {
+.branding-card {
+    overflow: hidden;
+}
+
+.store-banner-section {
     width: 100%;
 }
 
-.my-store-form-grid {
+.store-banner-preview {
+    position: relative;
+
+    width: 100%;
+    height: 280px;
+
+    overflow: hidden;
+
+    border-radius: 13px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #075985,
+            #0d8abc,
+            #12a8d8
+        );
+
+    cursor: pointer;
+}
+
+.store-banner-preview::after {
+    content: "";
+
+    position: absolute;
+    inset: 0;
+
+    pointer-events: none;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(0, 0, 0, 0.02),
+            rgba(0, 0, 0, 0.35)
+        );
+}
+
+.store-banner-preview img {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+}
+
+.store-banner-placeholder {
+    position: absolute;
+    inset: 0;
+
+    z-index: 1;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+
+    gap: 10px;
+
+    color: #ffffff;
+    text-align: center;
+}
+
+.store-banner-placeholder-icon {
+    font-size: 42px;
+}
+
+.store-banner-placeholder strong {
+    font-size: 14px;
+}
+
+.store-banner-overlay {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+
+    z-index: 3;
+
+    transform: translate(-50%, -50%);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 150px;
+    min-height: 42px;
+
+    padding: 0 16px;
+
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-radius: 9px;
+
+    background: rgba(0, 0, 0, 0.55);
+    color: #ffffff;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    backdrop-filter: blur(8px);
+
+    transition: 0.2s ease;
+}
+
+.store-banner-preview:hover .store-banner-overlay {
+    background: rgba(7, 89, 133, 0.9);
+}
+
+.store-banner-preview input {
+    display: none;
+}
+
+/* ============================================================
+   LOGO
+============================================================ */
+
+.store-logo-section {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+
+    margin-top: 20px;
+}
+
+.store-logo-wrapper {
+    position: relative;
+
+    width: 130px;
+    height: 130px;
+
+    flex-shrink: 0;
+}
+
+.store-logo-preview {
+    width: 130px;
+    height: 130px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    border: 5px solid #ffffff;
+    border-radius: 50%;
+
+    background: #eaf8fc;
+
+    box-shadow:
+        0 8px 25px rgba(15, 23, 42, 0.15);
+}
+
+.store-logo-preview img {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+}
+
+.store-logo-placeholder {
+    color: #0d8abc;
+    font-size: 42px;
+    font-weight: 800;
+}
+
+.store-logo-upload {
+    position: absolute;
+
+    right: 0;
+    bottom: 3px;
+
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 3px solid #ffffff;
+    border-radius: 50%;
+
+    background: #0d8abc;
+    color: #ffffff;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 4px 12px rgba(13, 138, 188, 0.25);
+
+    transition: 0.2s ease;
+}
+
+.store-logo-upload:hover {
+    background: #075985;
+    transform: scale(1.05);
+}
+
+.store-logo-upload input {
+    display: none;
+}
+
+/* ============================================================
+   FORM
+============================================================ */
+
+.store-form {
+    width: 100%;
+}
+
+.store-form-grid {
+    width: 100%;
+
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
     gap: 18px;
 }
 
-.my-store-form-group {
+.form-group {
     min-width: 0;
+
     display: flex;
     flex-direction: column;
+
     gap: 7px;
 }
 
-.my-store-form-group.full-width {
+.form-group.full-width {
     grid-column: 1 / -1;
 }
 
-.my-store-form-group label {
+.form-group label {
     color: #075985;
     font-size: 12px;
     font-weight: 700;
 }
 
-.my-store-form-group input,
-.my-store-form-group select,
-.my-store-form-group textarea {
+.form-group input,
+.form-group textarea,
+.form-group select {
     width: 100%;
-    box-sizing: border-box;
+    max-width: 100%;
 
     border: 1px solid #cfe4ec;
     border-radius: 9px;
 
-    background: #fff;
+    background: #ffffff;
     color: #0f172a;
 
     outline: none;
+
     transition: 0.2s ease;
 }
 
-.my-store-form-group input,
-.my-store-form-group select {
+.form-group input,
+.form-group select {
     height: 44px;
     padding: 0 12px;
 }
 
-.my-store-form-group textarea {
+.form-group textarea {
     min-height: 120px;
+
     padding: 12px;
+
     resize: vertical;
+
     line-height: 1.5;
 }
 
-.my-store-form-group input:focus,
-.my-store-form-group select:focus,
-.my-store-form-group textarea:focus {
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
     border-color: #0d8abc;
-    box-shadow: 0 0 0 3px rgba(13, 138, 188, 0.1);
+
+    box-shadow:
+        0 0 0 3px rgba(13, 138, 188, 0.1);
 }
 
-.my-store-form-group input::placeholder,
-.my-store-form-group textarea::placeholder {
+.form-group input::placeholder,
+.form-group textarea::placeholder {
     color: #94a3b8;
 }
 
-.my-store-form-help {
-    color: #94a3b8;
-    font-size: 11px;
+/* ============================================================
+   SOCIAL MEDIA
+============================================================ */
+
+.social-section {
+    width: 100%;
+}
+
+.social-section .store-card-header {
+    margin-bottom: 20px;
 }
 
 /* ============================================================
    FORM ACTIONS
 ============================================================ */
 
-.my-store-form-actions {
+.store-form-actions {
     display: flex;
-    justify-content: flex-end;
     align-items: center;
+    justify-content: flex-end;
     gap: 10px;
 
     margin-top: 22px;
@@ -535,214 +571,111 @@
 }
 
 /* ============================================================
-   UPLOAD AREA
+   BUTTONS
 ============================================================ */
 
-.my-store-upload-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
-}
+.store-btn {
+    min-height: 42px;
 
-.my-store-upload-box {
-    position: relative;
-    min-height: 180px;
-
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
 
-    padding: 20px;
+    gap: 8px;
 
-    box-sizing: border-box;
+    padding: 0 16px;
 
-    border: 2px dashed #b9dde9;
-    border-radius: 12px;
+    border-radius: 9px;
 
-    background: #f4fafc;
+    font-size: 13px;
+    font-weight: 700;
 
-    text-align: center;
+    border: 1px solid transparent;
+
     cursor: pointer;
 
     transition: 0.2s ease;
 }
 
-.my-store-upload-box:hover {
+.store-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.store-btn-primary {
+    background: #0d8abc;
     border-color: #0d8abc;
-    background: #eaf8fc;
+    color: #ffffff;
 }
 
-.my-store-upload-box svg {
-    margin-bottom: 10px;
-    color: #0d8abc;
-    font-size: 32px;
+.store-btn-primary:hover:not(:disabled) {
+    background: #075985;
+    border-color: #075985;
 }
 
-.my-store-upload-box strong {
+.store-btn-secondary {
+    background: #ffffff;
+    border-color: #cfe4ec;
     color: #075985;
-    font-size: 13px;
 }
 
-.my-store-upload-box span {
-    margin-top: 5px;
-    color: #64748b;
-    font-size: 11px;
-}
-
-.my-store-upload-box input {
-    display: none;
+.store-btn-secondary:hover:not(:disabled) {
+    background: #eaf8fc;
+    border-color: #0d8abc;
 }
 
 /* ============================================================
-   IMAGE PREVIEW
+   STORE INFORMATION
 ============================================================ */
 
-.my-store-image-preview {
-    position: relative;
+.store-info-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 18px;
+}
+
+/* ============================================================
+   UPLOAD STATUS
+============================================================ */
+
+.upload-status {
+    margin-top: 10px;
+
+    color: #64748b;
+
+    font-size: 11px;
+}
+
+.upload-progress {
     width: 100%;
-    height: 180px;
+    height: 6px;
+
     overflow: hidden;
-    border-radius: 10px;
-    background: #eaf2f5;
+
+    margin-top: 7px;
+
+    border-radius: 999px;
+
+    background: #dceff6;
 }
 
-.my-store-image-preview img {
-    width: 100%;
+.upload-progress-bar {
     height: 100%;
-    object-fit: cover;
-}
 
-.my-store-image-preview-remove {
-    position: absolute;
-    top: 8px;
-    right: 8px;
+    border-radius: inherit;
 
-    width: 32px;
-    height: 32px;
+    background:
+        linear-gradient(
+            90deg,
+            #075985,
+            #0d8abc,
+            #12a8d8
+        );
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border: none;
-    border-radius: 50%;
-
-    background: rgba(0, 0, 0, 0.65);
-    color: #fff;
-
-    cursor: pointer;
-}
-
-.my-store-image-preview-remove:hover {
-    background: #dc2626;
-}
-
-/* ============================================================
-   STORE STATS
-============================================================ */
-
-.my-store-stats {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px;
-    margin-top: 20px;
-}
-
-.my-store-stat {
-    min-width: 0;
-    padding: 18px;
-
-    border: 1px solid #dceff6;
-    border-radius: 12px;
-
-    background: #fff;
-    box-shadow: 0 5px 20px rgba(13, 138, 188, 0.05);
-}
-
-.my-store-stat-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-}
-
-.my-store-stat-icon {
-    width: 38px;
-    height: 38px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 9px;
-
-    background: #eaf8fc;
-    color: #0d8abc;
-}
-
-.my-store-stat-label {
-    margin-top: 12px;
-    color: #64748b;
-    font-size: 11px;
-    font-weight: 600;
-}
-
-.my-store-stat-value {
-    margin-top: 3px;
-    color: #075985;
-    font-size: 23px;
-    font-weight: 800;
-}
-
-/* ============================================================
-   PRODUCTS
-============================================================ */
-
-.my-store-products-section {
-    margin-top: 20px;
-}
-
-.my-store-products-grid {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 15px;
-}
-
-/* ============================================================
-   ALERTS
-============================================================ */
-
-.my-store-alert {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-
-    margin-bottom: 18px;
-    padding: 13px 15px;
-
-    border-radius: 9px;
-
-    font-size: 12px;
-    line-height: 1.5;
-}
-
-.my-store-alert-success {
-    border: 1px solid #bbf7d0;
-    background: #f0fdf4;
-    color: #166534;
-}
-
-.my-store-alert-error {
-    border: 1px solid #fecaca;
-    background: #fef2f2;
-    color: #991b1b;
-}
-
-.my-store-alert-info {
-    border: 1px solid #bae6fd;
-    background: #f0f9ff;
-    color: #075985;
+    transition: width 0.2s ease;
 }
 
 /* ============================================================
@@ -750,43 +683,59 @@
 ============================================================ */
 
 .my-store-loading {
-    min-height: 400px;
+    min-height: 500px;
 
     display: flex;
     align-items: center;
     justify-content: center;
     flex-direction: column;
 
-    gap: 15px;
+    gap: 12px;
+
+    text-align: center;
+}
+
+.my-store-loading h2 {
+    margin: 0;
+
+    color: #075985;
+
+    font-size: 20px;
+}
+
+.my-store-loading p {
+    margin: 0;
 
     color: #64748b;
+
     font-size: 13px;
 }
 
-.my-store-spinner {
-    width: 38px;
-    height: 38px;
+.store-spinner {
+    width: 42px;
+    height: 42px;
 
     border: 4px solid #d8eef5;
     border-top-color: #0d8abc;
 
     border-radius: 50%;
 
-    animation: myStoreSpin 0.8s linear infinite;
+    animation:
+        storeSpin 0.8s linear infinite;
 }
 
-@keyframes myStoreSpin {
+@keyframes storeSpin {
     to {
         transform: rotate(360deg);
     }
 }
 
 /* ============================================================
-   EMPTY STORE
+   EMPTY
 ============================================================ */
 
-.my-store-empty {
-    min-height: 300px;
+.store-empty {
+    min-height: 250px;
 
     display: flex;
     align-items: center;
@@ -803,94 +752,31 @@
     text-align: center;
 }
 
-.my-store-empty-icon {
-    width: 60px;
-    height: 60px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    margin-bottom: 13px;
-
-    border-radius: 50%;
-
-    background: #eaf8fc;
-    color: #0d8abc;
-
-    font-size: 27px;
-}
-
-.my-store-empty h2 {
+.store-empty h2 {
     margin: 0;
+
     color: #075985;
+
     font-size: 19px;
 }
 
-.my-store-empty p {
-    max-width: 450px;
-    margin: 7px 0 18px;
+.store-empty p {
+    max-width: 500px;
+
+    margin: 8px 0 18px;
+
     color: #64748b;
+
     font-size: 12px;
+
     line-height: 1.6;
 }
 
 /* ============================================================
-   PROGRESS
+   RESPONSIVE
 ============================================================ */
 
-.my-store-upload-progress {
-    width: 100%;
-    margin-top: 12px;
-}
-
-.my-store-upload-progress-track {
-    width: 100%;
-    height: 7px;
-    overflow: hidden;
-    border-radius: 999px;
-    background: #dceff6;
-}
-
-.my-store-upload-progress-bar {
-    height: 100%;
-    border-radius: inherit;
-    background: linear-gradient(
-        90deg,
-        #075985,
-        #0d8abc,
-        #12a8d8
-    );
-    transition: width 0.2s ease;
-}
-
-.my-store-upload-progress-text {
-    margin-top: 5px;
-    color: #64748b;
-    font-size: 10px;
-    text-align: right;
-}
-
-/* ============================================================
-   TABLET
-============================================================ */
-
-@media (max-width: 1100px) {
-
-    .my-store-products-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    .my-store-stats {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-/* ============================================================
-   TABLET
-============================================================ */
-
-@media (max-width: 850px) {
+@media (max-width: 900px) {
 
     .my-store-page {
         padding: 22px 16px 45px;
@@ -901,52 +787,21 @@
         flex-direction: column;
     }
 
-    .my-store-header-actions {
-        width: 100%;
+    .store-status {
+        align-self: flex-start;
     }
 
-    .my-store-header-actions .my-store-btn {
-        flex: 1;
-    }
-
-    .my-store-banner {
-        height: 230px;
-    }
-
-    .my-store-profile {
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 14px;
-        padding: 0 20px 20px;
-    }
-
-    .my-store-logo-wrapper {
-        margin-top: -55px;
-    }
-
-    .my-store-profile-actions {
-        width: 100%;
-        padding-bottom: 0;
-    }
-
-    .my-store-profile-actions .my-store-btn {
-        flex: 1;
-    }
-
-    .my-store-form-grid {
+    .store-form-grid,
+    .store-info-grid {
         grid-template-columns: 1fr;
     }
 
-    .my-store-form-group.full-width {
+    .form-group.full-width {
         grid-column: auto;
     }
 
-    .my-store-upload-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .my-store-products-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+    .store-banner-preview {
+        height: 230px;
     }
 }
 
@@ -961,104 +816,88 @@
     }
 
     .my-store-header {
-        margin-bottom: 15px;
+        margin-bottom: 16px;
     }
 
-    .my-store-title-area h1 {
-        font-size: 23px;
+    .my-store-header h1 {
+        font-size: 24px;
     }
 
-    .my-store-title-area p {
+    .my-store-header p {
         font-size: 12px;
     }
 
-    .my-store-card {
+    .store-card {
+        padding: 16px;
+
         border-radius: 12px;
     }
 
-    .my-store-banner {
-        height: 185px;
+    .store-card-header {
+        margin-bottom: 16px;
     }
 
-    .my-store-banner-upload {
-        right: 10px;
-        bottom: 10px;
-        min-height: 36px;
-        padding: 0 11px;
+    .store-card-header h2 {
+        font-size: 17px;
+    }
+
+    .store-card-header p {
         font-size: 11px;
     }
 
-    .my-store-profile {
-        padding: 0 14px 18px;
+    .store-banner-preview {
+        height: 185px;
+
+        border-radius: 10px;
     }
 
-    .my-store-logo-wrapper {
-        width: 105px;
-        height: 105px;
-        margin-top: -52px;
+    .store-banner-overlay {
+        min-width: 130px;
+        min-height: 38px;
+
+        padding: 0 12px;
+
+        font-size: 11px;
     }
 
-    .my-store-logo {
-        width: 105px;
-        height: 105px;
-        border-width: 4px;
-    }
-
-    .my-store-logo-placeholder {
-        font-size: 32px;
-    }
-
-    .my-store-logo-upload {
-        width: 33px;
-        height: 33px;
-        border-width: 2px;
-    }
-
-    .my-store-name {
-        font-size: 21px;
-    }
-
-    .my-store-description {
-        font-size: 12px;
-    }
-
-    .my-store-section-card {
-        padding: 16px;
-        border-radius: 11px;
-    }
-
-    .my-store-section-header {
-        margin-bottom: 15px;
-    }
-
-    .my-store-section-header h2 {
-        font-size: 16px;
-    }
-
-    .my-store-stats {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 9px;
-    }
-
-    .my-store-stat {
-        padding: 13px;
-    }
-
-    .my-store-stat-value {
-        font-size: 20px;
-    }
-
-    .my-store-products-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 9px;
-    }
-
-    .my-store-form-actions {
+    .store-logo-section {
+        align-items: flex-start;
         flex-direction: column;
     }
 
-    .my-store-form-actions .my-store-btn {
+    .store-logo-wrapper {
+        width: 105px;
+        height: 105px;
+    }
+
+    .store-logo-preview {
+        width: 105px;
+        height: 105px;
+
+        border-width: 4px;
+    }
+
+    .store-logo-placeholder {
+        font-size: 32px;
+    }
+
+    .store-logo-upload {
+        width: 33px;
+        height: 33px;
+
+        border-width: 2px;
+    }
+
+    .store-form-actions {
+        flex-direction: column;
+    }
+
+    .store-form-actions .store-btn {
         width: 100%;
+    }
+
+    .store-alert {
+        font-size: 12px;
     }
 }
 
@@ -1073,53 +912,30 @@
         padding-right: 8px;
     }
 
-    .my-store-banner {
+    .my-store-header h1 {
+        font-size: 21px;
+    }
+
+    .store-banner-preview {
         height: 165px;
     }
 
-    .my-store-profile {
-        padding-left: 11px;
-        padding-right: 11px;
-    }
-
-    .my-store-logo-wrapper {
-        width: 90px;
-        height: 90px;
-        margin-top: -45px;
-    }
-
-    .my-store-logo {
+    .store-logo-wrapper {
         width: 90px;
         height: 90px;
     }
 
-    .my-store-name {
-        font-size: 19px;
+    .store-logo-preview {
+        width: 90px;
+        height: 90px;
     }
 
-    .my-store-meta {
-        gap: 5px;
+    .store-form-grid {
+        gap: 13px;
     }
 
-    .my-store-meta-item {
-        font-size: 10px;
-        padding: 4px 7px;
-    }
-
-    .my-store-products-grid {
-        gap: 7px;
-    }
-
-    .my-store-stat {
-        padding: 11px;
-    }
-
-    .my-store-stat-label {
-        font-size: 10px;
-    }
-
-    .my-store-stat-value {
-        font-size: 18px;
+    .store-card {
+        padding: 13px;
     }
 }
 
@@ -1127,12 +943,12 @@
    ACCESSIBILITY
 ============================================================ */
 
-.my-store-btn:focus-visible,
-.my-store-banner-upload:focus-visible,
-.my-store-logo-upload:focus-visible,
-.my-store-form-group input:focus-visible,
-.my-store-form-group select:focus-visible,
-.my-store-form-group textarea:focus-visible {
+.my-store-page button:focus-visible,
+.my-store-page input:focus-visible,
+.my-store-page textarea:focus-visible,
+.my-store-page select:focus-visible,
+.store-banner-preview:focus-visible,
+.store-logo-upload:focus-visible {
     outline: 3px solid rgba(13, 138, 188, 0.25);
     outline-offset: 2px;
 }
@@ -1143,16 +959,14 @@
 
 @media (prefers-reduced-motion: reduce) {
 
-    .my-store-spinner {
+    .store-spinner {
         animation: none;
     }
 
-    .my-store-btn,
-    .my-store-logo-upload,
-    .my-store-banner-upload,
-    .my-store-form-group input,
-    .my-store-form-group select,
-    .my-store-form-group textarea {
-        transition: none;
+    .my-store-page *,
+    .my-store-page *::before,
+    .my-store-page *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
     }
 }
