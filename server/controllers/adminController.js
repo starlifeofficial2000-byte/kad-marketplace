@@ -360,6 +360,102 @@ exports.dashboard = async (req, res) => {
 };
 
 
+
+/* =========================================================
+   ADMIN REVENUE
+   GET /api/admin/revenue
+========================================================= */
+
+exports.getRevenue = async (req, res) => {
+
+    try {
+
+        const [
+            promotionRevenue,
+            subscriptionRevenue
+        ] = await Promise.all([
+
+            /* PROMOTION REVENUE */
+
+            PromotionPayment.sum(
+                "amount",
+                {
+                    where: {
+                        status: "Successful"
+                    }
+                }
+            ),
+
+            /* SUBSCRIPTION REVENUE */
+
+            Subscription.sum(
+                "amount"
+            )
+
+        ]);
+
+
+        const promotions =
+            Number(
+                promotionRevenue || 0
+            );
+
+
+        const subscriptions =
+            Number(
+                subscriptionRevenue || 0
+            );
+
+
+        const totalRevenue =
+            promotions +
+            subscriptions;
+
+
+        return res.status(200).json({
+
+            success: true,
+
+            data: {
+
+                totalRevenue,
+
+                promotionRevenue:
+                    promotions,
+
+                subscriptionRevenue:
+                    subscriptions
+
+            }
+
+        });
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "GET ADMIN REVENUE ERROR:",
+            error
+        );
+
+
+        return res.status(500).json({
+
+            success: false,
+
+            message:
+                "Failed to load revenue.",
+
+            error:
+                error.message
+
+        });
+
+    }
+
+};
+
 /* =========================================================
    REVENUE CHART
 

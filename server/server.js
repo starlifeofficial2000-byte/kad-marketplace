@@ -1452,9 +1452,7 @@ if (NODE_ENV === "production") {
        above and are explicitly excluded.
     */
 
-    app.get(
-        "*",
-        (req, res, next) => {
+    app.get("/{*splat}", (req, res) => {
 
             if (
                 req.path.startsWith("/api") ||
