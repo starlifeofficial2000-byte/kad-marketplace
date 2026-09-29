@@ -1,119 +1,216 @@
 import "./CategorySection.css";
 
 const categories = [
-
-
-
-       {
-        name:"All",
-        icon:"🏪"
+    {
+        name: "All",
+        icon: "🏪",
+        description: "Browse everything"
     },
     {
-        name:"Mobile Phones",
-        icon:"📱"
+        name: "Mobile Phones",
+        icon: "📱",
+        description: "Phones & smartphones"
     },
-
     {
-        name:"Laptops",
-        icon:"💻"
+        name: "Laptops",
+        icon: "💻",
+        description: "Laptops & computers"
     },
-
     {
-        name:"TV",
-        icon:"📺"
+        name: "TV",
+        icon: "📺",
+        description: "TVs & entertainment"
     },
-
     {
-        name:"Cars",
-        icon:"🚗"
+        name: "Cars",
+        icon: "🚗",
+        description: "Cars & vehicles"
     },
-
     {
-        name:"Motorcycles",
-        icon:"🏍"
+        name: "Motorcycles",
+        icon: "🏍️",
+        description: "Motorcycles & bikes"
     },
-
     {
-        name:"Clothes",
-        icon:"👕"
+        name: "Real Estate",
+        icon: "🏠",
+        description: "Houses, land & property"
     },
-
     {
-        name:"Accessories",
-        icon:"👜"
+        name: "Electronics",
+        icon: "🔌",
+        description: "Electronic devices"
     },
-
     {
-        name:"Food Stuff",
-        icon:"🍎"
+        name: "Furniture",
+        icon: "🛋️",
+        description: "Furniture & home items"
     },
-
     {
-        name:"Employment Opportunities",
-        icon:"💼"
+        name: "Clothes",
+        icon: "👕",
+        description: "Fashion & clothing"
+    },
+    {
+        name: "Accessories",
+        icon: "👜",
+        description: "Fashion & personal items"
+    },
+    {
+        name: "Food Stuff",
+        icon: "🍎",
+        description: "Food & groceries"
+    },
+    {
+        name: "Agriculture",
+        icon: "🌾",
+        description: "Farming & agricultural items"
+    },
+    {
+        name: "Construction",
+        icon: "🏗️",
+        description: "Building materials & equipment"
+    },
+    {
+        name: "Services",
+        icon: "🛠️",
+        description: "Professional & local services"
+    },
+    {
+        name: "Employment Opportunities",
+        icon: "💼",
+        description: "Jobs & opportunities"
     }
-
 ];
 
 function CategorySection({ setCategory, products = [] }) {
 
-    return(
+    const getProductCount = (categoryName) => {
 
+        if (categoryName === "All") {
+            return products.length;
+        }
+
+        return products.filter(
+            product =>
+                product.category?.toLowerCase() ===
+                categoryName.toLowerCase()
+        ).length;
+    };
+
+    return (
         <section className="category-section">
 
-            <h2>
+            <div className="category-section-header">
 
-                Browse Categories
+                <div>
 
-            </h2>
+                    <span className="category-eyebrow">
+                        EXPLORE MARKETPLACE
+                    </span>
+
+                    <h2>
+                        Browse Categories
+                    </h2>
+
+                    <p>
+                        Find products and services from trusted sellers
+                        across Ghana.
+                    </p>
+
+                </div>
+
+                <button
+                    type="button"
+                    className="category-view-all"
+                    onClick={() => setCategory("All")}
+                >
+                    View All
+                    <span>→</span>
+                </button>
+
+            </div>
+
 
             <div className="category-grid">
 
-                {
+                {categories.map((category) => {
 
-                    categories.map(category=>(
-<div
-    key={category.name}
-    className="category-card"
-    onClick={() => setCategory(category.name)}
->
+                    const productCount =
+                        getProductCount(category.name);
 
-    <span>{category.icon}</span>
+                    const isAll =
+                        category.name === "All";
 
-    <h3>{category.name}</h3>
+                    return (
 
-    <p>
+                        <button
+                            type="button"
+                            key={category.name}
+                            className={`category-card ${
+                                isAll
+                                    ? "category-card-all"
+                                    : ""
+                            }`}
+                            onClick={() =>
+                                setCategory(category.name)
+                            }
+                        >
 
-        {
+                            <div className="category-card-top">
 
-            category.name === "All"
+                                <div className="category-icon">
 
-            ? products.length
+                                    <span>
+                                        {category.icon}
+                                    </span>
 
-            : products.filter(
+                                </div>
 
-                p => p.category === category.name
+                                <span className="category-arrow">
+                                    →
+                                </span>
 
-            ).length
+                            </div>
 
-        }
 
-        {" "}Products
+                            <div className="category-card-content">
 
-    </p>
+                                <h3>
+                                    {category.name}
+                                </h3>
 
-</div>
+                                <p>
+                                    {category.description}
+                                </p>
 
-                    ))
+                            </div>
 
-                }
+
+                            <div className="category-card-footer">
+
+                                <span>
+                                    {productCount}
+                                </span>
+
+                                <span>
+                                    {productCount === 1
+                                        ? "Product"
+                                        : "Products"}
+                                </span>
+
+                            </div>
+
+                        </button>
+
+                    );
+
+                })}
 
             </div>
 
         </section>
-
     );
-
 }
 
 export default CategorySection;

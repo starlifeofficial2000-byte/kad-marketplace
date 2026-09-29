@@ -1,62 +1,442 @@
-.category-section{
+/* =========================================================
+   KAD MARKETPLACE
+   HOMEPAGE CATEGORY SECTION
+========================================================= */
 
-    padding:60px 8%;
+.category-section {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 65px 24px;
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.category-section-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 30px;
+    margin-bottom: 32px;
+}
+
+.category-eyebrow {
+    display: block;
+    margin-bottom: 9px;
+    color: #0d8abc;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 1.8px;
+}
+
+.category-section-header h2 {
+    margin: 0;
+    color: #172033;
+    font-size: clamp(28px, 4vw, 38px);
+    line-height: 1.15;
+    font-weight: 900;
+    letter-spacing: -1px;
+}
+
+.category-section-header p {
+    max-width: 600px;
+    margin: 11px 0 0;
+    color: #697586;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   VIEW ALL
+========================================================= */
+
+.category-view-all {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-shrink: 0;
+    min-height: 44px;
+    padding: 0 17px;
+    border: 1px solid #dbe3ea;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #172033;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.category-view-all span {
+    color: #0d8abc;
+    font-size: 17px;
+    transition: transform 0.2s ease;
+}
+
+.category-view-all:hover {
+    border-color: #0d8abc;
+    background: #0d8abc;
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+.category-view-all:hover span {
+    color: #ffffff;
+    transform: translateX(3px);
+}
+
+
+/* =========================================================
+   GRID
+========================================================= */
+
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+}
+
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.category-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 205px;
+    padding: 21px;
+    box-sizing: border-box;
+    overflow: hidden;
+    border: 1px solid #e3e8ee;
+    border-radius: 17px;
+    outline: none;
+    background: #ffffff;
+    text-align: left;
+    cursor: pointer;
+    box-shadow:
+        0 4px 14px rgba(15, 23, 42, 0.04);
+
+    transition:
+        transform 0.25s ease,
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        background 0.25s ease;
+}
+
+.category-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 3px;
+    background: #0d8abc;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.25s ease;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    border-color: #cbd8e2;
+    box-shadow:
+        0 16px 35px rgba(15, 23, 42, 0.09);
+}
+
+.category-card:hover::before {
+    transform: scaleX(1);
+}
+
+.category-card:focus-visible {
+    box-shadow:
+        0 0 0 4px rgba(13, 138, 188, 0.16);
+}
+
+
+/* =========================================================
+   ALL CARD
+========================================================= */
+
+.category-card-all {
+    border-color: rgba(13, 138, 188, 0.25);
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff 0%,
+            #f0f9fc 100%
+        );
+}
+
+
+/* =========================================================
+   CARD TOP
+========================================================= */
+
+.category-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+
+/* =========================================================
+   ICON
+========================================================= */
+
+.category-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 55px;
+    height: 55px;
+    flex-shrink: 0;
+    border-radius: 15px;
+    background: #edf7fb;
+    color: #0d8abc;
+    font-size: 25px;
+
+    transition:
+        transform 0.25s ease,
+        background 0.25s ease;
+}
+
+.category-card:hover .category-icon {
+    transform: scale(1.07);
+    background: #e0f3f9;
+}
+
+
+/* =========================================================
+   ARROW
+========================================================= */
+
+.category-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 31px;
+    height: 31px;
+    border-radius: 50%;
+    background: #f5f7f9;
+    color: #7a8795;
+    font-size: 15px;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.category-card:hover .category-arrow {
+    background: #0d8abc;
+    color: #ffffff;
+    transform: translateX(3px);
+}
+
+
+/* =========================================================
+   CARD CONTENT
+========================================================= */
+
+.category-card-content {
+    margin-top: 21px;
+}
+
+.category-card-content h3 {
+    margin: 0 0 7px;
+    color: #172033;
+    font-size: 17px;
+    line-height: 1.3;
+    font-weight: 850;
+}
+
+.category-card-content p {
+    margin: 0;
+    color: #7a8594;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   FOOTER / PRODUCT COUNT
+========================================================= */
+
+.category-card-footer {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: auto;
+    padding-top: 17px;
+    color: #7a8594;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.category-card-footer span:first-child {
+    color: #0d8abc;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 1050px) {
+
+    .category-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 
 }
 
-.category-section h2{
 
-    text-align:center;
+/* =========================================================
+   SMALL TABLET
+========================================================= */
 
-    margin-bottom:40px;
+@media (max-width: 800px) {
 
-}
+    .category-section {
+        padding: 50px 20px;
+    }
 
-.category-grid{
+    .category-section-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 18px;
+    }
 
-    display:grid;
-
-    grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
-
-    gap:20px;
-
-}
-
-.category-card{
-
-    background:white;
-
-    border-radius:15px;
-
-    padding:30px;
-
-    text-align:center;
-
-    cursor:pointer;
-
-    transition:.3s;
-
-    box-shadow:0 5px 15px rgba(0,0,0,.08);
+    .category-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 15px;
+    }
 
 }
 
-.category-card:hover{
 
-    transform:translateY(-8px);
+/* =========================================================
+   MOBILE
+========================================================= */
 
+@media (max-width: 550px) {
+
+    .category-section {
+        padding: 42px 15px;
+    }
+
+    .category-section-header {
+        margin-bottom: 23px;
+    }
+
+    .category-section-header h2 {
+        font-size: 27px;
+    }
+
+    .category-section-header p {
+        font-size: 13px;
+    }
+
+    .category-view-all {
+        width: 100%;
+    }
+
+    .category-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .category-card {
+        min-height: 185px;
+        padding: 16px;
+        border-radius: 14px;
+    }
+
+    .category-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        font-size: 21px;
+    }
+
+    .category-arrow {
+        width: 27px;
+        height: 27px;
+        font-size: 13px;
+    }
+
+    .category-card-content {
+        margin-top: 17px;
+    }
+
+    .category-card-content h3 {
+        font-size: 14px;
+    }
+
+    .category-card-content p {
+        font-size: 10px;
+    }
+
+    .category-card-footer {
+        padding-top: 13px;
+        font-size: 9px;
+    }
+
+    .category-card-footer span:first-child {
+        font-size: 12px;
+    }
 }
 
-.category-card span{
 
-    font-size:45px;
+/* =========================================================
+   VERY SMALL PHONES
+========================================================= */
 
-}
-.category-card p{
+@media (max-width: 370px) {
 
-    margin-top:10px;
+    .category-section {
+        padding-left: 11px;
+        padding-right: 11px;
+    }
 
-    color:#777;
+    .category-grid {
+        gap: 9px;
+    }
 
-    font-size:14px;
+    .category-card {
+        min-height: 175px;
+        padding: 13px;
+    }
+
+    .category-icon {
+        width: 41px;
+        height: 41px;
+        font-size: 19px;
+    }
+
+    .category-card-content h3 {
+        font-size: 13px;
+    }
+
+    .category-card-content p {
+        font-size: 9px;
+    }
 
 }
