@@ -8,7 +8,6 @@ import api from "../../../config/axios";
 
 import "./Settings.css";
 
-
 /* =========================================================
    SETTINGS COMPONENTS
 ========================================================= */
@@ -37,39 +36,33 @@ const DEFAULT_SETTINGS = {
 
     marketplace_name: "KAD Marketplace",
 
-    currency: "GH₵",
+    logo: "",
+    admin_logo: "",
+    favicon: "",
 
     support_email: "",
-
     support_phone: "",
+    business_address: "",
 
-    default_language: "English",
-
+    currency: "GH₵",
+    language: "English",
     timezone: "Africa/Accra",
 
-    developer_mode: "false",
-
-
-    /* =====================================================
-       DIRECT MARKETPLACE CONTROL
-    ===================================================== */
+    marketplace_description: "",
 
     maintenance_mode: "false",
+    registration_enabled: "true",
+    store_registration_enabled: "true",
 
-    allow_registration: "true",
+    facebook: "",
+    instagram: "",
+    tiktok: "",
+    x: "",
+    whatsapp: "",
 
-    allow_store_creation: "true",
+    is_active: "true",
 
-
-    /* =====================================================
-       BRANDING
-    ===================================================== */
-
-    logo: "",
-
-    admin_logo: "",
-
-    favicon: "",
+    developer_mode: "false",
 
 
     /* =====================================================
@@ -79,31 +72,24 @@ const DEFAULT_SETTINGS = {
     marketplace_description: "",
 
     primary_color: "#0A66C2",
-
     secondary_color: "#198754",
 
     max_product_images: "5",
-
     max_products_per_user: "50",
-
     max_product_price: "1000000",
 
     promotion_price: "",
-
     advertisement_price: "",
 
     allow_product_posting: "true",
 
     require_product_approval: "true",
-
     require_store_verification: "true",
 
     allow_guest_browsing: "true",
-
     allow_guest_messaging: "false",
 
     allow_product_reviews: "true",
-
     allow_seller_reviews: "true",
 
 
@@ -114,9 +100,7 @@ const DEFAULT_SETTINGS = {
     payment_enabled: "true",
 
     mobile_money_enabled: "true",
-
     card_enabled: "true",
-
     bank_transfer_enabled: "true",
 
     payment_provider: "paystack",
@@ -124,7 +108,6 @@ const DEFAULT_SETTINGS = {
     currency_code: "GHS",
 
     minimum_transaction: "1",
-
     maximum_transaction: "1000000",
 
     transaction_fee: "0",
@@ -142,31 +125,24 @@ const DEFAULT_SETTINGS = {
 
     email_provider: "resend",
 
-resend_from_name: "KAD Marketplace",
-
-resend_from_email: "",
+    resend_from_name: "KAD Marketplace",
+    resend_from_email: "",
 
     smtp_host: "",
-
     smtp_port: "587",
-
     smtp_username: "",
-
     smtp_password: "",
-
     smtp_encryption: "tls",
 
     smtp_from_email: "",
-
     smtp_from_name: "KAD Marketplace",
 
     registration_email: "true",
-
     password_reset_email: "true",
-
     order_email: "true",
-
     payment_email: "true",
+
+    subscription_email: "true",
 
 
     /* =====================================================
@@ -178,9 +154,7 @@ resend_from_email: "",
     welcome_email: "true",
 
     product_notifications: "true",
-
     order_notifications: "true",
-
     payment_notifications: "true",
 
     seller_notifications: "true",
@@ -194,66 +168,54 @@ resend_from_email: "",
     promotional_notifications: "true",
 
     sms_enabled: "false",
-
     sms_provider: "",
 
-/* =====================================================
-   SECURITY
-===================================================== */
 
-two_factor_authentication: "false",
+    /* =====================================================
+       SECURITY
+    ===================================================== */
 
-require_admin_two_factor: "true",
+    two_factor_authentication: "false",
 
-login_attempt_limit: "5",
+    require_admin_two_factor: "true",
 
-account_lock_duration: "30",
+    login_attempt_limit: "5",
 
-session_timeout: "120",
+    account_lock_duration: "30",
 
-password_min_length: "8",
+    session_timeout: "120",
 
-require_strong_passwords: "true",
+    password_min_length: "8",
 
-require_uppercase_password: "true",
+    require_strong_passwords: "true",
 
-require_lowercase_password: "true",
+    require_uppercase_password: "true",
+    require_lowercase_password: "true",
+    require_number_password: "true",
+    require_special_character: "true",
 
-require_number_password: "true",
+    password_history_count: "5",
 
-require_special_character: "true",
+    password_expiry_enabled: "false",
+    password_expiry_days: "90",
 
-password_history_count: "5",
+    ip_monitoring: "true",
+    suspicious_ip_blocking: "true",
 
-password_expiry_enabled: "false",
+    ip_failed_login_threshold: "10",
+    ip_block_duration: "60",
 
-password_expiry_days: "90",
+    security_alert_failed_login: "true",
+    security_alert_account_lock: "true",
+    security_alert_suspicious_ip: "true",
+    security_alert_admin_login: "true",
+    security_alert_password_change: "true",
+    security_alert_new_device: "true",
 
-ip_monitoring: "true",
+    security_admin_alerts: "true",
 
-suspicious_ip_blocking: "true",
+    audit_logging: "true",
 
-ip_failed_login_threshold: "10",
-
-ip_block_duration: "60",
-
-security_alerts: "true",
-
-security_alert_failed_login: "true",
-
-security_alert_account_lock: "true",
-
-security_alert_suspicious_ip: "true",
-
-security_alert_admin_login: "true",
-
-security_alert_password_change: "true",
-
-security_alert_new_device: "true",
-
-security_admin_alerts: "true",
-
-audit_logging: "true",
 
     /* =====================================================
        BACKUP
@@ -298,13 +260,11 @@ audit_logging: "true",
     google_site_verification: "",
 
     og_title: "",
-
     og_description: "",
 
     search_engine_indexing: "true",
 
     enable_sitemap: "true"
-
 };
 
 
@@ -329,7 +289,7 @@ const safeString = (
 
 
 /* =========================================================
-   BOOLEAN NORMALIZER
+   STRING BOOLEAN
 ========================================================= */
 
 const toStringBoolean = (
@@ -340,24 +300,22 @@ const toStringBoolean = (
     if (
         value === true ||
         value === 1 ||
-        value === "true" ||
         value === "1" ||
+        value === "true" ||
         value === "yes"
     ) {
         return "true";
     }
 
-
     if (
         value === false ||
         value === 0 ||
-        value === "false" ||
         value === "0" ||
+        value === "false" ||
         value === "no"
     ) {
         return "false";
     }
-
 
     return fallback;
 };
@@ -412,1001 +370,971 @@ function Settings() {
 
 
     /* =====================================================
-       NORMALIZE DATABASE SETTINGS
+       NORMALIZE SERVER SETTINGS
     ===================================================== */
 
-    const normalizeServerSettings =
-        useCallback(
-            (serverSettings) => {
+    const normalizeServerSettings = useCallback(
+        (serverSettings) => {
 
-                const normalized = {
-                    ...DEFAULT_SETTINGS
-                };
+            const server =
+                serverSettings || {};
 
 
-                if (
-                    !serverSettings ||
-                    typeof serverSettings !== "object" ||
-                    Array.isArray(serverSettings)
-                ) {
-
-                    return normalized;
-
-                }
+            const configuration =
+                server.configuration || {};
 
 
-                /* =================================================
-                   DIRECT DATABASE SETTINGS
-                ================================================= */
+            const marketplace =
+                configuration.marketplace || {};
 
-                normalized.marketplace_name =
+
+            const payment =
+                configuration.payment || {};
+
+
+            const email =
+                configuration.email || {};
+
+
+            const notifications =
+                configuration.notifications || {};
+
+
+            const security =
+                configuration.security || {};
+
+
+            const backup =
+                configuration.backup || {};
+
+
+            const analytics =
+                configuration.analytics || {};
+
+
+            const seo =
+                configuration.seo || {};
+
+
+            /*
+            =================================================
+            FLATTEN SERVER CONFIGURATION
+            =================================================
+            */
+
+            return {
+
+                ...DEFAULT_SETTINGS,
+
+                ...server,
+
+
+                /* =========================================
+                   GENERAL
+                ========================================= */
+
+                marketplace_name:
                     safeString(
-                        serverSettings.marketplace_name,
+                        server.marketplace_name,
                         DEFAULT_SETTINGS.marketplace_name
-                    );
+                    ),
 
+                logo:
+                    safeString(server.logo),
 
-                normalized.currency =
+                admin_logo:
+                    safeString(server.admin_logo),
+
+                favicon:
+                    safeString(server.favicon),
+
+                support_email:
+                    safeString(server.support_email),
+
+                support_phone:
+                    safeString(server.support_phone),
+
+                business_address:
+                    safeString(server.business_address),
+
+                currency:
                     safeString(
-                        serverSettings.currency,
-                        DEFAULT_SETTINGS.currency
-                    );
+                        server.currency,
+                        "GH₵"
+                    ),
 
-
-                normalized.support_email =
+                language:
                     safeString(
-                        serverSettings.support_email
-                    );
+                        server.language,
+                        "English"
+                    ),
 
-
-                normalized.support_phone =
+                timezone:
                     safeString(
-                        serverSettings.support_phone
-                    );
+                        server.timezone,
+                        "Africa/Accra"
+                    ),
 
-
-                normalized.default_language =
-                    safeString(
-                        serverSettings.language,
-                        DEFAULT_SETTINGS.default_language
-                    );
-
-
-                normalized.timezone =
-                    safeString(
-                        serverSettings.timezone,
-                        DEFAULT_SETTINGS.timezone
-                    );
-
-
-                normalized.logo =
-                    safeString(
-                        serverSettings.logo
-                    );
-
-
-                normalized.admin_logo =
-                    safeString(
-                        serverSettings.admin_logo
-                    );
-
-
-                normalized.favicon =
-                    safeString(
-                        serverSettings.favicon
-                    );
-
-
-                /* =================================================
-                   DIRECT MARKETPLACE CONTROL
-                ================================================= */
-
-                normalized.maintenance_mode =
+                maintenance_mode:
                     toStringBoolean(
-                        serverSettings.maintenance_mode,
-                        DEFAULT_SETTINGS.maintenance_mode
-                    );
+                        server.maintenance_mode,
+                        "false"
+                    ),
 
-
-                normalized.allow_registration =
+                registration_enabled:
                     toStringBoolean(
-                        serverSettings.registration_enabled,
-                        DEFAULT_SETTINGS.allow_registration
-                    );
+                        server.registration_enabled,
+                        "true"
+                    ),
 
-
-                normalized.allow_store_creation =
+                store_registration_enabled:
                     toStringBoolean(
-                        serverSettings.store_registration_enabled,
-                        DEFAULT_SETTINGS.allow_store_creation
-                    );
+                        server.store_registration_enabled,
+                        "true"
+                    ),
+
+                facebook:
+                    safeString(server.facebook),
+
+                instagram:
+                    safeString(server.instagram),
+
+                tiktok:
+                    safeString(server.tiktok),
+
+                x:
+                    safeString(server.x),
+
+                whatsapp:
+                    safeString(server.whatsapp),
+
+                is_active:
+                    toStringBoolean(
+                        server.is_active,
+                        "true"
+                    ),
 
 
-                /* =================================================
-                   CONFIGURATION OBJECT
-                ================================================= */
-
-                const configuration =
-                    serverSettings.configuration &&
-                    typeof serverSettings.configuration === "object"
-                        ? serverSettings.configuration
-                        : {};
-
-
-                /* =================================================
+                /* =========================================
                    MARKETPLACE
-                ================================================= */
+                ========================================= */
 
-                const marketplace =
-                    configuration.marketplace || {};
-
-
-                normalized.marketplace_description =
+                marketplace_description:
                     safeString(
-                        marketplace.description
-                    );
+                        marketplace.description ??
+                        server.marketplace_description
+                    ),
 
-
-                normalized.primary_color =
+                primary_color:
                     safeString(
-                        marketplace.primaryColor,
-                        DEFAULT_SETTINGS.primary_color
-                    );
+                        marketplace.primaryColor ??
+                        server.primary_color,
+                        "#0A66C2"
+                    ),
 
-
-                normalized.secondary_color =
+                secondary_color:
                     safeString(
-                        marketplace.secondaryColor,
-                        DEFAULT_SETTINGS.secondary_color
-                    );
+                        marketplace.secondaryColor ??
+                        server.secondary_color,
+                        "#198754"
+                    ),
 
-
-                normalized.max_product_images =
+                max_product_images:
                     safeString(
-                        marketplace.maxProductImages,
-                        DEFAULT_SETTINGS.max_product_images
-                    );
+                        marketplace.maxProductImages ??
+                        server.max_product_images,
+                        "5"
+                    ),
 
-
-                normalized.max_products_per_user =
+                max_products_per_user:
                     safeString(
-                        marketplace.maxProductsPerUser,
-                        DEFAULT_SETTINGS.max_products_per_user
-                    );
+                        marketplace.maxProductsPerUser ??
+                        server.max_products_per_user,
+                        "50"
+                    ),
 
-
-                normalized.max_product_price =
+                max_product_price:
                     safeString(
-                        marketplace.maxProductPrice,
-                        DEFAULT_SETTINGS.max_product_price
-                    );
+                        marketplace.maxProductPrice ??
+                        server.max_product_price,
+                        "1000000"
+                    ),
 
-
-                normalized.promotion_price =
+                promotion_price:
                     safeString(
-                        marketplace.promotionPrice
-                    );
+                        marketplace.promotionPrice ??
+                        server.promotion_price
+                    ),
 
-
-                normalized.advertisement_price =
+                advertisement_price:
                     safeString(
-                        marketplace.advertisementPrice
-                    );
+                        marketplace.advertisementPrice ??
+                        server.advertisement_price
+                    ),
 
-
-                normalized.allow_product_posting =
+                allow_product_posting:
                     toStringBoolean(
-                        marketplace.allowProductPosting,
-                        DEFAULT_SETTINGS.allow_product_posting
-                    );
+                        marketplace.allowProductPosting ??
+                        server.allow_product_posting,
+                        "true"
+                    ),
 
-
-                normalized.require_product_approval =
+                require_product_approval:
                     toStringBoolean(
-                        marketplace.requireProductApproval,
-                        DEFAULT_SETTINGS.require_product_approval
-                    );
+                        marketplace.requireProductApproval ??
+                        server.require_product_approval,
+                        "true"
+                    ),
 
-
-                normalized.require_store_verification =
+                require_store_verification:
                     toStringBoolean(
-                        marketplace.requireStoreVerification,
-                        DEFAULT_SETTINGS.require_store_verification
-                    );
+                        marketplace.requireStoreVerification ??
+                        server.require_store_verification,
+                        "true"
+                    ),
 
-
-                normalized.allow_guest_browsing =
+                allow_guest_browsing:
                     toStringBoolean(
-                        marketplace.allowGuestBrowsing,
-                        DEFAULT_SETTINGS.allow_guest_browsing
-                    );
+                        marketplace.allowGuestBrowsing ??
+                        server.allow_guest_browsing,
+                        "true"
+                    ),
 
-
-                normalized.allow_guest_messaging =
+                allow_guest_messaging:
                     toStringBoolean(
-                        marketplace.allowGuestMessaging,
-                        DEFAULT_SETTINGS.allow_guest_messaging
-                    );
+                        marketplace.allowGuestMessaging ??
+                        server.allow_guest_messaging,
+                        "false"
+                    ),
 
-
-                normalized.allow_product_reviews =
+                allow_product_reviews:
                     toStringBoolean(
-                        marketplace.allowProductReviews,
-                        DEFAULT_SETTINGS.allow_product_reviews
-                    );
+                        marketplace.allowProductReviews ??
+                        server.allow_product_reviews,
+                        "true"
+                    ),
 
-
-                normalized.allow_seller_reviews =
+                allow_seller_reviews:
                     toStringBoolean(
-                        marketplace.allowSellerReviews,
-                        DEFAULT_SETTINGS.allow_seller_reviews
-                    );
+                        marketplace.allowSellerReviews ??
+                        server.allow_seller_reviews,
+                        "true"
+                    ),
 
 
-                /* =================================================
-                   DEVELOPER MODE
-                ================================================= */
-
-                normalized.developer_mode =
-                    toStringBoolean(
-                        marketplace.developerMode,
-                        DEFAULT_SETTINGS.developer_mode
-                    );
-
-
-                /* =================================================
+                /* =========================================
                    PAYMENT
-                ================================================= */
+                ========================================= */
 
-                const payment =
-                    configuration.payment || {};
-
-
-                normalized.payment_enabled =
+                payment_enabled:
                     toStringBoolean(
-                        payment.enabled,
-                        DEFAULT_SETTINGS.payment_enabled
-                    );
+                        payment.enabled ??
+                        server.payment_enabled,
+                        "true"
+                    ),
 
-
-                normalized.mobile_money_enabled =
+                mobile_money_enabled:
                     toStringBoolean(
-                        payment.mobileMoneyEnabled,
-                        DEFAULT_SETTINGS.mobile_money_enabled
-                    );
+                        payment.mobileMoneyEnabled ??
+                        server.mobile_money_enabled,
+                        "true"
+                    ),
 
-
-                normalized.card_enabled =
+                card_enabled:
                     toStringBoolean(
-                        payment.cardEnabled,
-                        DEFAULT_SETTINGS.card_enabled
-                    );
+                        payment.cardEnabled ??
+                        server.card_enabled,
+                        "true"
+                    ),
 
-
-                normalized.bank_transfer_enabled =
+                bank_transfer_enabled:
                     toStringBoolean(
-                        payment.bankTransferEnabled,
-                        DEFAULT_SETTINGS.bank_transfer_enabled
-                    );
+                        payment.bankTransferEnabled ??
+                        server.bank_transfer_enabled,
+                        "true"
+                    ),
 
-
-                normalized.payment_provider =
+                payment_provider:
                     safeString(
-                        payment.gateway,
-                        DEFAULT_SETTINGS.payment_provider
-                    );
+                        payment.gateway ??
+                        server.payment_provider,
+                        "paystack"
+                    ),
 
-
-                normalized.currency_code =
+                currency_code:
                     safeString(
-                        payment.paymentCurrency,
-                        DEFAULT_SETTINGS.currency_code
-                    );
+                        payment.paymentCurrency ??
+                        server.currency_code,
+                        "GHS"
+                    ),
 
-
-                normalized.minimum_transaction =
+                minimum_transaction:
                     safeString(
-                        payment.minimumTransaction,
-                        DEFAULT_SETTINGS.minimum_transaction
-                    );
+                        payment.minimumTransaction ??
+                        server.minimum_transaction,
+                        "1"
+                    ),
 
-
-                normalized.maximum_transaction =
+                maximum_transaction:
                     safeString(
-                        payment.maximumTransaction,
-                        DEFAULT_SETTINGS.maximum_transaction
-                    );
+                        payment.maximumTransaction ??
+                        server.maximum_transaction,
+                        "1000000"
+                    ),
 
-
-                normalized.transaction_fee =
+                transaction_fee:
                     safeString(
-                        payment.transactionFee,
-                        DEFAULT_SETTINGS.transaction_fee
-                    );
+                        payment.transactionFee ??
+                        server.transaction_fee,
+                        "0"
+                    ),
 
-
-                normalized.auto_confirm_payments =
+                auto_confirm_payments:
                     toStringBoolean(
-                        payment.autoConfirmPayments,
-                        DEFAULT_SETTINGS.auto_confirm_payments
-                    );
+                        payment.autoConfirmPayments ??
+                        server.auto_confirm_payments,
+                        "false"
+                    ),
 
-
-                normalized.payment_notifications =
+                payment_notifications:
                     toStringBoolean(
-                        payment.paymentNotifications,
-                        DEFAULT_SETTINGS.payment_notifications
-                    );
-
-/* =================================================
-   EMAIL
-================================================= */
-
-const email =
-    configuration.email || {};
+                        payment.paymentNotifications ??
+                        server.payment_notifications,
+                        "true"
+                    ),
 
 
-normalized.email_enabled =
-    toStringBoolean(
-        email.enabled,
-        DEFAULT_SETTINGS.email_enabled
-    );
+                /* =========================================
+                   EMAIL
+                ========================================= */
+
+                email_enabled:
+                    toStringBoolean(
+                        email.enabled ??
+                        server.email_enabled,
+                        "true"
+                    ),
+
+                email_provider:
+                    safeString(
+                        email.provider ??
+                        server.email_provider,
+                        "resend"
+                    ),
+
+                resend_from_name:
+                    safeString(
+                        email.resendFromName ??
+                        server.resend_from_name,
+                        "KAD Marketplace"
+                    ),
+
+                resend_from_email:
+                    safeString(
+                        email.resendFromEmail ??
+                        server.resend_from_email
+                    ),
+
+                smtp_host:
+                    safeString(
+                        email.smtpHost ??
+                        server.smtp_host
+                    ),
+
+                smtp_port:
+                    safeString(
+                        email.smtpPort ??
+                        server.smtp_port,
+                        "587"
+                    ),
+
+                smtp_username:
+                    safeString(
+                        email.smtpUsername ??
+                        server.smtp_username
+                    ),
+
+                smtp_password:
+                    safeString(
+                        email.smtpPassword ??
+                        server.smtp_password
+                    ),
+
+                smtp_encryption:
+                    safeString(
+                        email.encryption ??
+                        server.smtp_encryption,
+                        "tls"
+                    ),
+
+                smtp_from_email:
+                    safeString(
+                        email.fromEmail ??
+                        server.smtp_from_email
+                    ),
+
+                smtp_from_name:
+                    safeString(
+                        email.fromName ??
+                        server.smtp_from_name,
+                        "KAD Marketplace"
+                    ),
+
+                registration_email:
+                    toStringBoolean(
+                        email.registrationEmail ??
+                        server.registration_email,
+                        "true"
+                    ),
+
+                password_reset_email:
+                    toStringBoolean(
+                        email.passwordResetEmail ??
+                        server.password_reset_email,
+                        "true"
+                    ),
+
+                order_email:
+                    toStringBoolean(
+                        email.orderEmail ??
+                        server.order_email,
+                        "true"
+                    ),
+
+                payment_email:
+                    toStringBoolean(
+                        email.paymentEmail ??
+                        server.payment_email,
+                        "true"
+                    ),
+
+                subscription_email:
+                    toStringBoolean(
+                        email.subscriptionEmail ??
+                        server.subscription_email,
+                        "true"
+                    ),
 
 
-normalized.email_provider =
-    safeString(
-        email.provider,
-        DEFAULT_SETTINGS.email_provider
-    );
-
-
-normalized.resend_from_name =
-    safeString(
-        email.resendFromName,
-        DEFAULT_SETTINGS.resend_from_name
-    );
-
-
-normalized.resend_from_email =
-    safeString(
-        email.resendFromEmail,
-        DEFAULT_SETTINGS.resend_from_email
-    );
-
-
-normalized.smtp_host =
-    safeString(
-        email.smtpHost
-    );
-
-
-normalized.smtp_port =
-    safeString(
-        email.smtpPort,
-        DEFAULT_SETTINGS.smtp_port
-    );
-
-
-normalized.smtp_username =
-    safeString(
-        email.smtpUsername
-    );
-
-
-normalized.smtp_password =
-    safeString(
-        email.smtpPassword
-    );
-
-
-normalized.smtp_encryption =
-    safeString(
-        email.encryption,
-        DEFAULT_SETTINGS.smtp_encryption
-    );
-
-
-normalized.smtp_from_email =
-    safeString(
-        email.fromEmail
-    );
-
-
-normalized.smtp_from_name =
-    safeString(
-        email.fromName,
-        DEFAULT_SETTINGS.smtp_from_name
-    );
-
-
-normalized.registration_email =
-    toStringBoolean(
-        email.registrationEmail,
-        DEFAULT_SETTINGS.registration_email
-    );
-
-
-normalized.password_reset_email =
-    toStringBoolean(
-        email.passwordResetEmail,
-        DEFAULT_SETTINGS.password_reset_email
-    );
-
-
-normalized.order_email =
-    toStringBoolean(
-        email.orderEmail,
-        DEFAULT_SETTINGS.order_email
-    );
-
-
-normalized.payment_email =
-    toStringBoolean(
-        email.paymentEmail,
-        DEFAULT_SETTINGS.payment_email
-    );
-
-                /* =================================================
+                /* =========================================
                    NOTIFICATIONS
-                ================================================= */
+                ========================================= */
 
-                const notifications =
-                    configuration.notifications || {};
-
-
-                normalized.email_notifications =
+                email_notifications:
                     toStringBoolean(
-                        notifications.emailNotifications,
-                        DEFAULT_SETTINGS.email_notifications
-                    );
+                        notifications.emailNotifications ??
+                        server.email_notifications,
+                        "true"
+                    ),
 
-
-                normalized.welcome_email =
+                welcome_email:
                     toStringBoolean(
-                        notifications.welcomeEmail,
-                        DEFAULT_SETTINGS.welcome_email
-                    );
+                        notifications.welcomeEmail ??
+                        server.welcome_email,
+                        "true"
+                    ),
 
-
-                normalized.product_notifications =
+                product_notifications:
                     toStringBoolean(
-                        notifications.productNotifications,
-                        DEFAULT_SETTINGS.product_notifications
-                    );
+                        notifications.productNotifications ??
+                        server.product_notifications,
+                        "true"
+                    ),
 
-
-                normalized.order_notifications =
+                order_notifications:
                     toStringBoolean(
-                        notifications.orderNotifications,
-                        DEFAULT_SETTINGS.order_notifications
-                    );
+                        notifications.orderNotifications ??
+                        server.order_notifications,
+                        "true"
+                    ),
 
-
-                normalized.payment_notifications =
+                payment_notifications:
                     toStringBoolean(
-                        notifications.paymentNotifications,
-                        DEFAULT_SETTINGS.payment_notifications
-                    );
+                        notifications.paymentNotifications ??
+                        server.payment_notifications,
+                        "true"
+                    ),
 
-
-                normalized.seller_notifications =
+                seller_notifications:
                     toStringBoolean(
-                        notifications.sellerNotifications,
-                        DEFAULT_SETTINGS.seller_notifications
-                    );
+                        notifications.sellerNotifications ??
+                        server.seller_notifications,
+                        "true"
+                    ),
 
-
-                normalized.admin_notifications =
+                admin_notifications:
                     toStringBoolean(
-                        notifications.adminAlerts,
-                        DEFAULT_SETTINGS.admin_notifications
-                    );
+                        notifications.adminAlerts ??
+                        server.admin_notifications,
+                        "true"
+                    ),
 
-
-                normalized.security_alerts =
+                security_alerts:
                     toStringBoolean(
-                        notifications.securityAlerts,
-                        DEFAULT_SETTINGS.security_alerts
-                    );
+                        notifications.securityAlerts ??
+                        server.security_alerts,
+                        "true"
+                    ),
 
-
-                normalized.maintenance_alerts =
+                maintenance_alerts:
                     toStringBoolean(
-                        notifications.maintenanceAlerts,
-                        DEFAULT_SETTINGS.maintenance_alerts
-                    );
+                        notifications.maintenanceAlerts ??
+                        server.maintenance_alerts,
+                        "true"
+                    ),
 
-
-                normalized.promotional_notifications =
+                promotional_notifications:
                     toStringBoolean(
-                        notifications.promotionalNotifications,
-                        DEFAULT_SETTINGS.promotional_notifications
-                    );
+                        notifications.promotionalNotifications ??
+                        server.promotional_notifications,
+                        "true"
+                    ),
 
-
-                normalized.sms_enabled =
+                sms_enabled:
                     toStringBoolean(
-                        notifications.smsEnabled,
-                        DEFAULT_SETTINGS.sms_enabled
-                    );
+                        notifications.smsEnabled ??
+                        server.sms_enabled,
+                        "false"
+                    ),
 
-
-                normalized.sms_provider =
+                sms_provider:
                     safeString(
-                        notifications.smsProvider
-                    );
-
-/* =================================================
-   SECURITY
-================================================= */
-
-const security =
-    configuration.security || {};
-
-
-/* =========================================
-   LOGIN SECURITY
-========================================= */
-
-normalized.login_attempt_limit =
-    safeString(
-        security.maxFailedLoginAttempts,
-        DEFAULT_SETTINGS.login_attempt_limit
-    );
-
-
-normalized.session_timeout =
-    safeString(
-        security.sessionTimeout,
-        DEFAULT_SETTINGS.session_timeout
-    );
-
-
-normalized.account_lock_duration =
-    safeString(
-        security.accountLockDuration,
-        DEFAULT_SETTINGS.account_lock_duration
-    );
-
-
-/* =========================================
-   TWO FACTOR
-========================================= */
-
-normalized.two_factor_authentication =
-    toStringBoolean(
-        security.twoFactorEnabled,
-        DEFAULT_SETTINGS.two_factor_authentication
-    );
-
-
-normalized.require_admin_two_factor =
-    toStringBoolean(
-        security.requireAdminTwoFactor,
-        DEFAULT_SETTINGS.require_admin_two_factor
-    );
-
-
-/* =========================================
-   PASSWORD SECURITY
-========================================= */
-
-normalized.require_strong_passwords =
-    toStringBoolean(
-        security.requireStrongPasswords,
-        DEFAULT_SETTINGS.require_strong_passwords
-    );
-
-
-normalized.password_min_length =
-    safeString(
-        security.minimumPasswordLength,
-        DEFAULT_SETTINGS.password_min_length
-    );
-
-
-normalized.require_uppercase_password =
-    toStringBoolean(
-        security.requireUppercasePassword,
-        DEFAULT_SETTINGS.require_uppercase_password
-    );
-
-
-normalized.require_lowercase_password =
-    toStringBoolean(
-        security.requireLowercasePassword,
-        DEFAULT_SETTINGS.require_lowercase_password
-    );
-
-
-normalized.require_number_password =
-    toStringBoolean(
-        security.requireNumberPassword,
-        DEFAULT_SETTINGS.require_number_password
-    );
-
-
-normalized.require_special_character =
-    toStringBoolean(
-        security.requireSpecialCharacter,
-        DEFAULT_SETTINGS.require_special_character
-    );
-
-
-normalized.password_history_count =
-    safeString(
-        security.passwordHistoryCount,
-        DEFAULT_SETTINGS.password_history_count
-    );
-
-
-/* =========================================
-   PASSWORD EXPIRY
-========================================= */
-
-normalized.password_expiry_enabled =
-    toStringBoolean(
-        security.passwordExpiryEnabled,
-        DEFAULT_SETTINGS.password_expiry_enabled
-    );
-
-
-normalized.password_expiry_days =
-    safeString(
-        security.passwordExpiryDays,
-        DEFAULT_SETTINGS.password_expiry_days
-    );
-
-
-/* =========================================
-   IP SECURITY
-========================================= */
-
-normalized.ip_monitoring =
-    toStringBoolean(
-        security.ipMonitoring,
-        DEFAULT_SETTINGS.ip_monitoring
-    );
-
-
-normalized.suspicious_ip_blocking =
-    toStringBoolean(
-        security.suspiciousIpBlocking,
-        DEFAULT_SETTINGS.suspicious_ip_blocking
-    );
-
-
-normalized.ip_failed_login_threshold =
-    safeString(
-        security.ipFailedLoginThreshold,
-        DEFAULT_SETTINGS.ip_failed_login_threshold
-    );
-
-
-normalized.ip_block_duration =
-    safeString(
-        security.ipBlockDuration,
-        DEFAULT_SETTINGS.ip_block_duration
-    );
-
-
-/* =========================================
-   SECURITY ALERTS
-========================================= */
-
-normalized.security_alerts =
-    toStringBoolean(
-        security.securityAlerts,
-        DEFAULT_SETTINGS.security_alerts
-    );
-
-
-normalized.security_alert_failed_login =
-    toStringBoolean(
-        security.securityAlertFailedLogin,
-        DEFAULT_SETTINGS.security_alert_failed_login
-    );
-
-
-normalized.security_alert_account_lock =
-    toStringBoolean(
-        security.securityAlertAccountLock,
-        DEFAULT_SETTINGS.security_alert_account_lock
-    );
-
-
-normalized.security_alert_suspicious_ip =
-    toStringBoolean(
-        security.securityAlertSuspiciousIp,
-        DEFAULT_SETTINGS.security_alert_suspicious_ip
-    );
-
-
-normalized.security_alert_admin_login =
-    toStringBoolean(
-        security.securityAlertAdminLogin,
-        DEFAULT_SETTINGS.security_alert_admin_login
-    );
-
-
-normalized.security_alert_password_change =
-    toStringBoolean(
-        security.securityAlertPasswordChange,
-        DEFAULT_SETTINGS.security_alert_password_change
-    );
-
-
-normalized.security_alert_new_device =
-    toStringBoolean(
-        security.securityAlertNewDevice,
-        DEFAULT_SETTINGS.security_alert_new_device
-    );
-
-
-normalized.security_admin_alerts =
-    toStringBoolean(
-        security.securityAdminAlerts,
-        DEFAULT_SETTINGS.security_admin_alerts
-    );
-
-
-/* =========================================
-   AUDIT LOGGING
-========================================= */
-
-normalized.audit_logging =
-    toStringBoolean(
-        security.auditLogging,
-        DEFAULT_SETTINGS.audit_logging
-    );
-
-                /* =================================================
+                        notifications.smsProvider ??
+                        server.sms_provider
+                    ),
+
+
+                /* =========================================
+                   SECURITY
+                ========================================= */
+
+                two_factor_authentication:
+                    toStringBoolean(
+                        security.twoFactorEnabled ??
+                        server.two_factor_authentication,
+                        "false"
+                    ),
+
+                require_admin_two_factor:
+                    toStringBoolean(
+                        security.requireAdminTwoFactor ??
+                        server.require_admin_two_factor,
+                        "true"
+                    ),
+
+                login_attempt_limit:
+                    safeString(
+                        security.maxFailedLoginAttempts ??
+                        server.login_attempt_limit,
+                        "5"
+                    ),
+
+                account_lock_duration:
+                    safeString(
+                        security.accountLockDuration ??
+                        server.account_lock_duration,
+                        "30"
+                    ),
+
+                session_timeout:
+                    safeString(
+                        security.sessionTimeout ??
+                        server.session_timeout,
+                        "120"
+                    ),
+
+                password_min_length:
+                    safeString(
+                        security.minimumPasswordLength ??
+                        server.password_min_length,
+                        "8"
+                    ),
+
+                require_strong_passwords:
+                    toStringBoolean(
+                        security.requireStrongPasswords ??
+                        server.require_strong_passwords,
+                        "true"
+                    ),
+
+                require_uppercase_password:
+                    toStringBoolean(
+                        security.requireUppercasePassword ??
+                        server.require_uppercase_password,
+                        "true"
+                    ),
+
+                require_lowercase_password:
+                    toStringBoolean(
+                        security.requireLowercasePassword ??
+                        server.require_lowercase_password,
+                        "true"
+                    ),
+
+                require_number_password:
+                    toStringBoolean(
+                        security.requireNumberPassword ??
+                        server.require_number_password,
+                        "true"
+                    ),
+
+                require_special_character:
+                    toStringBoolean(
+                        security.requireSpecialCharacter ??
+                        server.require_special_character,
+                        "true"
+                    ),
+
+                password_history_count:
+                    safeString(
+                        security.passwordHistoryCount ??
+                        server.password_history_count,
+                        "5"
+                    ),
+
+                password_expiry_enabled:
+                    toStringBoolean(
+                        security.passwordExpiryEnabled ??
+                        server.password_expiry_enabled,
+                        "false"
+                    ),
+
+                password_expiry_days:
+                    safeString(
+                        security.passwordExpiryDays ??
+                        server.password_expiry_days,
+                        "90"
+                    ),
+
+                ip_monitoring:
+                    toStringBoolean(
+                        security.ipMonitoring ??
+                        server.ip_monitoring,
+                        "true"
+                    ),
+
+                suspicious_ip_blocking:
+                    toStringBoolean(
+                        security.suspiciousIpBlocking ??
+                        server.suspicious_ip_blocking,
+                        "true"
+                    ),
+
+                ip_failed_login_threshold:
+                    safeString(
+                        security.ipFailedLoginThreshold ??
+                        server.ip_failed_login_threshold,
+                        "10"
+                    ),
+
+                ip_block_duration:
+                    safeString(
+                        security.ipBlockDuration ??
+                        server.ip_block_duration,
+                        "60"
+                    ),
+
+                security_alert_failed_login:
+                    toStringBoolean(
+                        security.securityAlertFailedLogin ??
+                        server.security_alert_failed_login,
+                        "true"
+                    ),
+
+                security_alert_account_lock:
+                    toStringBoolean(
+                        security.securityAlertAccountLock ??
+                        server.security_alert_account_lock,
+                        "true"
+                    ),
+
+                security_alert_suspicious_ip:
+                    toStringBoolean(
+                        security.securityAlertSuspiciousIp ??
+                        server.security_alert_suspicious_ip,
+                        "true"
+                    ),
+
+                security_alert_admin_login:
+                    toStringBoolean(
+                        security.securityAlertAdminLogin ??
+                        server.security_alert_admin_login,
+                        "true"
+                    ),
+
+                security_alert_password_change:
+                    toStringBoolean(
+                        security.securityAlertPasswordChange ??
+                        server.security_alert_password_change,
+                        "true"
+                    ),
+
+                security_alert_new_device:
+                    toStringBoolean(
+                        security.securityAlertNewDevice ??
+                        server.security_alert_new_device,
+                        "true"
+                    ),
+
+                security_admin_alerts:
+                    toStringBoolean(
+                        security.securityAdminAlerts ??
+                        server.security_admin_alerts,
+                        "true"
+                    ),
+
+                audit_logging:
+                    toStringBoolean(
+                        security.auditLogging ??
+                        server.audit_logging,
+                        "true"
+                    ),
+
+
+                /* =========================================
                    BACKUP
-                ================================================= */
+                ========================================= */
 
-                const backup =
-                    configuration.backup || {};
-
-
-                normalized.auto_backup =
+                auto_backup:
                     toStringBoolean(
-                        backup.automaticBackups,
-                        DEFAULT_SETTINGS.auto_backup
-                    );
+                        backup.automaticBackups ??
+                        server.auto_backup,
+                        "false"
+                    ),
 
-
-                normalized.backup_frequency =
+                backup_frequency:
                     safeString(
-                        backup.backupFrequency,
-                        DEFAULT_SETTINGS.backup_frequency
-                    );
+                        backup.backupFrequency ??
+                        server.backup_frequency,
+                        "daily"
+                    ),
 
-
-                normalized.backup_retention_days =
+                backup_retention_days:
                     safeString(
-                        backup.retentionDays,
-                        DEFAULT_SETTINGS.backup_retention_days
-                    );
+                        backup.retentionDays ??
+                        server.backup_retention_days,
+                        "30"
+                    ),
 
 
-                /* =================================================
+                /* =========================================
                    ANALYTICS
-                ================================================= */
+                ========================================= */
 
-                const analytics =
-                    configuration.analytics || {};
-
-
-                normalized.analytics_enabled =
+                analytics_enabled:
                     toStringBoolean(
-                        analytics.enabled,
-                        DEFAULT_SETTINGS.analytics_enabled
-                    );
+                        analytics.enabled ??
+                        server.analytics_enabled,
+                        "false"
+                    ),
 
-
-                normalized.google_analytics_id =
+                google_analytics_id:
                     safeString(
-                        analytics.googleAnalyticsId
-                    );
+                        analytics.googleAnalyticsId ??
+                        server.google_analytics_id
+                    ),
 
-
-                normalized.google_tag_manager_id =
+                google_tag_manager_id:
                     safeString(
-                        analytics.googleTagManagerId
-                    );
+                        analytics.googleTagManagerId ??
+                        server.google_tag_manager_id
+                    ),
 
-
-                normalized.facebook_pixel_id =
+                facebook_pixel_id:
                     safeString(
-                        analytics.facebookPixelId
-                    );
+                        analytics.facebookPixelId ??
+                        server.facebook_pixel_id
+                    ),
 
-
-                normalized.google_search_console_verification =
+                google_search_console_verification:
                     safeString(
-                        analytics.googleSearchConsoleVerification
-                    );
+                        analytics.googleSearchConsoleVerification ??
+                        server.google_search_console_verification
+                    ),
 
+                google_search_console:
+                    safeString(
+                        analytics.googleSearchConsoleVerification ??
+                        server.google_search_console
+                    ),
 
-                normalized.google_search_console =
-                    normalized.google_search_console_verification;
-
-
-                normalized.anonymous_analytics =
+                anonymous_analytics:
                     toStringBoolean(
-                        analytics.anonymousAnalytics,
-                        DEFAULT_SETTINGS.anonymous_analytics
-                    );
+                        analytics.anonymousAnalytics ??
+                        server.anonymous_analytics,
+                        "true"
+                    ),
 
 
-                /* =================================================
+                /* =========================================
                    SEO
-                ================================================= */
+                ========================================= */
 
-                const seo =
-                    configuration.seo || {};
-
-
-                normalized.seo_title =
+                seo_title:
                     safeString(
-                        seo.title,
-                        serverSettings.seo_title || ""
-                    );
+                        seo.title ??
+                        server.seo_title
+                    ),
 
-
-                normalized.seo_description =
+                seo_description:
                     safeString(
-                        seo.description,
-                        serverSettings.seo_description || ""
-                    );
+                        seo.description ??
+                        server.seo_description
+                    ),
 
-
-                normalized.seo_keywords =
+                seo_keywords:
                     safeString(
-                        seo.keywords
-                    );
+                        seo.keywords ??
+                        server.seo_keywords
+                    ),
 
-
-                normalized.google_site_verification =
+                google_site_verification:
                     safeString(
-                        seo.googleSiteVerification
-                    );
+                        seo.googleSiteVerification ??
+                        server.google_site_verification
+                    ),
 
-
-                normalized.og_title =
+                og_title:
                     safeString(
-                        seo.openGraphTitle
-                    );
+                        seo.openGraphTitle ??
+                        server.og_title
+                    ),
 
-
-                normalized.og_description =
+                og_description:
                     safeString(
-                        seo.openGraphDescription
-                    );
+                        seo.openGraphDescription ??
+                        server.og_description
+                    ),
 
-
-                normalized.search_engine_indexing =
+                search_engine_indexing:
                     toStringBoolean(
-                        seo.searchEngineIndexing,
-                        DEFAULT_SETTINGS.search_engine_indexing
-                    );
+                        seo.searchEngineIndexing ??
+                        server.search_engine_indexing,
+                        "true"
+                    ),
 
-
-                normalized.enable_sitemap =
+                enable_sitemap:
                     toStringBoolean(
-                        seo.sitemapEnabled,
-                        DEFAULT_SETTINGS.enable_sitemap
-                    );
+                        seo.sitemapEnabled ??
+                        server.enable_sitemap,
+                        "true"
+                    ),
 
 
-                return normalized;
+                /*
+                =================================================
+                KEEP ORIGINAL CONFIGURATION
+                =================================================
+                */
 
-            },
-            []
-        );
+                configuration
+
+            };
+
+        },
+        []
+    );
 
 
     /* =====================================================
        LOAD SETTINGS
     ===================================================== */
 
-    const loadSettings =
-        useCallback(
-            async () => {
+    const loadSettings = useCallback(
+        async () => {
 
-                try {
+            try {
 
-                    setLoading(true);
+                setLoading(true);
 
-                    setErrorMessage("");
-
-                    setMessage("");
+                setErrorMessage("");
+                setMessage("");
 
 
-                    const response =
-                        await api.get(
-                            "/admin/settings"
-                        );
-
-
-                    console.log(
-                        "ADMIN SETTINGS RESPONSE:",
-                        response.data
+                const response =
+                    await api.get(
+                        "/admin/settings"
                     );
 
 
-                    if (
-                        !response.data?.success
-                    ) {
-
-                        throw new Error(
-                            response.data?.message ||
-                            "Failed to load settings."
-                        );
-
-                    }
+                console.log(
+                    "ADMIN SETTINGS RESPONSE:",
+                    response.data
+                );
 
 
-                    const serverSettings =
-                        response.data.settings;
+                if (
+                    !response.data?.success
+                ) {
 
-
-                    const normalizedSettings =
-                        normalizeServerSettings(
-                            serverSettings
-                        );
-
-
-                    setSettings(
-                        normalizedSettings
+                    throw new Error(
+                        response.data?.message ||
+                        "Failed to load settings."
                     );
-
-
-                } catch (error) {
-
-                    console.error(
-                        "LOAD ADMIN SETTINGS ERROR:",
-                        error
-                    );
-
-
-                    if (
-                        error.response?.status === 401
-                    ) {
-
-                        setErrorMessage(
-                            "Your session has expired. Please log in again."
-                        );
-
-                    } else if (
-                        error.response?.status === 403
-                    ) {
-
-                        setErrorMessage(
-                            "You do not have permission to access Admin Settings."
-                        );
-
-                    } else {
-
-                        setErrorMessage(
-                            error.response?.data?.message ||
-                            error.message ||
-                            "Failed to load settings."
-                        );
-
-                    }
-
-                } finally {
-
-                    setLoading(false);
 
                 }
 
-            },
-            [
-                normalizeServerSettings
-            ]
-        );
+
+                const serverSettings =
+                    response.data.settings;
+
+
+                const normalizedSettings =
+                    normalizeServerSettings(
+                        serverSettings
+                    );
+
+
+                setSettings(
+                    normalizedSettings
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "LOAD ADMIN SETTINGS ERROR:",
+                    error
+                );
+
+
+                if (
+                    error.response?.status === 401
+                ) {
+
+                    setErrorMessage(
+                        "Your session has expired. Please log in again."
+                    );
+
+                } else if (
+                    error.response?.status === 403
+                ) {
+
+                    setErrorMessage(
+                        "You do not have permission to access Admin Settings."
+                    );
+
+                } else {
+
+                    setErrorMessage(
+                        error.response?.data?.message ||
+                        error.message ||
+                        "Failed to load settings."
+                    );
+
+                }
+
+            } finally {
+
+                setLoading(false);
+
+            }
+
+        },
+        [
+            normalizeServerSettings
+        ]
+    );
 
 
     /* =====================================================
@@ -1424,35 +1352,77 @@ normalized.audit_logging =
 
 
     /* =====================================================
-       HANDLE SETTING CHANGE
+       HANDLE CHANGE
     ===================================================== */
 
-    const handleChange =
-        useCallback(
-            (key, value) => {
+    const handleChange = useCallback(
+        (key, value) => {
 
-                setSettings(
-                    previousSettings => ({
+            const nextValue =
+                value === null ||
+                value === undefined
+                    ? ""
+                    : value;
+
+
+            setSettings(
+                previousSettings => {
+
+                    /*
+                    =========================================
+                    NESTED CONFIGURATION UPDATE
+                    =========================================
+                    */
+
+                    if (
+                        key === "configuration"
+                    ) {
+
+                        return {
+
+                            ...previousSettings,
+
+                            configuration: {
+
+                                ...(
+                                    previousSettings.configuration ||
+                                    {}
+                                ),
+
+                                ...nextValue
+
+                            }
+
+                        };
+
+                    }
+
+
+                    /*
+                    =========================================
+                    NORMAL SETTING
+                    =========================================
+                    */
+
+                    return {
 
                         ...previousSettings,
 
                         [key]:
-                            value === null ||
-                            value === undefined
-                                ? ""
-                                : value
+                            nextValue
 
-                    })
-                );
+                    };
+
+                }
+            );
 
 
-                setMessage("");
+            setMessage("");
+            setErrorMessage("");
 
-                setErrorMessage("");
-
-            },
-            []
-        );
+        },
+        []
+    );
 
 
     /* =====================================================
@@ -1460,75 +1430,74 @@ normalized.audit_logging =
     ===================================================== */
 
     const buildMarketplaceConfiguration =
-        () => {
+        useCallback(
+            () => {
 
-            return {
+                return {
 
-                description:
-                    settings.marketplace_description,
+                    description:
+                        settings.marketplace_description,
 
-                primaryColor:
-                    settings.primary_color,
+                    primaryColor:
+                        settings.primary_color,
 
-                secondaryColor:
-                    settings.secondary_color,
+                    secondaryColor:
+                        settings.secondary_color,
 
-                maxProductImages:
-                    Number(
-                        settings.max_product_images
-                    ) || 5,
+                    maxProductImages:
+                        Number(
+                            settings.max_product_images
+                        ) || 5,
 
-                maxProductsPerUser:
-                    Number(
-                        settings.max_products_per_user
-                    ) || 50,
+                    maxProductsPerUser:
+                        Number(
+                            settings.max_products_per_user
+                        ) || 50,
 
-                maxProductPrice:
-                    Number(
-                        settings.max_product_price
-                    ) || 1000000,
+                    maxProductPrice:
+                        Number(
+                            settings.max_product_price
+                        ) || 1000000,
 
-                promotionPrice:
-                    Number(
-                        settings.promotion_price
-                    ) || 0,
+                    promotionPrice:
+                        Number(
+                            settings.promotion_price
+                        ) || 0,
 
-                advertisementPrice:
-                    Number(
-                        settings.advertisement_price
-                    ) || 0,
+                    advertisementPrice:
+                        Number(
+                            settings.advertisement_price
+                        ) || 0,
 
-                allowProductPosting:
-                    settings.allow_product_posting === "true",
+                    allowProductPosting:
+                        settings.allow_product_posting === "true",
 
-                requireProductApproval:
-                    settings.require_product_approval === "true",
+                    requireProductApproval:
+                        settings.require_product_approval === "true",
 
-                requireStoreVerification:
-                    settings.require_store_verification === "true",
+                    requireStoreVerification:
+                        settings.require_store_verification === "true",
 
-                allowGuestBrowsing:
-                    settings.allow_guest_browsing === "true",
+                    allowGuestBrowsing:
+                        settings.allow_guest_browsing === "true",
 
-                allowGuestMessaging:
-                    settings.allow_guest_messaging === "true",
+                    allowGuestMessaging:
+                        settings.allow_guest_messaging === "true",
 
-                allowProductReviews:
-                    settings.allow_product_reviews === "true",
+                    allowProductReviews:
+                        settings.allow_product_reviews === "true",
 
-                allowSellerReviews:
-                    settings.allow_seller_reviews === "true",
+                    allowSellerReviews:
+                        settings.allow_seller_reviews === "true",
 
-                /*
-                 * FIX:
-                 * Developer mode is now persisted.
-                 */
-                developerMode:
-                    settings.developer_mode === "true"
+                    developerMode:
+                        settings.developer_mode === "true"
 
-            };
+                };
 
-        };
+            },
+            [settings]
+        );
 
 
     /* =====================================================
@@ -1536,404 +1505,315 @@ normalized.audit_logging =
     ===================================================== */
 
     const buildPaymentConfiguration =
-        () => {
+        useCallback(
+            () => {
 
-            return {
+                return {
 
-                enabled:
-                    settings.payment_enabled === "true",
+                    enabled:
+                        settings.payment_enabled === "true",
 
-                mobileMoneyEnabled:
-                    settings.mobile_money_enabled === "true",
+                    mobileMoneyEnabled:
+                        settings.mobile_money_enabled === "true",
 
-                cardEnabled:
-                    settings.card_enabled === "true",
+                    cardEnabled:
+                        settings.card_enabled === "true",
 
-                bankTransferEnabled:
-                    settings.bank_transfer_enabled === "true",
+                    bankTransferEnabled:
+                        settings.bank_transfer_enabled === "true",
 
-                gateway:
-                    settings.payment_provider,
+                    gateway:
+                        settings.payment_provider,
 
-                minimumTransaction:
-                    Number(
-                        settings.minimum_transaction
-                    ) || 1,
+                    minimumTransaction:
+                        Number(
+                            settings.minimum_transaction
+                        ) || 1,
 
-                maximumTransaction:
-                    Number(
-                        settings.maximum_transaction
-                    ) || 1000000,
+                    maximumTransaction:
+                        Number(
+                            settings.maximum_transaction
+                        ) || 1000000,
 
-                paymentCurrency:
-                    settings.currency_code,
+                    paymentCurrency:
+                        settings.currency_code,
 
-                transactionFee:
-                    Number(
-                        settings.transaction_fee
-                    ) || 0,
+                    transactionFee:
+                        Number(
+                            settings.transaction_fee
+                        ) || 0,
 
-                autoConfirmPayments:
-                    settings.auto_confirm_payments === "true",
+                    autoConfirmPayments:
+                        settings.auto_confirm_payments === "true",
 
-                paymentNotifications:
-                    settings.payment_notifications === "true"
+                    paymentNotifications:
+                        settings.payment_notifications === "true"
 
-            };
+                };
 
-        };
+            },
+            [settings]
+        );
 
-/* =====================================================
-   BUILD EMAIL CONFIGURATION
-===================================================== */
 
-const buildEmailConfiguration =
-    () => {
+    /* =====================================================
+       BUILD EMAIL CONFIGURATION
+    ===================================================== */
 
-        return {
+    const buildEmailConfiguration =
+        useCallback(
+            () => {
 
-            enabled:
-                settings.email_enabled === "true",
+                return {
 
-            provider:
-                settings.email_provider || "resend",
+                    enabled:
+                        settings.email_enabled === "true",
 
-            resendFromName:
-                settings.resend_from_name ||
-                "KAD Marketplace",
+                    provider:
+                        settings.email_provider ||
+                        "resend",
 
-            resendFromEmail:
-                settings.resend_from_email,
+                    resendFromName:
+                        settings.resend_from_name ||
+                        "KAD Marketplace",
 
-            smtpHost:
-                settings.smtp_host,
+                    resendFromEmail:
+                        settings.resend_from_email,
 
-            smtpPort:
-                Number(
-                    settings.smtp_port
-                ) || 587,
+                    smtpHost:
+                        settings.smtp_host,
 
-            smtpUsername:
-                settings.smtp_username,
+                    smtpPort:
+                        Number(
+                            settings.smtp_port
+                        ) || 587,
 
-            smtpPassword:
-                settings.smtp_password,
+                    smtpUsername:
+                        settings.smtp_username,
 
-            encryption:
-                settings.smtp_encryption,
+                    smtpPassword:
+                        settings.smtp_password,
 
-            fromName:
-                settings.smtp_from_name,
+                    encryption:
+                        settings.smtp_encryption,
 
-            fromEmail:
-                settings.smtp_from_email,
+                    fromName:
+                        settings.smtp_from_name,
 
-            registrationEmail:
-                settings.registration_email === "true",
+                    fromEmail:
+                        settings.smtp_from_email,
 
-            passwordResetEmail:
-                settings.password_reset_email === "true",
+                    registrationEmail:
+                        settings.registration_email === "true",
 
-            orderEmail:
-                settings.order_email === "true",
+                    passwordResetEmail:
+                        settings.password_reset_email === "true",
 
-            paymentEmail:
-                settings.payment_email === "true"
+                    orderEmail:
+                        settings.order_email === "true",
 
-        };
+                    paymentEmail:
+                        settings.payment_email === "true",
 
-    };
+                    subscriptionEmail:
+                        settings.subscription_email === "true"
+
+                };
+
+            },
+            [settings]
+        );
+
+
     /* =====================================================
        BUILD NOTIFICATION CONFIGURATION
     ===================================================== */
 
     const buildNotificationConfiguration =
-        () => {
+        useCallback(
+            () => {
 
-            return {
+                return {
 
-                emailNotifications:
-                    settings.email_notifications === "true",
+                    emailNotifications:
+                        settings.email_notifications === "true",
 
-                welcomeEmail:
-                    settings.welcome_email === "true",
+                    welcomeEmail:
+                        settings.welcome_email === "true",
 
-                productNotifications:
-                    settings.product_notifications === "true",
+                    productNotifications:
+                        settings.product_notifications === "true",
 
-                orderNotifications:
-                    settings.order_notifications === "true",
+                    orderNotifications:
+                        settings.order_notifications === "true",
 
-                paymentNotifications:
-                    settings.payment_notifications === "true",
+                    paymentNotifications:
+                        settings.payment_notifications === "true",
 
-                sellerNotifications:
-                    settings.seller_notifications === "true",
+                    sellerNotifications:
+                        settings.seller_notifications === "true",
 
-                adminAlerts:
-                    settings.admin_notifications === "true",
+                    adminAlerts:
+                        settings.admin_notifications === "true",
 
-                securityAlerts:
-                    settings.security_alerts === "true",
+                    securityAlerts:
+                        settings.security_alerts === "true",
 
-                maintenanceAlerts:
-                    settings.maintenance_alerts === "true",
+                    maintenanceAlerts:
+                        settings.maintenance_alerts === "true",
 
-                promotionalNotifications:
-                    settings.promotional_notifications === "true",
+                    promotionalNotifications:
+                        settings.promotional_notifications === "true",
 
-                smsEnabled:
-                    settings.sms_enabled === "true",
+                    smsEnabled:
+                        settings.sms_enabled === "true",
 
-                smsProvider:
-                    settings.sms_provider
+                    smsProvider:
+                        settings.sms_provider
 
-            };
+                };
 
-        };
-
-/* =====================================================
-   BUILD SECURITY CONFIGURATION
-===================================================== */
-
-const buildSecurityConfiguration =
-    () => {
-
-        return {
-
-            /* =========================================
-               LOGIN SECURITY
-            ========================================= */
-
-            maxFailedLoginAttempts:
-                Math.max(
-                    1,
-                    Number(
-                        settings.login_attempt_limit
-                    ) || 5
-                ),
-
-            accountLockDuration:
-                Math.max(
-                    1,
-                    Number(
-                        settings.account_lock_duration
-                    ) || 30
-                ),
-
-            sessionTimeout:
-                Math.max(
-                    5,
-                    Number(
-                        settings.session_timeout
-                    ) || 120
-                ),
-
-
-            /* =========================================
-               TWO FACTOR AUTHENTICATION
-            ========================================= */
-
-            twoFactorEnabled:
-                settings.two_factor_authentication === "true",
-
-            requireAdminTwoFactor:
-                settings.require_admin_two_factor === "true",
-
-
-            /* =========================================
-               PASSWORD SECURITY
-            ========================================= */
-
-            requireStrongPasswords:
-                settings.require_strong_passwords === "true",
-
-            minimumPasswordLength:
-                Math.max(
-                    6,
-                    Number(
-                        settings.password_min_length
-                    ) || 8
-                ),
-
-            requireUppercasePassword:
-                settings.require_uppercase_password === "true",
-
-            requireLowercasePassword:
-                settings.require_lowercase_password === "true",
-
-            requireNumberPassword:
-                settings.require_number_password === "true",
-
-            requireSpecialCharacter:
-                settings.require_special_character === "true",
-
-            passwordHistoryCount:
-                Math.max(
-                    0,
-                    Number(
-                        settings.password_history_count
-                    ) || 0
-                ),
-
-
-            /* =========================================
-               PASSWORD EXPIRY
-            ========================================= */
-
-            passwordExpiryEnabled:
-                settings.password_expiry_enabled === "true",
-
-            passwordExpiryDays:
-                Math.max(
-                    1,
-                    Number(
-                        settings.password_expiry_days
-                    ) || 90
-                ),
-
-
-            /* =========================================
-               IP SECURITY
-            ========================================= */
-
-            ipMonitoring:
-                settings.ip_monitoring === "true",
-
-            suspiciousIpBlocking:
-                settings.suspicious_ip_blocking === "true",
-
-            ipFailedLoginThreshold:
-                Math.max(
-                    1,
-                    Number(
-                        settings.ip_failed_login_threshold
-                    ) || 10
-                ),
-
-            ipBlockDuration:
-                Math.max(
-                    1,
-                    Number(
-                        settings.ip_block_duration
-                    ) || 60
-                ),
-
-
-            /* =========================================
-               SECURITY ALERTS
-            ========================================= */
-
-            securityAlerts:
-                settings.security_alerts === "true",
-
-            securityAlertFailedLogin:
-                settings.security_alert_failed_login === "true",
-
-            securityAlertAccountLock:
-                settings.security_alert_account_lock === "true",
-
-            securityAlertSuspiciousIp:
-                settings.security_alert_suspicious_ip === "true",
-
-            securityAlertAdminLogin:
-                settings.security_alert_admin_login === "true",
-
-            securityAlertPasswordChange:
-                settings.security_alert_password_change === "true",
-
-            securityAlertNewDevice:
-                settings.security_alert_new_device === "true",
-
-            securityAdminAlerts:
-                settings.security_admin_alerts === "true",
-
-
-            /* =========================================
-               AUDIT
-            ========================================= */
-
-            auditLogging:
-                settings.audit_logging === "true"
-
-        };
-
-    };
+            },
+            [settings]
+        );
 
 
     /* =====================================================
-       BUILD ANALYTICS CONFIGURATION
+       BUILD SECURITY CONFIGURATION
     ===================================================== */
 
-    const buildAnalyticsConfiguration =
-        () => {
+    const buildSecurityConfiguration =
+        useCallback(
+            () => {
 
-            return {
+                return {
 
-                enabled:
-                    settings.analytics_enabled === "true",
+                    maxFailedLoginAttempts:
+                        Math.max(
+                            1,
+                            Number(
+                                settings.login_attempt_limit
+                            ) || 5
+                        ),
 
-                googleAnalyticsId:
-                    settings.google_analytics_id,
+                    accountLockDuration:
+                        Math.max(
+                            1,
+                            Number(
+                                settings.account_lock_duration
+                            ) || 30
+                        ),
 
-                googleTagManagerId:
-                    settings.google_tag_manager_id,
+                    sessionTimeout:
+                        Math.max(
+                            5,
+                            Number(
+                                settings.session_timeout
+                            ) || 120
+                        ),
 
-                facebookPixelId:
-                    settings.facebook_pixel_id,
+                    twoFactorEnabled:
+                        settings.two_factor_authentication === "true",
 
-                googleSearchConsoleVerification:
-                    settings.google_search_console_verification ||
-                    settings.google_search_console,
+                    requireAdminTwoFactor:
+                        settings.require_admin_two_factor === "true",
 
-                anonymousAnalytics:
-                    settings.anonymous_analytics === "true"
+                    requireStrongPasswords:
+                        settings.require_strong_passwords === "true",
 
-            };
+                    minimumPasswordLength:
+                        Math.max(
+                            6,
+                            Number(
+                                settings.password_min_length
+                            ) || 8
+                        ),
 
-        };
+                    requireUppercasePassword:
+                        settings.require_uppercase_password === "true",
 
+                    requireLowercasePassword:
+                        settings.require_lowercase_password === "true",
 
-    /* =====================================================
-       BUILD SEO CONFIGURATION
-    ===================================================== */
+                    requireNumberPassword:
+                        settings.require_number_password === "true",
 
-    const buildSeoConfiguration =
-        () => {
+                    requireSpecialCharacter:
+                        settings.require_special_character === "true",
 
-            return {
+                    passwordHistoryCount:
+                        Math.max(
+                            0,
+                            Number(
+                                settings.password_history_count
+                            ) || 0
+                        ),
 
-                title:
-                    settings.seo_title,
+                    passwordExpiryEnabled:
+                        settings.password_expiry_enabled === "true",
 
-                description:
-                    settings.seo_description,
+                    passwordExpiryDays:
+                        Math.max(
+                            1,
+                            Number(
+                                settings.password_expiry_days
+                            ) || 90
+                        ),
 
-                keywords:
-                    settings.seo_keywords,
+                    ipMonitoring:
+                        settings.ip_monitoring === "true",
 
-                googleAnalyticsId:
-                    settings.google_analytics_id,
+                    suspiciousIpBlocking:
+                        settings.suspicious_ip_blocking === "true",
 
-                googleSiteVerification:
-                    settings.google_site_verification ||
-                    settings.google_search_console,
+                    ipFailedLoginThreshold:
+                        Math.max(
+                            1,
+                            Number(
+                                settings.ip_failed_login_threshold
+                            ) || 10
+                        ),
 
-                openGraphTitle:
-                    settings.og_title,
+                    ipBlockDuration:
+                        Math.max(
+                            1,
+                            Number(
+                                settings.ip_block_duration
+                            ) || 60
+                        ),
 
-                openGraphDescription:
-                    settings.og_description,
+                    securityAlerts:
+                        settings.security_alerts === "true",
 
-                searchEngineIndexing:
-                    settings.search_engine_indexing === "true",
+                    securityAlertFailedLogin:
+                        settings.security_alert_failed_login === "true",
 
-                sitemapEnabled:
-                    settings.enable_sitemap === "true"
+                    securityAlertAccountLock:
+                        settings.security_alert_account_lock === "true",
 
-            };
+                    securityAlertSuspiciousIp:
+                        settings.security_alert_suspicious_ip === "true",
 
-        };
+                    securityAlertAdminLogin:
+                        settings.security_alert_admin_login === "true",
+
+                    securityAlertPasswordChange:
+                        settings.security_alert_password_change === "true",
+
+                    securityAlertNewDevice:
+                        settings.security_alert_new_device === "true",
+
+                    securityAdminAlerts:
+                        settings.security_admin_alerts === "true",
+
+                    auditLogging:
+                        settings.audit_logging === "true"
+
+                };
+
+            },
+            [settings]
+        );
 
 
     /* =====================================================
@@ -1941,117 +1821,352 @@ const buildSecurityConfiguration =
     ===================================================== */
 
     const buildBackupConfiguration =
-        () => {
+        useCallback(
+            () => {
 
-            return {
+                return {
 
-                automaticBackups:
-                    settings.auto_backup === "true",
+                    automaticBackups:
+                        settings.auto_backup === "true",
 
-                backupFrequency:
-                    settings.backup_frequency,
+                    backupFrequency:
+                        settings.backup_frequency,
 
-                retentionDays:
-                    Number(
-                        settings.backup_retention_days
-                    ) || 30
+                    retentionDays:
+                        Number(
+                            settings.backup_retention_days
+                        ) || 30
 
-            };
+                };
 
-        };
+            },
+            [settings]
+        );
 
 
     /* =====================================================
-       BUILD COMPLETE DATABASE PAYLOAD
+       BUILD ANALYTICS CONFIGURATION
     ===================================================== */
 
-    const buildSettingsPayload =
-        () => {
+    const buildAnalyticsConfiguration =
+        useCallback(
+            () => {
 
-            return {
+                return {
 
-                /* =============================================
-                   DIRECT DATABASE FIELDS
-                ============================================= */
+                    enabled:
+                        settings.analytics_enabled === "true",
 
-                marketplace_name:
-                    settings.marketplace_name,
+                    googleAnalyticsId:
+                        settings.google_analytics_id,
 
-                logo:
-                    settings.logo,
+                    googleTagManagerId:
+                        settings.google_tag_manager_id,
 
-                admin_logo:
-                    settings.admin_logo,
+                    facebookPixelId:
+                        settings.facebook_pixel_id,
 
-                favicon:
-                    settings.favicon,
+                    googleSearchConsoleVerification:
+                        settings.google_search_console_verification ||
+                        settings.google_search_console,
 
-                support_email:
-                    settings.support_email,
+                    anonymousAnalytics:
+                        settings.anonymous_analytics === "true"
 
-                support_phone:
-                    settings.support_phone,
+                };
 
-                currency:
-                    settings.currency,
-
-                language:
-                    settings.default_language,
-
-                timezone:
-                    settings.timezone,
-
-                maintenance_mode:
-                    settings.maintenance_mode === "true",
-
-                registration_enabled:
-                    settings.allow_registration !== "false",
-
-                store_registration_enabled:
-                    settings.allow_store_creation !== "false",
-
-                seo_title:
-                    settings.seo_title,
-
-                seo_description:
-                    settings.seo_description,
+            },
+            [settings]
+        );
 
 
-                /* =============================================
-                   ADVANCED DATABASE CONFIGURATION
-                ============================================= */
+    /* =====================================================
+       BUILD SEO CONFIGURATION
+    ===================================================== */
 
-                configuration: {
+    const buildSeoConfiguration =
+        useCallback(
+            () => {
+
+                return {
+
+                    title:
+                        settings.seo_title || "",
+
+                    description:
+                        settings.seo_description || "",
+
+                    keywords:
+                        settings.seo_keywords || "",
+
+                    googleAnalyticsId:
+                        settings.google_analytics_id || "",
+
+                    googleSiteVerification:
+                        settings.google_site_verification ||
+                        settings.google_search_console ||
+                        "",
+
+                    openGraphTitle:
+                        settings.og_title || "",
+
+                    openGraphDescription:
+                        settings.og_description || "",
+
+                    searchEngineIndexing:
+                        settings.search_engine_indexing === "true",
+
+                    sitemapEnabled:
+                        settings.enable_sitemap === "true"
+
+                };
+
+            },
+            [settings]
+        );
+
+
+    /* =====================================================
+       BUILD COMPLETE CONFIGURATION
+    ===================================================== */
+
+    const buildConfiguration =
+        useCallback(
+            () => {
+
+                return {
+
+                    /*
+                    =========================================
+                    PRESERVE UNKNOWN EXISTING SETTINGS
+                    =========================================
+                    */
+
+                    ...(settings.configuration || {}),
+
+
+                    /*
+                    =========================================
+                    MARKETPLACE
+                    =========================================
+                    */
 
                     marketplace:
                         buildMarketplaceConfiguration(),
 
+
+                    /*
+                    =========================================
+                    PAYMENT
+                    =========================================
+                    */
+
                     payment:
                         buildPaymentConfiguration(),
+
+
+                    /*
+                    =========================================
+                    EMAIL
+                    =========================================
+                    */
 
                     email:
                         buildEmailConfiguration(),
 
+
+                    /*
+                    =========================================
+                    NOTIFICATIONS
+                    =========================================
+                    */
+
                     notifications:
                         buildNotificationConfiguration(),
+
+
+                    /*
+                    =========================================
+                    SECURITY
+                    =========================================
+                    */
 
                     security:
                         buildSecurityConfiguration(),
 
+
+                    /*
+                    =========================================
+                    BACKUP
+                    =========================================
+                    */
+
+                    backup:
+                        buildBackupConfiguration(),
+
+
+                    /*
+                    =========================================
+                    ANALYTICS
+                    =========================================
+                    */
+
                     analytics:
                         buildAnalyticsConfiguration(),
 
+
+                    /*
+                    =========================================
+                    SEO
+                    =========================================
+                    */
+
                     seo:
-                        buildSeoConfiguration(),
+                        buildSeoConfiguration()
 
-                    backup:
-                        buildBackupConfiguration()
+                };
 
-                }
+            },
+            [
+                settings.configuration,
+                buildMarketplaceConfiguration,
+                buildPaymentConfiguration,
+                buildEmailConfiguration,
+                buildNotificationConfiguration,
+                buildSecurityConfiguration,
+                buildBackupConfiguration,
+                buildAnalyticsConfiguration,
+                buildSeoConfiguration
+            ]
+        );
 
-            };
 
-        };
+    /* =====================================================
+       BUILD COMPLETE API PAYLOAD
+    ===================================================== */
+
+    const buildSettingsPayload =
+        useCallback(
+            () => {
+
+                const configuration =
+                    buildConfiguration();
+
+
+                const seo =
+                    configuration.seo;
+
+
+                return {
+
+                    /* =====================================
+                       DIRECT DATABASE FIELDS
+                    ===================================== */
+
+                    marketplace_name:
+                        settings.marketplace_name || "",
+
+                    logo:
+                        settings.logo || "",
+
+                    admin_logo:
+                        settings.admin_logo || "",
+
+                    favicon:
+                        settings.favicon || "",
+
+                    support_email:
+                        settings.support_email || "",
+
+                    support_phone:
+                        settings.support_phone || "",
+
+                    business_address:
+                        settings.business_address || "",
+
+                    currency:
+                        settings.currency || "GH₵",
+
+                    language:
+                        settings.language || "English",
+
+                    timezone:
+                        settings.timezone || "Africa/Accra",
+
+                    maintenance_mode:
+                        settings.maintenance_mode === "true",
+
+                    registration_enabled:
+                        settings.registration_enabled !== "false",
+
+                    store_registration_enabled:
+                        settings.store_registration_enabled !== "false",
+
+                    facebook:
+                        settings.facebook || "",
+
+                    instagram:
+                        settings.instagram || "",
+
+                    tiktok:
+                        settings.tiktok || "",
+
+                    x:
+                        settings.x || "",
+
+                    whatsapp:
+                        settings.whatsapp || "",
+
+                    is_active:
+                        settings.is_active !== "false",
+
+
+                    /* =====================================
+                       COMPLETE CONFIGURATION
+                    ===================================== */
+
+                    configuration,
+
+
+                    /* =====================================
+                       LEGACY SEO FIELDS
+                    ===================================== */
+
+                    seo_title:
+                        seo.title,
+
+                    seo_description:
+                        seo.description,
+
+                    seo_keywords:
+                        seo.keywords,
+
+                    google_analytics_id:
+                        seo.googleAnalyticsId,
+
+                    google_site_verification:
+                        seo.googleSiteVerification,
+
+                    og_title:
+                        seo.openGraphTitle,
+
+                    og_description:
+                        seo.openGraphDescription,
+
+                    search_engine_indexing:
+                        seo.searchEngineIndexing,
+
+                    enable_sitemap:
+                        seo.sitemapEnabled
+
+                };
+
+            },
+            [
+                settings,
+                buildConfiguration
+            ]
+        );
 
 
     /* =====================================================
@@ -2071,7 +2186,6 @@ const buildSecurityConfiguration =
                 setSaving(true);
 
                 setMessage("");
-
                 setErrorMessage("");
 
 
@@ -2080,8 +2194,34 @@ const buildSecurityConfiguration =
 
 
                 console.log(
-                    "SAVING ADMIN SETTINGS:",
+                    "===================================="
+                );
+
+                console.log(
+                    "SAVING ADMIN SETTINGS"
+                );
+
+                console.log(
+                    "===================================="
+                );
+
+                console.log(
                     payload
+                );
+
+                console.log(
+                    "CONFIGURATION:",
+                    payload.configuration
+                );
+
+                console.log(
+                    "SEO:",
+                    payload.configuration?.seo
+                );
+
+                console.log(
+                    "EMAIL:",
+                    payload.configuration?.email
                 );
 
 
@@ -2091,25 +2231,12 @@ const buildSecurityConfiguration =
                         payload
                     );
 
-console.log(
-    "SAVE ADMIN SETTINGS RESPONSE:",
-    response.data
-);
 
-console.log(
-    "SAVED EMAIL CONFIGURATION:",
-    response.data?.settings?.configuration?.email
-);
+                console.log(
+                    "SAVE ADMIN SETTINGS RESPONSE:",
+                    response.data
+                );
 
-console.log(
-    "RESEND FROM EMAIL:",
-    response.data?.settings?.configuration?.email?.resendFromEmail
-);
-
-console.log(
-    "EMAIL PROVIDER:",
-    response.data?.settings?.configuration?.email?.provider
-);
 
                 if (
                     !response.data?.success
@@ -2124,13 +2251,13 @@ console.log(
 
 
                 /*
-                =================================================
-                   UPDATE FRONTEND WITH DATABASE RESPONSE
-                =================================================
+                =============================================
+                UPDATE STATE WITH DATABASE RESPONSE
+                =============================================
                 */
 
                 if (
-                    response.data.settings
+                    response.data?.settings
                 ) {
 
                     const normalized =
@@ -2221,11 +2348,8 @@ console.log(
                 return;
             }
 
-
             setMessage("");
-
             setErrorMessage("");
-
 
             await loadSettings();
 
@@ -2274,7 +2398,7 @@ console.log(
 
 
             {/* =================================================
-                PAGE HEADER
+                HEADER
             ================================================= */}
 
             <div className="settings-page-header">
@@ -2342,7 +2466,7 @@ console.log(
 
 
             {/* =================================================
-                SUCCESS MESSAGE
+                SUCCESS
             ================================================= */}
 
             {message && (
@@ -2374,7 +2498,7 @@ console.log(
 
 
             {/* =================================================
-                ERROR MESSAGE
+                ERROR
             ================================================= */}
 
             {errorMessage && (
@@ -2406,7 +2530,9 @@ console.log(
                         onClick={handleReload}
                         disabled={saving}
                     >
+
                         Retry
+
                     </button>
 
                 </div>
@@ -2415,7 +2541,7 @@ console.log(
 
 
             {/* =================================================
-                GENERAL SETTINGS
+                GENERAL
             ================================================= */}
 
             <section className="settings-section">
@@ -2429,7 +2555,7 @@ console.log(
 
 
             {/* =================================================
-                BRANDING SETTINGS
+                BRANDING
             ================================================= */}
 
             <section className="settings-section">
@@ -2444,7 +2570,7 @@ console.log(
 
 
             {/* =================================================
-                MARKETPLACE SETTINGS
+                MARKETPLACE
             ================================================= */}
 
             <section className="settings-section">
@@ -2458,7 +2584,7 @@ console.log(
 
 
             {/* =================================================
-                PAYMENT SETTINGS
+                PAYMENT
             ================================================= */}
 
             <section className="settings-section">
@@ -2472,7 +2598,7 @@ console.log(
 
 
             {/* =================================================
-                EMAIL SETTINGS
+                EMAIL
             ================================================= */}
 
             <section className="settings-section">
@@ -2486,7 +2612,7 @@ console.log(
 
 
             {/* =================================================
-                NOTIFICATION SETTINGS
+                NOTIFICATIONS
             ================================================= */}
 
             <section className="settings-section">
@@ -2500,7 +2626,7 @@ console.log(
 
 
             {/* =================================================
-                SECURITY SETTINGS
+                SECURITY
             ================================================= */}
 
             <section className="settings-section">
@@ -2514,7 +2640,7 @@ console.log(
 
 
             {/* =================================================
-                BACKUP SETTINGS
+                BACKUP
             ================================================= */}
 
             <section className="settings-section">
@@ -2531,7 +2657,7 @@ console.log(
 
 
             {/* =================================================
-                SEO SETTINGS
+                SEO
             ================================================= */}
 
             <section className="settings-section">
@@ -2545,7 +2671,7 @@ console.log(
 
 
             {/* =================================================
-                ANALYTICS SETTINGS
+                ANALYTICS
             ================================================= */}
 
             <section className="settings-section">
@@ -2559,7 +2685,7 @@ console.log(
 
 
             {/* =================================================
-                BOTTOM ACTION BAR
+                BOTTOM ACTIONS
             ================================================= */}
 
             <div className="settings-actions">
@@ -2591,7 +2717,6 @@ console.log(
                 </button>
 
             </div>
-
 
         </div>
 

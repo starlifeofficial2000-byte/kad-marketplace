@@ -1,15 +1,18 @@
 User-agent: *
 Allow: /
 
+# Authentication pages
 Disallow: /login
 Disallow: /register
 Disallow: /forgot-password
 Disallow: /verify-reset
 Disallow: /reset-password
 Disallow: /verify-login-otp
+
+# Private user pages
 Disallow: /dashboard
-Disallow: /sell
 Disallow: /profile
+Disallow: /sell
 Disallow: /inbox
 Disallow: /chat/
 Disallow: /notifications
@@ -22,6 +25,9 @@ Disallow: /seller/leads
 Disallow: /wishlist
 Disallow: /support
 Disallow: /my-tickets
+
+# Admin
 Disallow: /admin/
 
+# Sitemap
 Sitemap: https://kadmarket.com/sitemap.xml

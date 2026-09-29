@@ -2,7 +2,7 @@ const MarketplaceSetting = require("../models/MarketplaceSetting");
 
 /*
 =====================================================
- DEFAULT ADVANCED CONFIGURATION
+ DEFAULT CONFIGURATION
 =====================================================
 */
 
@@ -34,44 +34,40 @@ const DEFAULT_CONFIGURATION = {
         paymentNotifications: true
     },
 
-   email: {
-    enabled: true,
-
-    provider: "resend",
-
-    resendFromName: "KAD Marketplace",
-    resendFromEmail: "",
-
-    smtpHost: "",
-    smtpPort: 587,
-    smtpUsername: "",
-    smtpPassword: "",
-    encryption: "tls",
-
-    fromName: "KAD Marketplace",
-    fromEmail: "",
-
-  registrationEmail: true,
-passwordResetEmail: true,
-orderEmail: true,
-paymentEmail: true,
-subscriptionEmail: true
-},
+    email: {
+        enabled: true,
+        provider: "resend",
+        resendFromName: "KAD Marketplace",
+        resendFromEmail: "",
+        smtpHost: "",
+        smtpPort: 587,
+        smtpUsername: "",
+        smtpPassword: "",
+        encryption: "tls",
+        fromName: "KAD Marketplace",
+        fromEmail: "",
+        registrationEmail: true,
+        passwordResetEmail: true,
+        orderEmail: true,
+        paymentEmail: true,
+        subscriptionEmail: true
+    },
 
     notifications: {
-    emailNotifications: true,
-    welcomeEmail: true,
-    productNotifications: true,
-    orderNotifications: true,
-    paymentNotifications: true,
-    sellerNotifications: true,
-    adminAlerts: true,
-    securityAlerts: true,
-    maintenanceAlerts: true,
-    promotionalNotifications: true,
-    smsEnabled: false,
-    smsProvider: ""
-},
+        emailNotifications: true,
+        welcomeEmail: true,
+        productNotifications: true,
+        orderNotifications: true,
+        paymentNotifications: true,
+        sellerNotifications: true,
+        adminAlerts: true,
+        securityAlerts: true,
+        maintenanceAlerts: true,
+        promotionalNotifications: true,
+        smsEnabled: false,
+        smsProvider: ""
+    },
+
     security: {
         maxFailedLoginAttempts: 5,
         accountLockDuration: 30,
@@ -95,15 +91,33 @@ subscriptionEmail: true
         anonymousAnalytics: true
     },
 
+    /*
+    =================================================
+    SEO
+    =================================================
+    */
+
     seo: {
-        title: "",
-        description: "",
-        keywords: "",
+        title: "KAD Marketplace | Buy & Sell in Ghana",
+
+        description:
+            "KAD Marketplace is a Ghanaian online marketplace where you can buy and sell products and services across Ghana.",
+
+        keywords:
+            "KAD Marketplace, Ghana marketplace, buy and sell Ghana, online marketplace Ghana",
+
         googleAnalyticsId: "",
+
         googleSiteVerification: "",
-        openGraphTitle: "",
-        openGraphDescription: "",
+
+        openGraphTitle:
+            "KAD Marketplace | Buy & Sell in Ghana",
+
+        openGraphDescription:
+            "Buy and sell products and services across Ghana on KAD Marketplace.",
+
         searchEngineIndexing: true,
+
         sitemapEnabled: true
     },
 
@@ -137,23 +151,26 @@ function deepMerge(base, incoming) {
 
     Object.keys(incoming).forEach((key) => {
 
+        const incomingValue = incoming[key];
+        const baseValue = base[key];
+
         if (
-            incoming[key] &&
-            typeof incoming[key] === "object" &&
-            !Array.isArray(incoming[key]) &&
-            base[key] &&
-            typeof base[key] === "object" &&
-            !Array.isArray(base[key])
+            incomingValue &&
+            typeof incomingValue === "object" &&
+            !Array.isArray(incomingValue) &&
+            baseValue &&
+            typeof baseValue === "object" &&
+            !Array.isArray(baseValue)
         ) {
 
             result[key] = deepMerge(
-                base[key],
-                incoming[key]
+                baseValue,
+                incomingValue
             );
 
         } else {
 
-            result[key] = incoming[key];
+            result[key] = incomingValue;
 
         }
 
@@ -173,9 +190,7 @@ async function getSettingsRecord() {
 
     let settings =
         await MarketplaceSetting.findOne({
-            order: [
-                ["id", "ASC"]
-            ]
+            order: [["id", "ASC"]]
         });
 
     if (!settings) {
@@ -191,6 +206,9 @@ async function getSettingsRecord() {
 
                 language:
                     "English",
+
+                timezone:
+                    "Africa/Accra",
 
                 maintenanceMode:
                     false,
@@ -217,7 +235,37 @@ async function getSettingsRecord() {
 
 /*
 =====================================================
- FORMAT SETTINGS FOR FRONTEND
+ PARSE CONFIGURATION
+=====================================================
+*/
+
+function parseConfiguration(configuration) {
+
+    if (
+        typeof configuration === "string"
+    ) {
+
+        try {
+
+            return JSON.parse(
+                configuration
+            );
+
+        } catch {
+
+            return {};
+
+        }
+
+    }
+
+    return configuration || {};
+}
+
+
+/*
+=====================================================
+ FORMAT SETTINGS
 =====================================================
 */
 
@@ -228,32 +276,13 @@ function formatSettings(record) {
             ? record.toJSON()
             : record;
 
-    let configuration =
-        data.configuration;
-
-    if (
-        typeof configuration === "string"
-    ) {
-
-        try {
-
-            configuration =
-                JSON.parse(configuration);
-
-        } catch {
-
-            configuration = {};
-
-        }
-
-    }
-
-    configuration =
+    const configuration =
         deepMerge(
             DEFAULT_CONFIGURATION,
-            configuration || {}
+            parseConfiguration(
+                data.configuration
+            )
         );
-
 
     return {
 
@@ -315,24 +344,26 @@ function formatSettings(record) {
             data.whatsapp || "",
 
         seo_title:
-            data.seoTitle || "",
+    configuration.seo?.title ||
+    data.seoTitle ||
+    "",
 
-        seo_description:
-            data.seoDescription || "",
-
+seo_description:
+    configuration.seo?.description ||
+    data.seoDescription ||
+    "",
         is_active:
             data.isActive !== false,
 
         configuration
 
     };
-
 }
 
 
 /*
 =====================================================
- GET SETTINGS
+ GET MARKETPLACE SETTINGS
 =====================================================
 */
 
@@ -341,14 +372,15 @@ async function getMarketplaceSettings() {
     const record =
         await getSettingsRecord();
 
-    return formatSettings(record);
-
+    return formatSettings(
+        record
+    );
 }
 
 
 /*
 =====================================================
- UPDATE SETTINGS
+ UPDATE MARKETPLACE SETTINGS
 =====================================================
 */
 
@@ -368,15 +400,14 @@ async function updateMarketplaceSettings(
 
     }
 
-
     const record =
         await getSettingsRecord();
 
 
     /*
-    -----------------------------------------------
-     DIRECT DATABASE FIELDS
-    -----------------------------------------------
+    =============================================
+    DIRECT DATABASE FIELDS
+    =============================================
     */
 
     const directFields = {
@@ -435,20 +466,16 @@ async function updateMarketplaceSettings(
         whatsapp:
             incoming.whatsapp,
 
-        seoTitle:
-            incoming.seo_title,
-
-        seoDescription:
-            incoming.seo_description,
-
         isActive:
             incoming.is_active
 
     };
 
 
-    Object.entries(directFields)
-        .forEach(([key, value]) => {
+    Object.entries(
+        directFields
+    ).forEach(
+        ([key, value]) => {
 
             if (
                 value !== undefined
@@ -459,63 +486,95 @@ async function updateMarketplaceSettings(
 
             }
 
-        });
+        }
+    );
 
 
     /*
-    -----------------------------------------------
-     ADVANCED CONFIGURATION
-    -----------------------------------------------
+    =============================================
+    CURRENT CONFIGURATION
+    =============================================
     */
 
-    let currentConfiguration =
-        record.configuration;
+    const currentConfiguration =
+        parseConfiguration(
+            record.configuration
+        );
+
+
+    /*
+    =============================================
+    INCOMING CONFIGURATION
+    =============================================
+    */
+
+    const incomingConfiguration =
+        incoming.configuration &&
+        typeof incoming.configuration === "object"
+            ? incoming.configuration
+            : {};
+
+
+    /*
+    =============================================
+    MERGE EVERYTHING
+    =============================================
+    */
+
+    record.configuration =
+        deepMerge(
+            DEFAULT_CONFIGURATION,
+            deepMerge(
+                currentConfiguration,
+                incomingConfiguration
+            )
+        );
+
+
+    /*
+    =============================================
+    KEEP SEO DIRECT FIELDS SYNCHRONIZED
+    =============================================
+    */
 
     if (
-        typeof currentConfiguration === "string"
+        record.configuration?.seo
     ) {
 
-        try {
+        if (
+            record.configuration.seo.title !== undefined
+        ) {
 
-            currentConfiguration =
-                JSON.parse(
-                    currentConfiguration
-                );
+            record.seoTitle =
+                record.configuration.seo.title;
 
-        } catch {
+        }
 
-            currentConfiguration = {};
+        if (
+            record.configuration.seo.description !== undefined
+        ) {
+
+            record.seoDescription =
+                record.configuration.seo.description;
 
         }
 
     }
 
 
-    const incomingConfiguration =
-        incoming.configuration || {};
-
-
-    record.configuration =
-        deepMerge(
-            deepMerge(
-                DEFAULT_CONFIGURATION,
-                currentConfiguration || {}
-            ),
-            incomingConfiguration
-        );
-
-
     await record.save();
 
 
-    return formatSettings(record);
-
+    return formatSettings(
+        record
+    );
 }
 
+
 /*
-=========================================================
+=====================================================
  GET INDIVIDUAL SETTING
-=========================================================
+=====================================================
 */
 
 async function getSetting(
@@ -528,9 +587,9 @@ async function getSetting(
 
 
     /*
-    -----------------------------------------------------
-     DIRECT SETTINGS / ALIASES
-    -----------------------------------------------------
+    =============================================
+    DIRECT SETTINGS
+    =============================================
     */
 
     const aliases = {
@@ -547,34 +606,24 @@ async function getSetting(
         registration_enabled:
             settings.registration_enabled,
 
-        /*
-        Frontend Marketplace Settings
-        */
-
         allow_registration:
             settings.registration_enabled,
 
         store_registration_enabled:
             settings.store_registration_enabled,
 
-        /*
-        Product Settings
-        */
-
         max_product_images:
-            settings.configuration?.marketplace?.maxProductImages,
+            settings.configuration
+                ?.marketplace
+                ?.maxProductImages,
 
         require_product_approval:
-            settings.configuration?.marketplace?.requireProductApproval
+            settings.configuration
+                ?.marketplace
+                ?.requireProductApproval
 
     };
 
-
-    /*
-    -----------------------------------------------------
-     RETURN DIRECT / ALIASED SETTING
-    -----------------------------------------------------
-    */
 
     if (
         Object.prototype.hasOwnProperty.call(
@@ -589,9 +638,9 @@ async function getSetting(
 
 
     /*
-    -----------------------------------------------------
-     SEARCH ALL CONFIGURATION SECTIONS
-    -----------------------------------------------------
+    =============================================
+    SEARCH CONFIGURATION
+    =============================================
     */
 
     const sections =
@@ -620,15 +669,9 @@ async function getSetting(
     }
 
 
-    /*
-    -----------------------------------------------------
-     FALLBACK
-    -----------------------------------------------------
-    */
-
     return fallback;
-
 }
+
 
 /*
 =====================================================
@@ -650,13 +693,17 @@ function toBoolean(
 
     }
 
-
     if (
         typeof value === "string"
     ) {
 
+        const normalized =
+            value
+                .trim()
+                .toLowerCase();
+
         if (
-            value.toLowerCase() === "true"
+            normalized === "true"
         ) {
 
             return true;
@@ -664,7 +711,7 @@ function toBoolean(
         }
 
         if (
-            value.toLowerCase() === "false"
+            normalized === "false"
         ) {
 
             return false;
@@ -673,11 +720,15 @@ function toBoolean(
 
     }
 
-
     return fallback;
-
 }
 
+
+/*
+=====================================================
+ EXPORT
+=====================================================
+*/
 
 module.exports = {
 
@@ -693,6 +744,8 @@ module.exports = {
 
     toBoolean,
 
-    formatSettings
+    formatSettings,
+
+    deepMerge
 
 };

@@ -1,13 +1,92 @@
 const { Setting } = require("../models");
 
 const {
-    getMarketplaceSettings
+    getMarketplaceSettings,
+    updateMarketplaceSettings,
+    getSetting,
+    toBoolean
 } = require("../services/marketplaceSettingsService");
 
 const {
     sendTestEmail
 } = require("../services/emailService");
 
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+const safeJsonParse = (value, fallback = {}) => {
+    if (typeof value !== "string") {
+        return value || fallback;
+    }
+
+    try {
+        return JSON.parse(value);
+    } catch {
+        return fallback;
+    }
+};
+
+
+/*
+   Convert frontend flat SEO settings into the
+   MarketplaceSetting configuration structure.
+*/
+const buildSEOConfiguration = (data) => {
+
+    const seo = {};
+
+    if (data.seo_title !== undefined) {
+        seo.title = data.seo_title;
+    }
+
+    if (data.seo_description !== undefined) {
+        seo.description = data.seo_description;
+    }
+
+    if (data.seo_keywords !== undefined) {
+        seo.keywords = data.seo_keywords;
+    }
+
+    if (data.google_analytics_id !== undefined) {
+        seo.googleAnalyticsId =
+            data.google_analytics_id;
+    }
+
+    if (data.google_site_verification !== undefined) {
+        seo.googleSiteVerification =
+            data.google_site_verification;
+    }
+
+    if (data.og_title !== undefined) {
+        seo.openGraphTitle =
+            data.og_title;
+    }
+
+    if (data.og_description !== undefined) {
+        seo.openGraphDescription =
+            data.og_description;
+    }
+
+    if (data.search_engine_indexing !== undefined) {
+        seo.searchEngineIndexing =
+            toBoolean(
+                data.search_engine_indexing,
+                true
+            );
+    }
+
+    if (data.enable_sitemap !== undefined) {
+        seo.sitemapEnabled =
+            toBoolean(
+                data.enable_sitemap,
+                true
+            );
+    }
+
+    return seo;
+};
 
 /* =========================================================
    GET ALL SETTINGS
@@ -17,24 +96,176 @@ exports.getSettings = async (req, res) => {
 
     try {
 
-        const settings = await Setting.findAll({
+        const settings =
+            await Setting.findAll({
 
-            order: [
+                order: [
+                    ["category", "ASC"],
+                    ["settingKey", "ASC"]
+                ]
 
-                ["category", "ASC"],
+            });
 
-                ["settingKey", "ASC"]
 
-            ]
+        const marketplaceSettings =
+            await getMarketplaceSettings();
 
-        });
+
+        const seo =
+            marketplaceSettings.configuration?.seo || {};
+
+        const analytics =
+            marketplaceSettings.configuration?.analytics || {};
+
+
+        /*
+        =====================================================
+        NORMAL SETTINGS ONLY
+        =====================================================
+        */
+
+        const nonSEOSettings =
+            settings.filter(
+                (item) =>
+                    String(item.category).toLowerCase() !== "seo"
+            );
+
+
+        /*
+        =====================================================
+        AUTHORITATIVE SEO SETTINGS
+        =====================================================
+        */
+
+        const seoSettings = [
+
+            {
+                settingKey:
+                    "seo_title",
+
+                settingValue:
+                    seo.title ||
+                    marketplaceSettings.seo_title ||
+                    "",
+
+                category:
+                    "SEO"
+            },
+
+            {
+                settingKey:
+                    "seo_description",
+
+                settingValue:
+                    seo.description ||
+                    marketplaceSettings.seo_description ||
+                    "",
+
+                category:
+                    "SEO"
+            },
+
+            {
+                settingKey:
+                    "seo_keywords",
+
+                settingValue:
+                    seo.keywords || "",
+
+                category:
+                    "SEO"
+            },
+
+            {
+                settingKey:
+                    "google_analytics_id",
+
+                settingValue:
+                    seo.googleAnalyticsId ||
+                    analytics.googleAnalyticsId ||
+                    "",
+
+                category:
+                    "SEO"
+            },
+
+            {
+                settingKey:
+                    "google_site_verification",
+
+                settingValue:
+                    seo.googleSiteVerification || "",
+
+                category:
+                    "SEO"
+            },
+
+            {
+                settingKey:
+                    "og_title",
+
+                settingValue:
+                    seo.openGraphTitle ||
+                    seo.title ||
+                    "",
+
+                category:
+                    "SEO"
+            },
+
+            {
+                settingKey:
+                    "og_description",
+
+                settingValue:
+                    seo.openGraphDescription ||
+                    seo.description ||
+                    "",
+
+                category:
+                    "SEO"
+            },
+
+            {
+                settingKey:
+                    "search_engine_indexing",
+
+                settingValue:
+                    String(
+                        seo.searchEngineIndexing !== false
+                    ),
+
+                category:
+                    "SEO"
+            },
+
+            {
+                settingKey:
+                    "enable_sitemap",
+
+                settingValue:
+                    String(
+                        seo.sitemapEnabled !== false
+                    ),
+
+                category:
+                    "SEO"
+            }
+
+        ];
 
 
         return res.status(200).json({
 
             success: true,
 
-            settings
+            settings: [
+
+                ...nonSEOSettings,
+
+                ...seoSettings
+
+            ]
 
         });
 
@@ -46,7 +277,6 @@ exports.getSettings = async (req, res) => {
             "GET SETTINGS ERROR:",
             error
         );
-
 
         return res.status(500).json({
 
@@ -69,21 +299,9 @@ exports.getPublicSettings = async (req, res) => {
 
     try {
 
-        /*
-        -----------------------------------------------------
-        Get formatted marketplace settings
-        -----------------------------------------------------
-        */
-
         const settings =
             await getMarketplaceSettings();
 
-
-        /*
-        -----------------------------------------------------
-        Extract advanced configuration
-        -----------------------------------------------------
-        */
 
         const configuration =
             settings.configuration || {};
@@ -98,21 +316,11 @@ exports.getPublicSettings = async (req, res) => {
             configuration.marketplace || {};
 
 
-        /*
-        -----------------------------------------------------
-        Return ONLY safe public settings
-        -----------------------------------------------------
-        */
-
         return res.status(200).json({
 
             success: true,
 
             settings: {
-
-                /* =========================================
-                   BASIC MARKETPLACE
-                ========================================= */
 
                 id:
                     settings.id || null,
@@ -129,6 +337,15 @@ exports.getPublicSettings = async (req, res) => {
                 favicon:
                     settings.favicon || "",
 
+                support_email:
+                    settings.support_email || "",
+
+                support_phone:
+                    settings.support_phone || "",
+
+                business_address:
+                    settings.business_address || "",
+
                 currency:
                     settings.currency || "GH₵",
 
@@ -136,7 +353,8 @@ exports.getPublicSettings = async (req, res) => {
                     settings.language || "English",
 
                 timezone:
-                    settings.timezone || "Africa/Accra",
+                    settings.timezone ||
+                    "Africa/Accra",
 
 
                 /* =========================================
@@ -208,7 +426,7 @@ exports.getPublicSettings = async (req, res) => {
 
 
                 /* =========================================
-                   MARKETPLACE THEME
+                   THEME
                 ========================================= */
 
                 primary_color:
@@ -245,6 +463,7 @@ exports.getPublicSettings = async (req, res) => {
 
 };
 
+
 /* =========================================================
    GET SETTINGS BY CATEGORY
 ========================================================= */
@@ -253,24 +472,135 @@ exports.getSettingsByCategory = async (req, res) => {
 
     try {
 
-        const { category } = req.params;
+        const { category } =
+            req.params;
 
 
-        const settings = await Setting.findAll({
+        if (
+            String(category).toLowerCase() ===
+            "seo"
+        ) {
 
-            where: {
+            const marketplaceSettings =
+                await getMarketplaceSettings();
 
-                category
+            const seo =
+                marketplaceSettings.configuration?.seo ||
+                {};
 
-            },
+            const analytics =
+                marketplaceSettings.configuration?.analytics ||
+                {};
 
-            order: [
 
-                ["settingKey", "ASC"]
+            return res.status(200).json({
 
-            ]
+                success: true,
 
-        });
+                settings: [
+
+                    {
+                        settingKey: "seo_title",
+                        settingValue:
+                            marketplaceSettings.seo_title ||
+                            seo.title ||
+                            "",
+                        category: "SEO"
+                    },
+
+                    {
+                        settingKey: "seo_description",
+                        settingValue:
+                            marketplaceSettings.seo_description ||
+                            seo.description ||
+                            "",
+                        category: "SEO"
+                    },
+
+                    {
+                        settingKey: "seo_keywords",
+                        settingValue:
+                            seo.keywords || "",
+                        category: "SEO"
+                    },
+
+                    {
+                        settingKey:
+                            "google_analytics_id",
+                        settingValue:
+                            analytics.googleAnalyticsId ||
+                            seo.googleAnalyticsId ||
+                            "",
+                        category: "SEO"
+                    },
+
+                    {
+                        settingKey:
+                            "google_site_verification",
+                        settingValue:
+                            seo.googleSiteVerification ||
+                            "",
+                        category: "SEO"
+                    },
+
+                    {
+                        settingKey: "og_title",
+                        settingValue:
+                            seo.openGraphTitle ||
+                            seo.title ||
+                            "",
+                        category: "SEO"
+                    },
+
+                    {
+                        settingKey:
+                            "og_description",
+                        settingValue:
+                            seo.openGraphDescription ||
+                            seo.description ||
+                            "",
+                        category: "SEO"
+                    },
+
+                    {
+                        settingKey:
+                            "search_engine_indexing",
+                        settingValue:
+                            String(
+                                seo.searchEngineIndexing !== false
+                            ),
+                        category: "SEO"
+                    },
+
+                    {
+                        settingKey:
+                            "enable_sitemap",
+                        settingValue:
+                            String(
+                                seo.sitemapEnabled !== false
+                            ),
+                        category: "SEO"
+                    }
+
+                ]
+
+            });
+
+        }
+
+
+        const settings =
+            await Setting.findAll({
+
+                where: {
+                    category
+                },
+
+                order: [
+                    ["settingKey", "ASC"]
+                ]
+
+            });
 
 
         return res.status(200).json({
@@ -289,7 +619,6 @@ exports.getSettingsByCategory = async (req, res) => {
             "GET CATEGORY SETTINGS ERROR:",
             error
         );
-
 
         return res.status(500).json({
 
@@ -315,7 +644,6 @@ exports.saveSettings = async (req, res) => {
 
         const settings = req.body;
 
-
         if (!Array.isArray(settings)) {
 
             return res.status(400).json({
@@ -329,34 +657,129 @@ exports.saveSettings = async (req, res) => {
 
         }
 
+        const seoData = {};
+
+        const seoKeys = [
+
+            "seo_title",
+            "seo_description",
+            "seo_keywords",
+            "google_analytics_id",
+            "google_site_verification",
+            "og_title",
+            "og_description",
+            "search_engine_indexing",
+            "enable_sitemap"
+
+        ];
+
+
+        /* =====================================================
+           PROCESS SETTINGS
+        ===================================================== */
 
         for (const item of settings) {
 
             if (
-
+                !item ||
                 !item.settingKey ||
-
                 item.settingKey.trim() === ""
-
             ) {
+                continue;
+            }
+
+            const key =
+                item.settingKey.trim();
+
+            const value =
+                item.settingValue ?? "";
+
+
+            /* ================================================
+               SEO SETTINGS
+            ================================================ */
+
+            if (seoKeys.includes(key)) {
+
+                seoData[key] = value;
 
                 continue;
 
             }
 
 
+            /* ================================================
+               NORMAL SETTINGS
+            ================================================ */
+
             await Setting.upsert({
 
-                settingKey:
-                    item.settingKey.trim(),
+                settingKey: key,
 
-                settingValue:
-                    item.settingValue ?? "",
+                settingValue: value,
 
                 category:
                     item.category || "General"
 
             });
+
+        }
+
+
+        /* =====================================================
+           SAVE SEO SETTINGS
+        ===================================================== */
+
+        if (
+            Object.keys(seoData).length > 0
+        ) {
+
+            const seo =
+                buildSEOConfiguration(
+                    seoData
+                );
+
+
+            const marketplaceUpdate = {
+
+                configuration: {
+
+                    seo
+
+                }
+
+            };
+
+
+            /*
+            -----------------------------------------------------
+            Synchronize direct SEO database fields
+            -----------------------------------------------------
+            */
+
+            if (
+                seoData.seo_title !== undefined
+            ) {
+
+                marketplaceUpdate.seo_title =
+                    seoData.seo_title;
+
+            }
+
+
+            if (
+                seoData.seo_description !== undefined
+            ) {
+
+                marketplaceUpdate.seo_description =
+                    seoData.seo_description;
+
+            }
+
+
+            await updateMarketplaceSettings(
+                marketplaceUpdate
+            );
 
         }
 
@@ -379,12 +802,12 @@ exports.saveSettings = async (req, res) => {
             error
         );
 
-
         return res.status(500).json({
 
             success: false,
 
             message:
+                error.message ||
                 "Failed to save settings."
 
         });
@@ -403,13 +826,9 @@ exports.saveSingleSetting = async (req, res) => {
     try {
 
         const {
-
             settingKey,
-
             settingValue,
-
             category
-
         } = req.body;
 
 
@@ -427,28 +846,121 @@ exports.saveSingleSetting = async (req, res) => {
         }
 
 
-        const [setting, created] =
+        const key =
+            settingKey.trim();
 
-            await Setting.upsert(
 
-                {
+        const seoKeys = [
 
-                    settingKey,
+            "seo_title",
+            "seo_description",
+            "seo_keywords",
+            "google_analytics_id",
+            "google_site_verification",
+            "og_title",
+            "og_description",
+            "search_engine_indexing",
+            "enable_sitemap"
 
-                    settingValue,
+        ];
 
-                    category:
-                        category || "General"
 
-                },
+        /* =====================================================
+           SEO SETTING
+        ===================================================== */
 
-                {
+        if (
+            seoKeys.includes(key)
+        ) {
 
-                    returning: true
+            const seoData = {
+
+                [key]:
+                    settingValue ?? ""
+
+            };
+
+
+            const seo =
+                buildSEOConfiguration(
+                    seoData
+                );
+
+
+            const marketplaceUpdate = {
+
+                configuration: {
+
+                    seo
 
                 }
 
+            };
+
+
+            /*
+            -----------------------------------------------------
+            Keep direct SEO fields synchronized
+            -----------------------------------------------------
+            */
+
+            if (
+                key === "seo_title"
+            ) {
+
+                marketplaceUpdate.seo_title =
+                    settingValue ?? "";
+
+            }
+
+
+            if (
+                key === "seo_description"
+            ) {
+
+                marketplaceUpdate.seo_description =
+                    settingValue ?? "";
+
+            }
+
+
+            await updateMarketplaceSettings(
+                marketplaceUpdate
             );
+
+
+            return res.status(200).json({
+
+                success: true,
+
+                message:
+                    "SEO setting updated successfully."
+
+            });
+
+        }
+
+
+        /* =====================================================
+           NORMAL SETTING
+        ===================================================== */
+
+        const [setting, created] =
+            await Setting.upsert({
+
+                settingKey: key,
+
+                settingValue:
+                    settingValue ?? "",
+
+                category:
+                    category || "General"
+
+            }, {
+
+                returning: true
+
+            });
 
 
         return res.status(200).json({
@@ -457,9 +969,7 @@ exports.saveSingleSetting = async (req, res) => {
 
             message:
                 created
-
                     ? "Setting created successfully."
-
                     : "Setting updated successfully.",
 
             setting
@@ -475,12 +985,12 @@ exports.saveSingleSetting = async (req, res) => {
             error
         );
 
-
         return res.status(500).json({
 
             success: false,
 
             message:
+                error.message ||
                 "Failed to save setting."
 
         });
@@ -512,21 +1022,22 @@ exports.uploadLogo = async (req, res) => {
         }
 
 
-        const type = req.body.type;
+        const type =
+            req.body.type;
 
 
         const allowedTypes = [
 
             "logo",
-
             "admin_logo",
-
             "favicon"
 
         ];
 
 
-        if (!allowedTypes.includes(type)) {
+        if (
+            !allowedTypes.includes(type)
+        ) {
 
             return res.status(400).json({
 
@@ -544,9 +1055,11 @@ exports.uploadLogo = async (req, res) => {
 
             settingKey: type,
 
-            settingValue: req.file.filename,
+            settingValue:
+                req.file.filename,
 
-            category: "Branding"
+            category:
+                "Branding"
 
         });
 
@@ -574,7 +1087,6 @@ exports.uploadLogo = async (req, res) => {
             error
         );
 
-
         return res.status(500).json({
 
             success: false,
@@ -590,28 +1102,29 @@ exports.uploadLogo = async (req, res) => {
 
 
 /* =========================================================
-   DELETE BRANDING FILE REFERENCE
+   DELETE BRANDING
 ========================================================= */
 
 exports.deleteBranding = async (req, res) => {
 
     try {
 
-        const { type } = req.params;
+        const { type } =
+            req.params;
 
 
         const allowedTypes = [
 
             "logo",
-
             "admin_logo",
-
             "favicon"
 
         ];
 
 
-        if (!allowedTypes.includes(type)) {
+        if (
+            !allowedTypes.includes(type)
+        ) {
 
             return res.status(400).json({
 
@@ -654,7 +1167,6 @@ exports.deleteBranding = async (req, res) => {
             error
         );
 
-
         return res.status(500).json({
 
             success: false,
@@ -668,6 +1180,7 @@ exports.deleteBranding = async (req, res) => {
 
 };
 
+
 /* =========================================================
    TEST EMAIL
 ========================================================= */
@@ -676,14 +1189,9 @@ exports.testEmail = async (req, res) => {
 
     try {
 
-        const {
-            email
-        } = req.body;
+        const { email } =
+            req.body;
 
-
-        /* -----------------------------------------------------
-           VALIDATE RECIPIENT
-        ----------------------------------------------------- */
 
         if (!email) {
 
@@ -699,22 +1207,9 @@ exports.testEmail = async (req, res) => {
         }
 
 
-        /* -----------------------------------------------------
-           SEND TEST EMAIL
-           
-           The emailService automatically determines
-           whether to use Resend or SMTP based on:
-           
-           configuration.email.provider
-        ----------------------------------------------------- */
-
         const result =
             await sendTestEmail(email);
 
-
-        /* -----------------------------------------------------
-           SUCCESS
-        ----------------------------------------------------- */
 
         console.log(
             "TEST EMAIL SENT:",
@@ -739,14 +1234,12 @@ exports.testEmail = async (req, res) => {
 
     }
 
-
     catch (error) {
 
         console.error(
             "TEST EMAIL ERROR:",
             error
         );
-
 
         return res.status(500).json({
 
@@ -765,6 +1258,7 @@ exports.testEmail = async (req, res) => {
 
 };
 
+
 /* =========================================================
    EXPORT SETTINGS
 ========================================================= */
@@ -773,62 +1267,72 @@ exports.exportSettings = async (req, res) => {
 
     try {
 
-        const settings = await Setting.findAll({
+        const settings =
+            await Setting.findAll({
 
-            order: [
+                order: [
 
-                ["category", "ASC"],
+                    ["category", "ASC"],
+                    ["settingKey", "ASC"]
 
-                ["settingKey", "ASC"]
+                ]
 
-            ]
+            });
 
-        });
+
+        const marketplaceSettings =
+            await getMarketplaceSettings();
 
 
         const exportData = {
 
             exportedAt:
-
                 new Date().toISOString(),
 
-            version: "1.0",
+            version:
+                "2.0",
 
-            settings
+            settings,
+
+            marketplaceSettings: {
+
+                marketplace_name:
+                    marketplaceSettings.marketplace_name,
+
+                currency:
+                    marketplaceSettings.currency,
+
+                language:
+                    marketplaceSettings.language,
+
+                timezone:
+                    marketplaceSettings.timezone,
+
+                configuration:
+                    marketplaceSettings.configuration
+
+            }
 
         };
 
 
         res.setHeader(
-
             "Content-Disposition",
-
             "attachment; filename=settings.json"
-
         );
 
-
         res.setHeader(
-
             "Content-Type",
-
             "application/json"
-
         );
 
 
         return res.send(
-
             JSON.stringify(
-
                 exportData,
-
                 null,
-
                 4
-
             )
-
         );
 
     }
@@ -839,7 +1343,6 @@ exports.exportSettings = async (req, res) => {
             "EXPORT SETTINGS ERROR:",
             error
         );
-
 
         return res.status(500).json({
 
@@ -877,43 +1380,28 @@ exports.importSettings = async (req, res) => {
         }
 
 
-        const parsedData = JSON.parse(
-
-            req.file.buffer.toString()
-
-        );
-
-
-        let settings;
+        const parsedData =
+            JSON.parse(
+                req.file.buffer.toString()
+            );
 
 
-        /*
-        Support both:
-
-        Old format:
-        [ {...}, {...} ]
-
-        New format:
-        {
-            exportedAt: "...",
-            version: "1.0",
-            settings: [...]
-        }
-        */
+        let settings = [];
 
 
-        if (Array.isArray(parsedData)) {
+        if (
+            Array.isArray(parsedData)
+        ) {
 
-            settings = parsedData;
+            settings =
+                parsedData;
 
         }
 
         else if (
-
             Array.isArray(
                 parsedData.settings
             )
-
         ) {
 
             settings =
@@ -938,30 +1426,140 @@ exports.importSettings = async (req, res) => {
         let imported = 0;
 
 
-        for (const item of settings) {
+        const seoData = {};
 
-            if (!item.settingKey) {
 
+        for (
+            const item of settings
+        ) {
+
+            if (
+                !item ||
+                !item.settingKey
+            ) {
                 continue;
+            }
+
+
+            const key =
+                item.settingKey;
+
+
+            const seoKeys = [
+
+                "seo_title",
+                "seo_description",
+                "seo_keywords",
+                "google_analytics_id",
+                "google_site_verification",
+                "og_title",
+                "og_description",
+                "search_engine_indexing",
+                "enable_sitemap"
+
+            ];
+
+
+            if (
+                seoKeys.includes(key)
+            ) {
+
+                seoData[key] =
+                    item.settingValue ?? "";
+
+            }
+
+            else {
+
+                await Setting.upsert({
+
+                    settingKey:
+                        key,
+
+                    settingValue:
+                        item.settingValue ?? "",
+
+                    category:
+                        item.category ||
+                        "General"
+
+                });
 
             }
 
 
-            await Setting.upsert({
+            imported++;
 
-                settingKey:
-                    item.settingKey,
+        }
 
-                settingValue:
-                    item.settingValue ?? "",
 
-                category:
-                    item.category || "General"
+        if (
+            Object.keys(seoData).length > 0
+        ) {
+
+            const seo =
+                buildSEOConfiguration(
+                    seoData
+                );
+
+
+            const updateData = {
+
+                configuration: {
+
+                    seo
+
+                }
+
+            };
+
+
+            if (
+                seoData.seo_title !== undefined
+            ) {
+
+                updateData.seo_title =
+                    seoData.seo_title;
+
+            }
+
+
+            if (
+                seoData.seo_description !== undefined
+            ) {
+
+                updateData.seo_description =
+                    seoData.seo_description;
+
+            }
+
+
+            await updateMarketplaceSettings(
+                updateData
+            );
+
+        }
+
+
+        /*
+        -----------------------------------------------------
+        IMPORT MARKETPLACE CONFIGURATION
+        -----------------------------------------------------
+        */
+
+        if (
+            parsedData.marketplaceSettings
+                ?.configuration
+        ) {
+
+            await updateMarketplaceSettings({
+
+                configuration:
+                    parsedData
+                        .marketplaceSettings
+                        .configuration
 
             });
-
-
-            imported++;
 
         }
 
@@ -986,12 +1584,12 @@ exports.importSettings = async (req, res) => {
             error
         );
 
-
         return res.status(500).json({
 
             success: false,
 
             message:
+                error.message ||
                 "Failed to import settings."
 
         });
@@ -1009,16 +1607,113 @@ exports.deleteSetting = async (req, res) => {
 
     try {
 
-        const { key } = req.params;
+        const { key } =
+            req.params;
+
+
+        const seoKeys = [
+
+            "seo_title",
+            "seo_description",
+            "seo_keywords",
+            "google_analytics_id",
+            "google_site_verification",
+            "og_title",
+            "og_description",
+            "search_engine_indexing",
+            "enable_sitemap"
+
+        ];
+
+
+        /*
+        -----------------------------------------------------
+        SEO SETTINGS SHOULD NOT BE DELETED FROM
+        MARKETPLACE CONFIGURATION.
+        Reset them instead.
+        -----------------------------------------------------
+        */
+
+        if (
+            seoKeys.includes(key)
+        ) {
+
+            const reset = {};
+
+
+            if (
+                key === "search_engine_indexing"
+            ) {
+
+                reset.search_engine_indexing =
+                    true;
+
+            }
+
+            else if (
+                key === "enable_sitemap"
+            ) {
+
+                reset.enable_sitemap =
+                    true;
+
+            }
+
+            else {
+
+                reset[key] = "";
+
+            }
+
+
+            const seo =
+                buildSEOConfiguration(
+                    reset
+                );
+
+
+            await updateMarketplaceSettings({
+
+                configuration: {
+
+                    seo
+
+                },
+
+                ...(key === "seo_title"
+                    ? {
+                        seo_title: ""
+                    }
+                    : {}),
+
+                ...(key === "seo_description"
+                    ? {
+                        seo_description: ""
+                    }
+                    : {})
+
+            });
+
+
+            return res.status(200).json({
+
+                success: true,
+
+                message:
+                    "SEO setting reset successfully."
+
+            });
+
+        }
 
 
         const setting =
-
             await Setting.findOne({
 
                 where: {
 
-                    settingKey: key
+                    settingKey:
+                        key
 
                 }
 
@@ -1059,7 +1754,6 @@ exports.deleteSetting = async (req, res) => {
             "DELETE SETTING ERROR:",
             error
         );
-
 
         return res.status(500).json({
 

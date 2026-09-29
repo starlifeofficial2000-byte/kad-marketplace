@@ -1,380 +1,558 @@
 function SEOSettings({ settings, handleChange }) {
-    const isEnabled = (key, fallback = true) => {
-        const value = settings?.[key];
 
-        if (value === undefined || value === null || value === "") {
+    /*
+    =====================================================
+    SEO CONFIGURATION
+    =====================================================
+    */
+
+    const seo =
+        settings?.configuration?.seo || {};
+
+
+    /*
+    =====================================================
+    GET SEO VALUE
+    =====================================================
+    */
+
+    const getValue = (
+        key,
+        fallback = ""
+    ) => {
+
+        const value = seo?.[key];
+
+        if (
+            value === undefined ||
+            value === null
+        ) {
             return fallback;
         }
 
-        return value === true || value === "true";
+        return value;
+
     };
 
-    const toggle = (key) => {
-        handleChange(key, (!isEnabled(key)).toString());
+
+    /*
+    =====================================================
+    GET BOOLEAN VALUE
+    =====================================================
+    */
+
+    const isEnabled = (
+        key,
+        fallback = true
+    ) => {
+
+        const value =
+            seo?.[key];
+
+        if (
+            value === undefined ||
+            value === null ||
+            value === ""
+        ) {
+            return fallback;
+        }
+
+        if (
+            value === true ||
+            value === 1 ||
+            value === "true" ||
+            value === "1" ||
+            value === "yes"
+        ) {
+            return true;
+        }
+
+        if (
+            value === false ||
+            value === 0 ||
+            value === "false" ||
+            value === "0" ||
+            value === "no"
+        ) {
+            return false;
+        }
+
+        return fallback;
+
     };
+
+
+    /*
+    =====================================================
+    UPDATE SEO
+    =====================================================
+    */
+
+    const updateSEO = (
+        key,
+        value
+    ) => {
+
+        handleChange(
+            "configuration",
+            {
+                ...(settings?.configuration || {}),
+
+                seo: {
+
+                    ...(settings?.configuration?.seo || {}),
+
+                    [key]:
+                        value
+
+                }
+            }
+        );
+
+    };
+
+
+    /*
+    =====================================================
+    TOGGLE SEO
+    =====================================================
+    */
+
+    const toggleSEO = (
+        key
+    ) => {
+
+        updateSEO(
+            key,
+            !isEnabled(
+                key,
+                true
+            )
+        );
+
+    };
+
 
     return (
+
         <div className="settings-section">
 
-            {/* =====================================
+            {/* =================================================
                 HEADER
-            ====================================== */}
+            ================================================= */}
 
             <div className="section-header">
+
                 <div>
-                    <h2>SEO Settings</h2>
+
+                    <h2>
+                        SEO Settings
+                    </h2>
 
                     <p>
-                        Configure how your marketplace appears on
-                        Google and other search engines.
+                        Control how KAD Marketplace appears
+                        on Google and other search engines.
                     </p>
+
                 </div>
+
             </div>
 
-            {/* =====================================
-                SEARCH ENGINE SETTINGS
-            ====================================== */}
+
+            {/* =================================================
+                BASIC SEO
+            ================================================= */}
 
             <div className="settings-card">
 
                 <h3 className="settings-subtitle">
-                    Search Engine Optimization
+                    Basic SEO
                 </h3>
 
-                {/* WEBSITE TITLE */}
+
+                {/* =================================================
+                    WEBSITE TITLE
+                ================================================= */}
 
                 <div className="form-group">
-                    <label htmlFor="seo_title">
+
+                    <label htmlFor="seo-title">
                         Website Title
                     </label>
 
                     <input
-                        id="seo_title"
+                        id="seo-title"
                         type="text"
-                        value={settings?.seo_title || ""}
-                        onChange={(e) =>
-                            handleChange(
-                                "seo_title",
-                                e.target.value
+                        value={getValue(
+                            "title"
+                        )}
+                        onChange={(event) =>
+                            updateSEO(
+                                "title",
+                                event.target.value
                             )
                         }
-                        placeholder="e.g. Ghana's Best Online Marketplace"
+                        placeholder="KAD Marketplace | Buy & Sell in Ghana"
                         maxLength={70}
                     />
 
                     <small>
-                        The main title displayed in search engine
-                        results.
+                        Recommended: 50–60 characters.
                     </small>
+
                 </div>
 
-                {/* META DESCRIPTION */}
+
+                {/* =================================================
+                    META DESCRIPTION
+                ================================================= */}
 
                 <div className="form-group">
-                    <label htmlFor="seo_description">
+
+                    <label htmlFor="seo-description">
                         Meta Description
                     </label>
 
                     <textarea
-                        id="seo_description"
+                        id="seo-description"
                         rows="4"
-                        value={settings?.seo_description || ""}
-                        onChange={(e) =>
-                            handleChange(
-                                "seo_description",
-                                e.target.value
+                        value={getValue(
+                            "description"
+                        )}
+                        onChange={(event) =>
+                            updateSEO(
+                                "description",
+                                event.target.value
                             )
                         }
-                        placeholder="Describe your marketplace for search engines..."
-                        maxLength={320}
+                        placeholder="Buy and sell products and services across Ghana on KAD Marketplace."
+                        maxLength={160}
                     />
 
                     <small>
-                        Recommended length: approximately 150–160
-                        characters.
+                        Recommended: 150–160 characters.
                     </small>
+
                 </div>
 
-                {/* SEO KEYWORDS */}
+
+                {/* =================================================
+                    KEYWORDS
+                ================================================= */}
 
                 <div className="form-group">
-                    <label htmlFor="seo_keywords">
+
+                    <label htmlFor="seo-keywords">
                         SEO Keywords
                     </label>
 
                     <input
-                        id="seo_keywords"
+                        id="seo-keywords"
                         type="text"
-                        value={settings?.seo_keywords || ""}
-                        onChange={(e) =>
-                            handleChange(
-                                "seo_keywords",
-                                e.target.value
+                        value={getValue(
+                            "keywords"
+                        )}
+                        onChange={(event) =>
+                            updateSEO(
+                                "keywords",
+                                event.target.value
                             )
                         }
-                        placeholder="marketplace, buy and sell, Ghana, online shopping"
+                        placeholder="Ghana marketplace, buy and sell Ghana, online marketplace"
                     />
 
                     <small>
-                        Separate keywords using commas.
+                        Separate keywords with commas.
                     </small>
+
                 </div>
 
-                {/* =====================================
-                    GOOGLE
-                ====================================== */}
+            </div>
+
+
+            {/* =================================================
+                GOOGLE
+            ================================================= */}
+
+            <div className="settings-card">
 
                 <h3 className="settings-subtitle">
-                    Google Integration
+                    Google
                 </h3>
 
-                {/* GOOGLE ANALYTICS */}
+
+                {/* =================================================
+                    GOOGLE ANALYTICS
+                ================================================= */}
 
                 <div className="form-group">
-                    <label htmlFor="google_analytics_id">
+
+                    <label htmlFor="google-analytics">
                         Google Analytics Measurement ID
                     </label>
 
                     <input
-                        id="google_analytics_id"
+                        id="google-analytics"
                         type="text"
-                        value={
-                            settings?.google_analytics_id || ""
-                        }
-                        onChange={(e) =>
-                            handleChange(
-                                "google_analytics_id",
-                                e.target.value
+                        value={getValue(
+                            "googleAnalyticsId"
+                        )}
+                        onChange={(event) =>
+                            updateSEO(
+                                "googleAnalyticsId",
+                                event.target.value
                             )
                         }
                         placeholder="G-XXXXXXXXXX"
                     />
 
-                    <small>
-                        Optional. Used to connect the marketplace
-                        to Google Analytics.
-                    </small>
                 </div>
 
-                {/* GOOGLE SITE VERIFICATION */}
+
+                {/* =================================================
+                    SEARCH CONSOLE
+                ================================================= */}
 
                 <div className="form-group">
-                    <label htmlFor="google_site_verification">
-                        Google Site Verification Code
+
+                    <label htmlFor="google-verification">
+                        Google Search Console Verification
                     </label>
 
                     <input
-                        id="google_site_verification"
+                        id="google-verification"
                         type="text"
-                        value={
-                            settings?.google_site_verification || ""
-                        }
-                        onChange={(e) =>
-                            handleChange(
-                                "google_site_verification",
-                                e.target.value
+                        value={getValue(
+                            "googleSiteVerification"
+                        )}
+                        onChange={(event) =>
+                            updateSEO(
+                                "googleSiteVerification",
+                                event.target.value
                             )
                         }
                         placeholder="Google verification code"
                     />
 
-                    <small>
-                        Used to verify ownership of your marketplace
-                        in Google Search Console.
-                    </small>
                 </div>
 
-                {/* =====================================
-                    SOCIAL / OPEN GRAPH
-                ====================================== */}
+            </div>
+
+
+            {/* =================================================
+                SOCIAL / OPEN GRAPH
+            ================================================= */}
+
+            <div className="settings-card">
 
                 <h3 className="settings-subtitle">
-                    Social Media Sharing
+                    Social Media
                 </h3>
 
-                {/* OG TITLE */}
+
+                {/* =================================================
+                    OPEN GRAPH TITLE
+                ================================================= */}
 
                 <div className="form-group">
-                    <label htmlFor="og_title">
-                        Social Media Title
+
+                    <label htmlFor="og-title">
+                        Open Graph Title
                     </label>
 
                     <input
-                        id="og_title"
+                        id="og-title"
                         type="text"
-                        value={settings?.og_title || ""}
-                        onChange={(e) =>
-                            handleChange(
-                                "og_title",
-                                e.target.value
+                        value={getValue(
+                            "openGraphTitle"
+                        )}
+                        onChange={(event) =>
+                            updateSEO(
+                                "openGraphTitle",
+                                event.target.value
                             )
                         }
-                        placeholder="Title shown when sharing your website"
+                        placeholder="KAD Marketplace | Buy & Sell in Ghana"
                         maxLength={200}
                     />
 
-                    <small>
-                        Used when your marketplace is shared on
-                        Facebook, WhatsApp, LinkedIn, and other
-                        platforms that support Open Graph metadata.
-                    </small>
                 </div>
 
-                {/* OG DESCRIPTION */}
+
+                {/* =================================================
+                    OPEN GRAPH DESCRIPTION
+                ================================================= */}
 
                 <div className="form-group">
-                    <label htmlFor="og_description">
-                        Social Media Description
+
+                    <label htmlFor="og-description">
+                        Open Graph Description
                     </label>
 
                     <textarea
-                        id="og_description"
+                        id="og-description"
                         rows="4"
-                        value={
-                            settings?.og_description || ""
-                        }
-                        onChange={(e) =>
-                            handleChange(
-                                "og_description",
-                                e.target.value
+                        value={getValue(
+                            "openGraphDescription"
+                        )}
+                        onChange={(event) =>
+                            updateSEO(
+                                "openGraphDescription",
+                                event.target.value
                             )
                         }
-                        placeholder="Description shown when sharing your website"
+                        placeholder="Buy and sell products and services across Ghana."
                         maxLength={320}
                     />
 
-                    <small>
-                        Description displayed with your marketplace
-                        when shared on supported social platforms.
-                    </small>
                 </div>
 
-                {/* =====================================
-                    INDEXING
-                ====================================== */}
+            </div>
+
+
+            {/* =================================================
+                SEARCH ENGINE VISIBILITY
+            ================================================= */}
+
+            <div className="settings-card">
 
                 <h3 className="settings-subtitle">
                     Search Engine Visibility
                 </h3>
 
+
+                {/* =================================================
+                    SEARCH ENGINE INDEXING
+                ================================================= */}
+
                 <div className="toggle-setting">
+
                     <div>
+
                         <strong>
                             Allow Search Engine Indexing
                         </strong>
 
                         <p>
-                            Allow Google, Bing, and other search
-                            engines to index your marketplace.
+                            Allow Google and other search engines
+                            to index public marketplace pages.
                         </p>
+
                     </div>
 
                     <input
                         type="checkbox"
                         checked={isEnabled(
-                            "search_engine_indexing",
+                            "searchEngineIndexing",
                             true
                         )}
                         onChange={() =>
-                            toggle("search_engine_indexing")
+                            toggleSEO(
+                                "searchEngineIndexing"
+                            )
                         }
                     />
+
                 </div>
 
+
+                {/* =================================================
+                    XML SITEMAP
+                ================================================= */}
+
                 <div className="toggle-setting">
+
                     <div>
+
                         <strong>
                             Enable XML Sitemap
                         </strong>
 
                         <p>
                             Allow search engines to discover
-                            marketplace pages through an XML sitemap.
+                            public marketplace pages through
+                            the XML sitemap.
                         </p>
+
                     </div>
 
                     <input
                         type="checkbox"
                         checked={isEnabled(
-                            "enable_sitemap",
+                            "sitemapEnabled",
                             true
                         )}
                         onChange={() =>
-                            toggle("enable_sitemap")
+                            toggleSEO(
+                                "sitemapEnabled"
+                            )
                         }
                     />
+
                 </div>
 
             </div>
 
-            {/* =====================================
+
+            {/* =================================================
                 SEO STATUS
-            ====================================== */}
+            ================================================= */}
 
             <div className="settings-info">
 
                 <strong>
-                    SEO Configuration Status
+                    SEO Status
                 </strong>
 
+
                 <p>
-                    Search Engine Indexing:{" "}
+                    Indexing:{" "}
                     {isEnabled(
-                        "search_engine_indexing",
+                        "searchEngineIndexing",
                         true
                     )
                         ? "Enabled"
                         : "Disabled"}
                 </p>
 
+
                 <p>
-                    XML Sitemap:{" "}
+                    Sitemap:{" "}
                     {isEnabled(
-                        "enable_sitemap",
+                        "sitemapEnabled",
                         true
                     )
                         ? "Enabled"
                         : "Disabled"}
                 </p>
+
 
                 <p>
                     Google Analytics:{" "}
-                    {settings?.google_analytics_id
+                    {getValue(
+                        "googleAnalyticsId"
+                    )
                         ? "Configured"
                         : "Not configured"}
                 </p>
 
+
                 <p>
-                    Google Search Console:{" "}
-                    {settings?.google_site_verification
+                    Search Console:{" "}
+                    {getValue(
+                        "googleSiteVerification"
+                    )
                         ? "Configured"
                         : "Not configured"}
-                </p>
-
-            </div>
-
-            {/* =====================================
-                SEO INFORMATION
-            ====================================== */}
-
-            <div className="settings-info">
-
-                <strong>
-                    💡 SEO Information
-                </strong>
-
-                <p>
-                    These settings are saved in the marketplace
-                    configuration. The public frontend must use the
-                    saved values to generate page titles, meta
-                    descriptions, Open Graph metadata, indexing
-                    directives, and sitemap configuration.
                 </p>
 
             </div>
 
         </div>
+
     );
+
 }
+
 
 export default SEOSettings;

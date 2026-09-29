@@ -44,30 +44,43 @@ const searchRoutes = require("./routes/searchRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
 const marketplaceSettingsRoutes =
     require("./routes/marketplaceSettingsRoutes");
+
 const adminProductRoutes =
     require("./routes/adminProductRoutes");
+
 const adminStoreRoutes =
     require("./routes/adminStoreRoutes");
+
 const adminAdvertisementRoutes =
     require("./routes/adminAdvertisementRoutes");
+
 const adminPaymentRoutes =
     require("./routes/adminPaymentRoutes");
+
 const adminRevenueRoutes =
     require("./routes/adminRevenueRoutes");
+
 const advertisementRoutes =
     require("./routes/advertisementRoutes");
+
 const adminSubscriptionPlanRoutes =
     require("./routes/adminSubscriptionPlanRoutes");
+
 const adminNotificationRoutes =
     require("./routes/adminNotificationRoutes");
+
 const adminSettingsRoutes =
     require("./routes/adminSettingsRoutes");
+
 const adminSupportRoutes =
     require("./routes/adminSupportRoutes");
+
 const wishlistRoutes =
     require("./routes/wishlistRoutes");
+
 const leadRoutes =
     require("./routes/leadRoutes");
+
 const brandingRoutes =
     require("./routes/brandingRoutes");
 
@@ -100,14 +113,6 @@ const userSettingsRoutes =
 
 const adminSecurityRoutes =
     require("./routes/adminSecurityRoutes");
-
-/* =========================================================
-   IMPORTANT
-   We will NOT rely on sitemapRoutes for the public sitemap.
-
-   The sitemap will be generated directly in this server so
-   /sitemap.xml can NEVER fall through to React.
-========================================================= */
 
 const sitemapRoutes =
     require("./routes/sitemapRoutes");
@@ -153,13 +158,15 @@ const PORT =
     process.env.PORT || 5000;
 
 const SITE_URL =
-    (process.env.SITE_URL ||
-        "https://kadmarket.com")
+    (
+        process.env.SITE_URL ||
+        "https://kadmarket.com"
+    )
         .trim()
         .replace(/\/+$/, "");
 
 /* =========================================================
-   PRODUCTION FRONTEND DIRECTORY
+   FRONTEND BUILD DIRECTORY
 ========================================================= */
 
 const clientDistPath =
@@ -182,6 +189,7 @@ app.use(
 ========================================================= */
 
 const normalizeOrigin = (url) => {
+
     if (!url) {
         return null;
     }
@@ -296,6 +304,7 @@ const uploadDirectory =
     path.join(__dirname, "uploads");
 
 if (!fs.existsSync(uploadDirectory)) {
+
     fs.mkdirSync(
         uploadDirectory,
         {
@@ -312,15 +321,6 @@ app.use(
 /* =========================================================
    ROBOTS.TXT
 ========================================================= */
-
-/*
-   IMPORTANT:
-
-   This route is registered before the React SPA fallback.
-
-   Google:
-   https://kadmarket.com/robots.txt
-*/
 
 app.get(
     "/robots.txt",
@@ -396,110 +396,6 @@ const generateSitemap = async () => {
         Store
     } = require("./models");
 
-    /* =====================================================
-       PRODUCTS
-    ===================================================== */
-
-    const products =
-        await Product.findAll({
-
-            where: {
-                status: "Approved",
-                sellerStatus: "Active",
-                deleted: false
-            },
-
-            attributes: [
-                "id",
-                "updatedAt"
-            ],
-
-            order: [
-                ["updatedAt", "DESC"]
-            ]
-        });
-
-    /* =====================================================
-       SELLERS
-    ===================================================== */
-
-    const sellers =
-        await User.findAll({
-
-            attributes: [
-                "id",
-                "updatedAt"
-            ],
-
-            include: [
-                {
-                    model: Product,
-
-                    as: "products",
-
-                    required: true,
-
-                    attributes: [],
-
-                    where: {
-                        status: "Approved",
-                        sellerStatus: "Active",
-                        deleted: false
-                    }
-                }
-            ],
-
-            group: [
-                "User.id"
-            ]
-        });
-
-    /* =====================================================
-       STORES
-    ===================================================== */
-
-    const stores =
-        await Store.findAll({
-
-            attributes: [
-                "id",
-                "storeSlug",
-                "updatedAt"
-            ],
-
-            include: [
-                {
-                    model: Product,
-
-                    as: "products",
-
-                    required: true,
-
-                    attributes: [],
-
-                    where: {
-                        status: "Approved",
-                        sellerStatus: "Active",
-                        deleted: false
-                    }
-                }
-            ],
-
-            where: {
-                storeSlug: {
-                    [Op.ne]: null
-                }
-            },
-
-            group: [
-                "Store.id"
-            ]
-        });
-
-    /* =====================================================
-       URL COLLECTION
-    ===================================================== */
-
     const urls = [];
 
     /* =====================================================
@@ -568,6 +464,25 @@ const generateSitemap = async () => {
        PRODUCTS
     ===================================================== */
 
+    const products =
+        await Product.findAll({
+
+            where: {
+                status: "Approved",
+                sellerStatus: "Active",
+                deleted: false
+            },
+
+            attributes: [
+                "id",
+                "updatedAt"
+            ],
+
+            order: [
+                ["updatedAt", "DESC"]
+            ]
+        });
+
     products.forEach((product) => {
 
         const productUrl =
@@ -596,6 +511,33 @@ const generateSitemap = async () => {
        SELLERS
     ===================================================== */
 
+    const sellers =
+        await User.findAll({
+
+            attributes: [
+                "id",
+                "updatedAt"
+            ],
+
+            include: [
+                {
+                    model: Product,
+                    as: "products",
+                    required: true,
+                    attributes: [],
+                    where: {
+                        status: "Approved",
+                        sellerStatus: "Active",
+                        deleted: false
+                    }
+                }
+            ],
+
+            group: [
+                "User.id"
+            ]
+        });
+
     sellers.forEach((seller) => {
 
         const sellerUrl =
@@ -623,6 +565,40 @@ const generateSitemap = async () => {
     /* =====================================================
        STORES
     ===================================================== */
+
+    const stores =
+        await Store.findAll({
+
+            attributes: [
+                "id",
+                "storeSlug",
+                "updatedAt"
+            ],
+
+            include: [
+                {
+                    model: Product,
+                    as: "products",
+                    required: true,
+                    attributes: [],
+                    where: {
+                        status: "Approved",
+                        sellerStatus: "Active",
+                        deleted: false
+                    }
+                }
+            ],
+
+            where: {
+                storeSlug: {
+                    [Op.ne]: null
+                }
+            },
+
+            group: [
+                "Store.id"
+            ]
+        });
 
     stores.forEach((store) => {
 
@@ -653,21 +629,17 @@ const generateSitemap = async () => {
     });
 
     /* =====================================================
-       XML
+       SITEMAP XML
     ===================================================== */
 
     return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset
-    xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.join("")}
 </urlset>`;
 };
 
 /* =========================================================
    PUBLIC SITEMAP
-
-   THIS MUST BE BEFORE THE REACT FALLBACK.
 ========================================================= */
 
 app.get(
@@ -691,10 +663,7 @@ app.get(
                     "application/xml; charset=utf-8",
 
                 "Cache-Control":
-                    "public, max-age=3600",
-
-                "X-Robots-Tag":
-                    "noindex"
+                    "public, max-age=3600"
             });
 
             return res.send(sitemap);
@@ -717,13 +686,7 @@ app.get(
 );
 
 /* =========================================================
-   OPTIONAL EXISTING SITEMAP ROUTES
-
-   Keep imported route available for any other endpoints
-   defined inside sitemapRoutes.js.
-
-   IMPORTANT:
-   /sitemap.xml above already takes priority.
+   OPTIONAL SITEMAP ROUTES
 ========================================================= */
 
 app.use(
@@ -928,7 +891,7 @@ app.get(
 ========================================================= */
 
 app.get(
-    "/",
+    "/api",
     (req, res) => {
 
         return res.status(200).json({
@@ -992,17 +955,13 @@ app.use(
 );
 
 /* =========================================================
-   STORE FOLLOW
+   STORE
 ========================================================= */
 
 app.use(
     "/api/store",
     storeFollowRoutes
 );
-
-/* =========================================================
-   STORE
-========================================================= */
 
 app.use(
     "/api/store",
@@ -1474,7 +1433,7 @@ io.on(
 if (NODE_ENV === "production") {
 
     /*
-       Serve React static files.
+       Serve React static assets.
     */
 
     app.use(
@@ -1489,10 +1448,8 @@ if (NODE_ENV === "production") {
     /*
        React SPA fallback.
 
-       IMPORTANT:
-
        sitemap.xml and robots.txt are already handled
-       above, so they can NEVER be returned as React HTML.
+       above and are explicitly excluded.
     */
 
     app.get(
@@ -1552,7 +1509,7 @@ app.use(
             success: false,
 
             message:
-                `API route not found: ${req.method} ${req.originalUrl}`
+                `Route not found: ${req.method} ${req.originalUrl}`
         });
     }
 );
