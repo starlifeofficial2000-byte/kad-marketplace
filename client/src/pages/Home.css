@@ -1,10 +1,16 @@
 /* ============================================================
-   HOME PAGE
+   KAD MARKETPLACE — HOME PAGE
+   BRAND COLORS
+   Primary  : #0D8ABC
+   Dark     : #075985
+   Accent   : #12A8D8
+   Light    : #EAF8FC
+   Background: #F4FAFC
 ============================================================ */
 
 .home-search {
     width: 100%;
-    max-width: 1280px;
+    max-width: 1400px;
     margin: 28px auto 0;
     padding: 0 20px;
     box-sizing: border-box;
@@ -20,34 +26,40 @@
     align-items: center;
     justify-content: center;
 
-    font-size: 11px;
+    margin-bottom: 7px;
+    padding: 5px 12px;
+
+    color: #0D8ABC;
+    background: #E8F7FC;
+
+    border: 1px solid #C7EAF5;
+    border-radius: 999px;
+
+    font-size: 10px;
     font-weight: 800;
-    letter-spacing: 1.6px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
-
-    color: #0d8abc;
-
-    margin-bottom: 6px;
 }
 
 .home-search-content h1 {
     margin: 0;
 
-    font-size: clamp(24px, 3vw, 34px);
-    line-height: 1.15;
-    font-weight: 800;
+    color: #075985;
 
-    color: #111827;
+    font-size: clamp(24px, 3vw, 34px);
+    font-weight: 800;
+    line-height: 1.15;
 }
 
 .home-search-content p {
     max-width: 650px;
+
     margin: 8px auto 0;
+
+    color: #64748B;
 
     font-size: 14px;
     line-height: 1.6;
-
-    color: #6b7280;
 }
 
 
@@ -59,6 +71,7 @@
     width: 100%;
 
     display: grid;
+
     grid-template-columns:
         minmax(250px, 1fr)
         210px
@@ -71,15 +84,15 @@
 
     padding: 8px;
 
-    background: #ffffff;
+    box-sizing: border-box;
 
-    border: 1px solid #e5e7eb;
+    background: #FFFFFF;
+
+    border: 1px solid #C7EAF5;
     border-radius: 14px;
 
     box-shadow:
-        0 8px 28px rgba(15, 23, 42, 0.08);
-
-    box-sizing: border-box;
+        0 8px 30px rgba(13, 138, 188, 0.10);
 }
 
 
@@ -97,24 +110,23 @@
 
     padding: 0 14px;
 
-    background: #f8fafc;
+    box-sizing: border-box;
 
-    border: 1px solid #e5e7eb;
+    background: #F4FAFC;
+
+    border: 1px solid #D5EAF1;
     border-radius: 10px;
 
-    transition:
-        border-color 0.2s ease,
-        background 0.2s ease,
-        box-shadow 0.2s ease;
+    transition: 0.2s ease;
 }
 
 .home-search-input:focus-within {
-    background: #ffffff;
+    background: #FFFFFF;
 
-    border-color: #0d8abc;
+    border-color: #0D8ABC;
 
     box-shadow:
-        0 0 0 3px rgba(13, 138, 188, 0.10);
+        0 0 0 3px rgba(13, 138, 188, 0.12);
 }
 
 .home-search-input > svg {
@@ -122,7 +134,7 @@
 
     margin-right: 10px;
 
-    color: #0d8abc;
+    color: #0D8ABC;
 
     font-size: 17px;
 }
@@ -130,7 +142,6 @@
 .home-search-input input {
     width: 100%;
     min-width: 0;
-
     height: 100%;
 
     padding: 0;
@@ -140,14 +151,14 @@
 
     background: transparent;
 
-    color: #111827;
+    color: #0F172A;
 
     font-size: 14px;
     font-weight: 500;
 }
 
 .home-search-input input::placeholder {
-    color: #9ca3af;
+    color: #94A3B8;
 }
 
 
@@ -165,65 +176,54 @@
     align-items: center;
     justify-content: center;
 
+    padding: 0;
+
     border: none;
     border-radius: 50%;
 
-    background: #e5e7eb;
-
-    color: #6b7280;
+    background: #DCEFF6;
+    color: #0D8ABC;
 
     cursor: pointer;
-
-    transition:
-        background 0.2s ease,
-        color 0.2s ease;
 }
 
 .search-clear:hover {
-    background: #d1d5db;
-    color: #111827;
-}
-
-.search-clear svg {
-    font-size: 11px;
+    background: #C7EAF5;
+    color: #075985;
 }
 
 
 /* ============================================================
-   CATEGORY SELECT
+   CATEGORY
 ============================================================ */
 
 .home-search-category {
     width: 100%;
     min-width: 0;
-
     height: 48px;
 
     padding: 0 36px 0 13px;
 
-    border: 1px solid #e5e7eb;
+    box-sizing: border-box;
+
+    border: 1px solid #D5EAF1;
     border-radius: 10px;
 
-    background-color: #f8fafc;
-    color: #374151;
+    outline: none;
+
+    background: #F4FAFC;
+    color: #075985;
 
     font-size: 13px;
     font-weight: 600;
 
-    outline: none;
-
     cursor: pointer;
-
-    transition:
-        border-color 0.2s ease,
-        background 0.2s ease,
-        box-shadow 0.2s ease;
 }
 
 .home-search-category:focus {
-    background: #ffffff;
+    background: #FFFFFF;
 
-    border-color: #0d8abc;
+    border-color: #0D8ABC;
 
     box-shadow:
         0 0 0 3px rgba(13, 138, 188, 0.10);
@@ -235,6 +235,7 @@
 ============================================================ */
 
 .home-search-button {
+    min-width: 110px;
     height: 48px;
 
     display: inline-flex;
@@ -248,8 +249,13 @@
     border: none;
     border-radius: 10px;
 
-    background: #0d8abc;
-    color: #ffffff;
+    background: linear-gradient(
+        135deg,
+        #0D8ABC,
+        #08769F
+    );
+
+    color: #FFFFFF;
 
     font-size: 13px;
     font-weight: 700;
@@ -258,23 +264,23 @@
 
     cursor: pointer;
 
-    transition:
-        background 0.2s ease,
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
+    box-shadow:
+        0 5px 14px rgba(13, 138, 188, 0.20);
+
+    transition: 0.2s ease;
 }
 
 .home-search-button:hover:not(:disabled) {
-    background: #08769f;
+    background: linear-gradient(
+        135deg,
+        #08769F,
+        #075985
+    );
 
     transform: translateY(-1px);
 
     box-shadow:
-        0 6px 16px rgba(13, 138, 188, 0.22);
-}
-
-.home-search-button:active:not(:disabled) {
-    transform: translateY(0);
+        0 8px 18px rgba(13, 138, 188, 0.25);
 }
 
 .home-search-button:disabled {
@@ -290,6 +296,7 @@
 .home-filter-button {
     position: relative;
 
+    min-width: 100px;
     height: 48px;
 
     display: inline-flex;
@@ -300,11 +307,11 @@
 
     padding: 0 16px;
 
-    border: 1px solid #dbe1e8;
+    border: 1px solid #B9DDE9;
     border-radius: 10px;
 
-    background: #ffffff;
-    color: #374151;
+    background: #EAF8FC;
+    color: #075985;
 
     font-size: 13px;
     font-weight: 700;
@@ -313,17 +320,14 @@
 
     cursor: pointer;
 
-    transition:
-        background 0.2s ease,
-        border-color 0.2s ease,
-        color 0.2s ease;
+    transition: 0.2s ease;
 }
 
 .home-filter-button:hover,
 .home-filter-button.active {
-    background: #eff8fc;
-    border-color: #0d8abc;
-    color: #0d8abc;
+    background: #D8F1F8;
+    border-color: #0D8ABC;
+    color: #0D8ABC;
 }
 
 .home-filter-button > svg {
@@ -347,8 +351,8 @@
 
     border-radius: 999px;
 
-    background: #0d8abc;
-    color: #ffffff;
+    background: #0D8ABC;
+    color: #FFFFFF;
 
     font-size: 10px;
     font-weight: 800;
@@ -367,7 +371,6 @@
     gap: 15px;
 
     margin-top: 12px;
-
     padding: 10px 2px;
 }
 
@@ -376,7 +379,6 @@
 
     display: flex;
     align-items: center;
-
     flex-wrap: wrap;
 
     gap: 7px;
@@ -392,22 +394,20 @@
 
     padding: 5px 8px 5px 10px;
 
-    border: 1px solid #dbe7ee;
+    box-sizing: border-box;
+
+    border: 1px solid #BFE3EF;
     border-radius: 999px;
 
-    background: #f5fafc;
-    color: #374151;
+    background: #EAF8FC;
+    color: #075985;
 
     font-size: 12px;
     font-weight: 600;
 }
 
 .search-chip > svg {
-    flex-shrink: 0;
-
-    color: #0d8abc;
-
-    font-size: 11px;
+    color: #0D8ABC;
 }
 
 .search-chip button {
@@ -424,18 +424,14 @@
     border-radius: 50%;
 
     background: transparent;
-    color: #9ca3af;
+    color: #64748B;
 
     cursor: pointer;
 }
 
 .search-chip button:hover {
-    background: #e5e7eb;
-    color: #374151;
-}
-
-.search-chip button svg {
-    font-size: 9px;
+    background: #C7EAF5;
+    color: #075985;
 }
 
 .clear-search-button {
@@ -446,8 +442,7 @@
     border: none;
 
     background: transparent;
-
-    color: #dc2626;
+    color: #DC2626;
 
     font-size: 12px;
     font-weight: 700;
@@ -469,13 +464,20 @@
 
     padding: 20px;
 
-    border: 1px solid #e5e7eb;
+    box-sizing: border-box;
+
+    border: 1px solid #C7EAF5;
     border-radius: 14px;
 
-    background: #ffffff;
+    background:
+        linear-gradient(
+            180deg,
+            #FFFFFF 0%,
+            #F4FAFC 100%
+        );
 
     box-shadow:
-        0 8px 30px rgba(15, 23, 42, 0.07);
+        0 8px 30px rgba(13, 138, 188, 0.09);
 
     animation: filterPanelIn 0.2s ease-out;
 }
@@ -505,16 +507,15 @@
     gap: 15px;
 
     margin-bottom: 18px;
-
     padding-bottom: 14px;
 
-    border-bottom: 1px solid #eef0f2;
+    border-bottom: 1px solid #DCEFF6;
 }
 
 .advanced-search-header h3 {
     margin: 0;
 
-    color: #111827;
+    color: #075985;
 
     font-size: 17px;
     font-weight: 800;
@@ -523,7 +524,7 @@
 .advanced-search-header p {
     margin: 4px 0 0;
 
-    color: #6b7280;
+    color: #64748B;
 
     font-size: 12px;
     line-height: 1.5;
@@ -539,22 +540,17 @@
     align-items: center;
     justify-content: center;
 
-    border: none;
+    border: 1px solid #C7EAF5;
     border-radius: 8px;
 
-    background: #f3f4f6;
-    color: #6b7280;
+    background: #EAF8FC;
+    color: #0D8ABC;
 
     cursor: pointer;
-
-    transition:
-        background 0.2s ease,
-        color 0.2s ease;
 }
 
 .advanced-search-header > button:hover {
-    background: #e5e7eb;
-    color: #111827;
+    background: #D8F1F8;
 }
 
 
@@ -586,7 +582,7 @@
 }
 
 .filter-group label {
-    color: #374151;
+    color: #075985;
 
     font-size: 12px;
     font-weight: 700;
@@ -601,43 +597,35 @@
 
     padding: 0 12px;
 
-    border: 1px solid #dfe4ea;
+    border: 1px solid #CFE4EC;
     border-radius: 9px;
-
-    background: #f9fafb;
-    color: #111827;
-
-    font-size: 13px;
-    font-weight: 500;
 
     outline: none;
 
-    transition:
-        border-color 0.2s ease,
-        background 0.2s ease,
-        box-shadow 0.2s ease;
+    background: #FFFFFF;
+    color: #0F172A;
+
+    font-size: 13px;
+    font-weight: 500;
 }
 
 .filter-group input:focus,
 .filter-group select:focus {
-    background: #ffffff;
-
-    border-color: #0d8abc;
+    border-color: #0D8ABC;
 
     box-shadow:
         0 0 0 3px rgba(13, 138, 188, 0.09);
 }
 
 .filter-group input::placeholder {
-    color: #9ca3af;
+    color: #94A3B8;
 }
 
 .filter-group select:disabled {
     opacity: 0.55;
-
     cursor: not-allowed;
 
-    background: #f3f4f6;
+    background: #EAF2F5;
 }
 
 
@@ -653,10 +641,9 @@
     gap: 10px;
 
     margin-top: 20px;
-
     padding-top: 16px;
 
-    border-top: 1px solid #eef0f2;
+    border-top: 1px solid #DCEFF6;
 }
 
 .clear-button,
@@ -677,44 +664,29 @@
     font-weight: 700;
 
     cursor: pointer;
-
-    transition:
-        background 0.2s ease,
-        border-color 0.2s ease,
-        color 0.2s ease,
-        transform 0.2s ease;
 }
 
 .clear-button {
-    border: 1px solid #dfe4ea;
+    border: 1px solid #CFE4EC;
 
-    background: #ffffff;
-
-    color: #4b5563;
+    background: #FFFFFF;
+    color: #475569;
 }
 
 .clear-button:hover {
-    background: #f9fafb;
-    border-color: #cbd5e1;
+    background: #EAF8FC;
+    border-color: #B9DDE9;
 }
 
 .search-button {
-    border: 1px solid #0d8abc;
+    border: 1px solid #0D8ABC;
 
-    background: #0d8abc;
-
-    color: #ffffff;
+    background: #0D8ABC;
+    color: #FFFFFF;
 }
 
 .search-button:hover:not(:disabled) {
-    background: #08769f;
-
-    transform: translateY(-1px);
-}
-
-.search-button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+    background: #075985;
 }
 
 
@@ -724,15 +696,24 @@
 
 .products-section {
     width: 100%;
-    max-width: 1280px;
+    max-width: 1400px;
 
     margin: 40px auto 0;
 
-    padding: 0 20px 50px;
+    padding: 24px 20px 50px;
 
     box-sizing: border-box;
 
     scroll-margin-top: 90px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #F4FAFC 0%,
+            #FFFFFF 100%
+        );
+
+    border-top: 1px solid #DCEFF6;
 }
 
 
@@ -748,16 +729,15 @@
     gap: 20px;
 
     margin-bottom: 20px;
-
     padding-bottom: 14px;
 
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 2px solid #D8EEF5;
 }
 
 .section-header h2 {
     margin: 0;
 
-    color: #111827;
+    color: #075985;
 
     font-size: clamp(20px, 2.5vw, 27px);
     font-weight: 800;
@@ -766,7 +746,7 @@
 .section-header p {
     margin: 5px 0 0;
 
-    color: #6b7280;
+    color: #64748B;
 
     font-size: 13px;
     line-height: 1.5;
@@ -777,11 +757,11 @@
 
     padding: 7px 12px;
 
+    border: 1px solid #BFE3EF;
     border-radius: 999px;
 
-    background: #eff8fc;
-
-    color: #0d8abc;
+    background: #EAF8FC;
+    color: #0D8ABC;
 
     font-size: 12px;
     font-weight: 800;
@@ -792,20 +772,25 @@
 
 /* ============================================================
    PRODUCT GRID
+   DESKTOP = 6
 ============================================================ */
 
 .products {
+    width: 100%;
+
     display: grid;
 
     grid-template-columns:
-        repeat(4, minmax(0, 1fr));
+        repeat(6, minmax(0, 1fr));
 
-    gap: 20px;
+    gap: 16px;
+
+    align-items: stretch;
 }
 
 
 /* ============================================================
-   EMPTY / ERROR STATE
+   EMPTY / ERROR
 ============================================================ */
 
 .empty-products {
@@ -818,10 +803,17 @@
 
     padding: 40px 20px;
 
-    border: 1px dashed #d8dee6;
+    box-sizing: border-box;
+
+    border: 1px dashed #B9DDE9;
     border-radius: 14px;
 
-    background: #fafbfc;
+    background:
+        linear-gradient(
+            135deg,
+            #F4FAFC,
+            #EAF8FC
+        );
 
     text-align: center;
 }
@@ -838,7 +830,8 @@
 
     border-radius: 50%;
 
-    background: #f1f5f9;
+    background: #D8F1F8;
+    color: #0D8ABC;
 
     font-size: 25px;
 }
@@ -846,7 +839,7 @@
 .empty-products h2 {
     margin: 0;
 
-    color: #1f2937;
+    color: #075985;
 
     font-size: 18px;
     font-weight: 800;
@@ -857,7 +850,7 @@
 
     margin: 7px 0 18px;
 
-    color: #6b7280;
+    color: #64748B;
 
     font-size: 13px;
     line-height: 1.6;
@@ -871,28 +864,22 @@
     border: none;
     border-radius: 8px;
 
-    background: #0d8abc;
-    color: #ffffff;
+    background: #0D8ABC;
+    color: #FFFFFF;
 
     font-size: 13px;
     font-weight: 700;
 
     cursor: pointer;
-
-    transition:
-        background 0.2s ease,
-        transform 0.2s ease;
 }
 
 .empty-products button:hover {
-    background: #08769f;
-
-    transform: translateY(-1px);
+    background: #075985;
 }
 
 
 /* ============================================================
-   LOADING SPINNER
+   LOADING
 ============================================================ */
 
 .loading-spinner {
@@ -901,8 +888,8 @@
 
     margin-bottom: 15px;
 
-    border: 4px solid #e5e7eb;
-    border-top-color: #0d8abc;
+    border: 4px solid #D8EEF5;
+    border-top-color: #0D8ABC;
 
     border-radius: 50%;
 
@@ -917,10 +904,35 @@
 
 
 /* ============================================================
-   LARGE TABLET
+   1101px — 1250px
+   6 COLUMNS
 ============================================================ */
 
-@media (max-width: 1100px) {
+@media (max-width: 1250px) and (min-width: 1101px) {
+
+    .products {
+        grid-template-columns:
+            repeat(6, minmax(0, 1fr));
+
+        gap: 13px;
+    }
+
+}
+
+
+/* ============================================================
+   901px — 1100px
+   5 COLUMNS
+============================================================ */
+
+@media (max-width: 1100px) and (min-width: 901px) {
+
+    .products {
+        grid-template-columns:
+            repeat(5, minmax(0, 1fr));
+
+        gap: 13px;
+    }
 
     .home-search-box {
         grid-template-columns:
@@ -935,34 +947,18 @@
             repeat(3, minmax(0, 1fr));
     }
 
-    .products {
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-    }
-
 }
 
 
 /* ============================================================
-   TABLET
+   651px — 900px
+   TABLET = 3
 ============================================================ */
 
-@media (max-width: 850px) {
+@media (max-width: 900px) and (min-width: 651px) {
 
     .home-search {
         padding: 0 16px;
-    }
-
-    .home-search-content {
-        margin-bottom: 14px;
-    }
-
-    .home-search-content h1 {
-        font-size: 26px;
-    }
-
-    .home-search-content p {
-        font-size: 13px;
     }
 
     .home-search-box {
@@ -970,16 +966,6 @@
             minmax(0, 1fr)
             minmax(150px, 0.55fr)
             auto;
-
-        gap: 7px;
-    }
-
-    .home-filter-button {
-        padding: 0 13px;
-    }
-
-    .home-search-button {
-        padding: 0 16px;
     }
 
     .advanced-search-grid {
@@ -987,30 +973,29 @@
             repeat(2, minmax(0, 1fr));
     }
 
-    .products {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-
-        gap: 16px;
-    }
-
     .products-section {
         padding-left: 16px;
         padding-right: 16px;
+    }
+
+    .products {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+
+        gap: 13px;
     }
 
 }
 
 
 /* ============================================================
-   MOBILE
+   MOBILE = 2
 ============================================================ */
 
 @media (max-width: 650px) {
 
     .home-search {
         margin-top: 20px;
-
         padding: 0 12px;
     }
 
@@ -1020,7 +1005,6 @@
 
     .search-eyebrow {
         font-size: 9px;
-        letter-spacing: 1.3px;
     }
 
     .home-search-content h1 {
@@ -1028,23 +1012,16 @@
     }
 
     .home-search-content p {
-        max-width: 100%;
-
-        margin-top: 6px;
-
         font-size: 12px;
     }
 
 
-    /* -----------------------------------------
-       SEARCH BOX
-    ----------------------------------------- */
+    /* SEARCH */
 
     .home-search-box {
         grid-template-columns: 1fr;
 
         gap: 7px;
-
         padding: 7px;
 
         border-radius: 12px;
@@ -1055,7 +1032,7 @@
     .home-search-button,
     .home-filter-button {
         width: 100%;
-
+        min-width: 0;
         height: 46px;
     }
 
@@ -1068,50 +1045,28 @@
     }
 
 
-    /* -----------------------------------------
-       SEARCH SUMMARY
-    ----------------------------------------- */
+    /* SUMMARY */
 
     .home-search-summary {
         align-items: flex-start;
-
         flex-direction: column;
 
         gap: 8px;
-
-        padding-top: 9px;
     }
 
     .search-summary-left {
         width: 100%;
     }
 
-    .clear-search-button {
-        padding-left: 0;
-    }
 
-
-    /* -----------------------------------------
-       FILTER PANEL
-    ----------------------------------------- */
+    /* FILTER */
 
     .advanced-search-panel {
         padding: 15px;
-
-        border-radius: 12px;
-    }
-
-    .advanced-search-header h3 {
-        font-size: 15px;
-    }
-
-    .advanced-search-header p {
-        font-size: 11px;
     }
 
     .advanced-search-grid {
         grid-template-columns: 1fr;
-
         gap: 12px;
     }
 
@@ -1125,26 +1080,29 @@
     }
 
 
-    /* -----------------------------------------
-       PRODUCTS
-    ----------------------------------------- */
+    /* PRODUCTS */
 
     .products-section {
         margin-top: 30px;
 
         padding:
-            0
+            20px
             12px
             40px;
+
+        background:
+            linear-gradient(
+                180deg,
+                #F4FAFC,
+                #FFFFFF
+            );
     }
 
     .section-header {
         align-items: flex-start;
-
         flex-direction: column;
 
         gap: 9px;
-
         margin-bottom: 15px;
     }
 
@@ -1154,10 +1112,6 @@
 
     .section-header p {
         font-size: 12px;
-    }
-
-    .product-count {
-        font-size: 11px;
     }
 
     .products {
@@ -1200,22 +1154,34 @@
         font-size: 12px;
     }
 
-    .home-search-button,
-    .home-filter-button {
-        font-size: 12px;
-    }
-
     .products-section {
         padding-left: 10px;
         padding-right: 10px;
     }
 
     .products {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
         gap: 8px;
     }
 
-    .product-count {
-        padding: 6px 9px;
+}
+
+
+/* ============================================================
+   VERY SMALL PHONES
+============================================================ */
+
+@media (max-width: 340px) {
+
+    .products {
+        gap: 6px;
+    }
+
+    .products-section {
+        padding-left: 8px;
+        padding-right: 8px;
     }
 
 }
