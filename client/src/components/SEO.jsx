@@ -1,13 +1,17 @@
 import { useEffect } from "react";
 import api from "../config/axios";
 
-const SITE_URL =
+const SITE_URL = (
     import.meta.env.VITE_SITE_URL ||
-    "https://kadmarket.com";
+    "https://kadmarket.com"
+).replace(/\/+$/, "");
+
+const GOOGLE_ANALYTICS_ID =
+    import.meta.env.VITE_GOOGLE_ANALYTICS_ID || "";
 
 
 /* =========================================================
-   HELPERS
+   META TAG
 ========================================================= */
 
 function setMetaTag({
@@ -15,7 +19,6 @@ function setMetaTag({
     property,
     content
 }) {
-
     if (!content) {
         return;
     }
@@ -28,22 +31,14 @@ function setMetaTag({
         document.head.querySelector(selector);
 
     if (!element) {
-
-        element =
-            document.createElement("meta");
+        element = document.createElement("meta");
 
         if (name) {
-            element.setAttribute(
-                "name",
-                name
-            );
+            element.setAttribute("name", name);
         }
 
         if (property) {
-            element.setAttribute(
-                "property",
-                property
-            );
+            element.setAttribute("property", property);
         }
 
         document.head.appendChild(element);
@@ -62,9 +57,9 @@ function setMetaTag({
 
 function setLinkTag({
     rel,
-    href
+    href,
+    type
 }) {
-
     if (!href) {
         return;
     }
@@ -75,9 +70,7 @@ function setLinkTag({
         );
 
     if (!element) {
-
-        element =
-            document.createElement("link");
+        element = document.createElement("link");
 
         element.setAttribute(
             "rel",
@@ -91,6 +84,13 @@ function setLinkTag({
         "href",
         href
     );
+
+    if (type) {
+        element.setAttribute(
+            "type",
+            type
+        );
+    }
 }
 
 
@@ -99,7 +99,6 @@ function setLinkTag({
 ========================================================= */
 
 function setFavicon(favicon) {
-
     if (!favicon) {
         return;
     }
@@ -110,9 +109,7 @@ function setFavicon(favicon) {
         );
 
     if (!element) {
-
-        element =
-            document.createElement("link");
+        element = document.createElement("link");
 
         element.setAttribute(
             "rel",
@@ -135,14 +132,13 @@ function setFavicon(favicon) {
 
 
 /* =========================================================
-   BOOLEAN CONVERTER
+   BOOLEAN
 ========================================================= */
 
 function toBoolean(
     value,
     fallback = true
 ) {
-
     if (
         value === true ||
         value === 1 ||
@@ -172,12 +168,12 @@ function toBoolean(
 ========================================================= */
 
 function normalizeUrl(url) {
-
     if (!url) {
         return "";
     }
 
-    const value = String(url).trim();
+    const value =
+        String(url).trim();
 
     if (
         value.startsWith("http://") ||
@@ -186,22 +182,38 @@ function normalizeUrl(url) {
         return value;
     }
 
+    if (value.startsWith("//")) {
+        return `https:${value}`;
+    }
+
     if (value.startsWith("/")) {
         return `${SITE_URL}${value}`;
     }
 
-    return value;
+    return `${SITE_URL}/${value}`;
 }
 
 
 /* =========================================================
-   GOOGLE ANALYTICS
+   CANONICAL URL
+========================================================= */
+
+function getCanonicalUrl(canonical) {
+    if (canonical) {
+        return normalizeUrl(canonical);
+    }
+
+    return `${SITE_URL}${window.location.pathname}`;
+}
+
+
+/* =========================================================
+   GOOGLE ANALYTICS 4
 ========================================================= */
 
 function loadGoogleAnalytics(
     analyticsId
 ) {
-
     if (!analyticsId) {
         return;
     }
@@ -214,10 +226,6 @@ function loadGoogleAnalytics(
     if (existingScript) {
         return;
     }
-
-    /* -----------------------------------------
-       Google Analytics library
-    ----------------------------------------- */
 
     const script =
         document.createElement("script");
@@ -237,47 +245,128 @@ function loadGoogleAnalytics(
     document.head.appendChild(script);
 
 
-    /* -----------------------------------------
-       Google Analytics configuration
-    ----------------------------------------- */
-
-    if (
-        !document.querySelector(
-            `script[data-kad-ga-config="${analyticsId}"]`
-        )
-    ) {
-
-        const configScript =
-            document.createElement("script");
-
-        configScript.setAttribute(
-            "data-kad-ga-config",
-            analyticsId
-        );
-
-        configScript.textContent = `
-            window.dataLayer =
-                window.dataLayer || [];
-
-            function gtag() {
-                window.dataLayer.push(arguments);
-            }
-
-            gtag(
-                "js",
-                new Date()
-            );
-
-            gtag(
-                "config",
-                "${analyticsId}"
-            );
-        `;
-
-        document.head.appendChild(
-            configScript
-        );
+    if (!window.dataLayer) {
+        window.dataLayer = [];
     }
+
+    if (!window.gtag) {
+        window.gtag = function () {
+            window.dataLayer.push(
+                arguments
+            );
+        };
+    }
+
+    window.gtag(
+        "js",
+        new Date()
+    );
+
+    window.gtag(
+        "config",
+        analyticsId,
+        {
+            send_page_view: true
+        }
+    );
+}
+
+
+/* =========================================================
+   GOOGLE VERIFICATION
+========================================================= */
+
+function setGoogleVerification(
+    verificationCode
+) {
+    if (!verificationCode) {
+        return;
+    }
+
+    setMetaTag({
+        name: "google-site-verification",
+        content: verificationCode
+    });
+}
+
+
+/* =========================================================
+   STRUCTURED DATA
+========================================================= */
+
+function setStructuredData(
+    structuredData
+) {
+    const SCRIPT_ID =
+        "kad-marketplace-structured-data";
+
+    const existing =
+        document.getElementById(
+            SCRIPT_ID
+        );
+
+    if (existing) {
+        existing.remove();
+    }
+
+    if (!structuredData) {
+        return;
+    }
+
+    const script =
+        document.createElement(
+            "script"
+        );
+
+    script.id =
+        SCRIPT_ID;
+
+    script.type =
+        "application/ld+json";
+
+    script.textContent =
+        JSON.stringify(
+            structuredData
+        );
+
+    document.head.appendChild(
+        script
+    );
+}
+
+
+/* =========================================================
+   DEFAULT WEBSITE SCHEMA
+========================================================= */
+
+function createWebsiteStructuredData(
+    marketplaceName,
+    description
+) {
+    return {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+
+        name: marketplaceName,
+
+        description: description,
+
+        url: SITE_URL,
+
+        potentialAction: {
+            "@type": "SearchAction",
+
+            target: {
+                "@type": "EntryPoint",
+
+                urlTemplate:
+                    `${SITE_URL}/search?q={search_term_string}`
+            },
+
+            "query-input":
+                "required name=search_term_string"
+        }
+    };
 }
 
 
@@ -292,9 +381,9 @@ function SEO({
     image,
     canonical,
     noIndex = false,
+    structuredData,
     children
 }) {
-
     useEffect(() => {
 
         let cancelled = false;
@@ -313,18 +402,18 @@ function SEO({
             }
 
 
-            /* ---------------------------------------------
-               MARKETPLACE
-            --------------------------------------------- */
+            /* =============================================
+               MARKETPLACE NAME
+            ============================================= */
 
             const marketplaceName =
                 settings.marketplace_name ||
                 "KAD Marketplace Ghana";
 
 
-            /* ---------------------------------------------
+            /* =============================================
                TITLE
-            --------------------------------------------- */
+            ============================================= */
 
             const seoTitle =
                 title ||
@@ -332,29 +421,176 @@ function SEO({
                 marketplaceName;
 
 
-            /* ---------------------------------------------
+            /* =============================================
                DESCRIPTION
-            --------------------------------------------- */
+            ============================================= */
 
             const seoDescription =
                 description ||
                 settings.seo_description ||
-                `Buy and sell products on ${marketplaceName}.`;
+                `Buy and sell products, services and opportunities on ${marketplaceName}.`;
 
 
-            /* ---------------------------------------------
+            /* =============================================
                KEYWORDS
-            --------------------------------------------- */
+            ============================================= */
 
             const seoKeywords =
                 keywords ||
                 settings.seo_keywords ||
-                "";
+                "KAD Marketplace, Ghana marketplace, buy and sell Ghana, online marketplace Ghana";
 
 
-            /* ---------------------------------------------
+            /* =============================================
+               IMAGE
+            ============================================= */
+
+            const seoImage =
+                normalizeUrl(
+                    image ||
+                    settings.logo ||
+                    "/favicon.svg"
+                );
+
+
+            /* =============================================
+               CANONICAL
+            ============================================= */
+
+            const currentCanonical =
+                getCanonicalUrl(
+                    canonical
+                );
+
+
+            /* =============================================
+               SEARCH ENGINE INDEXING
+            ============================================= */
+
+            const indexingEnabled =
+                toBoolean(
+                    settings.search_engine_indexing,
+                    true
+                );
+
+
+            /* =============================================
+               PRIVATE ROUTES
+            ============================================= */
+
+            const pathname =
+                window.location.pathname;
+
+            const privateRoute =
+                pathname === "/login" ||
+                pathname === "/register" ||
+                pathname === "/forgot-password" ||
+                pathname === "/verify-reset" ||
+                pathname === "/reset-password" ||
+                pathname === "/verify-login-otp" ||
+                pathname === "/dashboard" ||
+                pathname === "/sell" ||
+                pathname === "/profile" ||
+                pathname === "/inbox" ||
+                pathname.startsWith("/chat/") ||
+                pathname === "/notifications" ||
+                pathname === "/promotions" ||
+                pathname === "/promotion-success" ||
+                pathname === "/payment-success" ||
+                pathname === "/payment-failed" ||
+                pathname === "/edit-product" ||
+                pathname.startsWith("/edit-product/") ||
+                pathname === "/seller/leads" ||
+                pathname === "/wishlist" ||
+                pathname === "/support" ||
+                pathname === "/my-tickets" ||
+                pathname.startsWith("/my-tickets/") ||
+                pathname.startsWith("/admin/");
+
+
+            /* =============================================
+               ROBOTS
+            ============================================= */
+
+            const robotsContent =
+                noIndex ||
+                privateRoute ||
+                !indexingEnabled
+                    ? "noindex, nofollow"
+                    : "index, follow";
+
+
+            /* =============================================
+               TITLE
+            ============================================= */
+
+            document.title =
+                seoTitle;
+
+
+            /* =============================================
+               DESCRIPTION
+            ============================================= */
+
+            setMetaTag({
+                name: "description",
+                content:
+                    seoDescription.substring(
+                        0,
+                        160
+                    )
+            });
+
+
+            /* =============================================
+               KEYWORDS
+            ============================================= */
+
+            setMetaTag({
+                name: "keywords",
+                content: seoKeywords
+            });
+
+
+            /* =============================================
+               ROBOTS
+            ============================================= */
+
+            setMetaTag({
+                name: "robots",
+                content: robotsContent
+            });
+
+
+            /* =============================================
+               GOOGLEBOT
+            ============================================= */
+
+            setMetaTag({
+                name: "googlebot",
+                content: robotsContent
+            });
+
+
+            /* =============================================
+               GOOGLE SEARCH CONSOLE
+            ============================================= */
+
+            const verificationCode =
+                settings.google_site_verification ||
+                import.meta.env
+                    .VITE_GOOGLE_SITE_VERIFICATION;
+
+            if (verificationCode) {
+                setGoogleVerification(
+                    verificationCode
+                );
+            }
+
+
+            /* =============================================
                OPEN GRAPH
-            --------------------------------------------- */
+            ============================================= */
 
             const ogTitle =
                 settings.og_title ||
@@ -364,137 +600,6 @@ function SEO({
                 settings.og_description ||
                 seoDescription;
 
-
-            /* ---------------------------------------------
-               IMAGE
-            --------------------------------------------- */
-
-            const seoImage =
-                normalizeUrl(
-                    image ||
-                    settings.logo ||
-                    `${SITE_URL}/favicon.svg`
-                );
-
-
-            /* ---------------------------------------------
-               CANONICAL
-            --------------------------------------------- */
-
-            const currentPath =
-                window.location.pathname;
-
-            const currentCanonical =
-                canonical ||
-                `${SITE_URL}${currentPath}`;
-
-
-            /* ---------------------------------------------
-               SEARCH ENGINE INDEXING
-            --------------------------------------------- */
-
-            const indexingEnabled =
-                toBoolean(
-                    settings.search_engine_indexing,
-                    true
-                );
-
-            const shouldNoIndex =
-                noIndex === true ||
-                !indexingEnabled;
-
-
-            /* =================================================
-               PAGE TITLE
-            ================================================= */
-
-            document.title =
-                seoTitle;
-
-
-            /* =================================================
-               BASIC SEO
-            ================================================= */
-
-            setMetaTag({
-                name: "description",
-                content: seoDescription
-            });
-
-
-            if (seoKeywords) {
-
-                setMetaTag({
-                    name: "keywords",
-                    content: seoKeywords
-                });
-
-            }
-
-
-            /* =================================================
-               ROBOTS
-            ================================================= */
-
-          const pathname = window.location.pathname;
-
-const privateRoute =
-    pathname === "/login" ||
-    pathname === "/register" ||
-    pathname === "/forgot-password" ||
-    pathname === "/verify-reset" ||
-    pathname === "/reset-password" ||
-    pathname === "/verify-login-otp" ||
-    pathname === "/dashboard" ||
-    pathname === "/sell" ||
-    pathname === "/profile" ||
-    pathname === "/inbox" ||
-    pathname.startsWith("/chat/") ||
-    pathname === "/notifications" ||
-    pathname === "/promotions" ||
-    pathname === "/promotion-success" ||
-    pathname === "/payment-success" ||
-    pathname === "/payment-failed" ||
-    pathname === "/edit-product" ||
-    pathname.startsWith("/edit-product/") ||
-    pathname === "/seller/leads" ||
-    pathname === "/wishlist" ||
-    pathname === "/support" ||
-    pathname === "/my-tickets" ||
-    pathname.startsWith("/my-tickets/") ||
-    pathname.startsWith("/admin/");
-
-const robotsContent =
-    noIndex || privateRoute
-        ? "noindex, nofollow"
-        : "index, follow";
-
-setMetaTag(
-    "robots",
-    robotsContent
-);
-
-            /* =================================================
-               GOOGLE SEARCH CONSOLE
-            ================================================= */
-
-            if (
-                settings.google_site_verification
-            ) {
-
-                setMetaTag({
-                    name:
-                        "google-site-verification",
-                    content:
-                        settings.google_site_verification
-                });
-
-            }
-
-
-            /* =================================================
-               OPEN GRAPH
-            ================================================= */
 
             setMetaTag({
                 property: "og:title",
@@ -508,121 +613,143 @@ setMetaTag(
 
             setMetaTag({
                 property: "og:type",
-                content: "website"
+                content:
+                    structuredData?.["@type"] ===
+                    "Product"
+                        ? "product"
+                        : "website"
             });
 
             setMetaTag({
                 property: "og:url",
-                content: currentCanonical
+                content:
+                    currentCanonical
             });
 
             setMetaTag({
                 property: "og:site_name",
-                content: marketplaceName
+                content:
+                    marketplaceName
             });
 
             setMetaTag({
                 property: "og:image",
-                content: seoImage
+                content:
+                    seoImage
             });
 
             setMetaTag({
                 property: "og:image:alt",
-                content: ogTitle
+                content:
+                    seoTitle
             });
 
 
-            /* =================================================
+            /* =============================================
                TWITTER / X
-            ================================================= */
+            ============================================= */
 
             setMetaTag({
                 name: "twitter:card",
-                content: "summary_large_image"
+                content:
+                    "summary_large_image"
             });
 
             setMetaTag({
                 name: "twitter:title",
-                content: ogTitle
+                content:
+                    ogTitle
             });
 
             setMetaTag({
                 name: "twitter:description",
-                content: ogDescription
+                content:
+                    ogDescription
             });
 
             setMetaTag({
                 name: "twitter:image",
-                content: seoImage
+                content:
+                    seoImage
             });
 
 
-            /* =================================================
+            /* =============================================
                CANONICAL
-            ================================================= */
+            ============================================= */
 
             setLinkTag({
                 rel: "canonical",
-                href: currentCanonical
+                href:
+                    currentCanonical
             });
 
 
-            /* =================================================
+            /* =============================================
                FAVICON
-            ================================================= */
+            ============================================= */
 
             if (settings.favicon) {
-
                 setFavicon(
                     normalizeUrl(
                         settings.favicon
                     )
                 );
-
             }
 
 
-            /* =================================================
+            /* =============================================
                THEME COLOR
-            ================================================= */
+            ============================================= */
 
-            if (
-                settings.primary_color
-            ) {
-
-                setMetaTag({
-                    name: "theme-color",
-                    content:
-                        settings.primary_color
-                });
-
-            }
+            setMetaTag({
+                name: "theme-color",
+                content:
+                    settings.primary_color ||
+                    "#0D8ABC"
+            });
 
 
-            /* =================================================
+            /* =============================================
+               STRUCTURED DATA
+            ============================================= */
+
+            const schema =
+                structuredData ||
+                createWebsiteStructuredData(
+                    marketplaceName,
+                    seoDescription
+                );
+
+            setStructuredData(
+                schema
+            );
+
+
+            /* =============================================
                GOOGLE ANALYTICS
-            ================================================= */
+            ============================================= */
 
             const analyticsId =
-                settings.google_analytics_id;
+                settings.google_analytics_id ||
+                GOOGLE_ANALYTICS_ID;
 
             const analyticsEnabled =
                 toBoolean(
                     settings.analytics_enabled,
-                    false
+                    Boolean(
+                        GOOGLE_ANALYTICS_ID
+                    )
                 );
 
             if (
                 analyticsEnabled &&
                 analyticsId
             ) {
-
                 loadGoogleAnalytics(
                     analyticsId
                 );
-
             }
-
         };
 
 
@@ -635,20 +762,13 @@ setMetaTag(
 
                 try {
 
-                    /*
-                     * IMPORTANT:
-                     * Public SEO settings are available at
-                     *
-                     * /api/settings/public
-                     *
-                     * NOT /api/settings
-                     */
+                    const response =
+                        await api.get(
+                            "/settings/public"
+                        );
 
-                   const response = await api.get(
-    "/settings/public"
-);
-
-const result = response.data;
+                    const result =
+                        response.data;
 
 
                     if (
@@ -660,31 +780,22 @@ const result = response.data;
                             result.settings
                         );
 
-                    }
-                    else {
+                    } else {
 
                         applySEO();
 
                     }
 
-                }
-
-                catch (error) {
+                } catch (error) {
 
                     console.error(
                         "SEO SETTINGS ERROR:",
-                        error
+                        error.response?.data ||
+                        error.message
                     );
 
-                    /*
-                     * Even if the backend is temporarily
-                     * unavailable, still apply fallback SEO.
-                     */
-
                     applySEO();
-
                 }
-
             };
 
 
@@ -696,9 +807,7 @@ const result = response.data;
         ================================================= */
 
         return () => {
-
             cancelled = true;
-
         };
 
     }, [
@@ -707,7 +816,8 @@ const result = response.data;
         keywords,
         image,
         canonical,
-        noIndex
+        noIndex,
+        structuredData
     ]);
 
 
