@@ -1,8 +1,8 @@
 import {
     FaFacebook,
     FaInstagram,
-    FaTwitter,
     FaLinkedin,
+    FaTiktok,
     FaYoutube,
     FaCcVisa,
     FaCcMastercard
@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 
 import "./Footer.css";
 
+
 function Footer() {
 
     return (
@@ -20,114 +21,198 @@ function Footer() {
 
             <div className="footer-container">
 
+
+                {/* =====================================================
+                    ABOUT
+                ===================================================== */}
+
                 <div className="footer-about">
 
-                    <h2>KAD Marketplace</h2>
+                    <h2>
+                        KAD Marketplace
+                    </h2>
 
                     <p>
-
-                        Ghana's fastest growing online marketplace where buyers and sellers connect securely.
-
-
+                        Ghana's fastest growing online marketplace
+                        where buyers and sellers connect securely.
                     </p>
-                    
-<div className="social-icons">
 
-    <a
-        href="https://www.facebook.com/YourPage"
-        target="_blank"
-        rel="noopener noreferrer"
-    >
-        <FaFacebook />
-    </a>
 
-    <a
-        href="https://www.instagram.com/YourPage"
-        target="_blank"
-        rel="noopener noreferrer"
-    >
-        <FaInstagram />
-    </a>
+                    {/* =================================================
+                        SOCIAL MEDIA
+                    ================================================= */}
 
-    <a
-        href="https://x.com/YourPage"
-        target="_blank"
-        rel="noopener noreferrer"
-    >
-        <FaTwitter />
-    </a>
+                    <div className="social-icons">
 
-    <a
-        href="https://www.linkedin.com/company/YourPage"
-        target="_blank"
-        rel="noopener noreferrer"
-    >
-        <FaLinkedin />
-    </a>
+                        {/* Facebook */}
 
-    <a
-        href="https://www.youtube.com/@YourChannel"
-        target="_blank"
-        rel="noopener noreferrer"
-    >
-        <FaYoutube />
-    </a>
+                        <a
+                            href="https://www.facebook.com/share/1DpozJZpu2/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="KAD Marketplace on Facebook"
+                            title="Facebook"
+                        >
+                            <FaFacebook />
+                        </a>
 
-</div>
+
+                        {/* Instagram */}
+
+                        <a
+                            href="https://www.instagram.com/paroemiagh?stkn=MWZidzFucHl1a21udw=="
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="KAD Marketplace on Instagram"
+                            title="Instagram"
+                        >
+                            <FaInstagram />
+                        </a>
+
+
+                        {/* TikTok */}
+
+                        <a
+                            href="https://www.tiktok.com/@kadmarket.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="KAD Marketplace on TikTok"
+                            title="TikTok"
+                        >
+                            <FaTiktok />
+                        </a>
+
+
+                        {/* LinkedIn */}
+
+                        <a
+                            href="https://www.linkedin.com/in/asante-daniel-0397a5371?utm_source=share_via&utm_content=profile&utm_medium=member_android"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="KAD Marketplace on LinkedIn"
+                            title="LinkedIn"
+                        >
+                            <FaLinkedin />
+                        </a>
+
+
+                        {/* YouTube */}
+
+                        <a
+                            href="https://www.youtube.com/@kadmarket"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="KAD Marketplace on YouTube"
+                            title="YouTube"
+                        >
+                            <FaYoutube />
+                        </a>
+
+                    </div>
 
                 </div>
+
+
+                {/* =====================================================
+                    FOOTER LINKS
+                ===================================================== */}
 
                 <div className="footer-links">
 
-                    <div>
 
-                        <h3>Marketplace</h3>
-
-                       
-<Link to="/featured">Featured</Link>
-<Link to="/trending">Trending</Link>
-<Link to="/recommended">Recommended</Link>
-                    </div>
+                    {/* Marketplace */}
 
                     <div>
 
-                        <h3>Company</h3>
+                        <h3>
+                            Marketplace
+                        </h3>
 
-                        <Link to="/about">About Us</Link>
+                        <Link to="/featured">
+                            Featured
+                        </Link>
 
+                        <Link to="/trending">
+                            Trending
+                        </Link>
 
+                        <Link to="/recommended">
+                            Recommended
+                        </Link>
 
-<Link to="/contact">Contact Us</Link>
-
-<Link to="/privacy-policy">Privacy Policy</Link>
                     </div>
 
-                   
-                    
+
+                    {/* Company */}
+
+                    <div>
+
+                        <h3>
+                            Company
+                        </h3>
+
+                        <Link to="/about">
+                            About Us
+                        </Link>
+
+                        <Link to="/contact">
+                            Contact Us
+                        </Link>
+
+                        <Link to="/privacy-policy">
+                            Privacy Policy
+                        </Link>
+
+                    </div>
+
+
                 </div>
 
             </div>
+
+
+            {/* =========================================================
+                SECURE PAYMENTS
+            ========================================================= */}
 
             <div className="payment-section">
 
-                <h3>Secure Payments</h3>
+                <h3>
+                    Secure Payments
+                </h3>
 
                 <div className="payments">
 
-                    <span>MTN MoMo</span>
+                    <span>
+                        MTN MoMo
+                    </span>
 
-                    <span>Telecel Cash</span>
+                    <span>
+                        Telecel Cash
+                    </span>
 
-                    <span>AirtelTigo Money</span>
+                    <span>
+                        AirtelTigo Money
+                    </span>
 
-                    <FaCcVisa />
+                    <FaCcVisa
+                        aria-label="Visa"
+                        title="Visa"
+                    />
 
-                    <FaCcMastercard />
+                    <FaCcMastercard
+                        aria-label="Mastercard"
+                        title="Mastercard"
+                    />
 
-                    
                 </div>
 
             </div>
+
+
+            {/* =========================================================
+                FOOTER BOTTOM
+            ========================================================= */}
 
             <div className="footer-bottom">
 
@@ -135,10 +220,12 @@ function Footer() {
 
             </div>
 
+
         </footer>
 
     );
 
 }
+
 
 export default Footer;
