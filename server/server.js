@@ -42,80 +42,54 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const supportRoutes = require("./routes/supportRoutes");
 const searchRoutes = require("./routes/searchRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
-const marketplaceSettingsRoutes =
-    require("./routes/marketplaceSettingsRoutes");
+const marketplaceSettingsRoutes = require("./routes/marketplaceSettingsRoutes");
 
-const adminProductRoutes =
-    require("./routes/adminProductRoutes");
+const adminProductRoutes = require("./routes/adminProductRoutes");
+const adminStoreRoutes = require("./routes/adminStoreRoutes");
+const adminAdvertisementRoutes = require("./routes/adminAdvertisementRoutes");
+const adminPaymentRoutes = require("./routes/adminPaymentRoutes");
+const adminRevenueRoutes = require("./routes/adminRevenueRoutes");
+const advertisementRoutes = require("./routes/advertisementRoutes");
+const adminSubscriptionPlanRoutes = require("./routes/adminSubscriptionPlanRoutes");
+const adminNotificationRoutes = require("./routes/adminNotificationRoutes");
+const adminSettingsRoutes = require("./routes/adminSettingsRoutes");
+const adminSupportRoutes = require("./routes/adminSupportRoutes");
 
-const adminStoreRoutes =
-    require("./routes/adminStoreRoutes");
+const wishlistRoutes = require("./routes/wishlistRoutes");
+const leadRoutes = require("./routes/leadRoutes");
+const brandingRoutes = require("./routes/brandingRoutes");
 
-const adminAdvertisementRoutes =
-    require("./routes/adminAdvertisementRoutes");
+const homeBuilderRoutes = require("./routes/homeBuilderRoutes");
+const homeBuilderAdminRoutes = require("./routes/homeBuilderAdminRoutes");
 
-const adminPaymentRoutes =
-    require("./routes/adminPaymentRoutes");
+const contactRoutes = require("./routes/contactRoutes");
 
-const adminRevenueRoutes =
-    require("./routes/adminRevenueRoutes");
+const securityRoutes = require("./routes/securityRoutes");
+const roleRoutes = require("./routes/roleRoutes");
+const permissionRoutes = require("./routes/permissionRoutes");
 
-const advertisementRoutes =
-    require("./routes/advertisementRoutes");
+const backupRoutes = require("./routes/backupRoutes");
+const auditLogRoutes = require("./routes/auditLogRoutes");
 
-const adminSubscriptionPlanRoutes =
-    require("./routes/adminSubscriptionPlanRoutes");
+const userSettingsRoutes = require("./routes/userSettingsRoutes");
+const adminSecurityRoutes = require("./routes/adminSecurityRoutes");
 
-const adminNotificationRoutes =
-    require("./routes/adminNotificationRoutes");
+/* =========================================================
+   OPTIONAL SITEMAP ROUTES
 
-const adminSettingsRoutes =
-    require("./routes/adminSettingsRoutes");
+   Keep this only if sitemapRoutes contains additional
+   sitemap-related routes.
+========================================================= */
 
-const adminSupportRoutes =
-    require("./routes/adminSupportRoutes");
+let sitemapRoutes = null;
 
-const wishlistRoutes =
-    require("./routes/wishlistRoutes");
-
-const leadRoutes =
-    require("./routes/leadRoutes");
-
-const brandingRoutes =
-    require("./routes/brandingRoutes");
-
-const homeBuilderRoutes =
-    require("./routes/homeBuilderRoutes");
-
-const homeBuilderAdminRoutes =
-    require("./routes/homeBuilderAdminRoutes");
-
-const contactRoutes =
-    require("./routes/contactRoutes");
-
-const securityRoutes =
-    require("./routes/securityRoutes");
-
-const roleRoutes =
-    require("./routes/roleRoutes");
-
-const permissionRoutes =
-    require("./routes/permissionRoutes");
-
-const backupRoutes =
-    require("./routes/backupRoutes");
-
-const auditLogRoutes =
-    require("./routes/auditLogRoutes");
-
-const userSettingsRoutes =
-    require("./routes/userSettingsRoutes");
-
-const adminSecurityRoutes =
-    require("./routes/adminSecurityRoutes");
-
-const sitemapRoutes =
-    require("./routes/sitemapRoutes");
+try {
+    sitemapRoutes = require("./routes/sitemapRoutes");
+} catch (error) {
+    console.log(
+        "ℹ️ sitemapRoutes.js not loaded. Using built-in sitemap route."
+    );
+}
 
 /* =========================================================
    MIDDLEWARE
@@ -157,13 +131,17 @@ const NODE_ENV =
 const PORT =
     process.env.PORT || 5000;
 
-const SITE_URL =
-    (
-        process.env.SITE_URL ||
-        "https://kadmarket.com"
-    )
-        .trim()
-        .replace(/\/+$/, "");
+/*
+   IMPORTANT:
+   SITE_URL must be a real URL, not Markdown.
+*/
+
+const SITE_URL = (
+    process.env.SITE_URL ||
+    "https://kadmarket.com"
+)
+    .trim()
+    .replace(/\/+$/, "");
 
 /* =========================================================
    FRONTEND BUILD DIRECTORY
@@ -189,7 +167,6 @@ app.use(
 ========================================================= */
 
 const normalizeOrigin = (url) => {
-
     if (!url) {
         return null;
     }
@@ -225,7 +202,6 @@ console.log(
 );
 
 const isAllowedOrigin = (origin) => {
-
     if (!origin) {
         return true;
     }
@@ -236,9 +212,7 @@ const isAllowedOrigin = (origin) => {
 };
 
 const corsOptions = {
-
     origin: (origin, callback) => {
-
         if (!origin) {
             return callback(null, true);
         }
@@ -304,7 +278,6 @@ const uploadDirectory =
     path.join(__dirname, "uploads");
 
 if (!fs.existsSync(uploadDirectory)) {
-
     fs.mkdirSync(
         uploadDirectory,
         {
@@ -325,7 +298,6 @@ app.use(
 app.get(
     "/robots.txt",
     (req, res) => {
-
         const robots = [
             "User-agent: *",
             "Allow: /",
@@ -375,7 +347,6 @@ app.get(
 ========================================================= */
 
 const escapeXml = (value) => {
-
     return String(value ?? "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
@@ -389,7 +360,6 @@ const escapeXml = (value) => {
 ========================================================= */
 
 const generateSitemap = async () => {
-
     const {
         Product,
         User,
@@ -403,7 +373,6 @@ const generateSitemap = async () => {
     ===================================================== */
 
     const staticPages = [
-
         {
             path: "/",
             changefreq: "daily",
@@ -448,7 +417,6 @@ const generateSitemap = async () => {
     ];
 
     staticPages.forEach((page) => {
-
         urls.push(`
     <url>
         <loc>${escapeXml(
@@ -466,7 +434,6 @@ const generateSitemap = async () => {
 
     const products =
         await Product.findAll({
-
             where: {
                 status: "Approved",
                 sellerStatus: "Active",
@@ -484,7 +451,6 @@ const generateSitemap = async () => {
         });
 
     products.forEach((product) => {
-
         const productUrl =
             `${SITE_URL}/product/${encodeURIComponent(
                 product.id
@@ -513,7 +479,6 @@ const generateSitemap = async () => {
 
     const sellers =
         await User.findAll({
-
             attributes: [
                 "id",
                 "updatedAt"
@@ -534,12 +499,12 @@ const generateSitemap = async () => {
             ],
 
             group: [
-                "User.id"
+                "User.id",
+                "User.updatedAt"
             ]
         });
 
     sellers.forEach((seller) => {
-
         const sellerUrl =
             `${SITE_URL}/seller/${encodeURIComponent(
                 seller.id
@@ -568,7 +533,6 @@ const generateSitemap = async () => {
 
     const stores =
         await Store.findAll({
-
             attributes: [
                 "id",
                 "storeSlug",
@@ -596,12 +560,13 @@ const generateSitemap = async () => {
             },
 
             group: [
-                "Store.id"
+                "Store.id",
+                "Store.storeSlug",
+                "Store.updatedAt"
             ]
         });
 
     stores.forEach((store) => {
-
         if (!store.storeSlug) {
             return;
         }
@@ -645,9 +610,7 @@ ${urls.join("")}
 app.get(
     "/sitemap.xml",
     async (req, res) => {
-
         try {
-
             console.log(
                 "🗺️ Sitemap requested:",
                 req.originalUrl
@@ -669,7 +632,6 @@ app.get(
             return res.send(sitemap);
 
         } catch (error) {
-
             console.error(
                 "❌ SITEMAP GENERATION ERROR:",
                 error
@@ -689,23 +651,22 @@ app.get(
    OPTIONAL SITEMAP ROUTES
 ========================================================= */
 
-app.use(
-    "/",
-    sitemapRoutes
-);
+if (sitemapRoutes) {
+    app.use(
+        "/",
+        sitemapRoutes
+    );
+}
 
 /* =========================================================
    DEBUG UPLOADS
 ========================================================= */
 
 if (NODE_ENV !== "production") {
-
     app.get(
         "/api/debug/uploads",
         (req, res) => {
-
             try {
-
                 const exists =
                     fs.existsSync(
                         uploadDirectory
@@ -719,17 +680,12 @@ if (NODE_ENV !== "production") {
                         : [];
 
                 return res.status(200).json({
-
                     success: true,
-
                     uploadDir:
                         uploadDirectory,
-
                     exists,
-
                     fileCount:
                         files.length,
-
                     files:
                         files.slice(
                             0,
@@ -738,11 +694,8 @@ if (NODE_ENV !== "production") {
                 });
 
             } catch (error) {
-
                 return res.status(500).json({
-
                     success: false,
-
                     message:
                         error.message
                 });
@@ -762,13 +715,11 @@ const io =
             path: "/socket.io",
 
             cors: {
-
                 origin:
                     (
                         origin,
                         callback
                     ) => {
-
                         if (!origin) {
                             return callback(
                                 null,
@@ -842,43 +793,31 @@ console.log(
 app.get(
     "/api/health",
     async (req, res) => {
-
         try {
-
             await sequelize.authenticate();
 
             return res.status(200).json({
-
                 success: true,
-
                 status: "healthy",
-
                 environment:
                     NODE_ENV,
-
                 database:
                     "connected",
-
                 timestamp:
                     new Date().toISOString()
             });
 
         } catch (error) {
-
             console.error(
                 "Health check database error:",
                 error.message
             );
 
             return res.status(503).json({
-
                 success: false,
-
                 status: "unhealthy",
-
                 database:
                     "disconnected",
-
                 message:
                     error.message
             });
@@ -893,9 +832,7 @@ app.get(
 app.get(
     "/api",
     (req, res) => {
-
         return res.status(200).json({
-
             success: true,
 
             message:
@@ -914,13 +851,8 @@ app.get(
 );
 
 /* =========================================================
-   PUBLIC ROUTES
+   PUBLIC SETTINGS / AUTH
 ========================================================= */
-
-app.use(
-    "/api/admin/settings/branding",
-    brandingRoutes
-);
 
 app.use(
     "/api/auth",
@@ -935,6 +867,15 @@ app.use(
 app.use(
     "/api/user/settings",
     userSettingsRoutes
+);
+
+/* =========================================================
+   BRANDING
+========================================================= */
+
+app.use(
+    "/api/admin/settings/branding",
+    brandingRoutes
 );
 
 /* =========================================================
@@ -1313,7 +1254,6 @@ app.use(
 io.on(
     "connection",
     (socket) => {
-
         console.log(
             `🟢 Socket Connected: ${socket.id}`
         );
@@ -1321,7 +1261,6 @@ io.on(
         socket.on(
             "join_conversation",
             (conversationId) => {
-
                 if (!conversationId) {
                     return;
                 }
@@ -1339,7 +1278,6 @@ io.on(
         socket.on(
             "leave_conversation",
             (conversationId) => {
-
                 if (!conversationId) {
                     return;
                 }
@@ -1357,7 +1295,6 @@ io.on(
         socket.on(
             "typing",
             (data) => {
-
                 if (
                     !data ||
                     !data.conversationId
@@ -1381,7 +1318,6 @@ io.on(
         socket.on(
             "stop_typing",
             (data) => {
-
                 if (
                     !data ||
                     !data.conversationId
@@ -1405,7 +1341,6 @@ io.on(
         socket.on(
             "disconnect",
             (reason) => {
-
                 console.log(
                     `🔴 Socket Disconnected: ${socket.id}`,
                     reason
@@ -1416,7 +1351,6 @@ io.on(
         socket.on(
             "error",
             (error) => {
-
                 console.error(
                     `❌ Socket Error [${socket.id}]:`,
                     error
@@ -1431,7 +1365,6 @@ io.on(
 ========================================================= */
 
 if (NODE_ENV === "production") {
-
     /*
        Serve React static assets.
     */
@@ -1448,11 +1381,28 @@ if (NODE_ENV === "production") {
     /*
        React SPA fallback.
 
-       sitemap.xml and robots.txt are already handled
-       above and are explicitly excluded.
+       IMPORTANT:
+       This uses app.use() instead of app.get("/{*splat}")
+       so we can safely use next().
     */
 
-    app.get("/{*splat}", (req, res) => {
+    app.use(
+        (req, res, next) => {
+            /*
+               Only handle GET/HEAD requests.
+            */
+
+            if (
+                req.method !== "GET" &&
+                req.method !== "HEAD"
+            ) {
+                return next();
+            }
+
+            /*
+               Never allow React fallback to intercept API,
+               uploads, Socket.IO, sitemap or robots.
+            */
 
             if (
                 req.path.startsWith("/api") ||
@@ -1460,13 +1410,6 @@ if (NODE_ENV === "production") {
                 req.path.startsWith("/socket.io") ||
                 req.path === "/sitemap.xml" ||
                 req.path === "/robots.txt"
-            ) {
-                return next();
-            }
-
-            if (
-                req.method !== "GET" &&
-                req.method !== "HEAD"
             ) {
                 return next();
             }
@@ -1480,6 +1423,10 @@ if (NODE_ENV === "production") {
             if (
                 !fs.existsSync(indexPath)
             ) {
+                console.error(
+                    "❌ Frontend build not found:",
+                    indexPath
+                );
 
                 return res
                     .status(500)
@@ -1501,9 +1448,7 @@ if (NODE_ENV === "production") {
 
 app.use(
     (req, res) => {
-
         return res.status(404).json({
-
             success: false,
 
             message:
@@ -1518,7 +1463,6 @@ app.use(
 
 app.use(
     (error, req, res, next) => {
-
         console.error(
             "SERVER ERROR:",
             error
@@ -1527,17 +1471,13 @@ app.use(
         if (
             error.message &&
             (
-                error.message.includes(
-                    "CORS"
-                ) ||
+                error.message.includes("CORS") ||
                 error.message.includes(
                     "Not allowed by CORS"
                 )
             )
         ) {
-
             return res.status(403).json({
-
                 success: false,
 
                 message:
@@ -1546,12 +1486,9 @@ app.use(
         }
 
         if (
-            error.name ===
-            "MulterError"
+            error.name === "MulterError"
         ) {
-
             return res.status(400).json({
-
                 success: false,
 
                 message:
@@ -1563,7 +1500,6 @@ app.use(
         return res.status(
             error.status || 500
         ).json({
-
             success: false,
 
             message:
@@ -1583,275 +1519,269 @@ app.use(
 
 let promotionExpiryInterval = null;
 
-const startPromotionExpiryChecker =
-    () => {
-
-        if (
-            promotionExpiryInterval
-        ) {
-
-            console.warn(
-                "⚠️ Promotion expiry checker is already running."
-            );
-
-            return;
-        }
-
-        console.log(
-            "🚀 Promotion expiry checker started."
+const startPromotionExpiryChecker = () => {
+    if (promotionExpiryInterval) {
+        console.warn(
+            "⚠️ Promotion expiry checker is already running."
         );
 
-        const checkExpiredPromotions =
-            async () => {
+        return;
+    }
 
-                try {
+    console.log(
+        "🚀 Promotion expiry checker started."
+    );
 
-                    await PromotionService
-                        .removeExpiredPromotions();
+    const checkExpiredPromotions =
+        async () => {
+            try {
+                await PromotionService
+                    .removeExpiredPromotions();
 
-                    console.log(
-                        "Promotion expiry check completed."
-                    );
+                console.log(
+                    "Promotion expiry check completed."
+                );
 
-                } catch (error) {
+            } catch (error) {
+                console.error(
+                    "Promotion expiry check failed:",
+                    error.message
+                );
+            }
+        };
 
-                    console.error(
-                        "Promotion expiry check failed:",
-                        error.message
-                    );
-                }
-            };
+    /*
+       Run immediately.
+    */
 
-        checkExpiredPromotions();
+    checkExpiredPromotions();
 
-        promotionExpiryInterval =
-            setInterval(
-                checkExpiredPromotions,
-                60 * 1000
-            );
-    };
+    /*
+       Then run every minute.
+    */
+
+    promotionExpiryInterval =
+        setInterval(
+            checkExpiredPromotions,
+            60 * 1000
+        );
+};
 
 /* =========================================================
    DATABASE + SERVER STARTUP
 ========================================================= */
 
-const startServer =
-    async () => {
+const startServer = async () => {
+    try {
+        /* =================================================
+           DATABASE
+        ================================================= */
 
-        try {
+        await sequelize.authenticate();
 
-            /* =================================================
-               DATABASE
-            ================================================= */
+        console.log(
+            "✅ MySQL Connected Successfully"
+        );
 
-            await sequelize.authenticate();
+        /* =================================================
+           DATABASE SYNC
+        ================================================= */
 
-            console.log(
-                "✅ MySQL Connected Successfully"
+        await sequelize.sync();
+
+        console.log(
+            "✅ Database Synced Successfully"
+        );
+
+        /* =================================================
+           ROLES + PERMISSIONS
+        ================================================= */
+
+        const seedRolesAndPermissions =
+            require(
+                "./seeders/rolePermissionSeeder"
             );
 
-            /* =================================================
-               DATABASE SYNC
-            ================================================= */
+        await seedRolesAndPermissions();
 
-            await sequelize.sync();
+        console.log(
+            "✅ Roles and permissions checked."
+        );
 
-            console.log(
-                "✅ Database Synced Successfully"
-            );
+        /* =================================================
+           BACKGROUND SERVICES
+        ================================================= */
 
-            /* =================================================
-               ROLES + PERMISSIONS
-            ================================================= */
+        startPromotionExpiryChecker();
 
-            const seedRolesAndPermissions =
-                require(
-                    "./seeders/rolePermissionSeeder"
+        /* =================================================
+           SERVER
+        ================================================= */
+
+        server.listen(
+            PORT,
+            () => {
+                console.log("");
+
+                console.log(
+                    "=========================================="
                 );
 
-            await seedRolesAndPermissions();
+                console.log(
+                    "🚀 KAD MARKETPLACE SERVER STARTED"
+                );
 
-            console.log(
-                "✅ Roles and permissions checked."
-            );
+                console.log(
+                    "=========================================="
+                );
 
-            /* =================================================
-               BACKGROUND SERVICES
-            ================================================= */
+                console.log(
+                    `🌍 Port: ${PORT}`
+                );
 
-            startPromotionExpiryChecker();
+                console.log(
+                    `📦 Environment: ${NODE_ENV}`
+                );
 
-            /* =================================================
-               SERVER
-            ================================================= */
+                console.log(
+                    `🌐 Site URL: ${SITE_URL}`
+                );
 
-            server.listen(
-                PORT,
-                () => {
+                console.log(
+                    `🗺️ Sitemap: ${SITE_URL}/sitemap.xml`
+                );
 
-                    console.log("");
+                console.log(
+                    `🤖 Robots: ${SITE_URL}/robots.txt`
+                );
 
-                    console.log(
-                        "=========================================="
-                    );
+                console.log(
+                    `⚙️ Public Settings: ${SITE_URL}/api/settings/public`
+                );
 
-                    console.log(
-                        "🚀 KAD MARKETPLACE SERVER STARTED"
-                    );
+                console.log(
+                    `❤️ Health: ${SITE_URL}/api/health`
+                );
 
-                    console.log(
-                        "=========================================="
-                    );
+                console.log(
+                    `🌐 Allowed Origins: ${uniqueAllowedOrigins.join(", ")}`
+                );
 
-                    console.log(
-                        `🌍 Port: ${PORT}`
-                    );
+                console.log(
+                    "🔌 Socket.IO: /socket.io"
+                );
 
-                    console.log(
-                        `📦 Environment: ${NODE_ENV}`
-                    );
+                console.log(
+                    "=========================================="
+                );
 
-                    console.log(
-                        `🌐 Site URL: ${SITE_URL}`
-                    );
+                console.log("");
+            }
+        );
 
-                    console.log(
-                        `🗺️ Sitemap: ${SITE_URL}/sitemap.xml`
-                    );
+    } catch (error) {
+        console.error("");
 
-                    console.log(
-                        `🤖 Robots: ${SITE_URL}/robots.txt`
-                    );
+        console.error(
+            "❌ SERVER STARTUP FAILED"
+        );
 
-                    console.log(
-                        `🌐 Allowed Origins: ${uniqueAllowedOrigins.join(", ")}`
-                    );
+        console.error(
+            error
+        );
 
-                    console.log(
-                        "🔌 Socket.IO: /socket.io"
-                    );
+        console.error("");
 
-                    console.log(
-                        "=========================================="
-                    );
-
-                    console.log("");
-                }
-            );
-
-        } catch (error) {
-
-            console.error("");
-
-            console.error(
-                "❌ SERVER STARTUP FAILED"
-            );
-
-            console.error(
-                error
-            );
-
-            console.error("");
-
-            process.exit(1);
-        }
-    };
+        process.exit(1);
+    }
+};
 
 /* =========================================================
    GRACEFUL SHUTDOWN
 ========================================================= */
 
-const shutdown =
-    async (signal) => {
+const shutdown = async (signal) => {
+    console.log(
+        `\n${signal} received. Shutting down...`
+    );
 
-        console.log(
-            `\n${signal} received. Shutting down...`
-        );
+    try {
+        /* =================================================
+           STOP PROMOTION CHECKER
+        ================================================= */
 
-        try {
-
-            /* =================================================
-               STOP PROMOTION CHECKER
-            ================================================= */
-
-            if (
+        if (
+            promotionExpiryInterval
+        ) {
+            clearInterval(
                 promotionExpiryInterval
-            ) {
-
-                clearInterval(
-                    promotionExpiryInterval
-                );
-
-                promotionExpiryInterval =
-                    null;
-
-                console.log(
-                    "Promotion expiry checker stopped."
-                );
-            }
-
-            /* =================================================
-               CLOSE SOCKET.IO
-            ================================================= */
-
-            await new Promise(
-                (resolve) => {
-
-                    io.close(
-                        () => {
-
-                            console.log(
-                                "Socket.IO server closed."
-                            );
-
-                            resolve();
-                        }
-                    );
-                }
             );
 
-            /* =================================================
-               CLOSE HTTP SERVER
-            ================================================= */
-
-            await new Promise(
-                (resolve) => {
-
-                    server.close(
-                        () => {
-
-                            console.log(
-                                "HTTP server closed."
-                            );
-
-                            resolve();
-                        }
-                    );
-                }
-            );
-
-            /* =================================================
-               DATABASE
-            ================================================= */
-
-            await sequelize.close();
+            promotionExpiryInterval =
+                null;
 
             console.log(
-                "Database connection closed."
+                "Promotion expiry checker stopped."
             );
-
-            process.exit(0);
-
-        } catch (error) {
-
-            console.error(
-                "Shutdown error:",
-                error
-            );
-
-            process.exit(1);
         }
-    };
+
+        /* =================================================
+           CLOSE SOCKET.IO
+        ================================================= */
+
+        await new Promise(
+            (resolve) => {
+                io.close(
+                    () => {
+                        console.log(
+                            "Socket.IO server closed."
+                        );
+
+                        resolve();
+                    }
+                );
+            }
+        );
+
+        /* =================================================
+           CLOSE HTTP SERVER
+        ================================================= */
+
+        await new Promise(
+            (resolve) => {
+                server.close(
+                    () => {
+                        console.log(
+                            "HTTP server closed."
+                        );
+
+                        resolve();
+                    }
+                );
+            }
+        );
+
+        /* =================================================
+           DATABASE
+        ================================================= */
+
+        await sequelize.close();
+
+        console.log(
+            "Database connection closed."
+        );
+
+        process.exit(0);
+
+    } catch (error) {
+        console.error(
+            "Shutdown error:",
+            error
+        );
+
+        process.exit(1);
+    }
+};
 
 /* =========================================================
    PROCESS SIGNALS
@@ -1874,7 +1804,6 @@ process.on(
 process.on(
     "unhandledRejection",
     (reason) => {
-
         console.error(
             "❌ UNHANDLED PROMISE REJECTION:",
             reason
@@ -1889,7 +1818,6 @@ process.on(
 process.on(
     "uncaughtException",
     (error) => {
-
         console.error(
             "❌ UNCAUGHT EXCEPTION:",
             error
