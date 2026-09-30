@@ -2283,6 +2283,7 @@ const requires2FA =
     }
 
 };
+
 /* =========================================================
    VERIFY LOGIN OTP
 ========================================================= */
@@ -2291,9 +2292,14 @@ exports.verifyLoginOTP = async (req, res) => {
 
     try {
 
-        /* =========================================
+        console.log("\n========================================");
+        console.log("VERIFY LOGIN OTP REQUEST");
+        console.log("========================================");
+
+
+        /* =================================================
            GET REQUEST DATA
-        ========================================= */
+        ================================================= */
 
         const {
             email,
@@ -2301,9 +2307,9 @@ exports.verifyLoginOTP = async (req, res) => {
         } = req.body;
 
 
-        /* =========================================
-           VALIDATION
-        ========================================= */
+        /* =================================================
+           VALIDATE REQUEST
+        ================================================= */
 
         if (!email || !otp) {
 
@@ -2319,20 +2325,28 @@ exports.verifyLoginOTP = async (req, res) => {
         }
 
 
+        /* =================================================
+           NORMALIZE EMAIL
+        ================================================= */
+
         const normalizedEmail =
             String(email)
                 .trim()
                 .toLowerCase();
 
 
+        /* =================================================
+           NORMALIZE OTP
+        ================================================= */
+
         const normalizedOTP =
             String(otp)
                 .trim();
 
 
-        /* =========================================
-           BASIC OTP VALIDATION
-        ========================================= */
+        /* =================================================
+           VALIDATE OTP FORMAT
+        ================================================= */
 
         if (!/^\d{6}$/.test(normalizedOTP)) {
 
@@ -2348,32 +2362,84 @@ exports.verifyLoginOTP = async (req, res) => {
         }
 
 
-        /* =========================================
+        /* =================================================
            LOAD SECURITY CONFIGURATION
-        ========================================= */
+        ================================================= */
 
         const security =
             await getSecurityConfiguration();
 
 
+        /* =================================================
+           NORMALIZE BOOLEAN SETTINGS
+        ================================================= */
+
+        const toSafeBoolean = (
+            value,
+            defaultValue = false
+        ) => {
+
+            if (
+                value === true ||
+                value === "true" ||
+                value === 1 ||
+                value === "1"
+            ) {
+
+                return true;
+
+            }
+
+            if (
+                value === false ||
+                value === "false" ||
+                value === 0 ||
+                value === "0"
+            ) {
+
+                return false;
+
+            }
+
+            return defaultValue;
+
+        };
+
+
+        const twoFactorEnabled =
+            toSafeBoolean(
+                security.twoFactorEnabled,
+                false
+            );
+
+
+        const requireAdminTwoFactor =
+            toSafeBoolean(
+                security.requireAdminTwoFactor,
+                true
+            );
+
+
+        const securityAlerts =
+            toSafeBoolean(
+                security.securityAlerts,
+                true
+            );
+
+
         console.log(
-            "VERIFY LOGIN OTP - SECURITY CONFIG:",
+            "VERIFY OTP SECURITY CONFIG:",
             {
-                email:
-                    normalizedEmail,
-
-                twoFactorEnabled:
-                    security.twoFactorEnabled,
-
-                requireAdminTwoFactor:
-                    security.requireAdminTwoFactor
+                twoFactorEnabled,
+                requireAdminTwoFactor,
+                securityAlerts
             }
         );
 
 
-        /* =========================================
+        /* =================================================
            FIND USER
-        ========================================= */
+        ================================================= */
 
         const user =
             await findUserWithAccess(
@@ -2381,65 +2447,183 @@ exports.verifyLoginOTP = async (req, res) => {
             );
 
 
+        /* =================================================
+           USER NOT FOUND
+        ================================================= */
+
         if (!user) {
 
-            return res.status(404).json({
+            console.warn(
+                "VERIFY OTP - USER NOT FOUND:",
+                normalizedEmail
+            );
+
+            return res.status(401).json({
 
                 success: false,
 
                 message:
-                    "User not found."
+                    "Invalid verification request."
 
             });
 
         }
 
 
-        /* =========================================
-           DETERMINE ADMIN STATUS
-        ========================================= */
+        /* =================================================
+           CHECK ACCOUNT STATUS
+        ================================================= */
 
-        const isAdmin =
-            requiresTwoFactorAuthentication(
-                user
+        if (
+            String(user.status || "")
+                .trim()
+                .toLowerCase() ===
+            "blocked"
+        ) {
+
+            console.warn(
+                "VERIFY OTP - ACCOUNT BLOCKED:",
+                user.email
             );
 
+            return res.status(403).json({
 
-        /* =========================================
-           DETERMINE WHETHER THIS USER
-           CURRENTLY REQUIRES 2FA
-        ========================================= */
+                success: false,
+
+                message:
+                    "Your account has been blocked. Please contact support."
+
+            });
+
+        }
+
+
+        /* =================================================
+           CHECK ACTIVE ACCOUNT LOCK
+        ================================================= */
+
+        if (
+            user.lockUntil &&
+            new Date(user.lockUntil).getTime() >
+                Date.now()
+        ) {
+
+            const remainingMilliseconds =
+                new Date(user.lockUntil).getTime() -
+                Date.now();
+
+
+            const remainingMinutes =
+                Math.max(
+                    1,
+                    Math.ceil(
+                        remainingMilliseconds /
+                        60000
+                    )
+                );
+
+
+            return res.status(423).json({
+
+                success: false,
+
+                message:
+                    `Account temporarily locked. Try again in ${remainingMinutes} minute(s).`
+
+            });
+
+        }
+
+
+        /* =================================================
+           DETERMINE ADMIN ACCESS
+        ================================================= */
+
+        let isAdmin = false;
+
+
+        try {
+
+            isAdmin =
+                requiresTwoFactorAuthentication(
+                    user
+                );
+
+        } catch (adminCheckError) {
+
+            console.error(
+                "VERIFY OTP - ADMIN CHECK ERROR:",
+                adminCheckError
+            );
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Unable to determine account security requirements."
+
+            });
+
+        }
+
+
+        console.log(
+            "VERIFY OTP - ADMIN CHECK:",
+            {
+                email:
+                    user.email,
+
+                isAdmin
+            }
+        );
+
+
+        /* =================================================
+           DETERMINE 2FA REQUIREMENT
+        ================================================= */
+
+        /*
+         * SAME LOGIC AS LOGIN()
+         *
+         * Global 2FA ON:
+         * -> Everyone requires OTP
+         *
+         * Global 2FA OFF + Admin 2FA ON:
+         * -> Administrators require OTP
+         *
+         * Global 2FA OFF + Admin 2FA OFF:
+         * -> Nobody requires OTP
+         */
 
         const requires2FA =
-            security.twoFactorEnabled &&
+            twoFactorEnabled ||
             (
-                !security.requireAdminTwoFactor ||
-                isAdmin
+                isAdmin &&
+                requireAdminTwoFactor
             );
 
 
         console.log(
-            "VERIFY LOGIN OTP - 2FA DECISION:",
+            "VERIFY OTP - 2FA DECISION:",
             {
                 email:
                     user.email,
 
                 isAdmin,
 
-                twoFactorEnabled:
-                    security.twoFactorEnabled,
+                twoFactorEnabled,
 
-                requireAdminTwoFactor:
-                    security.requireAdminTwoFactor,
+                requireAdminTwoFactor,
 
                 requires2FA
             }
         );
 
 
-        /* =========================================
+        /* =================================================
            2FA NOT REQUIRED
-        ========================================= */
+        ================================================= */
 
         if (!requires2FA) {
 
@@ -2455,14 +2639,14 @@ exports.verifyLoginOTP = async (req, res) => {
         }
 
 
-        /* =========================================
+        /* =================================================
            CHECK OTP EXISTS
-        ========================================= */
+        ================================================= */
 
         if (!user.twoFactorCode) {
 
             console.warn(
-                "VERIFY LOGIN OTP - NO OTP FOUND:",
+                "VERIFY OTP - NO ACTIVE OTP:",
                 user.email
             );
 
@@ -2478,14 +2662,14 @@ exports.verifyLoginOTP = async (req, res) => {
         }
 
 
-        /* =========================================
-           CHECK OTP EXPIRATION
-        ========================================= */
+        /* =================================================
+           CHECK OTP EXPIRATION EXISTS
+        ================================================= */
 
         if (!user.twoFactorExpires) {
 
             console.warn(
-                "VERIFY LOGIN OTP - NO OTP EXPIRATION:",
+                "VERIFY OTP - NO OTP EXPIRATION:",
                 user.email
             );
 
@@ -2495,6 +2679,7 @@ exports.verifyLoginOTP = async (req, res) => {
 
             user.twoFactorExpires =
                 null;
+
 
             await user.save();
 
@@ -2511,6 +2696,10 @@ exports.verifyLoginOTP = async (req, res) => {
         }
 
 
+        /* =================================================
+           PARSE OTP EXPIRATION
+        ================================================= */
+
         const otpExpiration =
             new Date(
                 user.twoFactorExpires
@@ -2524,7 +2713,7 @@ exports.verifyLoginOTP = async (req, res) => {
         ) {
 
             console.error(
-                "VERIFY LOGIN OTP - INVALID OTP EXPIRATION:",
+                "VERIFY OTP - INVALID OTP EXPIRATION:",
                 {
                     email:
                         user.email,
@@ -2541,6 +2730,7 @@ exports.verifyLoginOTP = async (req, res) => {
             user.twoFactorExpires =
                 null;
 
+
             await user.save();
 
 
@@ -2556,13 +2746,17 @@ exports.verifyLoginOTP = async (req, res) => {
         }
 
 
+        /* =================================================
+           CHECK OTP EXPIRATION
+        ================================================= */
+
         if (
-            otpExpiration <
-            new Date()
+            otpExpiration.getTime() <=
+            Date.now()
         ) {
 
             console.warn(
-                "VERIFY LOGIN OTP - OTP EXPIRED:",
+                "VERIFY OTP - OTP EXPIRED:",
                 user.email
             );
 
@@ -2572,6 +2766,7 @@ exports.verifyLoginOTP = async (req, res) => {
 
             user.twoFactorExpires =
                 null;
+
 
             await user.save();
 
@@ -2588,24 +2783,9 @@ exports.verifyLoginOTP = async (req, res) => {
         }
 
 
-        /* =========================================
+        /* =================================================
            VERIFY OTP
-        ========================================= */
-
-        console.log(
-            "VERIFY LOGIN OTP - CHECKING CODE:",
-            {
-                email:
-                    user.email,
-
-                otpLength:
-                    normalizedOTP.length,
-
-                expiresAt:
-                    otpExpiration.toISOString()
-            }
-        );
-
+        ================================================= */
 
         let validOTP = false;
 
@@ -2621,9 +2801,10 @@ exports.verifyLoginOTP = async (req, res) => {
         } catch (otpError) {
 
             console.error(
-                "VERIFY LOGIN OTP - BCRYPT ERROR:",
+                "VERIFY OTP - BCRYPT ERROR:",
                 otpError
             );
+
 
             return res.status(500).json({
 
@@ -2638,7 +2819,7 @@ exports.verifyLoginOTP = async (req, res) => {
 
 
         console.log(
-            "VERIFY LOGIN OTP - OTP RESULT:",
+            "VERIFY OTP - RESULT:",
             {
                 email:
                     user.email,
@@ -2648,23 +2829,34 @@ exports.verifyLoginOTP = async (req, res) => {
         );
 
 
-        /* =========================================
+        /* =================================================
            INVALID OTP
-        ========================================= */
+        ================================================= */
 
         if (!validOTP) {
 
-            await saveLoginHistory({
+            try {
 
-                userId:
-                    user.id,
+                await saveLoginHistory({
 
-                req,
+                    userId:
+                        user.id,
 
-                success:
-                    false
+                    req,
 
-            });
+                    success:
+                        false
+
+                });
+
+            } catch (historyError) {
+
+                console.error(
+                    "VERIFY OTP - FAILED LOGIN HISTORY ERROR:",
+                    historyError
+                );
+
+            }
 
 
             return res.status(400).json({
@@ -2679,15 +2871,30 @@ exports.verifyLoginOTP = async (req, res) => {
         }
 
 
-        /* =========================================
+        /* =================================================
+           OTP VERIFIED
+        ================================================= */
+
+        console.log(
+            "VERIFY OTP - CODE VALID:",
+            user.email
+        );
+
+
+        /* =================================================
            CLEAR OTP
-        ========================================= */
+        ================================================= */
 
         user.twoFactorCode =
             null;
 
         user.twoFactorExpires =
             null;
+
+
+        /* =================================================
+           RESET LOGIN SECURITY STATE
+        ================================================= */
 
         user.loginAttempts =
             0;
@@ -2699,15 +2906,9 @@ exports.verifyLoginOTP = async (req, res) => {
         await user.save();
 
 
-        console.log(
-            "VERIFY LOGIN OTP - OTP CLEARED:",
-            user.email
-        );
-
-
-        /* =========================================
-           GENERATE JWT TOKEN
-        ========================================= */
+        /* =================================================
+           GENERATE JWT
+        ================================================= */
 
         let token;
 
@@ -2720,7 +2921,7 @@ exports.verifyLoginOTP = async (req, res) => {
         } catch (tokenError) {
 
             console.error(
-                "VERIFY LOGIN OTP - TOKEN ERROR:",
+                "VERIFY OTP - TOKEN GENERATION ERROR:",
                 tokenError
             );
 
@@ -2737,15 +2938,9 @@ exports.verifyLoginOTP = async (req, res) => {
         }
 
 
-        console.log(
-            "VERIFY LOGIN OTP - TOKEN GENERATED:",
-            user.email
-        );
-
-
-        /* =========================================
-           SAVE LOGIN HISTORY
-        ========================================= */
+        /* =================================================
+           SAVE SUCCESSFUL LOGIN HISTORY
+        ================================================= */
 
         try {
 
@@ -2764,48 +2959,63 @@ exports.verifyLoginOTP = async (req, res) => {
         } catch (historyError) {
 
             console.error(
-                "VERIFY LOGIN OTP - LOGIN HISTORY ERROR:",
+                "VERIFY OTP - LOGIN HISTORY ERROR:",
                 historyError
             );
 
         }
 
 
-        /* =========================================
+        /* =================================================
            SECURITY ALERT
-        ========================================= */
+        ================================================= */
 
-        try {
+        if (securityAlerts) {
 
-            await createAlert({
+            try {
 
-                userId:
-                    user.id,
+                await createAlert({
 
-                title:
-                    "Two-Factor Authentication Successful",
+                    userId:
+                        user.id,
 
-                description:
-                    `${user.email} successfully completed administrator verification.`,
+                    title:
+                        "Two-Factor Authentication Successful",
 
-                riskLevel:
-                    "Low"
+                    description:
+                        `${user.email} successfully completed two-factor authentication.`,
 
-            });
+                    riskLevel:
+                        "Low"
 
-        } catch (alertError) {
+                });
 
-            console.error(
-                "VERIFY LOGIN OTP - SECURITY ALERT ERROR:",
-                alertError
-            );
+            } catch (alertError) {
+
+                console.error(
+                    "VERIFY OTP - SECURITY ALERT ERROR:",
+                    alertError
+                );
+
+            }
 
         }
 
 
-        /* =========================================
+        /* =================================================
            SUCCESS RESPONSE
-        ========================================= */
+        ================================================= */
+
+        console.log(
+            "VERIFY OTP - LOGIN SUCCESS:",
+            user.email
+        );
+
+
+        console.log(
+            "========================================"
+        );
+
 
         return res.status(200).json({
 
@@ -2831,24 +3041,29 @@ exports.verifyLoginOTP = async (req, res) => {
 
     } catch (error) {
 
-        /* =========================================
-           UNEXPECTED ERROR
-        ========================================= */
+        /* =================================================
+           GLOBAL ERROR HANDLER
+        ================================================= */
 
         console.error(
-            "VERIFY LOGIN OTP ERROR:",
-            error
+            "\n========================================"
         );
 
+        console.error(
+            "VERIFY LOGIN OTP ERROR"
+        );
 
         console.error(
-            "VERIFY LOGIN OTP ERROR MESSAGE:",
+            "========================================"
+        );
+
+        console.error(
+            "MESSAGE:",
             error?.message
         );
 
-
         console.error(
-            "VERIFY LOGIN OTP ERROR STACK:",
+            "STACK:",
             error?.stack
         );
 
@@ -2866,7 +3081,6 @@ exports.verifyLoginOTP = async (req, res) => {
     }
 
 };
-
 /* =========================================================
    RESEND LOGIN OTP
 ========================================================= */
