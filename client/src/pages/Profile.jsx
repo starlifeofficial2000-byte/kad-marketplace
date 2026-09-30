@@ -22,27 +22,12 @@ function Profile() {
         address: "",
     });
 
-    /*
-    ==========================================================
-    API / SERVER CONFIGURATION
-    ==========================================================
-    */
+    /* =========================================================
+       GET API ORIGIN
+    ========================================================= */
 
     const getApiOrigin = () => {
         try {
-            /*
-             * IMPORTANT:
-             *
-             * Use the actual Axios baseURL.
-             *
-             * This works with:
-             *
-             * https://kad-marketplace-production.up.railway.app/api
-             *
-             * /api
-             *
-             * http://localhost:5000/api
-             */
             const baseURL =
                 api?.defaults?.baseURL ||
                 import.meta.env.VITE_API_URL ||
@@ -53,15 +38,6 @@ function Profile() {
                 window.location.origin
             );
 
-            /*
-             * If baseURL is:
-             *
-             * https://server.com/api
-             *
-             * return:
-             *
-             * https://server.com
-             */
             return url.origin;
         } catch (error) {
             console.error(
@@ -73,38 +49,71 @@ function Profile() {
         }
     };
 
-    /*
-    ==========================================================
-    PROFILE IMAGE URL
-    ==========================================================
-    */
+    /* =========================================================
+       GET PROFILE IMAGE URL
+
+       Supports:
+
+       1. Full Cloudflare R2 URL
+       2. R2 object key
+       3. Old /uploads/ path
+       4. Old filename
+    ========================================================= */
 
     const getImageUrl = (image, cacheBust = false) => {
         if (!image) {
             return "";
         }
 
-        if (typeof image !== "string") {
+        /*
+         * Sometimes backend may return an object.
+         */
+        if (typeof image === "object") {
+            image =
+                image.url ||
+                image.location ||
+                image.r2Key ||
+                image.key ||
+                image.path ||
+                image.filename;
+        }
+
+        if (!image) {
             return "";
         }
 
-        let value = image.trim();
+        let value = String(image).trim();
 
         if (!value) {
             return "";
         }
 
         /*
-         * Already a complete URL
+         * =====================================================
+         * FULL URL
+         * =====================================================
+         *
+         * This is the most important part for Cloudflare R2.
+         *
+         * Example:
+         *
+         * https://cdn.kadmarket.com/uploads/profile/abc.jpg
+         *
+         * or:
+         *
+         * https://pub-xxxxx.r2.dev/uploads/profile/abc.jpg
+         *
          */
+
         if (
             value.startsWith("http://") ||
             value.startsWith("https://")
         ) {
             if (cacheBust) {
-                const separator = value.includes("?")
-                    ? "&"
-                    : "?";
+                const separator =
+                    value.includes("?")
+                        ? "&"
+                        : "?";
 
                 return `${value}${separator}v=${Date.now()}`;
             }
@@ -112,34 +121,58 @@ function Profile() {
             return value;
         }
 
-        const API_ORIGIN = getApiOrigin();
+        /*
+         * =====================================================
+         * REMOVE LEADING SLASHES
+         * =====================================================
+         */
+
+        value = value
+            .replace(/\\/g, "/")
+            .replace(/^\/+/, "");
 
         /*
-         * If backend stored:
+         * =====================================================
+         * CLOUDFLARE R2 OBJECT KEY
+         * =====================================================
          *
-         * /uploads/profile.jpg
-         */
-        if (value.startsWith("/")) {
-            value = value.replace(/^\/+/, "");
-
-            const url =
-                `${API_ORIGIN}/${value}`;
-
-            return cacheBust
-                ? `${url}?v=${Date.now()}`
-                : url;
-        }
-
-        /*
-         * If backend stored:
+         * Example:
          *
-         * uploads/profile.jpg
+         * uploads/profile/1758394820192-profile.jpg
+         *
+         * If your backend has a public R2 URL configured,
+         * build the public URL here.
          */
+
         if (
-            value.startsWith("uploads/")
+            value.startsWith("uploads/profile/") ||
+            value.startsWith("uploads/profiles/")
         ) {
+            const r2PublicUrl =
+                import.meta.env.VITE_R2_PUBLIC_URL;
+
+            if (r2PublicUrl) {
+                const url =
+                    `${r2PublicUrl.replace(/\/+$/, "")}/${value}`;
+
+                return cacheBust
+                    ? `${url}?v=${Date.now()}`
+                    : url;
+            }
+        }
+
+        /*
+         * =====================================================
+         * OLD LOCAL UPLOAD
+         * =====================================================
+         */
+
+        if (value.startsWith("uploads/")) {
+            const apiOrigin =
+                getApiOrigin();
+
             const url =
-                `${API_ORIGIN}/${value}`;
+                `${apiOrigin}/${value}`;
 
             return cacheBust
                 ? `${url}?v=${Date.now()}`
@@ -147,38 +180,40 @@ function Profile() {
         }
 
         /*
-         * Normal case:
+         * =====================================================
+         * OLD DATABASE FILENAME
+         * =====================================================
          *
-         * Database contains only:
+         * Example:
          *
          * 1758394820192-profile.jpg
-         *
-         * Backend serves:
-         *
-         * /uploads/1758394820192-profile.jpg
          */
+
+        const apiOrigin =
+            getApiOrigin();
+
         const url =
-            `${API_ORIGIN}/uploads/${encodeURIComponent(value)}`;
+            `${apiOrigin}/uploads/${encodeURIComponent(value)}`;
 
         return cacheBust
             ? `${url}?v=${Date.now()}`
             : url;
     };
 
-    /*
-    ==========================================================
-    GET INITIALS
-    ==========================================================
-    */
+    /* =========================================================
+       INITIALS
+    ========================================================= */
 
     const getInitials = () => {
-        const name = formData.name?.trim();
+        const name =
+            formData.name?.trim();
 
         if (!name) {
             return "U";
         }
 
-        const parts = name.split(/\s+/);
+        const parts =
+            name.split(/\s+/);
 
         if (parts.length === 1) {
             return parts[0]
@@ -192,11 +227,9 @@ function Profile() {
         ).toUpperCase();
     };
 
-    /*
-    ==========================================================
-    FETCH PROFILE
-    ==========================================================
-    */
+    /* =========================================================
+       FETCH PROFILE
+    ========================================================= */
 
     useEffect(() => {
         fetchProfile();
@@ -216,8 +249,13 @@ function Profile() {
         try {
             setProfileLoading(true);
 
-            const response = await api.get(
-                "/users/profile"
+            const response =
+                await api.get(
+                    "/users/profile"
+                );
+
+            console.log(
+                "================================="
             );
 
             console.log(
@@ -229,62 +267,87 @@ function Profile() {
                 response.data?.user ||
                 response.data;
 
-            /*
-             * Update profile information
-             */
+            console.log(
+                "USER:",
+                user
+            );
+
+            /* =================================================
+               PROFILE INFORMATION
+            ================================================= */
+
             setFormData({
-                name: user?.name || "",
-                email: user?.email || "",
-                phone: user?.phone || "",
+                name:
+                    user?.name || "",
+
+                email:
+                    user?.email || "",
+
+                phone:
+                    user?.phone || "",
+
                 ghanaCard:
                     user?.ghanaCard || "",
+
                 region:
                     user?.region || "",
+
                 city:
                     user?.city || "",
+
                 address:
                     user?.address || "",
             });
 
-            /*
-             * Update profile image
-             */
-            if (user?.profileImage) {
+            /* =================================================
+               PROFILE IMAGE
+            ================================================= */
+
+            console.log(
+                "DATABASE PROFILE IMAGE:",
+                user?.profileImage
+            );
+
+            if (
+                user?.profileImage
+            ) {
                 const imageUrl =
                     getImageUrl(
-                        user.profileImage
+                        user.profileImage,
+                        true
                     );
 
                 console.log(
-                    "PROFILE IMAGE FROM SERVER:",
-                    user.profileImage
-                );
-
-                console.log(
-                    "PROFILE IMAGE URL:",
+                    "FINAL PROFILE IMAGE URL:",
                     imageUrl
                 );
 
-                setPreview(imageUrl);
+                setPreview(
+                    imageUrl
+                );
             } else {
+                console.log(
+                    "NO PROFILE IMAGE FOUND IN DATABASE"
+                );
+
                 setPreview("");
             }
+
         } catch (error) {
             console.error(
                 "FETCH PROFILE ERROR:",
                 error.response?.data ||
                     error.message
             );
+
         } finally {
             setProfileLoading(false);
         }
     };
 
-    /*
-    ==========================================================
-    HANDLE INPUT
-    ==========================================================
-    */
+    /* =========================================================
+       HANDLE INPUT
+    ========================================================= */
 
     const handleChange = (event) => {
         const {
@@ -292,17 +355,17 @@ function Profile() {
             value,
         } = event.target;
 
-        setFormData((previous) => ({
-            ...previous,
-            [name]: value,
-        }));
+        setFormData(
+            previous => ({
+                ...previous,
+                [name]: value,
+            })
+        );
     };
 
-    /*
-    ==========================================================
-    SELECT PROFILE IMAGE
-    ==========================================================
-    */
+    /* =========================================================
+       SELECT IMAGE
+    ========================================================= */
 
     const handleImage = (event) => {
         const file =
@@ -312,9 +375,6 @@ function Profile() {
             return;
         }
 
-        /*
-         * Allowed formats
-         */
         const allowedTypes = [
             "image/jpeg",
             "image/jpg",
@@ -337,13 +397,12 @@ function Profile() {
             return;
         }
 
-        /*
-         * Maximum 5MB
-         */
         const maxSize =
             5 * 1024 * 1024;
 
-        if (file.size > maxSize) {
+        if (
+            file.size > maxSize
+        ) {
             alert(
                 "Profile image must be 5MB or smaller."
             );
@@ -354,8 +413,9 @@ function Profile() {
         }
 
         /*
-         * Remove old preview URL
+         * Remove previous temporary URL.
          */
+
         if (objectUrlRef.current) {
             URL.revokeObjectURL(
                 objectUrlRef.current
@@ -363,8 +423,9 @@ function Profile() {
         }
 
         /*
-         * Create temporary preview
+         * Create preview.
          */
+
         const objectUrl =
             URL.createObjectURL(file);
 
@@ -372,41 +433,54 @@ function Profile() {
             objectUrl;
 
         setProfileImage(file);
+
         setPreview(objectUrl);
     };
 
-    /*
-    ==========================================================
-    PROFILE IMAGE ERROR
-    ==========================================================
-    */
+    /* =========================================================
+       IMAGE ERROR
+    ========================================================= */
 
     const handleImageError = (event) => {
         console.error(
-            "PROFILE IMAGE FAILED:",
+            "================================="
+        );
+
+        console.error(
+            "PROFILE IMAGE FAILED"
+        );
+
+        console.error(
+            "IMAGE URL:",
             event.currentTarget.src
+        );
+
+        console.error(
+            "================================="
         );
 
         event.currentTarget.style.display =
             "none";
 
         const fallback =
-            event.currentTarget.parentElement?.querySelector(
-                ".profile-avatar-fallback"
-            );
+            event.currentTarget.parentElement
+                ?.querySelector(
+                    ".profile-avatar-fallback"
+                );
 
         if (fallback) {
-            fallback.style.display = "flex";
+            fallback.style.display =
+                "flex";
         }
     };
 
-    /*
-    ==========================================================
-    UPDATE PROFILE
-    ==========================================================
-    */
+    /* =========================================================
+       UPDATE PROFILE
+    ========================================================= */
 
-    const updateProfile = async (event) => {
+    const updateProfile = async (
+        event
+    ) => {
         event.preventDefault();
 
         if (loading) {
@@ -416,11 +490,9 @@ function Profile() {
         try {
             setLoading(true);
 
-            const data = new FormData();
+            const data =
+                new FormData();
 
-            /*
-             * Profile information
-             */
             data.append(
                 "name",
                 formData.name.trim()
@@ -457,16 +529,10 @@ function Profile() {
             );
 
             /*
-             * Profile image
-             *
-             * Backend expects:
-             *
-             * req.file
-             *
-             * and the field name:
-             *
-             * profileImage
+             * Only append an image if
+             * the user selected a new one.
              */
+
             if (profileImage) {
                 data.append(
                     "profileImage",
@@ -475,14 +541,6 @@ function Profile() {
                 );
             }
 
-            /*
-             * DO NOT manually set:
-             *
-             * Content-Type: multipart/form-data
-             *
-             * Axios automatically creates
-             * the correct multipart boundary.
-             */
             const response =
                 await api.put(
                     "/users/profile",
@@ -507,9 +565,10 @@ function Profile() {
             const updatedUser =
                 response.data?.user;
 
-            /*
-             * Save updated user locally
-             */
+            /* =================================================
+               SAVE USER LOCALLY
+            ================================================= */
+
             if (updatedUser) {
                 localStorage.setItem(
                     "user",
@@ -518,39 +577,41 @@ function Profile() {
                     )
                 );
 
-                /*
-                 * Update form fields
-                 */
                 setFormData({
                     name:
                         updatedUser.name ||
                         "",
+
                     email:
                         updatedUser.email ||
                         "",
+
                     phone:
                         updatedUser.phone ||
                         "",
+
                     ghanaCard:
                         updatedUser.ghanaCard ||
                         "",
+
                     region:
                         updatedUser.region ||
                         "",
+
                     city:
                         updatedUser.city ||
                         "",
+
                     address:
                         updatedUser.address ||
                         "",
                 });
 
                 /*
-                 * IMPORTANT:
-                 *
-                 * If a new image was uploaded,
-                 * immediately use the server image.
+                 * If backend returned a profile image,
+                 * immediately display it.
                  */
+
                 if (
                     updatedUser.profileImage
                 ) {
@@ -561,7 +622,7 @@ function Profile() {
                         );
 
                     console.log(
-                        "NEW SERVER PROFILE IMAGE:",
+                        "UPDATED PROFILE IMAGE:",
                         serverImage
                     );
 
@@ -571,25 +632,23 @@ function Profile() {
                 }
             }
 
-            /*
-             * Remove temporary object URL
-             */
-            if (objectUrlRef.current) {
+            /* =================================================
+               REMOVE TEMPORARY OBJECT URL
+            ================================================= */
+
+            if (
+                objectUrlRef.current
+            ) {
                 URL.revokeObjectURL(
                     objectUrlRef.current
                 );
 
-                objectUrlRef.current = null;
+                objectUrlRef.current =
+                    null;
             }
 
-            /*
-             * Clear selected file
-             */
             setProfileImage(null);
 
-            /*
-             * Clear file input
-             */
             if (
                 fileInputRef.current
             ) {
@@ -598,16 +657,16 @@ function Profile() {
             }
 
             /*
-             * Fetch the profile again from
-             * the backend to make sure we have
-             * the actual saved image.
+             * Fetch fresh data from database.
              */
+
             await fetchProfile();
 
             alert(
                 response.data?.message ||
                     "Profile updated successfully."
             );
+
         } catch (error) {
             console.error(
                 "UPDATE PROFILE ERROR:",
@@ -621,16 +680,15 @@ function Profile() {
                     error.message ||
                     "Unable to update profile."
             );
+
         } finally {
             setLoading(false);
         }
     };
 
-    /*
-    ==========================================================
-    LOADING SCREEN
-    ==========================================================
-    */
+    /* =========================================================
+       LOADING
+    ========================================================= */
 
     if (profileLoading) {
         return (
@@ -653,25 +711,28 @@ function Profile() {
         );
     }
 
-    /*
-    ==========================================================
-    PAGE
-    ==========================================================
-    */
+    /* =========================================================
+       PAGE
+    ========================================================= */
 
     return (
         <div className="profile-page">
+
             <form
                 className="profile-card"
                 onSubmit={updateProfile}
             >
-                <h1>My Profile</h1>
 
-                {/* ==================================================
+                <h1>
+                    My Profile
+                </h1>
+
+                {/* ==========================================
                     PROFILE PICTURE
-                ================================================== */}
+                ========================================== */}
 
                 <div className="profile-picture">
+
                     {preview && (
                         <img
                             key={preview}
@@ -713,16 +774,19 @@ function Profile() {
                             handleImage
                         }
                         style={{
-                            display: "none",
+                            display:
+                                "none",
                         }}
                     />
+
                 </div>
 
-                {/* ==================================================
+                {/* ==========================================
                     PROFILE INFORMATION
-                ================================================== */}
+                ========================================== */}
 
                 <div className="profile-grid">
+
                     <div>
                         <label htmlFor="name">
                             Full Name
@@ -838,13 +902,15 @@ function Profile() {
                             autoComplete="address-level2"
                         />
                     </div>
+
                 </div>
 
-                {/* ==================================================
+                {/* ==========================================
                     ADDRESS
-                ================================================== */}
+                ========================================== */}
 
                 <div className="profile-address">
+
                     <label htmlFor="address">
                         Address
                     </label>
@@ -861,11 +927,12 @@ function Profile() {
                         }
                         autoComplete="street-address"
                     />
+
                 </div>
 
-                {/* ==================================================
-                    SAVE BUTTON
-                ================================================== */}
+                {/* ==========================================
+                    SAVE
+                ========================================== */}
 
                 <button
                     type="submit"
@@ -875,7 +942,9 @@ function Profile() {
                         ? "Saving..."
                         : "Save Changes"}
                 </button>
+
             </form>
+
         </div>
     );
 }
