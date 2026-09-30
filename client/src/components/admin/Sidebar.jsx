@@ -1,7 +1,6 @@
 import {
     NavLink,
-    useNavigate,
-    useLocation
+    useNavigate
 } from "react-router-dom";
 
 import {
@@ -37,15 +36,32 @@ import "./Sidebar.css";
 function Sidebar() {
 
     const navigate = useNavigate();
-    const location = useLocation();
 
-    const [isMobile, setIsMobile] = useState(
-        window.innerWidth <= 768
-    );
 
-    const [isOpen, setIsOpen] = useState(
-        window.innerWidth > 768
-    );
+    /* =====================================================
+       RESPONSIVE STATE
+
+       Desktop:
+       > 1100px = sidebar open
+
+       Tablet:
+       769px - 1100px = sidebar hidden
+
+       Mobile:
+       <= 768px = sidebar hidden
+    ===================================================== */
+
+    const getIsCompactScreen = () => {
+        return window.innerWidth <= 1100;
+    };
+
+
+    const [isCompactScreen, setIsCompactScreen] =
+        useState(getIsCompactScreen());
+
+
+    const [isOpen, setIsOpen] =
+        useState(!getIsCompactScreen());
 
 
     /* =====================================================
@@ -55,6 +71,7 @@ function Sidebar() {
     const user = JSON.parse(
         localStorage.getItem("user") || "{}"
     );
+
 
     const permissions =
         user.permissions || [];
@@ -74,10 +91,12 @@ function Sidebar() {
             return true;
         }
 
+
         return required.every(
             permission =>
                 permissions.includes(permission)
         );
+
     };
 
 
@@ -89,17 +108,26 @@ function Sidebar() {
 
         const handleResize = () => {
 
-            const mobile =
-                window.innerWidth <= 768;
+            const compact =
+                window.innerWidth <= 1100;
 
-            setIsMobile(mobile);
 
-            if (!mobile) {
+            setIsCompactScreen(compact);
+
+
+            /*
+             * Desktop automatically keeps
+             * the sidebar visible.
+             */
+            if (!compact) {
 
                 setIsOpen(true);
 
             } else {
 
+                /*
+                 * Tablet/mobile starts closed.
+                 */
                 setIsOpen(false);
 
             }
@@ -126,28 +154,13 @@ function Sidebar() {
 
 
     /* =====================================================
-       CLOSE MOBILE MENU
-    ===================================================== */
-
-    const closeMobileMenu = () => {
-
-        if (isMobile) {
-
-            setIsOpen(false);
-
-        }
-
-    };
-
-
-    /* =====================================================
        BODY SCROLL LOCK
     ===================================================== */
 
     useEffect(() => {
 
         if (
-            isMobile &&
+            isCompactScreen &&
             isOpen
         ) {
 
@@ -170,9 +183,37 @@ function Sidebar() {
         };
 
     }, [
-        isMobile,
+        isCompactScreen,
         isOpen
     ]);
+
+
+    /* =====================================================
+       CLOSE MENU
+    ===================================================== */
+
+    const closeMenu = () => {
+
+        if (isCompactScreen) {
+
+            setIsOpen(false);
+
+        }
+
+    };
+
+
+    /* =====================================================
+       TOGGLE MENU
+    ===================================================== */
+
+    const toggleSidebar = () => {
+
+        setIsOpen(
+            previous => !previous
+        );
+
+    };
 
 
     /* =====================================================
@@ -311,19 +352,6 @@ function Sidebar() {
 
 
     /* =====================================================
-       OPEN / CLOSE BUTTON
-    ===================================================== */
-
-    const toggleSidebar = () => {
-
-        setIsOpen(
-            previous => !previous
-        );
-
-    };
-
-
-    /* =====================================================
        RENDER
     ===================================================== */
 
@@ -331,37 +359,47 @@ function Sidebar() {
 
         <>
 
-            {/* MOBILE MENU BUTTON */}
+            {/* =================================================
+                MENU BUTTON
 
-            {isMobile && !isOpen && (
+                Visible on tablet + mobile only
+            ================================================= */}
+
+            {isCompactScreen && !isOpen && (
 
                 <button
                     type="button"
                     className="menu-btn"
                     onClick={toggleSidebar}
                     aria-label="Open admin menu"
-                    aria-expanded={false}
+                    aria-expanded="false"
                 >
+
                     <FaBars />
+
                 </button>
 
             )}
 
 
-            {/* MOBILE BACKDROP */}
+            {/* =================================================
+                BACKDROP
+            ================================================= */}
 
-            {isMobile && isOpen && (
+            {isCompactScreen && isOpen && (
 
                 <div
                     className="sidebar-overlay"
-                    onClick={closeMobileMenu}
+                    onClick={closeMenu}
                     aria-hidden="true"
                 />
 
             )}
 
 
-            {/* SIDEBAR */}
+            {/* =================================================
+                SIDEBAR
+            ================================================= */}
 
             <aside
                 className={`sidebar ${
@@ -371,7 +409,9 @@ function Sidebar() {
                 }`}
             >
 
-                {/* SIDEBAR HEADER */}
+                {/* =================================================
+                    HEADER
+                ================================================= */}
 
                 <div className="sidebar-top">
 
@@ -382,14 +422,12 @@ function Sidebar() {
                     </div>
 
 
-                    {isMobile && (
+                    {isCompactScreen && (
 
                         <button
                             type="button"
                             className="sidebar-close-button"
-                            onClick={
-                                closeMobileMenu
-                            }
+                            onClick={closeMenu}
                             aria-label="Close admin menu"
                         >
 
@@ -402,7 +440,9 @@ function Sidebar() {
                 </div>
 
 
-                {/* MENU */}
+                {/* =================================================
+                    MENU
+                ================================================= */}
 
                 <nav className="sidebar-menu">
 
@@ -415,12 +455,8 @@ function Sidebar() {
                             <NavLink
                                 key={menu.link}
                                 to={menu.link}
-                                onClick={
-                                    closeMobileMenu
-                                }
-                                className={({
-                                    isActive
-                                }) =>
+                                onClick={closeMenu}
+                                className={({ isActive }) =>
                                     isActive
                                         ? "sidebar-link active"
                                         : "sidebar-link"
@@ -447,7 +483,9 @@ function Sidebar() {
                 </nav>
 
 
-                {/* FOOTER */}
+                {/* =================================================
+                    FOOTER
+                ================================================= */}
 
                 <div className="sidebar-footer">
 

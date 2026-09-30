@@ -21,6 +21,7 @@
     --danger-bg: #fef2f2;
 
     --header-height: 72px;
+
     --sidebar-width: 260px;
 
     --sidebar-shadow:
@@ -47,9 +48,11 @@
 
     background: var(--sidebar-bg);
 
-    border-right: 1px solid var(--sidebar-border);
+    border-right:
+        1px solid var(--sidebar-border);
 
-    box-shadow: var(--sidebar-shadow);
+    box-shadow:
+        var(--sidebar-shadow);
 
     z-index: 1000;
 
@@ -69,7 +72,8 @@
 
 .sidebar.hidden {
 
-    transform: translateX(-105%);
+    transform:
+        translateX(-105%);
 }
 
 
@@ -82,10 +86,13 @@
     min-height: 70px;
 
     display: flex;
+
     align-items: center;
+
     justify-content: space-between;
 
-    padding: 0 18px;
+    padding:
+        0 18px;
 
     border-bottom:
         1px solid var(--sidebar-border);
@@ -101,14 +108,18 @@
 .sidebar-logo {
 
     display: flex;
+
     align-items: center;
 
-    color: var(--admin-primary);
+    color:
+        var(--admin-primary);
 
     font-size: 18px;
+
     font-weight: 800;
 
-    letter-spacing: 0.5px;
+    letter-spacing:
+        0.5px;
 
     white-space: nowrap;
 }
@@ -149,15 +160,18 @@
 
 .sidebar-close-button:hover {
 
-    background: #f1f5f9;
+    background:
+        #f1f5f9;
 
-    color: var(--admin-primary);
+    color:
+        var(--admin-primary);
 }
 
 
 .sidebar-close-button:active {
 
-    transform: scale(0.92);
+    transform:
+        scale(0.92);
 }
 
 
@@ -170,13 +184,16 @@
     flex: 1;
 
     display: flex;
+
     flex-direction: column;
 
     gap: 4px;
 
-    padding: 16px 12px;
+    padding:
+        16px 12px;
 
     overflow-y: auto;
+
     overflow-x: hidden;
 
     scrollbar-width: thin;
@@ -201,9 +218,11 @@
 
 .sidebar-menu::-webkit-scrollbar-thumb {
 
-    background: #cbd5e1;
+    background:
+        #cbd5e1;
 
-    border-radius: 10px;
+    border-radius:
+        10px;
 }
 
 
@@ -218,15 +237,19 @@
     min-height: 46px;
 
     display: flex;
+
     align-items: center;
 
     gap: 13px;
 
-    padding: 0 14px;
+    padding:
+        0 14px;
 
-    border-radius: 10px;
+    border-radius:
+        10px;
 
-    color: var(--sidebar-text);
+    color:
+        var(--sidebar-text);
 
     text-decoration: none;
 
@@ -245,11 +268,14 @@
 
 .sidebar-link:hover {
 
-    background: var(--sidebar-hover);
+    background:
+        var(--sidebar-hover);
 
-    color: var(--admin-primary);
+    color:
+        var(--admin-primary);
 
-    transform: translateX(2px);
+    transform:
+        translateX(2px);
 }
 
 
@@ -260,14 +286,17 @@
 .sidebar-link-icon {
 
     width: 22px;
+
     min-width: 22px;
 
     display: flex;
 
     align-items: center;
+
     justify-content: center;
 
-    color: #64748b;
+    color:
+        #64748b;
 
     font-size: 16px;
 
@@ -280,9 +309,11 @@
 .sidebar-link:hover
 .sidebar-link-icon {
 
-    color: var(--admin-primary);
+    color:
+        var(--admin-primary);
 
-    transform: scale(1.05);
+    transform:
+        scale(1.05);
 }
 
 
@@ -351,7 +382,8 @@
 
     flex-shrink: 0;
 
-    padding: 12px;
+    padding:
+        12px;
 
     border-top:
         1px solid var(--sidebar-border);
@@ -377,15 +409,19 @@
 
     gap: 13px;
 
-    padding: 0 14px;
+    padding:
+        0 14px;
 
     border: none;
 
-    border-radius: 10px;
+    border-radius:
+        10px;
 
-    background: transparent;
+    background:
+        transparent;
 
-    color: var(--danger);
+    color:
+        var(--danger);
 
     font-family: inherit;
 
@@ -414,7 +450,7 @@
 
 
 /* =========================================================
-   MOBILE MENU BUTTON
+   MENU BUTTON
 ========================================================= */
 
 .menu-btn {
@@ -439,7 +475,8 @@
     background:
         var(--admin-primary);
 
-    color: #ffffff;
+    color:
+        #ffffff;
 
     font-size: 19px;
 
@@ -450,6 +487,10 @@
     box-shadow:
         0 6px 18px
         rgba(10, 102, 194, 0.25);
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
 }
 
 
@@ -460,12 +501,15 @@
 }
 
 
+.menu-btn:active {
+
+    transform:
+        scale(0.94);
+}
+
+
 /* =========================================================
    BACKDROP
-
-   IMPORTANT:
-   Hidden by default.
-   Therefore it can NEVER block the desktop page.
 ========================================================= */
 
 .sidebar-overlay {
@@ -491,44 +535,26 @@
 
 /* =========================================================
    TABLET
+   769px - 1100px
+
+   Sidebar is hidden by default.
+   User opens it with menu button.
 ========================================================= */
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
 
     :root {
 
         --header-height: 68px;
 
-        --sidebar-width: 250px;
-    }
-
-
-    .sidebar-close-button {
-
-        display: flex;
-    }
-
-}
-
-
-/* =========================================================
-   MOBILE
-========================================================= */
-
-@media (max-width: 768px) {
-
-    :root {
-
-        --header-height: 64px;
-
-        --sidebar-width:
-            min(290px, 86vw);
+        --sidebar-width: 270px;
     }
 
 
     .sidebar {
 
         top: 0;
+
         bottom: 0;
 
         width:
@@ -549,21 +575,30 @@
     }
 
 
+    .sidebar-close-button {
+
+        display: flex;
+    }
+
+
+    .menu-btn {
+
+        display: flex;
+    }
+
+
+    .sidebar-overlay {
+
+        display: block;
+    }
+
+
     .sidebar-top {
 
         min-height: 70px;
 
         padding:
             0 16px;
-    }
-
-
-    .sidebar-close-button {
-
-        display: flex;
-
-        width: 40px;
-        height: 40px;
     }
 
 
@@ -609,34 +644,19 @@
         min-height: 48px;
     }
 
-
-    /* Show backdrop ONLY when React renders it */
-
-    .sidebar-overlay {
-
-        display: block;
-    }
-
-
-    /* Show menu button */
-
-    .menu-btn {
-
-        display: flex;
-    }
-
 }
 
 
 /* =========================================================
-   SMALL MOBILE
+   MOBILE
 ========================================================= */
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
 
     :root {
 
-        --sidebar-width: 85vw;
+        --sidebar-width:
+            min(290px, 86vw);
     }
 
 
@@ -681,7 +701,8 @@
         padding:
             0 13px;
 
-        border-radius: 9px;
+        border-radius:
+            9px;
     }
 
 
@@ -753,7 +774,8 @@
         2px solid
         var(--admin-primary);
 
-    outline-offset: 2px;
+    outline-offset:
+        2px;
 }
 
 
@@ -770,7 +792,8 @@
     .sidebar-close-button,
     .menu-btn {
 
-        transition: none !important;
+        transition:
+            none !important;
     }
 
 }
