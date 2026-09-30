@@ -36,62 +36,81 @@ const {
     deleteFromR2
 } = require("../config/r2");
 
+
 /* ==========================================
    GET LOGGED IN USER PROFILE
 ========================================== */
 
 exports.getProfile = async (req, res) => {
-
     try {
-
         const user = await User.findByPk(
-
             req.user.id,
-
             {
-
                 attributes: {
-
-                    exclude: ["password"]
-
+                    exclude: [
+                        "password",
+                        "loginOTP",
+                        "resetOTP"
+                    ]
                 }
-
             }
-
         );
 
         if (!user) {
-
             return res.status(404).json({
-
                 success: false,
-
                 message: "User not found."
-
             });
-
         }
 
-        res.json(user);
+        const userData = user.toJSON();
 
-    }
+        /*
+        ==========================================
+        CONVERT R2 PROFILE IMAGE TO PUBLIC URL
+        ==========================================
+        */
 
-    catch (error) {
+        if (userData.profileImage) {
+            userData.profileImage =
+                getProfileImageUrl(
+                    userData.profileImage
+                );
+        } else {
+            userData.profileImage = null;
+        }
 
-        res.status(500).json({
+        console.log(
+            "[PROFILE] Database profile image:",
+            user.profileImage
+        );
 
-            success: false,
+        console.log(
+            "[PROFILE] Public profile image:",
+            userData.profileImage
+        );
 
-            message: error.message
-
+        return res.json({
+            success: true,
+            user: userData
         });
 
-    }
+    } catch (error) {
+        console.error(
+            "GET PROFILE ERROR:",
+            error
+        );
 
+        return res.status(500).json({
+            success: false,
+            message:
+                error.message ||
+                "Unable to load profile."
+        });
+    }
 };
-/* ==========================================
-   UPDATE PROFILE
-========================================== */
+
+
 
 
 /* ==========================================
@@ -99,15 +118,22 @@ exports.getProfile = async (req, res) => {
 ========================================== */
 
 const getR2ProfileKey = (image) => {
-    if (!image) return null;
+    if (!image) {
+        return null;
+    }
 
     let value = String(image).trim();
 
-    if (!value) return null;
+    if (!value) {
+        return null;
+    }
 
     /*
-     * R2 public URL
-     */
+    ==========================================
+    R2 PUBLIC URL
+    ==========================================
+    */
+
     if (
         value.startsWith("http://") ||
         value.startsWith("https://")
@@ -126,8 +152,10 @@ const getR2ProfileKey = (image) => {
 
                 const key =
                     decodeURIComponent(
-                        parsed.pathname
-                            .replace(/^\/+/, "")
+                        parsed.pathname.replace(
+                            /^\/+/,
+                            ""
+                        )
                     );
 
                 if (
@@ -137,7 +165,12 @@ const getR2ProfileKey = (image) => {
                 ) {
                     return key;
                 }
-            } catch {
+            } catch (error) {
+                console.error(
+                    "R2 PROFILE URL PARSE ERROR:",
+                    error.message
+                );
+
                 return null;
             }
         }
@@ -146,8 +179,11 @@ const getR2ProfileKey = (image) => {
     }
 
     /*
-     * Stored R2 key
-     */
+    ==========================================
+    STORED R2 KEY
+    ==========================================
+    */
+
     value = value
         .replace(/\\/g, "/")
         .replace(/^\/+/, "");
@@ -164,17 +200,28 @@ const getR2ProfileKey = (image) => {
 };
 
 
-const getProfileImageUrl = (image) => {
-    if (!image) return null;
+/* ==========================================
+   GET PROFILE IMAGE PUBLIC URL
+========================================== */
 
-    const value =
+const getProfileImageUrl = (image) => {
+    if (!image) {
+        return null;
+    }
+
+    let value =
         String(image).trim();
 
-    if (!value) return null;
+    if (!value) {
+        return null;
+    }
 
     /*
-     * Already a complete URL
-     */
+    ==========================================
+    ALREADY A COMPLETE URL
+    ==========================================
+    */
+
     if (
         value.startsWith("http://") ||
         value.startsWith("https://")
@@ -182,32 +229,48 @@ const getProfileImageUrl = (image) => {
         return value;
     }
 
+    /*
+    ==========================================
+    NORMALIZE STORED PATH
+    ==========================================
+    */
+
     const normalized =
         value
             .replace(/\\/g, "/")
             .replace(/^\/+/, "");
 
     /*
-     * New R2 profile image
-     */
+    ==========================================
+    CLOUDFLARE R2 PROFILE IMAGE
+    ==========================================
+    */
+
     if (
         normalized.startsWith(
             "uploads/profiles/"
         )
     ) {
-        return (
-            getR2PublicUrl(
+        try {
+            return getR2PublicUrl(
                 normalized
-            ) || null
-        );
+            );
+        } catch (error) {
+            console.error(
+                "R2 PROFILE IMAGE URL ERROR:",
+                error.message
+            );
+
+            return null;
+        }
     }
 
     /*
-     * Legacy profile image.
-     *
-     * Keep existing users working while
-     * migration is completed.
-     */
+    ==========================================
+    LEGACY LOCAL UPLOAD
+    ==========================================
+    */
+
     if (
         normalized.startsWith(
             "uploads/"
@@ -217,12 +280,13 @@ const getProfileImageUrl = (image) => {
     }
 
     /*
-     * Very old database records may contain
-     * only the filename.
-     */
+    ==========================================
+    VERY OLD DATABASE RECORD
+    ==========================================
+    */
+
     return `/uploads/${normalized}`;
 };
-
 
 /* ==========================================
    UPDATE PROFILE

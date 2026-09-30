@@ -32,7 +32,8 @@ const R2_ENDPOINT =
     );
 
 const R2_PUBLIC_URL =
-    process.env.R2_PUBLIC_URL?.trim().replace(/\/+$/, "");
+    process.env.R2_PUBLIC_URL?.trim()
+        .replace(/\/+$/, "");
 
 
 /* ============================================================
@@ -76,8 +77,11 @@ const r2Client =
             endpoint: R2_ENDPOINT,
             forcePathStyle: false,
             credentials: {
-                accessKeyId: R2_ACCESS_KEY_ID,
-                secretAccessKey: R2_SECRET_ACCESS_KEY
+                accessKeyId:
+                    R2_ACCESS_KEY_ID,
+
+                secretAccessKey:
+                    R2_SECRET_ACCESS_KEY
             }
         })
         : null;
@@ -154,7 +158,7 @@ function getR2PublicUrl(key) {
 
 
 /* ============================================================
-   EXTRACT R2 KEY FROM URL OR OBJECT
+   EXTRACT R2 KEY
 ============================================================ */
 
 function getR2Key(value) {
@@ -163,7 +167,11 @@ function getR2Key(value) {
         return null;
     }
 
-    /* Object format */
+
+    /* --------------------------------------------------------
+       OBJECT FORMAT
+    -------------------------------------------------------- */
+
     if (typeof value === "object") {
 
         value =
@@ -175,21 +183,25 @@ function getR2Key(value) {
             value.filename;
     }
 
+
     if (!value) {
         return null;
     }
 
+
     let stringValue =
         String(value).trim();
+
 
     if (!stringValue) {
         return null;
     }
 
-    /*
-     * If this is a URL belonging to our R2
-     * public domain, extract the object key.
-     */
+
+    /* --------------------------------------------------------
+       FULL URL
+    -------------------------------------------------------- */
+
     if (
         stringValue.startsWith("http://") ||
         stringValue.startsWith("https://")
@@ -197,38 +209,64 @@ function getR2Key(value) {
 
         if (
             R2_PUBLIC_URL &&
-            stringValue.startsWith(R2_PUBLIC_URL)
+            stringValue.startsWith(
+                R2_PUBLIC_URL
+            )
         ) {
 
             const pathname =
                 stringValue
-                    .substring(R2_PUBLIC_URL.length)
+                    .substring(
+                        R2_PUBLIC_URL.length
+                    )
                     .replace(/^\/+/, "");
 
-            return decodeURIComponent(pathname);
+            return decodeURIComponent(
+                pathname
+            );
         }
 
-        /*
-         * External URL.
-         * We do not treat it as an R2 object.
-         */
+
         return null;
     }
+
+
+    /* --------------------------------------------------------
+       NORMALIZE
+    -------------------------------------------------------- */
 
     stringValue =
         normalizeKey(stringValue);
 
-    /*
-     * Only store objects inside
-     * uploads/stores/.
-     */
-    if (
-        stringValue.startsWith(
-            "uploads/stores/"
-        )
-    ) {
+
+    /* --------------------------------------------------------
+       ACCEPT ALL OUR R2 UPLOAD DIRECTORIES
+    -------------------------------------------------------- */
+
+    const allowedPrefixes = [
+        "uploads/profiles/",
+        "uploads/profile/",
+        "uploads/stores/",
+        "uploads/store/",
+        "uploads/products/",
+        "uploads/product/",
+        "uploads/branding/",
+        "uploads/advertisements/",
+        "uploads/ads/"
+    ];
+
+
+    const isAllowed =
+        allowedPrefixes.some(
+            prefix =>
+                stringValue.startsWith(prefix)
+        );
+
+
+    if (isAllowed) {
         return stringValue;
     }
+
 
     return null;
 }
@@ -247,27 +285,35 @@ async function uploadToR2({
 
     assertConfigured();
 
+
     if (!Buffer.isBuffer(buffer)) {
         throw new Error(
             "R2 upload requires a Buffer."
         );
     }
 
+
     const normalizedKey =
         normalizeKey(key);
+
 
     console.log(
         "[R2] Uploading:",
         normalizedKey
     );
 
+
     const command =
         new PutObjectCommand({
-            Bucket: R2_BUCKET_NAME,
 
-            Key: normalizedKey,
+            Bucket:
+                R2_BUCKET_NAME,
 
-            Body: buffer,
+            Key:
+                normalizedKey,
+
+            Body:
+                buffer,
 
             ContentType:
                 contentType ||
@@ -278,19 +324,30 @@ async function uploadToR2({
                 "public, max-age=31536000, immutable"
         });
 
-    await r2Client.send(command);
+
+    await r2Client.send(
+        command
+    );
+
 
     const publicUrl =
-        getR2PublicUrl(normalizedKey);
+        getR2PublicUrl(
+            normalizedKey
+        );
+
 
     console.log(
         "[R2] Upload successful:",
         publicUrl
     );
 
+
     return {
-        key: normalizedKey,
-        url: publicUrl
+        key:
+            normalizedKey,
+
+        url:
+            publicUrl
     };
 }
 
@@ -305,15 +362,14 @@ async function deleteFromR2(key) {
         return null;
     }
 
+
     assertConfigured();
+
 
     const normalizedKey =
         getR2Key(key);
 
-    /*
-     * Do not delete external URLs or
-     * unrelated files.
-     */
+
     if (!normalizedKey) {
 
         console.warn(
@@ -325,26 +381,38 @@ async function deleteFromR2(key) {
         return null;
     }
 
+
     console.log(
         "[R2] Deleting:",
         normalizedKey
     );
 
+
     const command =
         new DeleteObjectCommand({
-            Bucket: R2_BUCKET_NAME,
-            Key: normalizedKey
+
+            Bucket:
+                R2_BUCKET_NAME,
+
+            Key:
+                normalizedKey
         });
 
-    await r2Client.send(command);
+
+    await r2Client.send(
+        command
+    );
+
 
     console.log(
         "[R2] Delete successful:",
         normalizedKey
     );
 
+
     return {
-        key: normalizedKey
+        key:
+            normalizedKey
     };
 }
 
