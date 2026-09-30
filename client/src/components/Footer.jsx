@@ -28,7 +28,9 @@ function Footer() {
 
                         Ghana's fastest growing online marketplace where buyers and sellers connect securely.
 
+
                     </p>
+                    
 <div className="social-icons">
 
     <a

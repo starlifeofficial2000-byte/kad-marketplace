@@ -522,12 +522,8 @@ function MyStore() {
                         ...getAuthConfig(),
 
                         headers: {
-                            ...(getAuthConfig()
-                                .headers || {}),
-
-                            "Content-Type":
-                                "multipart/form-data",
-                        },
+    ...(getAuthConfig().headers || {}),
+},
 
                         timeout: 120000,
                     }
@@ -658,13 +654,9 @@ function MyStore() {
                     {
                         ...getAuthConfig(),
 
-                        headers: {
-                            ...(getAuthConfig()
-                                .headers || {}),
-
-                            "Content-Type":
-                                "multipart/form-data",
-                        },
+                      headers: {
+    ...(getAuthConfig().headers || {}),
+},
 
                         timeout: 120000,
                     }
