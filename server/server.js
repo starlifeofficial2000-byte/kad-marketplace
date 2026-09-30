@@ -76,18 +76,17 @@ const adminSecurityRoutes = require("./routes/adminSecurityRoutes");
 
 /* =========================================================
    OPTIONAL SITEMAP ROUTES
-
-   Keep this only if sitemapRoutes contains additional
-   sitemap-related routes.
 ========================================================= */
 
 let sitemapRoutes = null;
 
 try {
     sitemapRoutes = require("./routes/sitemapRoutes");
+
+    console.log("✅ sitemapRoutes.js loaded.");
 } catch (error) {
     console.log(
-        "ℹ️ sitemapRoutes.js not loaded. Using built-in sitemap route."
+        "ℹ️ sitemapRoutes.js not found. Using built-in sitemap route."
     );
 }
 
@@ -95,15 +94,13 @@ try {
    MIDDLEWARE
 ========================================================= */
 
-const maintenanceMode =
-    require("./middleware/maintenanceMode");
+const maintenanceMode = require("./middleware/maintenanceMode");
 
 /* =========================================================
    SERVICES
 ========================================================= */
 
-const PromotionService =
-    require("./services/promotionService");
+const PromotionService = require("./services/promotionService");
 
 /* =========================================================
    BACKGROUND JOBS
@@ -125,20 +122,18 @@ const server = http.createServer(app);
    ENVIRONMENT
 ========================================================= */
 
-const NODE_ENV =
-    process.env.NODE_ENV || "development";
+const NODE_ENV = process.env.NODE_ENV || "development";
 
-const PORT =
-    process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 /*
    IMPORTANT:
-   SITE_URL must be a real URL, not Markdown.
+   SITE_URL must be a normal URL.
+   Do NOT put Markdown inside environment variables.
 */
 
 const SITE_URL = (
-    process.env.SITE_URL ||
-    "https://kadmarket.com"
+    process.env.SITE_URL || "https://kadmarket.com"
 )
     .trim()
     .replace(/\/+$/, "");
@@ -147,8 +142,12 @@ const SITE_URL = (
    FRONTEND BUILD DIRECTORY
 ========================================================= */
 
-const clientDistPath =
-    path.join(__dirname, "../client/dist");
+const clientDistPath = path.join(
+    __dirname,
+    "../client/dist"
+);
+
+console.log("📁 Frontend directory:", clientDistPath);
 
 /* =========================================================
    SECURITY
@@ -274,16 +273,15 @@ app.use(
    UPLOAD DIRECTORY
 ========================================================= */
 
-const uploadDirectory =
-    path.join(__dirname, "uploads");
+const uploadDirectory = path.join(
+    __dirname,
+    "uploads"
+);
 
 if (!fs.existsSync(uploadDirectory)) {
-    fs.mkdirSync(
-        uploadDirectory,
-        {
-            recursive: true
-        }
-    );
+    fs.mkdirSync(uploadDirectory, {
+        recursive: true
+    });
 }
 
 app.use(
@@ -295,52 +293,55 @@ app.use(
    ROBOTS.TXT
 ========================================================= */
 
-app.get(
-    "/robots.txt",
-    (req, res) => {
-        const robots = [
-            "User-agent: *",
-            "Allow: /",
-            "",
-            "Disallow: /login",
-            "Disallow: /register",
-            "Disallow: /forgot-password",
-            "Disallow: /verify-reset",
-            "Disallow: /reset-password",
-            "Disallow: /verify-login-otp",
-            "Disallow: /dashboard",
-            "Disallow: /sell",
-            "Disallow: /profile",
-            "Disallow: /inbox",
-            "Disallow: /chat/",
-            "Disallow: /notifications",
-            "Disallow: /promotions",
-            "Disallow: /promotion-success",
-            "Disallow: /payment-success",
-            "Disallow: /payment-failed",
-            "Disallow: /edit-product",
-            "Disallow: /seller/leads",
-            "Disallow: /wishlist",
-            "Disallow: /support",
-            "Disallow: /my-tickets",
-            "Disallow: /admin/",
-            "",
-            `Sitemap: ${SITE_URL}/sitemap.xml`
-        ].join("\n");
+app.get("/robots.txt", (req, res) => {
+    const robots = [
+        "User-agent: *",
+        "Allow: /",
+        "",
 
-        res.status(200);
+        "# Authentication pages",
+        "Disallow: /login",
+        "Disallow: /register",
+        "Disallow: /forgot-password",
+        "Disallow: /verify-reset",
+        "Disallow: /reset-password",
+        "Disallow: /verify-login-otp",
+        "",
 
-        res.set({
-            "Content-Type":
-                "text/plain; charset=utf-8",
+        "# Private user pages",
+        "Disallow: /dashboard",
+        "Disallow: /profile",
+        "Disallow: /sell",
+        "Disallow: /inbox",
+        "Disallow: /chat/",
+        "Disallow: /notifications",
+        "Disallow: /promotions",
+        "Disallow: /promotion-success",
+        "Disallow: /payment-success",
+        "Disallow: /payment-failed",
+        "Disallow: /edit-product",
+        "Disallow: /seller/leads",
+        "Disallow: /wishlist",
+        "Disallow: /support",
+        "Disallow: /my-tickets",
+        "",
 
-            "Cache-Control":
-                "public, max-age=3600"
-        });
+        "# Admin",
+        "Disallow: /admin/",
+        "",
 
-        return res.send(robots);
-    }
-);
+        `Sitemap: ${SITE_URL}/sitemap.xml`
+    ].join("\n");
+
+    res.status(200);
+
+    res.set({
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "public, max-age=3600"
+    });
+
+    return res.send(robots);
+});
 
 /* =========================================================
    XML ESCAPE
@@ -378,37 +379,31 @@ const generateSitemap = async () => {
             changefreq: "daily",
             priority: "1.0"
         },
-
         {
             path: "/featured",
             changefreq: "daily",
             priority: "0.8"
         },
-
         {
             path: "/trending",
             changefreq: "daily",
             priority: "0.8"
         },
-
         {
             path: "/recommended",
             changefreq: "daily",
             priority: "0.8"
         },
-
         {
             path: "/about",
             changefreq: "monthly",
             priority: "0.6"
         },
-
         {
             path: "/contact",
             changefreq: "monthly",
             priority: "0.6"
         },
-
         {
             path: "/privacy-policy",
             changefreq: "yearly",
@@ -432,23 +427,22 @@ const generateSitemap = async () => {
        PRODUCTS
     ===================================================== */
 
-    const products =
-        await Product.findAll({
-            where: {
-                status: "Approved",
-                sellerStatus: "Active",
-                deleted: false
-            },
+    const products = await Product.findAll({
+        where: {
+            status: "Approved",
+            sellerStatus: "Active",
+            deleted: false
+        },
 
-            attributes: [
-                "id",
-                "updatedAt"
-            ],
+        attributes: [
+            "id",
+            "updatedAt"
+        ],
 
-            order: [
-                ["updatedAt", "DESC"]
-            ]
-        });
+        order: [
+            ["updatedAt", "DESC"]
+        ]
+    });
 
     products.forEach((product) => {
         const productUrl =
@@ -477,32 +471,31 @@ const generateSitemap = async () => {
        SELLERS
     ===================================================== */
 
-    const sellers =
-        await User.findAll({
-            attributes: [
-                "id",
-                "updatedAt"
-            ],
+    const sellers = await User.findAll({
+        attributes: [
+            "id",
+            "updatedAt"
+        ],
 
-            include: [
-                {
-                    model: Product,
-                    as: "products",
-                    required: true,
-                    attributes: [],
-                    where: {
-                        status: "Approved",
-                        sellerStatus: "Active",
-                        deleted: false
-                    }
+        include: [
+            {
+                model: Product,
+                as: "products",
+                required: true,
+                attributes: [],
+                where: {
+                    status: "Approved",
+                    sellerStatus: "Active",
+                    deleted: false
                 }
-            ],
+            }
+        ],
 
-            group: [
-                "User.id",
-                "User.updatedAt"
-            ]
-        });
+        group: [
+            "User.id",
+            "User.updatedAt"
+        ]
+    });
 
     sellers.forEach((seller) => {
         const sellerUrl =
@@ -531,40 +524,39 @@ const generateSitemap = async () => {
        STORES
     ===================================================== */
 
-    const stores =
-        await Store.findAll({
-            attributes: [
-                "id",
-                "storeSlug",
-                "updatedAt"
-            ],
+    const stores = await Store.findAll({
+        attributes: [
+            "id",
+            "storeSlug",
+            "updatedAt"
+        ],
 
-            include: [
-                {
-                    model: Product,
-                    as: "products",
-                    required: true,
-                    attributes: [],
-                    where: {
-                        status: "Approved",
-                        sellerStatus: "Active",
-                        deleted: false
-                    }
+        include: [
+            {
+                model: Product,
+                as: "products",
+                required: true,
+                attributes: [],
+                where: {
+                    status: "Approved",
+                    sellerStatus: "Active",
+                    deleted: false
                 }
-            ],
+            }
+        ],
 
-            where: {
-                storeSlug: {
-                    [Op.ne]: null
-                }
-            },
+        where: {
+            storeSlug: {
+                [Op.ne]: null
+            }
+        },
 
-            group: [
-                "Store.id",
-                "Store.storeSlug",
-                "Store.updatedAt"
-            ]
-        });
+        group: [
+            "Store.id",
+            "Store.storeSlug",
+            "Store.updatedAt"
+        ]
+    });
 
     stores.forEach((store) => {
         if (!store.storeSlug) {
@@ -607,55 +599,49 @@ ${urls.join("")}
    PUBLIC SITEMAP
 ========================================================= */
 
-app.get(
-    "/sitemap.xml",
-    async (req, res) => {
-        try {
-            console.log(
-                "🗺️ Sitemap requested:",
-                req.originalUrl
+app.get("/sitemap.xml", async (req, res) => {
+    try {
+        console.log(
+            "🗺️ Sitemap requested:",
+            req.originalUrl
+        );
+
+        const sitemap =
+            await generateSitemap();
+
+        res.status(200);
+
+        res.set({
+            "Content-Type":
+                "application/xml; charset=utf-8",
+
+            "Cache-Control":
+                "public, max-age=3600"
+        });
+
+        return res.send(sitemap);
+
+    } catch (error) {
+        console.error(
+            "❌ SITEMAP GENERATION ERROR:",
+            error
+        );
+
+        return res
+            .status(500)
+            .type("text/plain")
+            .send(
+                "Unable to generate sitemap."
             );
-
-            const sitemap =
-                await generateSitemap();
-
-            res.status(200);
-
-            res.set({
-                "Content-Type":
-                    "application/xml; charset=utf-8",
-
-                "Cache-Control":
-                    "public, max-age=3600"
-            });
-
-            return res.send(sitemap);
-
-        } catch (error) {
-            console.error(
-                "❌ SITEMAP GENERATION ERROR:",
-                error
-            );
-
-            return res
-                .status(500)
-                .type("text/plain")
-                .send(
-                    "Unable to generate sitemap."
-                );
-        }
     }
-);
+});
 
 /* =========================================================
    OPTIONAL SITEMAP ROUTES
 ========================================================= */
 
 if (sitemapRoutes) {
-    app.use(
-        "/",
-        sitemapRoutes
-    );
+    app.use("/", sitemapRoutes);
 }
 
 /* =========================================================
@@ -708,79 +694,69 @@ if (NODE_ENV !== "production") {
    SOCKET.IO
 ========================================================= */
 
-const io =
-    new Server(
-        server,
-        {
-            path: "/socket.io",
+const io = new Server(server, {
+    path: "/socket.io",
 
-            cors: {
-                origin:
-                    (
-                        origin,
-                        callback
-                    ) => {
-                        if (!origin) {
-                            return callback(
-                                null,
-                                true
-                            );
-                        }
+    cors: {
+        origin: (
+            origin,
+            callback
+        ) => {
+            if (!origin) {
+                return callback(
+                    null,
+                    true
+                );
+            }
 
-                        if (
-                            isAllowedOrigin(
-                                origin
-                            )
-                        ) {
-                            return callback(
-                                null,
-                                true
-                            );
-                        }
+            if (
+                isAllowedOrigin(origin)
+            ) {
+                return callback(
+                    null,
+                    true
+                );
+            }
 
-                        console.warn(
-                            "❌ SOCKET.IO CORS BLOCKED:",
-                            origin
-                        );
+            console.warn(
+                "❌ SOCKET.IO CORS BLOCKED:",
+                origin
+            );
 
-                        return callback(
-                            new Error(
-                                `Socket.IO CORS blocked: ${origin}`
-                            )
-                        );
-                    },
+            return callback(
+                new Error(
+                    `Socket.IO CORS blocked: ${origin}`
+                )
+            );
+        },
 
-                methods: [
-                    "GET",
-                    "POST",
-                    "PUT",
-                    "PATCH",
-                    "DELETE",
-                    "OPTIONS"
-                ],
+        methods: [
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE",
+            "OPTIONS"
+        ],
 
-                credentials: true
-            },
+        credentials: true
+    },
 
-            transports: [
-                "websocket",
-                "polling"
-            ],
+    transports: [
+        "websocket",
+        "polling"
+    ],
 
-            allowEIO3: false,
+    allowEIO3: false,
 
-            pingTimeout: 60000,
+    pingTimeout: 60000,
 
-            pingInterval: 25000,
+    pingInterval: 25000,
 
-            connectTimeout: 45000
-        }
-    );
+    connectTimeout: 45000
+});
 
-app.set(
-    "io",
-    io
-);
+app.set("io", io);
 
 console.log(
     "🔌 Socket.IO initialized successfully."
@@ -882,9 +858,7 @@ app.use(
    MAINTENANCE MODE
 ========================================================= */
 
-app.use(
-    maintenanceMode
-);
+app.use(maintenanceMode);
 
 /* =========================================================
    PRODUCTS
@@ -1365,8 +1339,9 @@ io.on(
 ========================================================= */
 
 if (NODE_ENV === "production") {
+
     /*
-       Serve React static assets.
+       Serve React/Vite production files.
     */
 
     app.use(
@@ -1382,15 +1357,15 @@ if (NODE_ENV === "production") {
        React SPA fallback.
 
        IMPORTANT:
-       This uses app.use() instead of app.get("/{*splat}")
-       so we can safely use next().
+       Only browser navigation requests that expect HTML
+       should receive index.html.
+
+       API routes, uploads, Socket.IO, sitemap,
+       robots and static files are excluded.
     */
 
     app.use(
         (req, res, next) => {
-            /*
-               Only handle GET/HEAD requests.
-            */
 
             if (
                 req.method !== "GET" &&
@@ -1399,17 +1374,28 @@ if (NODE_ENV === "production") {
                 return next();
             }
 
-            /*
-               Never allow React fallback to intercept API,
-               uploads, Socket.IO, sitemap or robots.
-            */
-
             if (
                 req.path.startsWith("/api") ||
                 req.path.startsWith("/uploads") ||
                 req.path.startsWith("/socket.io") ||
                 req.path === "/sitemap.xml" ||
                 req.path === "/robots.txt"
+            ) {
+                return next();
+            }
+
+            /*
+               Only return React index.html when the browser
+               is requesting an HTML document.
+            */
+
+            const acceptHeader =
+                req.headers.accept || "";
+
+            if (
+                !acceptHeader.includes(
+                    "text/html"
+                )
             ) {
                 return next();
             }
@@ -1463,6 +1449,7 @@ app.use(
 
 app.use(
     (error, req, res, next) => {
+
         console.error(
             "SERVER ERROR:",
             error
@@ -1520,6 +1507,7 @@ app.use(
 let promotionExpiryInterval = null;
 
 const startPromotionExpiryChecker = () => {
+
     if (promotionExpiryInterval) {
         console.warn(
             "⚠️ Promotion expiry checker is already running."
@@ -1534,7 +1522,9 @@ const startPromotionExpiryChecker = () => {
 
     const checkExpiredPromotions =
         async () => {
+
             try {
+
                 await PromotionService
                     .removeExpiredPromotions();
 
@@ -1543,6 +1533,7 @@ const startPromotionExpiryChecker = () => {
                 );
 
             } catch (error) {
+
                 console.error(
                     "Promotion expiry check failed:",
                     error.message
@@ -1572,7 +1563,9 @@ const startPromotionExpiryChecker = () => {
 ========================================================= */
 
 const startServer = async () => {
+
     try {
+
         /* =================================================
            DATABASE
         ================================================= */
@@ -1620,7 +1613,9 @@ const startServer = async () => {
 
         server.listen(
             PORT,
+            "0.0.0.0",
             () => {
+
                 console.log("");
 
                 console.log(
@@ -1672,6 +1667,10 @@ const startServer = async () => {
                 );
 
                 console.log(
+                    `📁 Frontend: ${clientDistPath}`
+                );
+
+                console.log(
                     "=========================================="
                 );
 
@@ -1680,6 +1679,7 @@ const startServer = async () => {
         );
 
     } catch (error) {
+
         console.error("");
 
         console.error(
@@ -1701,11 +1701,13 @@ const startServer = async () => {
 ========================================================= */
 
 const shutdown = async (signal) => {
+
     console.log(
         `\n${signal} received. Shutting down...`
     );
 
     try {
+
         /* =================================================
            STOP PROMOTION CHECKER
         ================================================= */
@@ -1713,6 +1715,7 @@ const shutdown = async (signal) => {
         if (
             promotionExpiryInterval
         ) {
+
             clearInterval(
                 promotionExpiryInterval
             );
@@ -1731,8 +1734,10 @@ const shutdown = async (signal) => {
 
         await new Promise(
             (resolve) => {
+
                 io.close(
                     () => {
+
                         console.log(
                             "Socket.IO server closed."
                         );
@@ -1749,8 +1754,10 @@ const shutdown = async (signal) => {
 
         await new Promise(
             (resolve) => {
+
                 server.close(
                     () => {
+
                         console.log(
                             "HTTP server closed."
                         );
@@ -1774,6 +1781,7 @@ const shutdown = async (signal) => {
         process.exit(0);
 
     } catch (error) {
+
         console.error(
             "Shutdown error:",
             error
@@ -1804,6 +1812,7 @@ process.on(
 process.on(
     "unhandledRejection",
     (reason) => {
+
         console.error(
             "❌ UNHANDLED PROMISE REJECTION:",
             reason
@@ -1818,6 +1827,7 @@ process.on(
 process.on(
     "uncaughtException",
     (error) => {
+
         console.error(
             "❌ UNCAUGHT EXCEPTION:",
             error
