@@ -350,7 +350,7 @@ function FeaturedProducts() {
     return (
         <section className="featured-products">
             <SEO
-    title="Featured Products | KAD Marketplace Ghana"
+    title="buy & sell in ghana | KAD Marketplace Ghana"
     description="Discover featured products for sale from sellers across Ghana on KAD Marketplace."
     keywords="featured products Ghana, featured marketplace Ghana, buy products Ghana, KAD Marketplace"
     canonical="https://kadmarket.com/featured"

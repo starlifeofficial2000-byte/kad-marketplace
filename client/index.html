@@ -1,235 +1,505 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
 
-    <!-- =====================================================
-         VIEWPORT
-    ====================================================== -->
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
+<head>
 
-    <!-- =====================================================
-         PRIMARY SEO
-    ====================================================== -->
+  <meta charset="UTF-8" />
 
-    <title>KAD Marketplace | Buy & Sell in Ghana</title>
+  <!-- =====================================================
+       VIEWPORT
+  ====================================================== -->
 
-    <meta
-      name="description"
-      content="KAD Marketplace is a Ghanaian online marketplace for buying and selling products, services, electronics, phones, laptops, vehicles, fashion, properties and more."
-    />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
 
-    <meta
-      name="author"
-      content="KAD Technologies Ghana"
-    />
 
-    <meta
-      name="robots"
-      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
-    />
+  <!-- =====================================================
+       PRIMARY SEO
+  ====================================================== -->
 
-    <meta
-      name="googlebot"
-      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
-    />
+  <title>KAD Marketplace | Buy & Sell in Ghana</title>
 
-    <!-- =====================================================
-         CANONICAL
-    ====================================================== -->
+  <meta
+    name="description"
+    content="KAD Marketplace is a Ghanaian online marketplace for buying and selling products, services, electronics, phones, laptops, vehicles, fashion, properties and more."
+  />
 
-    <link
-      rel="canonical"
-      href="https://kadmarket.com/"
-    />
+  <meta
+    name="author"
+    content="KAD Technologies Ghana"
+  />
 
-    <!-- =====================================================
-         THEME / MOBILE
-    ====================================================== -->
+  <meta
+    name="robots"
+    content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+  />
 
-    <meta
-      name="theme-color"
-      content="#0D8ABC"
-    />
+  <meta
+    name="googlebot"
+    content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+  />
 
-    <meta
-      name="application-name"
-      content="KAD Marketplace"
-    />
 
-    <meta
-      name="mobile-web-app-capable"
-      content="yes"
-    />
+  <!-- =====================================================
+       CANONICAL
+  ====================================================== -->
 
-    <meta
-      name="apple-mobile-web-app-title"
-      content="KAD Marketplace"
-    />
+  <link
+    rel="canonical"
+    href="https://kadmarket.com/"
+  />
 
-    <meta
-      name="apple-mobile-web-app-capable"
-      content="yes"
-    />
 
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="default"
-    />
+  <!-- =====================================================
+       THEME / MOBILE
+  ====================================================== -->
 
-    <!-- =====================================================
-         FAVICON
-    ====================================================== -->
+  <meta
+    name="theme-color"
+    content="#0D8ABC"
+  />
 
-    <link
-      rel="icon"
-      type="image/png"
-      href="/favicon.png"
-    />
+  <meta
+    name="application-name"
+    content="KAD Marketplace"
+  />
 
-    <link
-      rel="apple-touch-icon"
-      href="/favicon.png"
-    />
+  <meta
+    name="mobile-web-app-capable"
+    content="yes"
+  />
 
-    <!-- =====================================================
-         OPEN GRAPH
-    ====================================================== -->
+  <meta
+    name="apple-mobile-web-app-title"
+    content="KAD Marketplace"
+  />
 
-    <meta
-      property="og:type"
-      content="website"
-    />
+  <meta
+    name="apple-mobile-web-app-capable"
+    content="yes"
+  />
 
-    <meta
-      property="og:site_name"
-      content="KAD Marketplace"
-    />
+  <meta
+    name="apple-mobile-web-app-status-bar-style"
+    content="default"
+  />
 
-    <meta
-      property="og:title"
-      content="KAD Marketplace | Buy & Sell in Ghana"
-    />
 
-    <meta
-      property="og:description"
-      content="Buy and sell products and services across Ghana on KAD Marketplace."
-    />
+  <!-- =====================================================
+       DEFAULT FAVICON
+       
+       This is only the fallback.
+       JavaScript below will replace it with the
+       favicon stored in the database.
+  ====================================================== -->
 
-    <meta
-      property="og:url"
-      content="https://kadmarket.com/"
-    />
+  <link
+    id="dynamic-favicon"
+    rel="icon"
+    type="image/png"
+    href="/favicon.png"
+  />
 
-    <meta
-      property="og:locale"
-      content="en_GH"
-    />
+  <link
+    id="dynamic-apple-icon"
+    rel="apple-touch-icon"
+    href="/favicon.png"
+  />
 
-    <meta
-      property="og:image"
-      content="https://kadmarket.com/og-image.jpg"
-    />
 
-    <meta
-      property="og:image:width"
-      content="1200"
-    />
+  <!-- =====================================================
+       DATABASE FAVICON LOADER
+  ====================================================== -->
 
-    <meta
-      property="og:image:height"
-      content="630"
-    />
+  <script>
 
-    <meta
-      property="og:image:alt"
-      content="KAD Marketplace - Ghana Online Marketplace"
-    />
+    (async function loadDatabaseFavicon() {
 
-    <!-- =====================================================
-         TWITTER / X
-    ====================================================== -->
+      try {
 
-    <meta
-      name="twitter:card"
-      content="summary_large_image"
-    />
+        console.log(
+          "[FAVICON] Loading marketplace settings..."
+        );
 
-    <meta
-      name="twitter:title"
-      content="KAD Marketplace | Buy & Sell in Ghana"
-    />
 
-    <meta
-      name="twitter:description"
-      content="Buy and sell products and services across Ghana on KAD Marketplace."
-    />
+        /*
+         * IMPORTANT:
+         *
+         * Your frontend and backend are hosted separately.
+         *
+         * Backend:
+         * https://kad-marketplace-production.up.railway.app
+         *
+         * Therefore we request the settings from
+         * the backend directly.
+         */
 
-    <meta
-      name="twitter:image"
-      content="https://kadmarket.com/og-image.jpg"
-    />
+        const API_BASE_URL =
+          "https://kad-marketplace-production.up.railway.app";
 
-    <!-- =====================================================
-         STRUCTURED DATA - ORGANIZATION
-    ====================================================== -->
 
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "KAD Marketplace",
-        "url": "https://kadmarket.com/",
-        "logo": "https://kadmarket.com/favicon.png",
-        "description": "KAD Marketplace is a Ghanaian online marketplace for buying and selling products and services.",
-        "parentOrganization": {
-          "@type": "Organization",
-          "name": "KAD Technologies Ghana"
-        },
-        "areaServed": {
-          "@type": "Country",
-          "name": "Ghana"
+        const settingsUrl =
+          `${API_BASE_URL}/api/settings`;
+
+
+        console.log(
+          "[FAVICON] Request URL:",
+          settingsUrl
+        );
+
+
+        /*
+         * Request marketplace settings.
+         */
+
+        const response =
+          await fetch(
+            settingsUrl,
+            {
+              method: "GET",
+
+              headers: {
+                "Accept": "application/json"
+              },
+
+              cache: "no-store"
+            }
+          );
+
+
+        /*
+         * Check HTTP response.
+         */
+
+        if (!response.ok) {
+
+          console.warn(
+            "[FAVICON] Settings request failed:",
+            response.status,
+            response.statusText
+          );
+
+          return;
+
         }
-      }
-    </script>
 
-    <!-- =====================================================
-         STRUCTURED DATA - WEBSITE
-    ====================================================== -->
 
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "KAD Marketplace",
-        "url": "https://kadmarket.com/",
-        "description": "Buy and sell products and services in Ghana on KAD Marketplace.",
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": {
-            "@type": "EntryPoint",
-            "urlTemplate": "https://kadmarket.com/search?q={search_term_string}"
-          },
-          "query-input": "required name=search_term_string"
+        /*
+         * Convert response to JSON.
+         */
+
+        const result =
+          await response.json();
+
+
+        console.log(
+          "[FAVICON] Settings response:",
+          result
+        );
+
+
+        /*
+         * Your API may return:
+         *
+         * {
+         *   success: true,
+         *   settings: {...}
+         * }
+         *
+         * So we first look for result.settings.
+         */
+
+        const settings =
+          result?.settings ||
+          result?.data ||
+          result;
+
+
+        /*
+         * Get favicon from database.
+         */
+
+        const faviconUrl =
+          settings?.favicon;
+
+
+        console.log(
+          "[FAVICON] Database favicon:",
+          faviconUrl
+        );
+
+
+        /*
+         * If database does not contain a favicon,
+         * keep the default /favicon.png.
+         */
+
+        if (
+          !faviconUrl ||
+          typeof faviconUrl !== "string"
+        ) {
+
+          console.warn(
+            "[FAVICON] No favicon URL returned from database."
+          );
+
+          return;
+
         }
+
+
+        /*
+         * Find normal browser favicon.
+         */
+
+        const faviconElement =
+          document.getElementById(
+            "dynamic-favicon"
+          );
+
+
+        /*
+         * Replace favicon with database favicon.
+         */
+
+        if (faviconElement) {
+
+          faviconElement.href =
+            faviconUrl;
+
+        }
+
+
+        /*
+         * Find Apple/mobile icon.
+         */
+
+        const appleIconElement =
+          document.getElementById(
+            "dynamic-apple-icon"
+          );
+
+
+        /*
+         * Replace Apple/mobile icon.
+         */
+
+        if (appleIconElement) {
+
+          appleIconElement.href =
+            faviconUrl;
+
+        }
+
+
+        /*
+         * Log successful update.
+         */
+
+        console.log(
+          "[FAVICON] Database favicon loaded successfully:",
+          faviconUrl
+        );
+
+
+      } catch (error) {
+
+        /*
+         * Do not break the website if the settings
+         * endpoint is temporarily unavailable.
+         */
+
+        console.error(
+          "[FAVICON] Failed to load database favicon:",
+          error
+        );
+
       }
-    </script>
-  </head>
 
-  <body>
-    <div id="root"></div>
+    })();
 
-    <noscript>
-      KAD Marketplace is a Ghanaian online marketplace where users can
-      buy and sell products and services.
-    </noscript>
+  </script>
 
-    <script
-      type="module"
-      src="/src/main.jsx"
-    ></script>
-  </body>
+
+  <!-- =====================================================
+       OPEN GRAPH
+  ====================================================== -->
+
+  <meta
+    property="og:type"
+    content="website"
+  />
+
+  <meta
+    property="og:site_name"
+    content="KAD Marketplace"
+  />
+
+  <meta
+    property="og:title"
+    content="KAD Marketplace | Buy & Sell in Ghana"
+  />
+
+  <meta
+    property="og:description"
+    content="Buy and sell products and services across Ghana on KAD Marketplace."
+  />
+
+  <meta
+    property="og:url"
+    content="https://kadmarket.com/"
+  />
+
+  <meta
+    property="og:locale"
+    content="en_GH"
+  />
+
+  <meta
+    property="og:image"
+    content="https://kadmarket.com/og-image.jpg"
+  />
+
+  <meta
+    property="og:image:width"
+    content="1200"
+  />
+
+  <meta
+    property="og:image:height"
+    content="630"
+  />
+
+  <meta
+    property="og:image:alt"
+    content="KAD Marketplace - Ghana Online Marketplace"
+  />
+
+
+  <!-- =====================================================
+       TWITTER / X
+  ====================================================== -->
+
+  <meta
+    name="twitter:card"
+    content="summary_large_image"
+  />
+
+  <meta
+    name="twitter:title"
+    content="KAD Marketplace | Buy & Sell in Ghana"
+  />
+
+  <meta
+    name="twitter:description"
+    content="Buy and sell products and services across Ghana on KAD Marketplace."
+  />
+
+  <meta
+    name="twitter:image"
+    content="https://kadmarket.com/og-image.jpg"
+  />
+
+
+  <!-- =====================================================
+       STRUCTURED DATA - ORGANIZATION
+  ====================================================== -->
+
+  <script type="application/ld+json">
+
+  {
+    "@context": "https://schema.org",
+
+    "@type": "Organization",
+
+    "name": "KAD Marketplace",
+
+    "url": "https://kadmarket.com/",
+
+    "logo": "https://kadmarket.com/favicon.png",
+
+    "description":
+      "KAD Marketplace is a Ghanaian online marketplace for buying and selling products and services.",
+
+    "parentOrganization": {
+      "@type": "Organization",
+      "name": "KAD Technologies Ghana"
+    },
+
+    "areaServed": {
+      "@type": "Country",
+      "name": "Ghana"
+    }
+  }
+
+  </script>
+
+
+  <!-- =====================================================
+       STRUCTURED DATA - WEBSITE
+  ====================================================== -->
+
+  <script type="application/ld+json">
+
+  {
+    "@context": "https://schema.org",
+
+    "@type": "WebSite",
+
+    "name": "KAD Marketplace",
+
+    "url": "https://kadmarket.com/",
+
+    "description":
+      "Buy and sell products and services in Ghana on KAD Marketplace.",
+
+    "potentialAction": {
+
+      "@type": "SearchAction",
+
+      "target": {
+        "@type": "EntryPoint",
+
+        "urlTemplate":
+          "https://kadmarket.com/search?q={search_term_string}"
+      },
+
+      "query-input":
+        "required name=search_term_string"
+    }
+  }
+
+  </script>
+
+</head>
+
+
+<!-- =======================================================
+     BODY
+======================================================== -->
+
+<body>
+
+  <div id="root"></div>
+
+
+  <noscript>
+    KAD Marketplace is a Ghanaian online marketplace where
+    users can buy and sell products and services.
+  </noscript>
+
+
+  <!-- =====================================================
+       REACT APPLICATION
+  ====================================================== -->
+
+  <script
+    type="module"
+    src="/src/main.jsx"
+  ></script>
+
+</body>
+
 </html>
