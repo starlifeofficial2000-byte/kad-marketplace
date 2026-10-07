@@ -19,7 +19,6 @@ import {
     FaBars,
     FaTimes,
     FaBell,
-    FaComments,
     FaPlusCircle,
     FaUser,
     FaChevronDown,
@@ -45,8 +44,8 @@ import localLogo from "../assets/KADMARKETPLACE.png";
 
 const IS_PRODUCTION = import.meta.env.PROD;
 
-const normalizeUrl = (value) => {
 
+const normalizeUrl = (value) => {
     if (!value) {
         return "";
     }
@@ -112,81 +111,89 @@ function Navbar() {
     const [marketplaceLogo, setMarketplaceLogo] =
         useState("");
 
-    const [unreadMessages, setUnreadMessages] =
+    /*
+     * This is the SINGLE unread count displayed
+     * on the notification bell.
+     *
+     * It includes unread chat messages from:
+     *
+     * GET /api/messages/unread/count
+     */
+    const [unreadNotifications, setUnreadNotifications] =
         useState(0);
 
-    const [messagesLoading, setMessagesLoading] =
+    const [notificationsLoading, setNotificationsLoading] =
         useState(false);
 
 
-    /* =====================================================
+    /* =========================================================
        LOAD MARKETPLACE NAME + LOGO
-    ===================================================== */
+    ========================================================= */
 
     useEffect(() => {
 
         let cancelled = false;
 
-        const loadMarketplaceBranding =
-            async () => {
 
-                try {
+        const loadMarketplaceBranding = async () => {
 
-                    const response =
-                        await api.get(
-                            "/settings/public"
-                        );
+            try {
 
-                    const settings =
-                        response.data?.settings || {};
+                const response =
+                    await api.get(
+                        "/settings/public"
+                    );
 
-                    if (!cancelled) {
 
-                        setMarketplaceName(
-                            settings.marketplace_name ||
-                            settings.marketplaceName ||
-                            "KAD Marketplace"
-                        );
+                const settings =
+                    response.data?.settings || {};
 
-                        setMarketplaceLogo(
-                            settings.logo || ""
-                        );
-                    }
 
-                } catch (error) {
+                if (!cancelled) {
 
-                    console.error(
-                        "[NAVBAR] BRANDING LOAD ERROR:",
-                        error.response?.data ||
-                        error.message ||
-                        error
+                    setMarketplaceName(
+                        settings.marketplace_name ||
+                        settings.marketplaceName ||
+                        "KAD Marketplace"
+                    );
+
+
+                    setMarketplaceLogo(
+                        settings.logo || ""
                     );
                 }
-            };
+
+            } catch (error) {
+
+                console.error(
+                    "[NAVBAR] BRANDING LOAD ERROR:",
+                    error.response?.data ||
+                    error.message ||
+                    error
+                );
+            }
+        };
 
 
         loadMarketplaceBranding();
 
 
         return () => {
-
             cancelled = true;
-
         };
 
     }, []);
 
 
-    /* =====================================================
+    /* =========================================================
        LOGO ERROR FALLBACK
-    ===================================================== */
+    ========================================================= */
 
-    const handleLogoError = (
-        event
-    ) => {
+    const handleLogoError = (event) => {
 
         const image =
             event.currentTarget;
+
 
         if (
             image.dataset.fallbackApplied ===
@@ -195,10 +202,13 @@ function Navbar() {
             return;
         }
 
+
         image.dataset.fallbackApplied =
             "true";
 
+
         image.src = localLogo;
+
 
         console.warn(
             "[NAVBAR] Dynamic logo failed. Using local fallback."
@@ -206,9 +216,9 @@ function Navbar() {
     };
 
 
-    /* =====================================================
+    /* =========================================================
        LOAD USER
-    ===================================================== */
+    ========================================================= */
 
     useEffect(() => {
 
@@ -221,6 +231,7 @@ function Navbar() {
                         "user"
                     );
 
+
                 if (!storedUser) {
 
                     setUser(null);
@@ -228,10 +239,12 @@ function Navbar() {
                     return;
                 }
 
+
                 const parsedUser =
                     JSON.parse(
                         storedUser
                     );
+
 
                 setUser(parsedUser);
 
@@ -241,6 +254,7 @@ function Navbar() {
                     "[NAVBAR] USER PARSE ERROR:",
                     error
                 );
+
 
                 setUser(null);
             }
@@ -255,6 +269,7 @@ function Navbar() {
             loadUser
         );
 
+
         window.addEventListener(
             "userUpdated",
             loadUser
@@ -268,6 +283,7 @@ function Navbar() {
                 loadUser
             );
 
+
             window.removeEventListener(
                 "userUpdated",
                 loadUser
@@ -277,20 +293,29 @@ function Navbar() {
     }, []);
 
 
-    /* =====================================================
-       LOAD UNREAD CHAT COUNT
+    /* =========================================================
+       LOAD UNREAD NOTIFICATION COUNT
 
-       Backend endpoint:
+       Chat messages are treated as notifications.
+
+       Backend:
        GET /api/messages/unread/count
-    ===================================================== */
 
-    const loadUnreadMessages =
+       Expected response:
+
+       {
+           success: true,
+           unreadCount: 5
+       }
+    ========================================================= */
+
+    const loadUnreadNotifications =
         useCallback(
             async () => {
 
                 if (!user?.id) {
 
-                    setUnreadMessages(0);
+                    setUnreadNotifications(0);
 
                     return;
                 }
@@ -298,7 +323,7 @@ function Navbar() {
 
                 try {
 
-                    setMessagesLoading(true);
+                    setNotificationsLoading(true);
 
 
                     const response =
@@ -311,23 +336,6 @@ function Navbar() {
                         response.data || {};
 
 
-                    /*
-                     * Supported backend response shapes:
-                     *
-                     * {
-                     *   success: true,
-                     *   unreadCount: 5
-                     * }
-                     *
-                     * or
-                     *
-                     * {
-                     *   data: {
-                     *      unreadCount: 5
-                     *   }
-                     * }
-                     */
-
                     const count =
                         Number(
                             data.unreadCount ??
@@ -337,22 +345,28 @@ function Navbar() {
                         );
 
 
-                    setUnreadMessages(
-                        Number.isFinite(count) &&
-                        count > 0
-                            ? count
-                            : 0
-                    );
+                    if (
+                        Number.isFinite(count)
+                    ) {
+
+                        setUnreadNotifications(
+                            Math.max(
+                                0,
+                                count
+                            )
+                        );
+
+                    }
 
                 } catch (error) {
 
                     /*
-                     * A temporary request failure should
-                     * not erase an existing unread count.
+                     * Do NOT erase the existing count
+                     * when a temporary request fails.
                      */
 
                     console.error(
-                        "[NAVBAR] UNREAD MESSAGE COUNT ERROR:",
+                        "[NAVBAR] UNREAD NOTIFICATION COUNT ERROR:",
                         error.response?.data ||
                         error.message ||
                         error
@@ -360,42 +374,43 @@ function Navbar() {
 
                 } finally {
 
-                    setMessagesLoading(false);
+                    setNotificationsLoading(false);
                 }
             },
             [user?.id]
         );
 
 
-    /* =====================================================
-       INITIAL MESSAGE COUNT
-    ===================================================== */
+    /* =========================================================
+       INITIAL UNREAD COUNT
+    ========================================================= */
 
     useEffect(() => {
 
         if (!user?.id) {
 
-            setUnreadMessages(0);
+            setUnreadNotifications(0);
 
             return;
         }
 
 
-        loadUnreadMessages();
+        loadUnreadNotifications();
 
     }, [
         user?.id,
-        loadUnreadMessages
+        loadUnreadNotifications
     ]);
 
 
-    /* =====================================================
-       REAL-TIME CHAT NOTIFICATIONS
+    /* =========================================================
+       REAL-TIME NOTIFICATION SOCKET
 
-       Server events:
-       - new_message_notification
-       - messages_read
-    ===================================================== */
+       Events:
+
+       new_message_notification
+       messages_read
+    ========================================================= */
 
     useEffect(() => {
 
@@ -417,16 +432,18 @@ function Navbar() {
                     null;
             }
 
-            setUnreadMessages(0);
+
+            setUnreadNotifications(0);
 
             return;
         }
 
 
         /*
-         * Clean up an old socket before creating
-         * a new authenticated connection.
+         * Remove previous socket before
+         * creating another authenticated socket.
          */
+
         if (
             notificationSocketRef.current
         ) {
@@ -477,14 +494,31 @@ function Navbar() {
             notificationSocket;
 
 
+        /* =====================================================
+           CONNECT
+        ===================================================== */
+
         const handleConnect = () => {
 
             console.log(
                 "[NAVBAR SOCKET] CONNECTED:",
                 notificationSocket.id
             );
+
+
+            /*
+             * Refresh from the database after
+             * reconnecting to make sure the bell
+             * count is accurate.
+             */
+
+            loadUnreadNotifications();
         };
 
+
+        /* =====================================================
+           CONNECTION ERROR
+        ===================================================== */
 
         const handleConnectError = (
             error
@@ -498,6 +532,10 @@ function Navbar() {
         };
 
 
+        /* =====================================================
+           DISCONNECT
+        ===================================================== */
+
         const handleDisconnect = (
             reason
         ) => {
@@ -509,26 +547,34 @@ function Navbar() {
         };
 
 
-        /*
-         * New message received.
-         *
-         * The backend sends this to:
-         * user:<recipientId>
-         */
+        /* =====================================================
+           NEW MESSAGE
+
+           Backend sends:
+
+           {
+               conversationId,
+               message,
+               sender,
+               unreadCount
+           }
+        ===================================================== */
+
         const handleNewMessageNotification = (
             notification
         ) => {
 
             console.log(
-                "[NAVBAR SOCKET] NEW MESSAGE:",
+                "[NAVBAR SOCKET] NEW MESSAGE NOTIFICATION:",
                 notification
             );
 
 
             /*
-             * Prefer the unreadCount calculated by
-             * the backend if supplied.
+             * The backend should send the authoritative
+             * unread count.
              */
+
             if (
                 notification &&
                 notification.unreadCount != null
@@ -546,12 +592,13 @@ function Navbar() {
                     )
                 ) {
 
-                    setUnreadMessages(
+                    setUnreadNotifications(
                         Math.max(
                             0,
                             backendCount
                         )
                     );
+
 
                     return;
                 }
@@ -559,18 +606,29 @@ function Navbar() {
 
 
             /*
-             * Otherwise increment locally.
+             * Fallback if the backend does not
+             * provide unreadCount.
              */
-            setUnreadMessages(
+
+            setUnreadNotifications(
                 previous =>
                     previous + 1
             );
         };
 
 
-        /*
-         * Chat page marks messages as read.
-         */
+        /* =====================================================
+           MESSAGES READ
+
+           When Chat marks messages as read,
+           backend sends:
+
+           {
+               conversationId,
+               unreadCount
+           }
+        ===================================================== */
+
         const handleMessagesRead = (
             data
         ) => {
@@ -598,12 +656,13 @@ function Navbar() {
                     )
                 ) {
 
-                    setUnreadMessages(
+                    setUnreadNotifications(
                         Math.max(
                             0,
                             backendCount
                         )
                     );
+
 
                     return;
                 }
@@ -611,32 +670,40 @@ function Navbar() {
 
 
             /*
-             * If the backend does not send a count,
-             * refresh it from the database.
+             * Fallback to database.
              */
-            loadUnreadMessages();
+
+            loadUnreadNotifications();
         };
 
+
+        /* =====================================================
+           SOCKET EVENTS
+        ===================================================== */
 
         notificationSocket.on(
             "connect",
             handleConnect
         );
 
+
         notificationSocket.on(
             "connect_error",
             handleConnectError
         );
+
 
         notificationSocket.on(
             "disconnect",
             handleDisconnect
         );
 
+
         notificationSocket.on(
             "new_message_notification",
             handleNewMessageNotification
         );
+
 
         notificationSocket.on(
             "messages_read",
@@ -645,14 +712,20 @@ function Navbar() {
 
 
         /*
-         * Authenticate and connect.
+         * Explicit authentication.
          */
+
         notificationSocket.auth = {
             token
         };
 
+
         notificationSocket.connect();
 
+
+        /* =====================================================
+           CLEANUP
+        ===================================================== */
 
         return () => {
 
@@ -661,25 +734,30 @@ function Navbar() {
                 handleConnect
             );
 
+
             notificationSocket.off(
                 "connect_error",
                 handleConnectError
             );
+
 
             notificationSocket.off(
                 "disconnect",
                 handleDisconnect
             );
 
+
             notificationSocket.off(
                 "new_message_notification",
                 handleNewMessageNotification
             );
 
+
             notificationSocket.off(
                 "messages_read",
                 handleMessagesRead
             );
+
 
             notificationSocket.disconnect();
 
@@ -696,16 +774,19 @@ function Navbar() {
 
     }, [
         user?.id,
-        loadUnreadMessages
+        loadUnreadNotifications
     ]);
 
 
-    /* =====================================================
-       PERIODIC FALLBACK REFRESH
+    /* =========================================================
+       PERIODIC FALLBACK
 
-       Real-time Socket.IO is primary.
-       This is only a safety net.
-    ===================================================== */
+       Socket.IO is primary.
+
+       This makes sure the notification bell
+       stays synchronized even if a socket event
+       is missed.
+    ========================================================= */
 
     useEffect(() => {
 
@@ -718,7 +799,7 @@ function Navbar() {
             window.setInterval(
                 () => {
 
-                    loadUnreadMessages();
+                    loadUnreadNotifications();
 
                 },
                 30000
@@ -734,27 +815,26 @@ function Navbar() {
 
     }, [
         user?.id,
-        loadUnreadMessages
+        loadUnreadNotifications
     ]);
 
 
-    /* =====================================================
-       REFRESH WHEN USER RETURNS TO TAB
-    ===================================================== */
+    /* =========================================================
+       REFRESH WHEN TAB BECOMES VISIBLE
+    ========================================================= */
 
     useEffect(() => {
 
-        const handleVisibilityChange =
-            () => {
+        const handleVisibilityChange = () => {
 
-                if (
-                    document.visibilityState ===
-                    "visible"
-                ) {
+            if (
+                document.visibilityState ===
+                "visible"
+            ) {
 
-                    loadUnreadMessages();
-                }
-            };
+                loadUnreadNotifications();
+            }
+        };
 
 
         document.addEventListener(
@@ -772,20 +852,19 @@ function Navbar() {
         };
 
     }, [
-        loadUnreadMessages
+        loadUnreadNotifications
     ]);
 
 
-    /* =====================================================
+    /* =========================================================
        REFRESH WHEN WINDOW GETS FOCUS
-    ===================================================== */
+    ========================================================= */
 
     useEffect(() => {
 
         const handleFocus = () => {
 
-            loadUnreadMessages();
-
+            loadUnreadNotifications();
         };
 
 
@@ -804,19 +883,23 @@ function Navbar() {
         };
 
     }, [
-        loadUnreadMessages
+        loadUnreadNotifications
     ]);
 
 
-    /* =====================================================
-       REFRESH AFTER CHAT PAGE
-    ===================================================== */
+    /* =========================================================
+       REFRESH AFTER OPENING CHAT
+
+       Chat is:
+
+       /chat/:conversationId
+    ========================================================= */
 
     useEffect(() => {
 
         if (
             location.pathname.startsWith(
-                "/chat"
+                "/chat/"
             )
         ) {
 
@@ -824,7 +907,7 @@ function Navbar() {
                 window.setTimeout(
                     () => {
 
-                        loadUnreadMessages();
+                        loadUnreadNotifications();
 
                     },
                     700
@@ -841,22 +924,20 @@ function Navbar() {
 
     }, [
         location.pathname,
-        loadUnreadMessages
+        loadUnreadNotifications
     ]);
 
 
-    /* =====================================================
-       OPTIONAL CUSTOM MESSAGE UPDATE EVENT
-    ===================================================== */
+    /* =========================================================
+       CUSTOM MESSAGE UPDATE EVENT
+    ========================================================= */
 
     useEffect(() => {
 
-        const handleMessagesUpdated =
-            () => {
+        const handleMessagesUpdated = () => {
 
-                loadUnreadMessages();
-
-            };
+            loadUnreadNotifications();
+        };
 
 
         window.addEventListener(
@@ -874,13 +955,13 @@ function Navbar() {
         };
 
     }, [
-        loadUnreadMessages
+        loadUnreadNotifications
     ]);
 
 
-    /* =====================================================
+    /* =========================================================
        PROFILE IMAGE
-    ===================================================== */
+    ========================================================= */
 
     const profileImage =
         useMemo(() => {
@@ -921,9 +1002,9 @@ function Navbar() {
         }, [user]);
 
 
-    /* =====================================================
+    /* =========================================================
        PROFILE IMAGE ERROR
-    ===================================================== */
+    ========================================================= */
 
     const handleProfileImageError = (
         event
@@ -959,9 +1040,9 @@ function Navbar() {
     };
 
 
-    /* =====================================================
+    /* =========================================================
        LOGOUT
-    ===================================================== */
+    ========================================================= */
 
     const logout = () => {
 
@@ -980,6 +1061,7 @@ function Navbar() {
             "token"
         );
 
+
         localStorage.removeItem(
             "user"
         );
@@ -987,9 +1069,12 @@ function Navbar() {
 
         setUser(null);
 
-        setUnreadMessages(0);
+
+        setUnreadNotifications(0);
+
 
         setMenuOpen(false);
+
 
         setShowProfileMenu(false);
 
@@ -1005,9 +1090,9 @@ function Navbar() {
     };
 
 
-    /* =====================================================
-       CLOSE DROPDOWN
-    ===================================================== */
+    /* =========================================================
+       CLOSE DROPDOWN WHEN CLICKING OUTSIDE
+    ========================================================= */
 
     useEffect(() => {
 
@@ -1046,9 +1131,9 @@ function Navbar() {
     }, []);
 
 
-    /* =====================================================
+    /* =========================================================
        CLOSE MENUS WHEN ROUTE CHANGES
-    ===================================================== */
+    ========================================================= */
 
     useEffect(() => {
 
@@ -1061,36 +1146,57 @@ function Navbar() {
     ]);
 
 
-    /* =====================================================
+    /* =========================================================
        CLOSE MOBILE MENU
-    ===================================================== */
+    ========================================================= */
 
     const closeMobileMenu = () => {
 
         setMenuOpen(false);
-
     };
 
 
-    /* =====================================================
-       OPEN MESSAGES
+    /* =========================================================
+       OPEN NOTIFICATIONS
 
-       Your Chat screen uses /inbox as its parent route.
-       Keep /messages here if that is your existing inbox route.
-    ===================================================== */
+       The notification bell is now the central
+       location for unread messages.
 
-    const openMessages = () => {
+       Chat notifications are displayed inside
+       /notifications.
+    ========================================================= */
+
+    const openNotifications = () => {
 
         closeMobileMenu();
 
-        navigate("/messages");
+        setShowProfileMenu(false);
 
+        navigate("/notifications");
     };
 
 
-    /* =====================================================
+    /* =========================================================
+       OPEN MESSAGES FROM PROFILE MENU
+
+       Messages themselves remain accessible from
+       the profile dropdown, but there is NO
+       separate unread message badge.
+    ========================================================= */
+
+    const openMessages = () => {
+
+        setShowProfileMenu(false);
+
+        closeMobileMenu();
+
+        navigate("/inbox");
+    };
+
+
+    /* =========================================================
        ACTIVE NAV CLASS
-    ===================================================== */
+    ========================================================= */
 
     const navClass = ({
         isActive
@@ -1102,19 +1208,29 @@ function Navbar() {
     };
 
 
-    /* =====================================================
-       MESSAGE BADGE
-    ===================================================== */
+    /* =========================================================
+       NOTIFICATION BADGE
+    ========================================================= */
 
-    const messageBadge =
-        unreadMessages > 99
+    const notificationBadge =
+        unreadNotifications > 99
             ? "99+"
-            : unreadMessages;
+            : unreadNotifications;
 
 
-    /* =====================================================
+    /* =========================================================
+       BELL ARIA LABEL
+    ========================================================= */
+
+    const notificationLabel =
+        unreadNotifications > 0
+            ? `${unreadNotifications} unread notifications`
+            : "Notifications";
+
+
+    /* =========================================================
        RENDER
-    ===================================================== */
+    ========================================================= */
 
     return (
 
@@ -1340,46 +1456,49 @@ function Navbar() {
 
 
                             {/* =================================================
-                                MESSAGES
+                                NOTIFICATION BELL
+
+                                THIS IS NOW THE ONLY UNREAD BADGE.
+
+                                Chat messages + notifications appear here.
                             ================================================= */}
 
                             <button
                                 type="button"
                                 className={
-                                    "message-btn" +
+                                    "notification-btn" +
                                     (
                                         location.pathname.startsWith(
-                                            "/messages"
+                                            "/notifications"
                                         )
                                             ? " active"
                                             : ""
                                     )
                                 }
                                 onClick={
-                                    openMessages
+                                    openNotifications
                                 }
                                 aria-label={
-                                    unreadMessages > 0
-                                        ? `${unreadMessages} unread messages`
-                                        : "Messages"
+                                    notificationLabel
                                 }
                                 title={
-                                    unreadMessages > 0
-                                        ? `${unreadMessages} unread messages`
-                                        : "Messages"
+                                    notificationLabel
                                 }
                             >
 
-                                <span className="message-icon-wrapper">
+                                <span className="notification-icon-wrapper">
 
-                                    <FaComments />
+                                    <FaBell />
 
-                                    {unreadMessages > 0 && (
+                                    {unreadNotifications > 0 && (
 
-                                        <span className="message-badge">
+                                        <span
+                                            className="notification-badge"
+                                            aria-hidden="true"
+                                        >
 
                                             {
-                                                messageBadge
+                                                notificationBadge
                                             }
 
                                         </span>
@@ -1389,25 +1508,6 @@ function Navbar() {
                                 </span>
 
                             </button>
-
-
-                            {/* =================================================
-                                NOTIFICATIONS
-                            ================================================= */}
-
-                            <Link
-                                to="/notifications"
-                                className="notification-btn"
-                                aria-label="Notifications"
-                                title="Notifications"
-                                onClick={
-                                    closeMobileMenu
-                                }
-                            >
-
-                                <FaBell />
-
-                            </Link>
 
 
                             {/* =================================================
@@ -1483,6 +1583,10 @@ function Navbar() {
 
                                     <div className="profile-menu">
 
+                                        {/* =================================================
+                                            PROFILE HEADER
+                                        ================================================= */}
+
                                         <div className="profile-menu-header">
 
                                             <div className="profile-menu-avatar">
@@ -1543,6 +1647,10 @@ function Navbar() {
                                         </div>
 
 
+                                        {/* =================================================
+                                            PROFILE LINKS
+                                        ================================================= */}
+
                                         <div className="profile-menu-links">
 
                                             <Link
@@ -1581,30 +1689,29 @@ function Navbar() {
                                             </Link>
 
 
-                                            <Link
-                                                to="/messages"
-                                                onClick={() =>
-                                                    setShowProfileMenu(
-                                                        false
-                                                    )
+                                            {/* ================================
+                                                MESSAGES
+
+                                                NO BADGE HERE.
+                                                Unread count is only on bell.
+                                            ================================= */}
+
+                                            <button
+                                                type="button"
+                                                className="profile-menu-link-button"
+                                                onClick={
+                                                    openMessages
                                                 }
                                             >
 
-                                                <span className="profile-link-icon-with-badge">
+                                                <span className="profile-link-icon">
 
-                                                    <FaComments />
-
-                                                    {unreadMessages > 0 && (
-
-                                                        <span className="profile-message-badge">
-
-                                                            {
-                                                                messageBadge
-                                                            }
-
-                                                        </span>
-
-                                                    )}
+                                                    <span
+                                                        aria-hidden="true"
+                                                        className="profile-message-icon"
+                                                    >
+                                                        💬
+                                                    </span>
 
                                                 </span>
 
@@ -1613,7 +1720,7 @@ function Navbar() {
                                                     Messages
                                                 </span>
 
-                                            </Link>
+                                            </button>
 
 
                                             <Link
@@ -1652,12 +1759,15 @@ function Navbar() {
                                             </Link>
 
 
-                                            <Link
-                                                to="/notifications"
-                                                onClick={() =>
-                                                    setShowProfileMenu(
-                                                        false
-                                                    )
+                                            {/* ================================
+                                                NOTIFICATIONS
+                                            ================================= */}
+
+                                            <button
+                                                type="button"
+                                                className="profile-menu-link-button"
+                                                onClick={
+                                                    openNotifications
                                                 }
                                             >
 
@@ -1667,10 +1777,26 @@ function Navbar() {
                                                     Notifications
                                                 </span>
 
-                                            </Link>
+                                                {unreadNotifications > 0 && (
+
+                                                    <span className="profile-notification-count">
+
+                                                        {
+                                                            notificationBadge
+                                                        }
+
+                                                    </span>
+
+                                                )}
+
+                                            </button>
 
                                         </div>
 
+
+                                        {/* =================================================
+                                            LOGOUT
+                                        ================================================= */}
 
                                         <div className="profile-menu-footer">
 
