@@ -267,3 +267,49 @@ padding:12px;
 }
 
 }
+/* =========================================================
+   REAL-TIME SOCKET STATUS
+========================================================= */
+
+.socket-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-left: auto;
+
+    padding: 5px 10px;
+
+    border-radius: 999px;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.4px;
+}
+
+.socket-status.connected {
+    color: #16803c;
+    background: rgba(22, 128, 60, 0.10);
+}
+
+.socket-status.disconnected {
+    color: #b42318;
+    background: rgba(180, 35, 24, 0.10);
+}
+
+/* Unread conversation */
+
+.conversation.unread {
+    position: relative;
+}
+
+.conversation.unread .conversation-info h2 {
+    font-weight: 800;
+}
+
+.conversation.unread .conversation-info p {
+    font-weight: 600;
+}

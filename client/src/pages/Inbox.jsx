@@ -2,10 +2,12 @@ import {
     useCallback,
     useEffect,
     useMemo,
+    useRef,
     useState
 } from "react";
 
 import { useNavigate } from "react-router-dom";
+import { io } from "socket.io-client";
 
 import api from "../config/axios";
 
@@ -15,6 +17,19 @@ import {
 } from "react-icons/fa";
 
 import "./Inbox.css";
+
+/* =========================================================
+   SERVER CONFIGURATION
+========================================================= */
+
+const API_SERVER = (
+    import.meta.env.VITE_API_URL ||
+    "https://api.kadmarket.com"
+).replace(/\/+$/, "");
+
+const SOCKET_URL = API_SERVER;
+
+const SOCKET_PATH = "/socket.io";
 
 /* =========================================================
    IMAGE CONFIGURATION
@@ -28,108 +43,134 @@ const CDN_URL = (
 const FALLBACK_IMAGE = "/images/product-placeholder.png";
 
 /* =========================================================
+   SAFE USER
+========================================================= */
+
+function getStoredUser() {
+    try {
+        const stored = localStorage.getItem("user");
+
+        if (!stored) {
+            return null;
+        }
+
+        const parsed = JSON.parse(stored);
+
+        return parsed && typeof parsed === "object"
+            ? parsed
+            : null;
+    } catch (error) {
+        console.error(
+            "INBOX USER PARSE ERROR:",
+            error
+        );
+
+        return null;
+    }
+}
+
+/* =========================================================
    INBOX
 ========================================================= */
 
 function Inbox() {
     const navigate = useNavigate();
 
-    const [conversations, setConversations] = useState([]);
+    const socketRef = useRef(null);
+    const mountedRef = useRef(true);
+
+    const [conversations, setConversations] =
+        useState([]);
+
     const [search, setSearch] = useState("");
 
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+    const [loading, setLoading] =
+        useState(true);
+
+    const [error, setError] =
+        useState("");
+
+    const [socketConnected, setSocketConnected] =
+        useState(false);
 
     /* =====================================================
        RESOLVE PRODUCT IMAGE URL
     ===================================================== */
 
-    const getImageUrl = useCallback((imagePath) => {
-        if (
-            !imagePath ||
-            typeof imagePath !== "string"
-        ) {
-            return FALLBACK_IMAGE;
-        }
+    const getImageUrl = useCallback(
+        (imagePath) => {
+            if (
+                !imagePath ||
+                typeof imagePath !== "string"
+            ) {
+                return FALLBACK_IMAGE;
+            }
 
-        let cleanPath = imagePath.trim();
+            let cleanPath = imagePath.trim();
 
-        if (!cleanPath) {
-            return FALLBACK_IMAGE;
-        }
+            if (!cleanPath) {
+                return FALLBACK_IMAGE;
+            }
 
-        /*
-         * Some database values may contain escaped
-         * backslashes or quotes.
-         */
-        cleanPath = cleanPath
-            .replace(/\\/g, "/")
-            .replace(/^["']|["']$/g, "")
-            .trim();
+            /*
+             * Remove escaped slashes and quotes.
+             */
 
-        if (!cleanPath) {
-            return FALLBACK_IMAGE;
-        }
+            cleanPath = cleanPath
+                .replace(/\\/g, "/")
+                .replace(/^["']|["']$/g, "")
+                .trim();
 
-        /*
-         * Already a complete public URL.
-         *
-         * Example:
-         * https://cdn.kadmarket.com/uploads/image.jpg
-         */
-        if (/^https?:\/\//i.test(cleanPath)) {
-            return cleanPath;
-        }
+            if (!cleanPath) {
+                return FALLBACK_IMAGE;
+            }
 
-        /*
-         * Remove leading slash.
-         *
-         * /uploads/image.jpg
-         * becomes:
-         * uploads/image.jpg
-         */
-        const normalizedPath =
-            cleanPath.replace(/^\/+/, "");
+            /*
+             * Already a complete URL.
+             */
 
-        /*
-         * R2 key already contains uploads/.
-         */
-        if (
-            normalizedPath
-                .toLowerCase()
-                .startsWith("uploads/")
-        ) {
-            return `${CDN_URL}/${normalizedPath}`;
-        }
+            if (/^https?:\/\//i.test(cleanPath)) {
+                return cleanPath;
+            }
 
-        /*
-         * Handle values such as:
-         *
-         * product/image.jpg
-         * products/image.jpg
-         * images/image.jpg
-         *
-         * If the database already contains a folder,
-         * preserve it rather than adding another folder.
-         */
-        if (
-            normalizedPath.includes("/") &&
-            !normalizedPath.startsWith(".")
-        ) {
-            return `${CDN_URL}/${normalizedPath}`;
-        }
+            /*
+             * Remove leading slash.
+             */
 
-        /*
-         * Plain filename.
-         *
-         * image.jpg
-         *
-         * becomes:
-         *
-         * https://cdn.kadmarket.com/uploads/image.jpg
-         */
-        return `${CDN_URL}/uploads/${normalizedPath}`;
-    }, []);
+            const normalizedPath =
+                cleanPath.replace(/^\/+/, "");
+
+            /*
+             * R2 key already contains uploads/.
+             */
+
+            if (
+                normalizedPath
+                    .toLowerCase()
+                    .startsWith("uploads/")
+            ) {
+                return `${CDN_URL}/${normalizedPath}`;
+            }
+
+            /*
+             * Preserve existing folders.
+             */
+
+            if (
+                normalizedPath.includes("/") &&
+                !normalizedPath.startsWith(".")
+            ) {
+                return `${CDN_URL}/${normalizedPath}`;
+            }
+
+            /*
+             * Plain filename.
+             */
+
+            return `${CDN_URL}/uploads/${normalizedPath}`;
+        },
+        []
+    );
 
     /* =====================================================
        PARSE PRODUCT IMAGES
@@ -144,6 +185,7 @@ function Inbox() {
             /*
              * Already an array.
              */
+
             if (Array.isArray(productImages)) {
                 return productImages
                     .filter(
@@ -151,12 +193,15 @@ function Inbox() {
                             typeof image === "string" &&
                             image.trim()
                     )
-                    .map((image) => image.trim());
+                    .map((image) =>
+                        image.trim()
+                    );
             }
 
             /*
              * String value.
              */
+
             if (typeof productImages === "string") {
                 const cleanValue =
                     productImages.trim();
@@ -167,10 +212,8 @@ function Inbox() {
 
                 /*
                  * Try JSON first.
-                 *
-                 * Example:
-                 * ["image1.jpg","image2.jpg"]
                  */
+
                 try {
                     const parsed =
                         JSON.parse(cleanValue);
@@ -192,6 +235,7 @@ function Inbox() {
                      * JSON string containing
                      * one image.
                      */
+
                     if (
                         typeof parsed ===
                             "string" &&
@@ -204,16 +248,14 @@ function Inbox() {
                 } catch {
                     /*
                      * Not JSON.
-                     *
-                     * Treat it as a normal
-                     * filename/key.
                      */
                 }
 
                 /*
-                 * Support comma-separated legacy
-                 * values as well.
+                 * Support comma-separated
+                 * legacy values.
                  */
+
                 if (
                     cleanValue.includes(",") &&
                     !cleanValue.includes("http")
@@ -226,7 +268,9 @@ function Inbox() {
                             )
                             .filter(Boolean);
 
-                    if (commaImages.length > 0) {
+                    if (
+                        commaImages.length > 0
+                    ) {
                         return commaImages;
                     }
                 }
@@ -245,11 +289,6 @@ function Inbox() {
 
     const getProductImage = useCallback(
         (conversation) => {
-            /*
-             * Product can come from:
-             *
-             * conversation.product
-             */
             const product =
                 conversation?.product;
 
@@ -257,24 +296,14 @@ function Inbox() {
                 return FALLBACK_IMAGE;
             }
 
-            /*
-             * Normal product image field.
-             */
             let productImages =
                 product.images;
 
-            /*
-             * Some backend responses may expose
-             * a single image through imageUrl.
-             */
             if (!productImages) {
                 productImages =
                     product.imageUrl;
             }
 
-            /*
-             * Some older records may use `image`.
-             */
             if (!productImages) {
                 productImages =
                     product.image;
@@ -292,9 +321,6 @@ function Inbox() {
                 return FALLBACK_IMAGE;
             }
 
-            /*
-             * Find the first valid image.
-             */
             const firstImage =
                 images.find(
                     (image) =>
@@ -307,24 +333,7 @@ function Inbox() {
                 return FALLBACK_IMAGE;
             }
 
-            const resolvedUrl =
-                getImageUrl(firstImage);
-
-            console.log(
-                "INBOX PRODUCT IMAGE:",
-                {
-                    productId:
-                        product?.id,
-                    rawImages:
-                        productImages,
-                    parsedImages:
-                        images,
-                    firstImage,
-                    resolvedUrl
-                }
-            );
-
-            return resolvedUrl;
+            return getImageUrl(firstImage);
         },
         [
             getImageUrl,
@@ -337,88 +346,92 @@ function Inbox() {
     ===================================================== */
 
     const loadConversations =
-        useCallback(async () => {
-            try {
-                setError("");
+        useCallback(
+            async ({
+                silent = false
+            } = {}) => {
+                try {
+                    if (!silent) {
+                        setLoading(true);
+                    }
 
-                const response =
-                    await api.get(
-                        "/messages/conversations"
+                    setError("");
+
+                    const response =
+                        await api.get(
+                            "/messages/conversations"
+                        );
+
+                    const data =
+                        response.data
+                            ?.conversations ??
+                        response.data
+                            ?.messages ??
+                        response.data
+                            ?.data ??
+                        [];
+
+                    const conversationArray =
+                        Array.isArray(data)
+                            ? data
+                            : [];
+
+                    if (!mountedRef.current) {
+                        return;
+                    }
+
+                    setConversations(
+                        conversationArray
                     );
 
-                console.log(
-                    "CONVERSATIONS RESPONSE:",
-                    response.data
-                );
+                    setError("");
+                } catch (requestError) {
+                    console.error(
+                        "LOAD CONVERSATIONS ERROR:",
+                        requestError.response
+                            ?.data ||
+                            requestError.message
+                    );
 
-                /*
-                 * Backend may return:
-                 *
-                 * {
-                 *   success: true,
-                 *   conversations: [...]
-                 * }
-                 *
-                 * OR:
-                 *
-                 * {
-                 *   success: true,
-                 *   messages: [...]
-                 * }
-                 *
-                 * OR:
-                 *
-                 * {
-                 *   success: true,
-                 *   data: [...]
-                 * }
-                 */
+                    if (!mountedRef.current) {
+                        return;
+                    }
 
-                const data =
-                    response.data?.conversations ??
-                    response.data?.messages ??
-                    response.data?.data ??
-                    [];
+                    /*
+                     * Do not replace working
+                     * conversations with an error
+                     * during a silent refresh.
+                     */
 
-                const conversationArray =
-                    Array.isArray(data)
-                        ? data
-                        : [];
-
-                console.log(
-                    "CONVERSATIONS ARRAY:",
-                    conversationArray
-                );
-
-                setConversations(
-                    conversationArray
-                );
-
-                setError("");
-            } catch (requestError) {
-                console.error(
-                    "LOAD CONVERSATIONS ERROR:",
-                    requestError.response?.data ||
-                        requestError.message
-                );
-
-                setError(
-                    requestError.response?.data
-                        ?.message ||
-                        "Unable to load conversations."
-                );
-            } finally {
-                setLoading(false);
-            }
-        }, []);
+                    if (!silent) {
+                        setError(
+                            requestError.response
+                                ?.data
+                                ?.message ||
+                                "Unable to load conversations."
+                        );
+                    }
+                } finally {
+                    if (
+                        mountedRef.current &&
+                        !silent
+                    ) {
+                        setLoading(false);
+                    }
+                }
+            },
+            []
+        );
 
     /* =====================================================
-       AUTH + INITIAL LOAD + AUTO REFRESH
+       INITIAL LOAD
     ===================================================== */
 
     useEffect(() => {
+        mountedRef.current = true;
+
         const storedUser =
-            localStorage.getItem("user");
+            getStoredUser();
 
         if (!storedUser) {
             navigate("/login");
@@ -427,19 +440,352 @@ function Inbox() {
 
         loadConversations();
 
+        return () => {
+            mountedRef.current = false;
+        };
+    }, [
+        navigate,
+        loadConversations
+    ]);
+
+    /* =====================================================
+       SOCKET.IO REAL-TIME CONNECTION
+    ===================================================== */
+
+    useEffect(() => {
+        const storedUser =
+            getStoredUser();
+
+        const token =
+            localStorage.getItem("token");
+
+        if (!storedUser || !token) {
+            return undefined;
+        }
+
         /*
-         * Refresh conversations every 30 seconds.
+         * Create authenticated socket.
          */
+
+        const socket = io(
+            SOCKET_URL,
+            {
+                path: SOCKET_PATH,
+
+                transports: [
+                    "websocket",
+                    "polling"
+                ],
+
+                withCredentials: true,
+
+                autoConnect: false,
+
+                reconnection: true,
+
+                reconnectionAttempts:
+                    Infinity,
+
+                reconnectionDelay: 1000,
+
+                reconnectionDelayMax:
+                    10000,
+
+                timeout: 45000,
+
+                auth: {
+                    token
+                }
+            }
+        );
+
+        socketRef.current = socket;
+
+        /* =================================================
+           CONNECT
+        ================================================= */
+
+        const handleConnect = () => {
+            console.log(
+                "INBOX SOCKET CONNECTED:",
+                socket.id
+            );
+
+            if (mountedRef.current) {
+                setSocketConnected(true);
+            }
+
+            /*
+             * Refresh immediately after
+             * connecting to ensure we have
+             * the latest conversation state.
+             */
+
+            loadConversations({
+                silent: true
+            });
+        };
+
+        /* =================================================
+           DISCONNECT
+        ================================================= */
+
+        const handleDisconnect = (
+            reason
+        ) => {
+            console.log(
+                "INBOX SOCKET DISCONNECTED:",
+                reason
+            );
+
+            if (mountedRef.current) {
+                setSocketConnected(false);
+            }
+        };
+
+        /* =================================================
+           SOCKET ERROR
+        ================================================= */
+
+        const handleConnectError = (
+            socketError
+        ) => {
+            console.error(
+                "INBOX SOCKET ERROR:",
+                socketError?.message ||
+                    socketError
+            );
+
+            if (mountedRef.current) {
+                setSocketConnected(false);
+            }
+        };
+
+        /* =================================================
+           NEW MESSAGE
+        ================================================= */
+
+        const handleNewMessage = (
+            notification
+        ) => {
+            console.log(
+                "INBOX NEW MESSAGE:",
+                notification
+            );
+
+            /*
+             * Reload conversations immediately.
+             *
+             * This updates:
+             * - last message
+             * - updatedAt
+             * - unreadCount
+             * - product information
+             * - conversation ordering
+             */
+
+            loadConversations({
+                silent: true
+            });
+
+            /*
+             * Notify Navbar / Notifications.
+             */
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "messagesUpdated",
+                    {
+                        detail:
+                            notification
+                    }
+                )
+            );
+        };
+
+        /* =================================================
+           MESSAGES READ
+        ================================================= */
+
+        const handleMessagesRead = (
+            payload
+        ) => {
+            console.log(
+                "INBOX MESSAGES READ:",
+                payload
+            );
+
+            /*
+             * Refresh because backend has
+             * recalculated unreadCount.
+             */
+
+            loadConversations({
+                silent: true
+            });
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "messagesUpdated",
+                    {
+                        detail: payload
+                    }
+                )
+            );
+        };
+
+        /* =================================================
+           LISTENERS
+        ================================================= */
+
+        socket.on(
+            "connect",
+            handleConnect
+        );
+
+        socket.on(
+            "disconnect",
+            handleDisconnect
+        );
+
+        socket.on(
+            "connect_error",
+            handleConnectError
+        );
+
+        socket.on(
+            "new_message_notification",
+            handleNewMessage
+        );
+
+        socket.on(
+            "messages_read",
+            handleMessagesRead
+        );
+
+        /*
+         * Connect.
+         */
+
+        socket.connect();
+
+        /* =================================================
+           CLEANUP
+        ================================================= */
+
+        return () => {
+            socket.off(
+                "connect",
+                handleConnect
+            );
+
+            socket.off(
+                "disconnect",
+                handleDisconnect
+            );
+
+            socket.off(
+                "connect_error",
+                handleConnectError
+            );
+
+            socket.off(
+                "new_message_notification",
+                handleNewMessage
+            );
+
+            socket.off(
+                "messages_read",
+                handleMessagesRead
+            );
+
+            socket.disconnect();
+
+            if (
+                socketRef.current ===
+                socket
+            ) {
+                socketRef.current = null;
+            }
+        };
+    }, [
+        loadConversations
+    ]);
+
+    /* =====================================================
+       FALLBACK AUTO REFRESH
+    ===================================================== */
+
+    useEffect(() => {
         const interval =
             setInterval(() => {
-                loadConversations();
+                loadConversations({
+                    silent: true
+                });
             }, 30000);
 
         return () => {
             clearInterval(interval);
         };
     }, [
-        navigate,
+        loadConversations
+    ]);
+
+    /* =====================================================
+       REFRESH WHEN PAGE BECOMES VISIBLE
+    ===================================================== */
+
+    useEffect(() => {
+        const handleVisibility =
+            () => {
+                if (
+                    document.visibilityState ===
+                    "visible"
+                ) {
+                    loadConversations({
+                        silent: true
+                    });
+                }
+            };
+
+        document.addEventListener(
+            "visibilitychange",
+            handleVisibility
+        );
+
+        return () => {
+            document.removeEventListener(
+                "visibilitychange",
+                handleVisibility
+            );
+        };
+    }, [
+        loadConversations
+    ]);
+
+    /* =====================================================
+       REFRESH WHEN WINDOW GETS FOCUS
+    ===================================================== */
+
+    useEffect(() => {
+        const handleFocus = () => {
+            loadConversations({
+                silent: true
+            });
+        };
+
+        window.addEventListener(
+            "focus",
+            handleFocus
+        );
+
+        return () => {
+            window.removeEventListener(
+                "focus",
+                handleFocus
+            );
+        };
+    }, [
         loadConversations
     ]);
 
@@ -463,6 +809,8 @@ function Inbox() {
                     const productTitle =
                         item?.product?.title
                             ?.toLowerCase() ||
+                        item?.product?.name
+                            ?.toLowerCase() ||
                         "";
 
                     const lastMessage =
@@ -475,6 +823,13 @@ function Inbox() {
                             ?.toLowerCase() ||
                         "";
 
+                    const otherUserName =
+                        item?.otherUser?.name
+                            ?.toLowerCase() ||
+                        item?.user?.name
+                            ?.toLowerCase() ||
+                        "";
+
                     return (
                         productTitle.includes(
                             searchText
@@ -483,6 +838,9 @@ function Inbox() {
                             searchText
                         ) ||
                         messageText.includes(
+                            searchText
+                        ) ||
+                        otherUserName.includes(
                             searchText
                         )
                     );
@@ -533,15 +891,18 @@ function Inbox() {
             "INBOX PRODUCT IMAGE FAILED:",
             {
                 productId:
-                    conversation?.product?.id,
+                    conversation?.product
+                        ?.id,
+
                 attemptedUrl:
                     image?.src
             }
         );
 
         /*
-         * Prevent an infinite fallback loop.
+         * Prevent infinite fallback loop.
          */
+
         if (
             image.dataset.fallback ===
             "true"
@@ -552,7 +913,28 @@ function Inbox() {
         image.dataset.fallback =
             "true";
 
-        image.src = FALLBACK_IMAGE;
+        image.src =
+            FALLBACK_IMAGE;
+    };
+
+    /* =====================================================
+       KEYBOARD ACCESS
+    ===================================================== */
+
+    const handleConversationKeyDown = (
+        event,
+        conversation
+    ) => {
+        if (
+            event.key === "Enter" ||
+            event.key === " "
+        ) {
+            event.preventDefault();
+
+            openConversation(
+                conversation
+            );
+        }
     };
 
     /* =====================================================
@@ -583,10 +965,35 @@ function Inbox() {
             ================================================= */}
 
             <div className="inbox-header">
+
                 <h1>
                     <FaComments />
                     Messages
                 </h1>
+
+                {/*
+                 * Socket status is intentionally
+                 * subtle so it does not disturb
+                 * the existing design.
+                 */}
+
+                <span
+                    className={
+                        socketConnected
+                            ? "socket-status connected"
+                            : "socket-status disconnected"
+                    }
+                    title={
+                        socketConnected
+                            ? "Real-time messaging connected"
+                            : "Real-time connection unavailable"
+                    }
+                >
+                    {socketConnected
+                        ? "Live"
+                        : "Offline"}
+                </span>
+
             </div>
 
             {/* =================================================
@@ -594,6 +1001,7 @@ function Inbox() {
             ================================================= */}
 
             <div className="search-bar">
+
                 <FaSearch />
 
                 <input
@@ -606,6 +1014,7 @@ function Inbox() {
                         )
                     }
                 />
+
             </div>
 
             {/* =================================================
@@ -614,6 +1023,7 @@ function Inbox() {
 
             {error && (
                 <div className="empty-chat">
+
                     <FaComments />
 
                     <h2>
@@ -628,11 +1038,13 @@ function Inbox() {
                         type="button"
                         onClick={() => {
                             setLoading(true);
+
                             loadConversations();
                         }}
                     >
                         Try Again
                     </button>
+
                 </div>
             )}
 
@@ -643,6 +1055,7 @@ function Inbox() {
             {!error &&
                 filtered.length === 0 && (
                     <div className="empty-chat">
+
                         <FaComments />
 
                         <h2>
@@ -653,6 +1066,7 @@ function Inbox() {
                             Conversations will
                             appear here.
                         </p>
+
                     </div>
                 )}
 
@@ -684,14 +1098,16 @@ function Inbox() {
                         const productPrice =
                             product?.price;
 
-                        /*
-                         * IMPORTANT:
-                         * Product image now comes
-                         * from R2/CDN.
-                         */
                         const productImage =
                             getProductImage(
                                 conversation
+                            );
+
+                        const unreadCount =
+                            Number(
+                                conversation
+                                    ?.unreadCount ||
+                                0
                             );
 
                         return (
@@ -699,12 +1115,32 @@ function Inbox() {
                                 key={
                                     conversationId
                                 }
-                                className="conversation"
+
+                                className={
+                                    unreadCount > 0
+                                        ? "conversation unread"
+                                        : "conversation"
+                                }
+
                                 onClick={() =>
                                     openConversation(
                                         conversation
                                     )
                                 }
+
+                                onKeyDown={(
+                                    event
+                                ) =>
+                                    handleConversationKeyDown(
+                                        event,
+                                        conversation
+                                    )
+                                }
+
+                                role="button"
+
+                                tabIndex={0}
+
                             >
 
                                 {/* =================================
@@ -717,10 +1153,13 @@ function Inbox() {
                                         src={
                                             productImage
                                         }
+
                                         alt={
                                             productTitle
                                         }
+
                                         loading="lazy"
+
                                         onError={(
                                             event
                                         ) =>
@@ -769,7 +1208,8 @@ function Inbox() {
 
                                     <span>
                                         {
-                                            conversation?.updatedAt
+                                            conversation
+                                                ?.updatedAt
                                                 ? new Date(
                                                     conversation.updatedAt
                                                 ).toLocaleDateString()
@@ -777,18 +1217,17 @@ function Inbox() {
                                         }
                                     </span>
 
-                                    {
-                                        Number(
-                                            conversation?.unreadCount ||
-                                            0
-                                        ) > 0 && (
-                                            <div className="badge">
-                                                {
-                                                    conversation.unreadCount
-                                                }
-                                            </div>
-                                        )
-                                    }
+                                    {unreadCount >
+                                        0 && (
+                                        <div className="badge">
+                                            {
+                                                unreadCount >
+                                                99
+                                                    ? "99+"
+                                                    : unreadCount
+                                            }
+                                        </div>
+                                    )}
 
                                 </div>
 

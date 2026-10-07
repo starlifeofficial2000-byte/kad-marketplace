@@ -1,4 +1,5 @@
 const express = require("express");
+
 const router = express.Router();
 
 const auth = require("../middleware/auth");
@@ -6,9 +7,9 @@ const chatUpload = require("../middleware/chatUpload");
 
 const messageController = require("../controllers/messageController");
 
-/* ==========================================
-   START / SEND FIRST MESSAGE
-========================================== */
+/* =========================================================
+   SEND FIRST MESSAGE
+========================================================= */
 
 router.post(
     "/",
@@ -16,9 +17,9 @@ router.post(
     messageController.sendMessage
 );
 
-/* ==========================================
-   OPEN OR CREATE CONVERSATION
-========================================== */
+/* =========================================================
+   OPEN / CREATE CONVERSATION
+========================================================= */
 
 router.post(
     "/open",
@@ -26,11 +27,9 @@ router.post(
     messageController.openConversation
 );
 
-/* ==========================================
+/* =========================================================
    GET MY CONVERSATIONS
-   IMPORTANT:
-   This must come BEFORE /:conversationId
-========================================== */
+========================================================= */
 
 router.get(
     "/conversations",
@@ -38,9 +37,22 @@ router.get(
     messageController.getMyConversations
 );
 
-/* ==========================================
+/* =========================================================
+   GET TOTAL UNREAD MESSAGE COUNT
+
+   IMPORTANT:
+   This MUST come before /:conversationId
+========================================================= */
+
+router.get(
+    "/unread/count",
+    auth,
+    messageController.getUnreadMessageCount
+);
+
+/* =========================================================
    GET CONVERSATION DETAILS
-========================================== */
+========================================================= */
 
 router.get(
     "/conversation/:conversationId",
@@ -48,10 +60,10 @@ router.get(
     messageController.getConversationDetails
 );
 
-/* ==========================================
+/* =========================================================
    GET USER CONVERSATIONS
    Legacy / explicit user endpoint
-========================================== */
+========================================================= */
 
 router.get(
     "/user/:userId",
@@ -59,9 +71,9 @@ router.get(
     messageController.getUserConversations
 );
 
-/* ==========================================
+/* =========================================================
    GET MESSAGES IN A CONVERSATION
-========================================== */
+========================================================= */
 
 router.get(
     "/:conversationId",
@@ -69,9 +81,9 @@ router.get(
     messageController.getMessages
 );
 
-/* ==========================================
-   SEND TEXT MESSAGE TO CONVERSATION
-========================================== */
+/* =========================================================
+   SEND TEXT MESSAGE TO EXISTING CONVERSATION
+========================================================= */
 
 router.post(
     "/:conversationId",
@@ -79,9 +91,9 @@ router.post(
     messageController.sendMessageToConversation
 );
 
-/* ==========================================
+/* =========================================================
    SEND IMAGE MESSAGE
-========================================== */
+========================================================= */
 
 router.post(
     "/:conversationId/image",
@@ -90,9 +102,9 @@ router.post(
     messageController.sendImageMessage
 );
 
-/* ==========================================
+/* =========================================================
    SEND AUDIO MESSAGE
-========================================== */
+========================================================= */
 
 router.post(
     "/:conversationId/audio",
@@ -101,9 +113,9 @@ router.post(
     messageController.sendAudioMessage
 );
 
-/* ==========================================
+/* =========================================================
    MARK MESSAGES DELIVERED
-========================================== */
+========================================================= */
 
 router.put(
     "/:conversationId/delivered",
@@ -111,9 +123,9 @@ router.put(
     messageController.markDelivered
 );
 
-/* ==========================================
+/* =========================================================
    MARK MESSAGES READ
-========================================== */
+========================================================= */
 
 router.put(
     "/:conversationId/read",

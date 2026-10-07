@@ -8,21 +8,50 @@ CENTRAL API CLIENT
 */
 
 /* =====================================================
-   DEFAULT SERVER
+   ENVIRONMENT
 ===================================================== */
 
-const DEFAULT_API_SERVER =
+/*
+ * Local development server.
+ */
+const LOCAL_API_SERVER =
     "http://localhost:5000";
+
+/*
+ * Production API server.
+ *
+ * This should point to the Railway/API domain that
+ * serves:
+ *
+ * https://api.kadmarket.com/api/...
+ */
+const PRODUCTION_API_SERVER =
+    "https://api.kadmarket.com";
 
 
 /* =====================================================
    READ ENVIRONMENT VARIABLES
 ===================================================== */
 
+const ENV_API_SERVER =
+    import.meta.env.VITE_API_SERVER;
+
+const ENV_SERVER_URL =
+    import.meta.env.VITE_SERVER_URL;
+
+
+/* =====================================================
+   SELECT SERVER
+===================================================== */
+
 const RAW_API_SERVER =
-    import.meta.env.VITE_API_SERVER ||
-    import.meta.env.VITE_SERVER_URL ||
-    DEFAULT_API_SERVER;
+    ENV_API_SERVER ||
+    ENV_SERVER_URL ||
+    (
+        import.meta.env.DEV
+            ? LOCAL_API_SERVER
+            : PRODUCTION_API_SERVER
+    );
 
 
 /* =====================================================
@@ -32,23 +61,61 @@ const RAW_API_SERVER =
 const normalizeServerUrl = (url) => {
 
     if (!url) {
-        return DEFAULT_API_SERVER;
+        return import.meta.env.DEV
+            ? LOCAL_API_SERVER
+            : PRODUCTION_API_SERVER;
     }
 
-    let normalized = String(url).trim();
+    let normalized =
+        String(url).trim();
+
 
     /*
-    Remove trailing slash.
-    */
+     * Remove surrounding quotes that may
+     * accidentally be placed in .env.
+     */
 
-    normalized = normalized.replace(/\/+$/, "");
+    normalized =
+        normalized.replace(
+            /^["']|["']$/g,
+            ""
+        );
+
 
     /*
-    Prevent accidental /api/api
-    if somebody puts /api in the environment variable.
-    */
+     * Remove trailing slash.
+     */
 
-    normalized = normalized.replace(/\/api$/i, "");
+    normalized =
+        normalized.replace(
+            /\/+$/,
+            ""
+        );
+
+
+    /*
+     * Prevent accidental:
+     *
+     * https://api.kadmarket.com/api/api
+     *
+     * if the environment variable already
+     * contains /api.
+     */
+
+    normalized =
+        normalized.replace(
+            /\/api$/i,
+            ""
+        );
+
+
+    /*
+     * Remove accidental whitespace.
+     */
+
+    normalized =
+        normalized.trim();
+
 
     return normalized;
 };
@@ -59,7 +126,9 @@ const normalizeServerUrl = (url) => {
 ===================================================== */
 
 const SERVER_URL =
-    normalizeServerUrl(RAW_API_SERVER);
+    normalizeServerUrl(
+        RAW_API_SERVER
+    );
 
 
 /* =====================================================
@@ -77,13 +146,34 @@ const API_URL =
 if (import.meta.env.DEV) {
 
     console.log(
-        "🔧 KAD MARKETPLACE SERVER:",
+        "========================================"
+    );
+
+    console.log(
+        "🔧 KAD MARKETPLACE API CONFIG"
+    );
+
+    console.log(
+        "========================================"
+    );
+
+    console.log(
+        "Environment:",
+        import.meta.env.MODE
+    );
+
+    console.log(
+        "API Server:",
         SERVER_URL
     );
 
     console.log(
-        "🔧 KAD MARKETPLACE API:",
+        "API Base URL:",
         API_URL
+    );
+
+    console.log(
+        "========================================"
     );
 }
 
@@ -99,7 +189,8 @@ const api = axios.create({
     timeout: 30000,
 
     headers: {
-        Accept: "application/json"
+        Accept:
+            "application/json"
     }
 
 });
@@ -114,13 +205,16 @@ api.interceptors.request.use(
     (config) => {
 
         /*
-        -----------------------------------------------
-        JWT
-        -----------------------------------------------
+        =================================================
+        JWT AUTHENTICATION
+        =================================================
         */
 
         const token =
-            localStorage.getItem("token");
+            localStorage.getItem(
+                "token"
+            );
+
 
         if (token) {
 
@@ -133,50 +227,95 @@ api.interceptors.request.use(
 
 
         /*
-        -----------------------------------------------
-        FORM DATA
-        -----------------------------------------------
+        =================================================
+        CONTENT TYPE
+        =================================================
         */
 
+        /*
+         * Axios/browser must generate the
+         * multipart boundary automatically
+         * for FormData.
+         */
+
         if (
-            typeof FormData !== "undefined" &&
-            config.data instanceof FormData
+            typeof FormData !==
+                "undefined" &&
+            config.data instanceof
+                FormData
         ) {
 
-            /*
-            Let Axios/browser generate:
+            if (
+                config.headers
+            ) {
 
-            multipart/form-data;
-            boundary=...
+                delete config.headers[
+                    "Content-Type"
+                ];
 
-            */
-
-            delete config.headers["Content-Type"];
-
-            delete config.headers["content-type"];
+                delete config.headers[
+                    "content-type"
+                ];
+            }
 
         } else {
 
             config.headers =
                 config.headers || {};
 
-            config.headers["Content-Type"] =
-                "application/json";
+            /*
+             * Only set JSON automatically
+             * when the caller has not supplied
+             * another content type.
+             */
+
+            if (
+                !config.headers[
+                    "Content-Type"
+                ] &&
+                !config.headers[
+                    "content-type"
+                ]
+            ) {
+
+                config.headers[
+                    "Content-Type"
+                ] =
+                    "application/json";
+            }
         }
 
 
         /*
-        -----------------------------------------------
+        =================================================
         DEVELOPMENT REQUEST LOG
-        -----------------------------------------------
+        =================================================
         */
 
         if (import.meta.env.DEV) {
 
             console.log(
-                "➡️ API REQUEST:",
-                config.method?.toUpperCase(),
-                `${config.baseURL}${config.url}`
+                "➡️ API REQUEST",
+                {
+                    method:
+                        config.method
+                            ?.toUpperCase(),
+
+                    url:
+                        config.url,
+
+                    fullURL:
+                        `${config.baseURL || ""}${config.url || ""}`,
+
+                    hasToken:
+                        Boolean(token),
+
+                    isFormData:
+                        typeof FormData !==
+                            "undefined" &&
+                        config.data instanceof
+                            FormData
+                }
             );
         }
 
@@ -184,12 +323,18 @@ api.interceptors.request.use(
         return config;
     },
 
+
     (error) => {
 
-        return Promise.reject(error);
+        console.error(
+            "❌ API REQUEST SETUP ERROR:",
+            error
+        );
 
+        return Promise.reject(
+            error
+        );
     }
-
 );
 
 
@@ -201,14 +346,32 @@ api.interceptors.response.use(
 
     (response) => {
 
+        /*
+        =================================================
+        DEVELOPMENT RESPONSE LOG
+        =================================================
+        */
+
         if (import.meta.env.DEV) {
 
             console.log(
-                "⬅️ API RESPONSE:",
-                response.status,
-                response.config?.url
+                "⬅️ API RESPONSE",
+                {
+                    status:
+                        response.status,
+
+                    method:
+                        response.config
+                            ?.method
+                            ?.toUpperCase(),
+
+                    url:
+                        response.config
+                            ?.url
+                }
             );
         }
+
 
         return response;
     },
@@ -219,25 +382,82 @@ api.interceptors.response.use(
         const status =
             error.response?.status;
 
+        const responseData =
+            error.response?.data;
+
+        const requestConfig =
+            error.config;
+
 
         /*
-        -----------------------------------------------
-        401
-        -----------------------------------------------
+        =================================================
+        401 UNAUTHORIZED
+        =================================================
         */
 
         if (status === 401) {
 
             console.warn(
-                "🔐 Authentication expired or invalid."
+                "🔐 Authentication expired or invalid.",
+                {
+                    url:
+                        requestConfig?.url,
+
+                    message:
+                        responseData?.message ||
+                        "Unauthorized"
+                }
+            );
+
+
+            /*
+             * IMPORTANT:
+             *
+             * Do NOT automatically remove
+             * the token here.
+             *
+             * Some endpoints can return 401
+             * during temporary authentication
+             * states such as:
+             *
+             * - login
+             * - 2FA
+             * - OTP verification
+             * - password reset
+             *
+             * Individual authentication pages
+             * should control logout/session
+             * cleanup.
+             */
+        }
+
+
+        /*
+        =================================================
+        403 FORBIDDEN
+        =================================================
+        */
+
+        if (status === 403) {
+
+            console.warn(
+                "⛔ API FORBIDDEN:",
+                {
+                    url:
+                        requestConfig?.url,
+
+                    message:
+                        responseData?.message ||
+                        "Access denied"
+                }
             );
         }
 
 
         /*
-        -----------------------------------------------
-        404
-        -----------------------------------------------
+        =================================================
+        404 NOT FOUND
+        =================================================
         */
 
         if (status === 404) {
@@ -246,50 +466,177 @@ api.interceptors.response.use(
                 "❌ API ROUTE NOT FOUND",
                 {
                     method:
-                        error.config?.method?.toUpperCase(),
+                        requestConfig
+                            ?.method
+                            ?.toUpperCase(),
 
                     baseURL:
-                        error.config?.baseURL,
+                        requestConfig
+                            ?.baseURL,
 
                     url:
-                        error.config?.url,
+                        requestConfig
+                            ?.url,
 
                     fullURL:
-                        `${error.config?.baseURL || ""}${error.config?.url || ""}`
+                        `${requestConfig?.baseURL || ""}${requestConfig?.url || ""}`,
+
+                    message:
+                        responseData?.message ||
+                        "Route not found"
                 }
             );
         }
 
 
         /*
-        -----------------------------------------------
-        500+
-        -----------------------------------------------
+        =================================================
+        409 CONFLICT
+        =================================================
         */
 
-        if (status >= 500) {
+        if (status === 409) {
+
+            console.warn(
+                "⚠️ API CONFLICT:",
+                {
+                    url:
+                        requestConfig?.url,
+
+                    message:
+                        responseData?.message ||
+                        "Request conflict"
+                }
+            );
+        }
+
+
+        /*
+        =================================================
+        422 VALIDATION ERROR
+        =================================================
+        */
+
+        if (status === 422) {
+
+            console.warn(
+                "⚠️ API VALIDATION ERROR:",
+                {
+                    url:
+                        requestConfig?.url,
+
+                    message:
+                        responseData?.message ||
+                        "Validation failed",
+
+                    errors:
+                        responseData?.errors ||
+                        responseData?.validationErrors ||
+                        null
+                }
+            );
+        }
+
+
+        /*
+        =================================================
+        429 RATE LIMIT
+        =================================================
+        */
+
+        if (status === 429) {
+
+            console.warn(
+                "🚦 API RATE LIMIT:",
+                {
+                    url:
+                        requestConfig?.url,
+
+                    message:
+                        responseData?.message ||
+                        "Too many requests"
+                }
+            );
+        }
+
+
+        /*
+        =================================================
+        500+ SERVER ERROR
+        =================================================
+        */
+
+        if (
+            typeof status === "number" &&
+            status >= 500
+        ) {
 
             console.error(
                 "🔥 API SERVER ERROR",
                 {
                     status,
 
+                    method:
+                        requestConfig
+                            ?.method
+                            ?.toUpperCase(),
+
                     url:
-                        error.config?.url,
+                        requestConfig
+                            ?.url,
 
                     message:
-                        error.response?.data?.message ||
+                        responseData?.message ||
                         error.message
                 }
             );
         }
 
 
-        return Promise.reject(error);
+        /*
+        =================================================
+        NETWORK ERROR
+        =================================================
+        */
 
+        if (
+            !error.response
+        ) {
+
+            console.error(
+                "🌐 API NETWORK ERROR",
+                {
+                    message:
+                        error.message,
+
+                    code:
+                        error.code,
+
+                    url:
+                        requestConfig?.url,
+
+                    baseURL:
+                        requestConfig?.baseURL
+                }
+            );
+        }
+
+
+        /*
+        =================================================
+        RETURN ORIGINAL AXIOS ERROR
+        =================================================
+        */
+
+        return Promise.reject(
+            error
+        );
     }
-
 );
 
+
+/* =====================================================
+   EXPORT
+===================================================== */
 
 export default api;

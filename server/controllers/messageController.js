@@ -10,27 +10,28 @@ const {
     deleteFromR2
 } = require("../config/r2");
 
-/* =========================================================
-   HELPER
-   CHECK IF USER BELONGS TO CONVERSATION
-========================================================= */
+
 /* =========================================================
    CHAT MEDIA URL HELPERS
 ========================================================= */
 
 const resolveChatMediaUrl = (value) => {
-    if (!value) return null;
+    if (!value) {
+        return null;
+    }
 
     const clean = String(value).trim();
 
-    if (!clean) return null;
+    if (!clean) {
+        return null;
+    }
 
-    // Already a complete URL
+    /* Already a complete URL */
     if (/^https?:\/\//i.test(clean)) {
         return clean;
     }
 
-    // R2 object key
+    /* R2 object key */
     const r2Url = getR2PublicUrl(clean);
 
     if (r2Url) {
@@ -40,8 +41,15 @@ const resolveChatMediaUrl = (value) => {
     return clean;
 };
 
+
+/* =========================================================
+   FORMAT CHAT MESSAGE
+========================================================= */
+
 const formatChatMessage = (message) => {
-    if (!message) return null;
+    if (!message) {
+        return null;
+    }
 
     const data =
         typeof message.toJSON === "function"
@@ -49,17 +57,32 @@ const formatChatMessage = (message) => {
             : { ...message };
 
     if (data.image) {
-        data.image = resolveChatMediaUrl(data.image);
+        data.image =
+            resolveChatMediaUrl(data.image);
     }
 
     if (data.audio) {
-        data.audio = resolveChatMediaUrl(data.audio);
+        data.audio =
+            resolveChatMediaUrl(data.audio);
     }
 
     return data;
 };
-const getConversationForUser = async (conversationId, userId) => {
-    const conversation = await Conversation.findByPk(conversationId);
+
+
+/* =========================================================
+   CHECK CONVERSATION ACCESS
+========================================================= */
+
+const getConversationForUser = async (
+    conversationId,
+    userId
+) => {
+
+    const conversation =
+        await Conversation.findByPk(
+            conversationId
+        );
 
     if (!conversation) {
         return {
@@ -69,8 +92,10 @@ const getConversationForUser = async (conversationId, userId) => {
     }
 
     const authorized =
-        Number(conversation.buyerId) === Number(userId) ||
-        Number(conversation.sellerId) === Number(userId);
+        Number(conversation.buyerId) ===
+            Number(userId) ||
+        Number(conversation.sellerId) ===
+            Number(userId);
 
     return {
         conversation,
@@ -80,11 +105,178 @@ const getConversationForUser = async (conversationId, userId) => {
 
 
 /* =========================================================
+   GET OTHER PARTICIPANT
+========================================================= */
+
+const getOtherParticipantId = (
+    conversation,
+    senderId
+) => {
+
+    const buyerId =
+        Number(conversation.buyerId);
+
+    const sellerId =
+        Number(conversation.sellerId);
+
+    const currentSenderId =
+        Number(senderId);
+
+    if (currentSenderId === buyerId) {
+        return sellerId;
+    }
+
+    if (currentSenderId === sellerId) {
+        return buyerId;
+    }
+
+    return null;
+};
+
+
+/* =========================================================
+   EMIT REAL-TIME MESSAGE NOTIFICATION
+========================================================= */
+
+const emitMessageNotification = ({
+    io,
+    conversation,
+    message
+}) => {
+
+    if (
+        !io ||
+        !conversation ||
+        !message
+    ) {
+        return;
+    }
+
+    const senderId =
+        Number(message.senderId);
+
+    const recipientId =
+        getOtherParticipantId(
+            conversation,
+            senderId
+        );
+
+    if (!recipientId) {
+
+        console.warn(
+            "⚠️ Unable to determine message recipient:",
+            {
+                conversationId:
+                    conversation.id,
+
+                senderId,
+
+                buyerId:
+                    conversation.buyerId,
+
+                sellerId:
+                    conversation.sellerId
+            }
+        );
+
+        return;
+    }
+
+    const notification = {
+        conversationId:
+            conversation.id,
+
+        messageId:
+            message.id,
+
+        senderId,
+
+        recipientId,
+
+        type:
+            message.type ||
+            "text",
+
+        message:
+            message.message ||
+            "",
+
+        image:
+            message.image ||
+            null,
+
+        audio:
+            message.audio ||
+            null,
+
+        audioDuration:
+            Number(
+                message.audioDuration
+            ) || 0,
+
+        status:
+            message.status ||
+            "sent",
+
+        createdAt:
+            message.createdAt ||
+            new Date()
+    };
+
+    const recipientRoom =
+        `user:${recipientId}`;
+
+    io.to(recipientRoom).emit(
+        "new_message_notification",
+        notification
+    );
+
+    console.log(
+        `🔔 Message notification sent to user ${recipientId}`
+    );
+};
+
+
+/* =========================================================
+   GET UNREAD COUNT FOR ONE CONVERSATION
+========================================================= */
+
+const getConversationUnreadCount = async (
+    conversationId,
+    userId
+) => {
+
+    return await Message.count({
+        where: {
+            conversationId,
+
+            /* Only messages from the other person */
+            senderId: {
+                [Op.ne]:
+                    Number(userId)
+            },
+
+            /* Anything not read is unread */
+            status: {
+                [Op.ne]:
+                    "read"
+            }
+        }
+    });
+};
+
+
+/* =========================================================
    SEND FIRST MESSAGE
 ========================================================= */
 
-exports.sendMessage = async (req, res) => {
+exports.sendMessage = async (
+    req,
+    res
+) => {
+
     try {
+
         const {
             buyerId,
             sellerId,
@@ -92,82 +284,173 @@ exports.sendMessage = async (req, res) => {
             message
         } = req.body;
 
-        const senderId = req.user.id;
+        const senderId =
+            Number(req.user.id);
 
-        if (!buyerId || !sellerId || !productId) {
+
+        /* =================================================
+           VALIDATION
+        ================================================= */
+
+        if (
+            !buyerId ||
+            !sellerId ||
+            !productId
+        ) {
+
             return res.status(400).json({
                 success: false,
-                message: "buyerId, sellerId and productId are required."
+                message:
+                    "buyerId, sellerId and productId are required."
             });
         }
 
-        if (!message || !message.trim()) {
+        if (
+            !message ||
+            !message.trim()
+        ) {
+
             return res.status(400).json({
                 success: false,
-                message: "Message cannot be empty."
+                message:
+                    "Message cannot be empty."
             });
         }
+
+
+        /* =================================================
+           CHECK PARTICIPANT
+        ================================================= */
 
         const isParticipant =
-            Number(senderId) === Number(buyerId) ||
-            Number(senderId) === Number(sellerId);
+            senderId === Number(buyerId) ||
+            senderId === Number(sellerId);
 
         if (!isParticipant) {
+
             return res.status(403).json({
                 success: false,
-                message: "You are not part of this conversation."
+                message:
+                    "You are not part of this conversation."
             });
         }
 
-        let conversation = await Conversation.findOne({
-            where: {
-                buyerId,
-                sellerId,
-                productId
-            }
-        });
+
+        /* =================================================
+           FIND / CREATE CONVERSATION
+        ================================================= */
+
+        let conversation =
+            await Conversation.findOne({
+                where: {
+                    buyerId,
+                    sellerId,
+                    productId
+                }
+            });
+
 
         if (!conversation) {
-            conversation = await Conversation.create({
-                buyerId,
-                sellerId,
-                productId
-            });
+
+            conversation =
+                await Conversation.create({
+                    buyerId,
+                    sellerId,
+                    productId
+                });
         }
 
-        const newMessage = await Message.create({
-            conversationId: conversation.id,
-            senderId,
-            message: message.trim(),
-            type: "text",
-            status: "sent"
-        });
+
+        /* =================================================
+           CREATE MESSAGE
+        ================================================= */
+
+        const newMessage =
+            await Message.create({
+
+                conversationId:
+                    conversation.id,
+
+                senderId,
+
+                message:
+                    message.trim(),
+
+                type:
+                    "text",
+
+                status:
+                    "sent"
+            });
+
+
+        /* =================================================
+           UPDATE CONVERSATION
+        ================================================= */
 
         await conversation.update({
-            updatedAt: new Date()
+            updatedAt:
+                new Date()
         });
 
-        const io = req.app.get("io");
+
+        /* =================================================
+           SOCKET.IO
+        ================================================= */
+
+        const io =
+            req.app.get("io");
+
 
         if (io) {
-            io.to(String(conversation.id)).emit(
+
+            /* Active chat */
+            io.to(
+                String(
+                    conversation.id
+                )
+            ).emit(
                 "receive_message",
                 newMessage
             );
+
+
+            /* Recipient notification */
+            emitMessageNotification({
+                io,
+                conversation,
+                message:
+                    newMessage
+            });
         }
+
+
+        /* =================================================
+           RESPONSE
+        ================================================= */
 
         return res.status(201).json({
             success: true,
+
             conversation,
-            newMessage
+
+            newMessage:
+                formatChatMessage(
+                    newMessage
+                )
         });
 
     } catch (error) {
-        console.error("SEND FIRST MESSAGE ERROR:", error);
+
+        console.error(
+            "SEND FIRST MESSAGE ERROR:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
-            message: error.message
+            message:
+                error.message
         });
     }
 };
@@ -177,52 +460,87 @@ exports.sendMessage = async (req, res) => {
    GET ALL MESSAGES
 ========================================================= */
 
-exports.getMessages = async (req, res) => {
+exports.getMessages = async (
+    req,
+    res
+) => {
+
     try {
-        const conversationId = req.params.conversationId;
-        const userId = req.user.id;
+
+        const conversationId =
+            req.params.conversationId;
+
+        const userId =
+            Number(req.user.id);
+
+
+        /* =================================================
+           CHECK CONVERSATION
+        ================================================= */
 
         const {
             conversation,
             authorized
-        } = await getConversationForUser(
-            conversationId,
-            userId
-        );
+        } =
+            await getConversationForUser(
+                conversationId,
+                userId
+            );
+
 
         if (!conversation) {
+
             return res.status(404).json({
                 success: false,
-                message: "Conversation not found."
+                message:
+                    "Conversation not found."
             });
         }
+
 
         if (!authorized) {
+
             return res.status(403).json({
                 success: false,
-                message: "You are not part of this conversation."
+                message:
+                    "You are not part of this conversation."
             });
         }
 
-        const messages = await Message.findAll({
-            where: {
-                conversationId
-            },
-            order: [
-                ["createdAt", "ASC"]
-            ]
-        });
 
-        const formattedMessages = messages.map(
-            formatChatMessage
-        );
+        /* =================================================
+           GET MESSAGES
+        ================================================= */
+
+        const messages =
+            await Message.findAll({
+                where: {
+                    conversationId
+                },
+
+                order: [
+                    [
+                        "createdAt",
+                        "ASC"
+                    ]
+                ]
+            });
+
+
+        const formattedMessages =
+            messages.map(
+                formatChatMessage
+            );
+
 
         return res.json({
             success: true,
-            messages: formattedMessages
+            messages:
+                formattedMessages
         });
 
     } catch (error) {
+
         console.error(
             "GET MESSAGES ERROR:",
             error
@@ -230,77 +548,160 @@ exports.getMessages = async (req, res) => {
 
         return res.status(500).json({
             success: false,
-            message: error.message
+            message:
+                error.message
         });
     }
 };
+
 
 /* =========================================================
    SEND MESSAGE TO EXISTING CONVERSATION
 ========================================================= */
 
-exports.sendMessageToConversation = async (req, res) => {
-    try {
-        const senderId = req.user.id;
-        const conversationId = req.params.conversationId;
-        const { message } = req.body;
+exports.sendMessageToConversation = async (
+    req,
+    res
+) => {
 
-        if (!message || !message.trim()) {
+    try {
+
+        const senderId =
+            Number(req.user.id);
+
+        const conversationId =
+            req.params.conversationId;
+
+        const {
+            message
+        } = req.body;
+
+
+        /* =================================================
+           VALIDATION
+        ================================================= */
+
+        if (
+            !message ||
+            !message.trim()
+        ) {
+
             return res.status(400).json({
                 success: false,
-                message: "Message cannot be empty."
+                message:
+                    "Message cannot be empty."
             });
         }
+
+
+        /* =================================================
+           CHECK CONVERSATION
+        ================================================= */
 
         const {
             conversation,
             authorized
-        } = await getConversationForUser(
-            conversationId,
-            senderId
-        );
+        } =
+            await getConversationForUser(
+                conversationId,
+                senderId
+            );
+
 
         if (!conversation) {
+
             return res.status(404).json({
                 success: false,
-                message: "Conversation not found."
+                message:
+                    "Conversation not found."
             });
         }
+
 
         if (!authorized) {
+
             return res.status(403).json({
                 success: false,
-                message: "You are not part of this conversation."
+                message:
+                    "You are not part of this conversation."
             });
         }
 
-        const newMessage = await Message.create({
-            conversationId,
-            senderId,
-            message: message.trim(),
-            type: "text",
-            status: "sent"
-        });
+
+        /* =================================================
+           CREATE MESSAGE
+        ================================================= */
+
+        const newMessage =
+            await Message.create({
+
+                conversationId,
+
+                senderId,
+
+                message:
+                    message.trim(),
+
+                type:
+                    "text",
+
+                status:
+                    "sent"
+            });
+
+
+        /* =================================================
+           UPDATE CONVERSATION
+        ================================================= */
 
         await conversation.update({
-            updatedAt: new Date()
+            updatedAt:
+                new Date()
         });
 
-        const io = req.app.get("io");
+
+        /* =================================================
+           SOCKET.IO
+        ================================================= */
+
+        const io =
+            req.app.get("io");
+
 
         if (io) {
-            io.to(String(conversationId)).emit(
+
+            io.to(
+                String(
+                    conversationId
+                )
+            ).emit(
                 "receive_message",
                 newMessage
             );
+
+
+            emitMessageNotification({
+                io,
+
+                conversation,
+
+                message:
+                    newMessage
+            });
         }
+
 
         return res.status(201).json({
             success: true,
-            newMessage
+
+            newMessage:
+                formatChatMessage(
+                    newMessage
+                )
         });
 
     } catch (error) {
+
         console.error(
             "SEND MESSAGE ERROR:",
             error
@@ -308,7 +709,8 @@ exports.sendMessageToConversation = async (req, res) => {
 
         return res.status(500).json({
             success: false,
-            message: error.message
+            message:
+                error.message
         });
     }
 };
@@ -317,138 +719,217 @@ exports.sendMessageToConversation = async (req, res) => {
 /* =========================================================
    SEND IMAGE MESSAGE
 ========================================================= */
-/* =========================================================
-   SEND IMAGE MESSAGE
-========================================================= */
 
-exports.sendImageMessage = async (req, res) => {
-    let uploadedR2Key = null;
+exports.sendImageMessage = async (
+    req,
+    res
+) => {
+
+    let uploadedR2Key =
+        null;
 
     try {
-        const conversationId = req.params.conversationId;
-        const userId = Number(req.user.id);
 
-        console.log("========== IMAGE MESSAGE ==========");
-        console.log("Conversation ID:", conversationId);
-        console.log("User ID:", userId);
-        console.log("Uploaded file:", req.file?.r2Key);
-        console.log("===================================");
+        const conversationId =
+            req.params.conversationId;
+
+        const userId =
+            Number(req.user.id);
+
+
+        console.log(
+            "========== IMAGE MESSAGE =========="
+        );
+
+        console.log(
+            "Conversation ID:",
+            conversationId
+        );
+
+        console.log(
+            "User ID:",
+            userId
+        );
+
+        console.log(
+            "Uploaded file:",
+            req.file?.r2Key
+        );
+
+        console.log(
+            "==================================="
+        );
+
 
         /* =================================================
-           1. MAKE SURE IMAGE WAS UPLOADED
+           CHECK FILE
         ================================================= */
 
         if (!req.file) {
+
             return res.status(400).json({
                 success: false,
-                message: "Please select an image."
+                message:
+                    "Please select an image."
             });
         }
+
 
         uploadedR2Key =
             req.file.r2Key ||
             req.file.key ||
             null;
 
+
         if (!uploadedR2Key) {
+
             return res.status(500).json({
                 success: false,
-                message: "Image upload failed. No R2 object key was returned."
+                message:
+                    "Image upload failed. No R2 object key was returned."
             });
         }
 
+
         /* =================================================
-           2. FIND CONVERSATION
+           CHECK CONVERSATION
         ================================================= */
 
-        const conversation =
-            await Conversation.findByPk(conversationId);
+        const {
+            conversation,
+            authorized
+        } =
+            await getConversationForUser(
+                conversationId,
+                userId
+            );
+
 
         if (!conversation) {
-            await deleteFromR2(uploadedR2Key).catch(() => {});
+
+            await deleteFromR2(
+                uploadedR2Key
+            ).catch(() => {});
+
 
             return res.status(404).json({
                 success: false,
-                message: "Conversation not found."
+                message:
+                    "Conversation not found."
             });
         }
 
-        /* =================================================
-           3. CHECK PARTICIPANT
-        ================================================= */
 
-        const isParticipant =
-            Number(conversation.buyerId) === userId ||
-            Number(conversation.sellerId) === userId;
+        if (!authorized) {
 
-        if (!isParticipant) {
-            await deleteFromR2(uploadedR2Key).catch(() => {});
+            await deleteFromR2(
+                uploadedR2Key
+            ).catch(() => {});
+
 
             return res.status(403).json({
                 success: false,
-                message: "You are not part of this conversation."
+                message:
+                    "You are not part of this conversation."
             });
         }
 
-        /* =================================================
-           4. CREATE MESSAGE
 
-           Store the R2 object key in the database.
+        /* =================================================
+           CREATE MESSAGE
         ================================================= */
 
-        const newMessage = await Message.create({
-            conversationId,
-            senderId: req.user.id,
-            type: "image",
+        const newMessage =
+            await Message.create({
 
-            image: uploadedR2Key,
+                conversationId,
 
-            message: null,
-            status: "sent"
-        });
+                senderId:
+                    userId,
+
+                type:
+                    "image",
+
+                image:
+                    uploadedR2Key,
+
+                message:
+                    null,
+
+                status:
+                    "sent"
+            });
+
 
         /* =================================================
-           5. UPDATE CONVERSATION
+           UPDATE CONVERSATION
         ================================================= */
 
         await conversation.update({
-            updatedAt: new Date()
+            updatedAt:
+                new Date()
         });
 
+
         /* =================================================
-           6. CREATE PUBLIC R2 URL
+           PUBLIC R2 URL
         ================================================= */
 
         const imageUrl =
-            getR2PublicUrl(uploadedR2Key);
+            getR2PublicUrl(
+                uploadedR2Key
+            );
+
 
         /* =================================================
-           7. REAL-TIME SOCKET MESSAGE
-
-           Send the URL to connected clients.
+           SOCKET MESSAGE
         ================================================= */
 
         const socketMessage = {
             ...newMessage.toJSON(),
-            image: imageUrl || uploadedR2Key
+
+            image:
+                imageUrl ||
+                uploadedR2Key
         };
 
-        const io = req.app.get("io");
+
+        const io =
+            req.app.get("io");
+
 
         if (io) {
-            io.to(String(conversationId)).emit(
+
+            io.to(
+                String(
+                    conversationId
+                )
+            ).emit(
                 "receive_message",
                 socketMessage
             );
+
+
+            emitMessageNotification({
+                io,
+
+                conversation,
+
+                message:
+                    socketMessage
+            });
         }
 
+
         /* =================================================
-           8. RESPONSE
+           RESPONSE
         ================================================= */
 
         return res.status(201).json({
             success: true,
-            newMessage: socketMessage
+
+            newMessage:
+                socketMessage
         });
 
     } catch (error) {
@@ -458,20 +939,26 @@ exports.sendImageMessage = async (req, res) => {
             error
         );
 
+
         /* =================================================
-           CLEAN UP ORPHANED R2 FILE
+           CLEAN ORPHANED FILE
         ================================================= */
 
         if (uploadedR2Key) {
+
             try {
-                await deleteFromR2(uploadedR2Key);
+
+                await deleteFromR2(
+                    uploadedR2Key
+                );
 
                 console.log(
-                    "Deleted orphaned chat image from R2:",
+                    "Deleted orphaned chat image:",
                     uploadedR2Key
                 );
 
             } catch (cleanupError) {
+
                 console.error(
                     "FAILED TO DELETE ORPHANED CHAT IMAGE:",
                     cleanupError
@@ -479,8 +966,10 @@ exports.sendImageMessage = async (req, res) => {
             }
         }
 
+
         return res.status(500).json({
             success: false,
+
             message:
                 error.message ||
                 "Failed to send image message."
@@ -488,131 +977,221 @@ exports.sendImageMessage = async (req, res) => {
     }
 };
 
+
 /* =========================================================
    SEND AUDIO MESSAGE
 ========================================================= */
 
-exports.sendAudioMessage = async (req, res) => {
-    let uploadedR2Key = null;
+exports.sendAudioMessage = async (
+    req,
+    res
+) => {
+
+    let uploadedR2Key =
+        null;
 
     try {
-        const conversationId = req.params.conversationId;
-        const senderId = Number(req.user.id);
+
+        const conversationId =
+            req.params.conversationId;
+
+        const senderId =
+            Number(req.user.id);
+
 
         /* =================================================
-           1. CHECK CONVERSATION
+           CHECK CONVERSATION
         ================================================= */
 
         const {
             conversation,
             authorized
-        } = await getConversationForUser(
-            conversationId,
-            senderId
-        );
+        } =
+            await getConversationForUser(
+                conversationId,
+                senderId
+            );
+
 
         if (!conversation) {
+
             return res.status(404).json({
                 success: false,
-                message: "Conversation not found."
+                message:
+                    "Conversation not found."
             });
         }
+
 
         if (!authorized) {
+
             return res.status(403).json({
                 success: false,
-                message: "You are not part of this conversation."
+                message:
+                    "You are not part of this conversation."
             });
         }
 
+
         /* =================================================
-           2. CHECK AUDIO
+           CHECK AUDIO
         ================================================= */
 
         if (!req.file) {
+
             return res.status(400).json({
                 success: false,
-                message: "Please record an audio."
+                message:
+                    "Please record an audio."
             });
         }
+
 
         uploadedR2Key =
             req.file.r2Key ||
             req.file.key ||
             null;
 
+
         if (!uploadedR2Key) {
+
             return res.status(500).json({
                 success: false,
-                message: "Audio upload failed. No R2 object key was returned."
+                message:
+                    "Audio upload failed. No R2 object key was returned."
             });
         }
 
-        console.log("====================================");
-        console.log("CHAT AUDIO UPLOAD");
-        console.log("Conversation ID:", conversationId);
-        console.log("Sender ID:", senderId);
-        console.log("R2 Key:", uploadedR2Key);
-        console.log("Duration:", req.body.duration || 0);
-        console.log("====================================");
+
+        console.log(
+            "===================================="
+        );
+
+        console.log(
+            "CHAT AUDIO UPLOAD"
+        );
+
+        console.log(
+            "Conversation ID:",
+            conversationId
+        );
+
+        console.log(
+            "Sender ID:",
+            senderId
+        );
+
+        console.log(
+            "R2 Key:",
+            uploadedR2Key
+        );
+
+        console.log(
+            "Duration:",
+            req.body.duration || 0
+        );
+
+        console.log(
+            "===================================="
+        );
+
 
         /* =================================================
-           3. CREATE AUDIO MESSAGE
+           CREATE AUDIO MESSAGE
         ================================================= */
 
-        const newMessage = await Message.create({
-            conversationId,
-            senderId,
-            type: "audio",
+        const newMessage =
+            await Message.create({
 
-            audio: uploadedR2Key,
+                conversationId,
 
-            audioDuration:
-                Number(req.body.duration) || 0,
+                senderId,
 
-            status: "sent"
-        });
+                type:
+                    "audio",
+
+                audio:
+                    uploadedR2Key,
+
+                audioDuration:
+                    Number(
+                        req.body.duration
+                    ) || 0,
+
+                status:
+                    "sent"
+            });
+
 
         /* =================================================
-           4. UPDATE CONVERSATION
+           UPDATE CONVERSATION
         ================================================= */
 
         await conversation.update({
-            updatedAt: new Date()
+            updatedAt:
+                new Date()
         });
 
+
         /* =================================================
-           5. PUBLIC R2 URL
+           PUBLIC AUDIO URL
         ================================================= */
 
         const audioUrl =
-            getR2PublicUrl(uploadedR2Key);
+            getR2PublicUrl(
+                uploadedR2Key
+            );
+
 
         /* =================================================
-           6. REAL-TIME MESSAGE
+           SOCKET MESSAGE
         ================================================= */
 
         const socketMessage = {
             ...newMessage.toJSON(),
-            audio: audioUrl || uploadedR2Key
+
+            audio:
+                audioUrl ||
+                uploadedR2Key
         };
 
-        const io = req.app.get("io");
+
+        const io =
+            req.app.get("io");
+
 
         if (io) {
-            io.to(String(conversationId)).emit(
+
+            io.to(
+                String(
+                    conversationId
+                )
+            ).emit(
                 "receive_message",
                 socketMessage
             );
+
+
+            emitMessageNotification({
+                io,
+
+                conversation,
+
+                message:
+                    socketMessage
+            });
         }
 
+
         /* =================================================
-           7. RESPONSE
+           RESPONSE
         ================================================= */
 
         return res.status(201).json({
             success: true,
-            newMessage: socketMessage
+
+            newMessage:
+                socketMessage
         });
 
     } catch (error) {
@@ -622,20 +1201,26 @@ exports.sendAudioMessage = async (req, res) => {
             error
         );
 
+
         /* =================================================
-           CLEAN UP ORPHANED R2 FILE
+           CLEAN ORPHANED FILE
         ================================================= */
 
         if (uploadedR2Key) {
+
             try {
-                await deleteFromR2(uploadedR2Key);
+
+                await deleteFromR2(
+                    uploadedR2Key
+                );
 
                 console.log(
-                    "Deleted orphaned chat audio from R2:",
+                    "Deleted orphaned chat audio:",
                     uploadedR2Key
                 );
 
             } catch (cleanupError) {
+
                 console.error(
                     "FAILED TO DELETE ORPHANED CHAT AUDIO:",
                     cleanupError
@@ -643,8 +1228,10 @@ exports.sendAudioMessage = async (req, res) => {
             }
         }
 
+
         return res.status(500).json({
             success: false,
+
             message:
                 error.message ||
                 "Failed to send audio message."
@@ -652,101 +1239,220 @@ exports.sendAudioMessage = async (req, res) => {
     }
 };
 
+
 /* =========================================================
    GET USER CONVERSATIONS
 ========================================================= */
 
-exports.getUserConversations = async (req, res) => {
+exports.getUserConversations = async (
+    req,
+    res
+) => {
+
     try {
-        const userId = req.params.userId;
 
-        const conversations = await Conversation.findAll({
-            where: {
-                [Op.or]: [
-                    { buyerId: userId },
-                    { sellerId: userId }
-                ]
-            },
-            order: [
-                ["updatedAt", "DESC"]
-            ]
-        });
+        const userId =
+            Number(req.params.userId);
 
-        const results = [];
 
-        for (const conversation of conversations) {
-            const lastMessage = await Message.findOne({
+        /* =================================================
+           SECURITY
+
+           A logged-in user should not be able to request
+           another user's private conversations.
+        ================================================= */
+
+        if (
+            userId !==
+            Number(req.user.id)
+        ) {
+
+            return res.status(403).json({
+                success: false,
+                message:
+                    "You can only access your own conversations."
+            });
+        }
+
+
+        const conversations =
+            await Conversation.findAll({
+
                 where: {
-                    conversationId: conversation.id
+                    [Op.or]: [
+                        {
+                            buyerId:
+                                userId
+                        },
+                        {
+                            sellerId:
+                                userId
+                        }
+                    ]
                 },
+
                 order: [
-                    ["createdAt", "DESC"]
+                    [
+                        "updatedAt",
+                        "DESC"
+                    ]
                 ]
             });
 
-            const product = await Product.findByPk(
-                conversation.productId
-            );
 
-            if (product && product.images) {
+        const results = [];
+
+
+        for (
+            const conversation
+            of conversations
+        ) {
+
+            /* =============================================
+               LAST MESSAGE
+            ============================================= */
+
+            const lastMessage =
+                await Message.findOne({
+                    where: {
+                        conversationId:
+                            conversation.id
+                    },
+
+                    order: [
+                        [
+                            "createdAt",
+                            "DESC"
+                        ]
+                    ]
+                });
+
+
+            /* =============================================
+               PRODUCT
+            ============================================= */
+
+            const product =
+                await Product.findByPk(
+                    conversation.productId
+                );
+
+
+            if (
+                product &&
+                product.images
+            ) {
+
                 try {
-                    if (typeof product.images === "string") {
-                        product.images = JSON.parse(
-                            product.images
-                        );
+
+                    if (
+                        typeof product.images ===
+                        "string"
+                    ) {
+
+                        product.images =
+                            JSON.parse(
+                                product.images
+                            );
                     }
+
                 } catch {
+
                     product.images = [];
                 }
             }
 
+
+            /* =============================================
+               OTHER USER
+            ============================================= */
+
             const otherUserId =
-                Number(conversation.buyerId) === Number(userId)
+                Number(
+                    conversation.buyerId
+                ) === userId
+
                     ? conversation.sellerId
+
                     : conversation.buyerId;
 
-            const otherUser = await User.findByPk(
-                otherUserId,
-                {
-                    attributes: [
-                        "id",
-                        "name",
-                        "profileImage"
-                    ]
-                }
-            );
+
+            const otherUser =
+                await User.findByPk(
+                    otherUserId,
+                    {
+                        attributes: [
+                            "id",
+                            "name",
+                            "profileImage"
+                        ]
+                    }
+                );
+
+
+            /* =============================================
+               UNREAD COUNT
+            ============================================= */
+
+            const unreadCount =
+                await getConversationUnreadCount(
+                    conversation.id,
+                    userId
+                );
+
+
+            /* =============================================
+               RESULT
+            ============================================= */
 
             results.push({
-                id: conversation.id,
-                buyerId: conversation.buyerId,
-                sellerId: conversation.sellerId,
+
+                id:
+                    conversation.id,
+
+                buyerId:
+                    conversation.buyerId,
+
+                sellerId:
+                    conversation.sellerId,
+
                 product,
-                user: otherUser,
 
-                lastMessage: lastMessage
-                    ? lastMessage.message || ""
-                    : "",
+                user:
+                    otherUser,
 
-                lastMessageType: lastMessage
-                    ? lastMessage.type || "text"
-                    : "text",
+                lastMessage:
+                    lastMessage
+                        ? lastMessage.message || ""
+                        : "",
 
-                lastMessageAt: lastMessage
-                    ? lastMessage.createdAt
-                    : null,
+                lastMessageType:
+                    lastMessage
+                        ? lastMessage.type ||
+                            "text"
+                        : "text",
 
-                updatedAt: conversation.updatedAt,
+                lastMessageAt:
+                    lastMessage
+                        ? lastMessage.createdAt
+                        : null,
 
-                unreadCount: 0
+                updatedAt:
+                    conversation.updatedAt,
+
+                unreadCount
             });
         }
 
+
         return res.json({
             success: true,
-            conversations: results
+            conversations:
+                results
         });
 
     } catch (error) {
+
         console.error(
             "GET USER CONVERSATIONS ERROR:",
             error
@@ -754,7 +1460,8 @@ exports.getUserConversations = async (req, res) => {
 
         return res.status(500).json({
             success: false,
-            message: error.message
+            message:
+                error.message
         });
     }
 };
@@ -764,348 +1471,96 @@ exports.getUserConversations = async (req, res) => {
    GET CONVERSATION DETAILS
 ========================================================= */
 
-exports.getConversationDetails = async (req, res) => {
+exports.getConversationDetails = async (
+    req,
+    res
+) => {
+
     try {
+
         const conversationId =
             req.params.conversationId;
 
-        const userId = req.user.id;
+        const userId =
+            Number(req.user.id);
+
+
+        /* =================================================
+           CHECK ACCESS
+        ================================================= */
 
         const {
             conversation,
             authorized
-        } = await getConversationForUser(
-            conversationId,
-            userId
-        );
+        } =
+            await getConversationForUser(
+                conversationId,
+                userId
+            );
+
 
         if (!conversation) {
+
             return res.status(404).json({
                 success: false,
-                message: "Conversation not found."
+                message:
+                    "Conversation not found."
             });
         }
+
 
         if (!authorized) {
+
             return res.status(403).json({
                 success: false,
-                message: "You are not part of this conversation."
+                message:
+                    "You are not part of this conversation."
             });
         }
 
-        const product = await Product.findByPk(
-            conversation.productId
-        );
 
-        if (product && product.images) {
+        /* =================================================
+           PRODUCT
+        ================================================= */
+
+        const product =
+            await Product.findByPk(
+                conversation.productId
+            );
+
+
+        if (
+            product &&
+            product.images
+        ) {
+
             try {
-                if (typeof product.images === "string") {
-                    product.images = JSON.parse(
-                        product.images
-                    );
+
+                if (
+                    typeof product.images ===
+                    "string"
+                ) {
+
+                    product.images =
+                        JSON.parse(
+                            product.images
+                        );
                 }
+
             } catch {
+
                 product.images = [];
             }
         }
 
-        const seller = await User.findByPk(
-            conversation.sellerId,
-            {
-                attributes: [
-                    "id",
-                    "name",
-                    "profileImage"
-                ]
-            }
-        );
 
-        const buyer = await User.findByPk(
-            conversation.buyerId,
-            {
-                attributes: [
-                    "id",
-                    "name",
-                    "profileImage"
-                ]
-            }
-        );
+        /* =================================================
+           SELLER
+        ================================================= */
 
-        return res.json({
-            success: true,
-            conversation,
-            product,
-            seller,
-            buyer
-        });
-
-    } catch (error) {
-        console.error(
-            "GET CONVERSATION DETAILS ERROR:",
-            error
-        );
-
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
-};
-
-
-/* =========================================================
-   MARK DELIVERED
-========================================================= */
-
-exports.markDelivered = async (req, res) => {
-    try {
-        const conversationId =
-            req.params.conversationId;
-
-        const userId = req.user.id;
-
-        const {
-            conversation,
-            authorized
-        } = await getConversationForUser(
-            conversationId,
-            userId
-        );
-
-        if (!conversation) {
-            return res.status(404).json({
-                success: false,
-                message: "Conversation not found."
-            });
-        }
-
-        if (!authorized) {
-            return res.status(403).json({
-                success: false,
-                message: "You are not part of this conversation."
-            });
-        }
-
-        await Message.update(
-            {
-                status: "delivered"
-            },
-            {
-                where: {
-                    conversationId,
-                    status: "sent"
-                }
-            }
-        );
-
-        return res.json({
-            success: true
-        });
-
-    } catch (error) {
-        console.error(
-            "MARK DELIVERED ERROR:",
-            error
-        );
-
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
-};
-
-
-/* =========================================================
-   MARK READ
-========================================================= */
-
-exports.markRead = async (req, res) => {
-    try {
-        const conversationId =
-            req.params.conversationId;
-
-        const userId = req.user.id;
-
-        const {
-            conversation,
-            authorized
-        } = await getConversationForUser(
-            conversationId,
-            userId
-        );
-
-        if (!conversation) {
-            return res.status(404).json({
-                success: false,
-                message: "Conversation not found."
-            });
-        }
-
-        if (!authorized) {
-            return res.status(403).json({
-                success: false,
-                message: "You are not part of this conversation."
-            });
-        }
-
-        await Message.update(
-            {
-                status: "read",
-                readAt: new Date()
-            },
-            {
-                where: {
-                    conversationId,
-                    status: {
-                        [Op.ne]: "read"
-                    }
-                }
-            }
-        );
-
-        return res.json({
-            success: true
-        });
-
-    } catch (error) {
-        console.error(
-            "MARK READ ERROR:",
-            error
-        );
-
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
-};
-
-
-/* =========================================================
-   OPEN / CREATE CONVERSATION
-========================================================= */
-
-exports.openConversation = async (req, res) => {
-    try {
-        const {
-            buyerId,
-            sellerId,
-            productId
-        } = req.body;
-
-        const userId = req.user.id;
-
-        if (!buyerId || !sellerId || !productId) {
-            return res.status(400).json({
-                success: false,
-                message:
-                    "buyerId, sellerId and productId are required."
-            });
-        }
-
-        const isParticipant =
-            Number(userId) === Number(buyerId) ||
-            Number(userId) === Number(sellerId);
-
-        if (!isParticipant) {
-            return res.status(403).json({
-                success: false,
-                message: "You are not part of this conversation."
-            });
-        }
-
-        let conversation = await Conversation.findOne({
-            where: {
-                buyerId,
-                sellerId,
-                productId
-            }
-        });
-
-        if (!conversation) {
-            conversation = await Conversation.create({
-                buyerId,
-                sellerId,
-                productId
-            });
-        }
-
-        return res.json({
-            success: true,
-            conversationId: conversation.id,
-            conversation
-        });
-
-    } catch (error) {
-        console.error(
-            "OPEN CONVERSATION ERROR:",
-            error
-        );
-
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
-};
-
-
-/* =========================================================
-   GET MY CONVERSATIONS
-========================================================= */
-
-exports.getMyConversations = async (req, res) => {
-    try {
-        const userId = req.user.id;
-
-        const conversations = await Conversation.findAll({
-            where: {
-                [Op.or]: [
-                    { buyerId: userId },
-                    { sellerId: userId }
-                ]
-            },
-            order: [
-                ["updatedAt", "DESC"]
-            ]
-        });
-
-        const results = [];
-
-        for (const conversation of conversations) {
-            const lastMessage = await Message.findOne({
-                where: {
-                    conversationId: conversation.id
-                },
-                order: [
-                    ["createdAt", "DESC"]
-                ]
-            });
-
-            const product = await Product.findByPk(
-                conversation.productId
-            );
-
-            if (product && product.images) {
-                try {
-                    if (typeof product.images === "string") {
-                        product.images = JSON.parse(
-                            product.images
-                        );
-                    }
-                } catch {
-                    product.images = [];
-                }
-            }
-
-            const otherUserId =
-                Number(conversation.buyerId) === Number(userId)
-                    ? conversation.sellerId
-                    : conversation.buyerId;
-
-            const otherUser = await User.findByPk(
-                otherUserId,
+        const seller =
+            await User.findByPk(
+                conversation.sellerId,
                 {
                     attributes: [
                         "id",
@@ -1115,37 +1570,620 @@ exports.getMyConversations = async (req, res) => {
                 }
             );
 
-            results.push({
-                id: conversation.id,
-                buyerId: conversation.buyerId,
-                sellerId: conversation.sellerId,
-                product,
-                user: otherUser,
 
-                lastMessage: lastMessage
-                    ? lastMessage.message || ""
-                    : "",
+        /* =================================================
+           BUYER
+        ================================================= */
 
-                lastMessageType: lastMessage
-                    ? lastMessage.type || "text"
-                    : "text",
+        const buyer =
+            await User.findByPk(
+                conversation.buyerId,
+                {
+                    attributes: [
+                        "id",
+                        "name",
+                        "profileImage"
+                    ]
+                }
+            );
 
-                lastMessageAt: lastMessage
-                    ? lastMessage.createdAt
-                    : null,
 
-                updatedAt: conversation.updatedAt,
+        /* =================================================
+           UNREAD COUNT
+        ================================================= */
 
-                unreadCount: 0
-            });
-        }
+        const unreadCount =
+            await getConversationUnreadCount(
+                conversation.id,
+                userId
+            );
+
 
         return res.json({
             success: true,
-            conversations: results
+
+            conversation,
+
+            product,
+
+            seller,
+
+            buyer,
+
+            unreadCount
         });
 
     } catch (error) {
+
+        console.error(
+            "GET CONVERSATION DETAILS ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message:
+                error.message
+        });
+    }
+};
+
+
+/* =========================================================
+   MARK DELIVERED
+========================================================= */
+
+exports.markDelivered = async (
+    req,
+    res
+) => {
+
+    try {
+
+        const conversationId =
+            req.params.conversationId;
+
+        const userId =
+            Number(req.user.id);
+
+
+        /* =================================================
+           CHECK ACCESS
+        ================================================= */
+
+        const {
+            conversation,
+            authorized
+        } =
+            await getConversationForUser(
+                conversationId,
+                userId
+            );
+
+
+        if (!conversation) {
+
+            return res.status(404).json({
+                success: false,
+                message:
+                    "Conversation not found."
+            });
+        }
+
+
+        if (!authorized) {
+
+            return res.status(403).json({
+                success: false,
+                message:
+                    "You are not part of this conversation."
+            });
+        }
+
+
+        /* =================================================
+           MARK OTHER USER'S SENT MESSAGES DELIVERED
+        ================================================= */
+
+        await Message.update(
+
+            {
+                status:
+                    "delivered"
+            },
+
+            {
+                where: {
+
+                    conversationId,
+
+                    senderId: {
+                        [Op.ne]:
+                            userId
+                    },
+
+                    status:
+                        "sent"
+                }
+            }
+        );
+
+
+        return res.json({
+            success: true
+        });
+
+    } catch (error) {
+
+        console.error(
+            "MARK DELIVERED ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message:
+                error.message
+        });
+    }
+};
+
+
+/* =========================================================
+   MARK READ
+========================================================= */
+
+exports.markRead = async (
+    req,
+    res
+) => {
+
+    try {
+
+        const conversationId =
+            req.params.conversationId;
+
+        const userId =
+            Number(req.user.id);
+
+
+        /* =================================================
+           CHECK ACCESS
+        ================================================= */
+
+        const {
+            conversation,
+            authorized
+        } =
+            await getConversationForUser(
+                conversationId,
+                userId
+            );
+
+
+        if (!conversation) {
+
+            return res.status(404).json({
+                success: false,
+                message:
+                    "Conversation not found."
+            });
+        }
+
+
+        if (!authorized) {
+
+            return res.status(403).json({
+                success: false,
+                message:
+                    "You are not part of this conversation."
+            });
+        }
+
+
+        /* =================================================
+           MARK ONLY RECEIVED MESSAGES AS READ
+        ================================================= */
+
+        const [
+            updatedCount
+        ] =
+            await Message.update(
+
+                {
+                    status:
+                        "read",
+
+                    readAt:
+                        new Date()
+                },
+
+                {
+                    where: {
+
+                        conversationId,
+
+                        senderId: {
+                            [Op.ne]:
+                                userId
+                        },
+
+                        status: {
+                            [Op.ne]:
+                                "read"
+                        }
+                    }
+                }
+            );
+
+
+        /* =================================================
+           GET NEW UNREAD COUNT
+        ================================================= */
+
+        const unreadCount =
+            await getConversationUnreadCount(
+                conversationId,
+                userId
+            );
+
+
+        /* =================================================
+           NOTIFY USER'S FRONTEND
+        ================================================= */
+
+        const io =
+            req.app.get("io");
+
+
+        if (io) {
+
+            io.to(
+                `user:${userId}`
+            ).emit(
+                "messages_read",
+                {
+                    conversationId:
+                        Number(
+                            conversationId
+                        ),
+
+                    unreadCount
+                }
+            );
+        }
+
+
+        return res.json({
+
+            success: true,
+
+            markedRead:
+                updatedCount,
+
+            unreadCount
+        });
+
+    } catch (error) {
+
+        console.error(
+            "MARK READ ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message:
+                error.message
+        });
+    }
+};
+
+
+/* =========================================================
+   OPEN / CREATE CONVERSATION
+========================================================= */
+
+exports.openConversation = async (
+    req,
+    res
+) => {
+
+    try {
+
+        const {
+            buyerId,
+            sellerId,
+            productId
+        } = req.body;
+
+        const userId =
+            Number(req.user.id);
+
+
+        /* =================================================
+           VALIDATION
+        ================================================= */
+
+        if (
+            !buyerId ||
+            !sellerId ||
+            !productId
+        ) {
+
+            return res.status(400).json({
+                success: false,
+                message:
+                    "buyerId, sellerId and productId are required."
+            });
+        }
+
+
+        /* =================================================
+           CHECK PARTICIPANT
+        ================================================= */
+
+        const isParticipant =
+            userId === Number(buyerId) ||
+            userId === Number(sellerId);
+
+
+        if (!isParticipant) {
+
+            return res.status(403).json({
+                success: false,
+                message:
+                    "You are not part of this conversation."
+            });
+        }
+
+
+        /* =================================================
+           FIND / CREATE
+        ================================================= */
+
+        let conversation =
+            await Conversation.findOne({
+                where: {
+                    buyerId,
+                    sellerId,
+                    productId
+                }
+            });
+
+
+        if (!conversation) {
+
+            conversation =
+                await Conversation.create({
+                    buyerId,
+                    sellerId,
+                    productId
+                });
+        }
+
+
+        return res.json({
+
+            success: true,
+
+            conversationId:
+                conversation.id,
+
+            conversation
+        });
+
+    } catch (error) {
+
+        console.error(
+            "OPEN CONVERSATION ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message:
+                error.message
+        });
+    }
+};
+
+
+/* =========================================================
+   GET MY CONVERSATIONS
+========================================================= */
+
+exports.getMyConversations = async (
+    req,
+    res
+) => {
+
+    try {
+
+        const userId =
+            Number(req.user.id);
+
+
+        const conversations =
+            await Conversation.findAll({
+
+                where: {
+                    [Op.or]: [
+                        {
+                            buyerId:
+                                userId
+                        },
+                        {
+                            sellerId:
+                                userId
+                        }
+                    ]
+                },
+
+                order: [
+                    [
+                        "updatedAt",
+                        "DESC"
+                    ]
+                ]
+            });
+
+
+        const results = [];
+
+
+        for (
+            const conversation
+            of conversations
+        ) {
+
+            /* =============================================
+               LAST MESSAGE
+            ============================================= */
+
+            const lastMessage =
+                await Message.findOne({
+
+                    where: {
+                        conversationId:
+                            conversation.id
+                    },
+
+                    order: [
+                        [
+                            "createdAt",
+                            "DESC"
+                        ]
+                    ]
+                });
+
+
+            /* =============================================
+               PRODUCT
+            ============================================= */
+
+            const product =
+                await Product.findByPk(
+                    conversation.productId
+                );
+
+
+            if (
+                product &&
+                product.images
+            ) {
+
+                try {
+
+                    if (
+                        typeof product.images ===
+                        "string"
+                    ) {
+
+                        product.images =
+                            JSON.parse(
+                                product.images
+                            );
+                    }
+
+                } catch {
+
+                    product.images = [];
+                }
+            }
+
+
+            /* =============================================
+               OTHER USER
+            ============================================= */
+
+            const otherUserId =
+                Number(
+                    conversation.buyerId
+                ) === userId
+
+                    ? conversation.sellerId
+
+                    : conversation.buyerId;
+
+
+            const otherUser =
+                await User.findByPk(
+                    otherUserId,
+                    {
+                        attributes: [
+                            "id",
+                            "name",
+                            "profileImage"
+                        ]
+                    }
+                );
+
+
+            /* =============================================
+               UNREAD COUNT
+            ============================================= */
+
+            const unreadCount =
+                await getConversationUnreadCount(
+                    conversation.id,
+                    userId
+                );
+
+
+            /* =============================================
+               RESULT
+            ============================================= */
+
+            results.push({
+
+                id:
+                    conversation.id,
+
+                buyerId:
+                    conversation.buyerId,
+
+                sellerId:
+                    conversation.sellerId,
+
+                product,
+
+                user:
+                    otherUser,
+
+                lastMessage:
+                    lastMessage
+                        ? lastMessage.message || ""
+                        : "",
+
+                lastMessageType:
+                    lastMessage
+                        ? lastMessage.type ||
+                            "text"
+                        : "text",
+
+                lastMessageAt:
+                    lastMessage
+                        ? lastMessage.createdAt
+                        : null,
+
+                updatedAt:
+                    conversation.updatedAt,
+
+                unreadCount
+            });
+        }
+
+
+        return res.json({
+            success: true,
+
+            conversations:
+                results
+        });
+
+    } catch (error) {
+
         console.error(
             "GET MY CONVERSATIONS ERROR:",
             error
@@ -1153,7 +2191,135 @@ exports.getMyConversations = async (req, res) => {
 
         return res.status(500).json({
             success: false,
-            message: error.message
+            message:
+                error.message
         });
     }
+};
+
+
+/* =========================================================
+   GET TOTAL UNREAD MESSAGE COUNT
+========================================================= */
+
+exports.getUnreadMessageCount = async (
+    req,
+    res
+) => {
+
+    try {
+
+        const userId =
+            Number(req.user.id);
+
+
+        /* =================================================
+           GET USER CONVERSATIONS
+        ================================================= */
+
+        const conversations =
+            await Conversation.findAll({
+
+                where: {
+                    [Op.or]: [
+                        {
+                            buyerId:
+                                userId
+                        },
+                        {
+                            sellerId:
+                                userId
+                        }
+                    ]
+                },
+
+                attributes: [
+                    "id"
+                ]
+            });
+
+
+        if (
+            !conversations.length
+        ) {
+
+            return res.json({
+
+                success: true,
+
+                unreadCount:
+                    0
+            });
+        }
+
+
+        const conversationIds =
+            conversations.map(
+                conversation =>
+                    conversation.id
+            );
+
+
+        /* =================================================
+           COUNT UNREAD
+        ================================================= */
+
+        const unreadCount =
+            await Message.count({
+
+                where: {
+
+                    conversationId: {
+                        [Op.in]:
+                            conversationIds
+                    },
+
+                    senderId: {
+                        [Op.ne]:
+                            userId
+                    },
+
+                    status: {
+                        [Op.ne]:
+                            "read"
+                    }
+                }
+            });
+
+
+        return res.json({
+
+            success: true,
+
+            unreadCount
+        });
+
+    } catch (error) {
+
+        console.error(
+            "GET UNREAD MESSAGE COUNT ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message:
+                error.message
+        });
+    }
+};
+
+
+/* =========================================================
+   EXPORT HELPERS
+   Optional internal exports for testing.
+========================================================= */
+
+exports._helpers = {
+    resolveChatMediaUrl,
+    formatChatMessage,
+    getConversationForUser,
+    getOtherParticipantId,
+    getConversationUnreadCount,
+    emitMessageNotification
 };

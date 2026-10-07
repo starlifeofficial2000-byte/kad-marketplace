@@ -1090,206 +1090,193 @@ function Chat() {
 
     useEffect(() => {
 
-        if (
-            !conversationId ||
-            !token
-        ) {
+        if (!conversationId || !token) {
             return;
         }
 
+        const id = String(conversationId);
 
-        const id =
-            String(conversationId);
+        currentConversationRef.current = id;
 
+        // The backend authenticates Socket.IO with the JWT.
+        socket.auth = { token };
 
-        currentConversationRef.current =
-            id;
+        const joinConversation = () => {
 
+            if (currentConversationRef.current !== id) {
+                return;
+            }
 
-        const joinConversation =
-            () => {
+            setSocketConnected(true);
 
-                if (
-                    currentConversationRef.current !==
-                    id
-                ) {
-                    return;
-                }
+            console.log("SOCKET CONNECTED:", socket.id);
 
+            socket.emit("join_conversation", id);
 
-                setSocketConnected(
-                    true
-                );
+            console.log("JOINED CONVERSATION:", id);
+        };
 
+        const handleConnectError = (socketError) => {
 
-                socket.emit(
-                    "join_conversation",
-                    id
-                );
-            };
+            console.error(
+                "SOCKET CONNECTION ERROR:",
+                socketError?.message || socketError
+            );
 
+            setSocketConnected(false);
+        };
 
-        const handleConnectError =
-            (socketError) => {
+        const handleDisconnect = (reason) => {
 
-                console.error(
-                    "SOCKET CONNECTION ERROR:",
-                    socketError?.message ||
-                    socketError
-                );
+            console.warn(
+                "SOCKET DISCONNECTED:",
+                reason
+            );
 
+            setSocketConnected(false);
+        };
 
-                setSocketConnected(
-                    false
-                );
-            };
+        const handleReceiveMessage = async (incomingMessage) => {
 
+            if (!incomingMessage) {
+                return;
+            }
 
-        const handleDisconnect =
-            (reason) => {
+            const incomingConversationId =
+                incomingMessage.conversationId ??
+                incomingMessage.conversation_id;
 
-                console.warn(
-                    "SOCKET DISCONNECTED:",
-                    reason
-                );
+            // Ignore messages from another conversation.
+            if (
+                incomingConversationId &&
+                String(incomingConversationId) !== id
+            ) {
+                return;
+            }
 
-
-                setSocketConnected(
-                    false
-                );
-            };
-
-
-        const handleReceiveMessage =
-            (incomingMessage) => {
+            // Prevent duplicate messages.
+            setMessages((previousMessages) => {
 
                 if (
-                    !incomingMessage
+                    incomingMessage.id &&
+                    previousMessages.some(
+                        (item) =>
+                            String(item.id) ===
+                            String(incomingMessage.id)
+                    )
                 ) {
-                    return;
+                    return previousMessages;
                 }
 
+                return [
+                    ...previousMessages,
+                    incomingMessage
+                ];
+            });
 
-                const incomingConversationId =
-                    incomingMessage.conversationId ??
-                    incomingMessage.conversation_id;
+            // A message from the other participant is immediately
+            // marked as read because this conversation is open.
+            const incomingSenderId =
+                incomingMessage.senderId ??
+                incomingMessage.sender_id;
 
+            if (
+                incomingSenderId &&
+                userId &&
+                String(incomingSenderId) !== String(userId)
+            ) {
 
-                if (
-                    incomingConversationId &&
-                    String(
-                        incomingConversationId
-                    ) !== id
-                ) {
-                    return;
+                try {
+
+                    await api.put(
+                        `/messages/${id}/read`
+                    );
+
+                } catch (readError) {
+
+                    console.warn(
+                        "REALTIME MARK READ ERROR:",
+                        readError.response?.data ||
+                        readError.message
+                    );
                 }
+            }
+        };
 
+        const handleMessagesRead = (data) => {
 
-                setMessages(
-                    previousMessages => {
+            if (!data) {
+                return;
+            }
 
-                        if (
-                            incomingMessage.id &&
-                            previousMessages.some(
-                                item =>
-                                    String(
-                                        item.id
-                                    ) ===
-                                    String(
-                                        incomingMessage.id
-                                    )
-                            )
-                        ) {
-                            return previousMessages;
-                        }
+            if (
+                data.conversationId &&
+                String(data.conversationId) !== id
+            ) {
+                return;
+            }
 
+            // Update only messages sent by the current user.
+            setMessages((previousMessages) =>
+                previousMessages.map((item) => {
 
-                        return [
-                            ...previousMessages,
-                            incomingMessage
-                        ];
+                    const sender =
+                        item.senderId ??
+                        item.sender_id;
+
+                    if (
+                        String(sender) !== String(userId)
+                    ) {
+                        return item;
                     }
-                );
-            };
 
+                    return {
+                        ...item,
+                        status: "read",
+                        readAt:
+                            item.readAt ||
+                            item.read_at ||
+                            new Date().toISOString()
+                    };
+                })
+            );
+        };
 
-        socket.on(
-            "connect",
-            joinConversation
-        );
+        socket.on("connect", joinConversation);
+        socket.on("connect_error", handleConnectError);
+        socket.on("disconnect", handleDisconnect);
+        socket.on("receive_message", handleReceiveMessage);
+        socket.on("messages_read", handleMessagesRead);
 
+        // Always refresh auth before a connection/reconnection.
+        socket.auth = { token };
 
-        socket.on(
-            "connect_error",
-            handleConnectError
-        );
-
-
-        socket.on(
-            "disconnect",
-            handleDisconnect
-        );
-
-
-        socket.on(
-            "receive_message",
-            handleReceiveMessage
-        );
-
-
-        if (
-            !socket.connected
-        ) {
-
+        if (!socket.connected) {
             socket.connect();
-
         } else {
-
             joinConversation();
         }
 
-
         return () => {
 
-            socket.off(
-                "connect",
-                joinConversation
-            );
+            socket.off("connect", joinConversation);
+            socket.off("connect_error", handleConnectError);
+            socket.off("disconnect", handleDisconnect);
+            socket.off("receive_message", handleReceiveMessage);
+            socket.off("messages_read", handleMessagesRead);
 
+            if (socket.connected) {
+                socket.emit("leave_conversation", id);
+            }
 
-            socket.off(
-                "connect_error",
-                handleConnectError
-            );
-
-
-            socket.off(
-                "disconnect",
-                handleDisconnect
-            );
-
-
-            socket.off(
-                "receive_message",
-                handleReceiveMessage
-            );
-
-
-            socket.emit(
-                "leave_conversation",
-                id
-            );
-
-
-            currentConversationRef.current =
-                null;
+            currentConversationRef.current = null;
         };
 
     }, [
         conversationId,
-        token
+        token,
+        userId
     ]);
-
 
     /* =====================================================
        AUTO SCROLL
@@ -2123,7 +2110,12 @@ function Chat() {
     useEffect(() => {
 
         return () => {
-            socket.disconnect();
+
+            if (socket.connected) {
+                socket.disconnect();
+            }
+
+            setSocketConnected(false);
         };
 
     }, []);

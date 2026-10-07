@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+
 import {
     BrowserRouter,
     Routes,
@@ -11,12 +12,14 @@ import api from "./config/axios";
 /* ==========================================
    SEO
 ========================================== */
+
 import SEO from "./components/SEO";
 import SEOManager from "./components/SEO/SEOManager";
 
 /* ==========================================
    PUBLIC PAGES
 ========================================== */
+
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -29,6 +32,7 @@ import VerifyLoginOTP from "./pages/VerifyLoginOTP";
 /* ==========================================
    SELLER
 ========================================== */
+
 import SellerDashboard from "./pages/SellerDashboard";
 import Sell from "./pages/Sell";
 import SellerProfile from "./pages/SellerProfile";
@@ -36,12 +40,14 @@ import SellerProfile from "./pages/SellerProfile";
 /* ==========================================
    PRODUCTS
 ========================================== */
+
 import ProductDetails from "./pages/ProductDetails";
 import EditProduct from "./pages/EditProduct";
 
 /* ==========================================
    USER
 ========================================== */
+
 import Profile from "./pages/Profile";
 import Inbox from "./pages/Inbox";
 import Chat from "./pages/Chat";
@@ -51,18 +57,21 @@ import Wishlist from "./pages/Wishlist";
 /* ==========================================
    PROMOTIONS
 ========================================== */
+
 import Promotions from "./pages/Promotions";
 import PromotionSuccess from "./pages/PromotionSuccess";
 
 /* ==========================================
    PAYMENTS
 ========================================== */
+
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFailed from "./pages/PaymentFailed";
 
 /* ==========================================
    SUPPORT
 ========================================== */
+
 import Support from "./pages/Support";
 import MyTickets from "./pages/MyTickets";
 import TicketDetails from "./pages/TicketDetails";
@@ -70,11 +79,14 @@ import TicketDetails from "./pages/TicketDetails";
 /* ==========================================
    OTHER PUBLIC PAGES
 ========================================== */
+
 import SellerLeads from "./pages/SellerLeads";
 import StorePage from "./pages/StorePage";
+
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+
 import Featured from "./pages/Featured";
 import Trending from "./pages/Trending";
 import Recommended from "./pages/Recommended";
@@ -82,17 +94,21 @@ import Recommended from "./pages/Recommended";
 /* ==========================================
    ADMIN LAYOUT
 ========================================== */
+
 import AdminLayout from "./layouts/AdminLayout";
 
 /* ==========================================
    ADMIN PAGES
 ========================================== */
-import DashboardHome from "./pages/admin/DashboardHome";
-import Users from "./pages/admin/Users";
-import Products from "./pages/admin/Products";
-import Stores from "./pages/admin/Stores";
 
+import DashboardHome from "./pages/admin/DashboardHome";
+
+import Users from "./pages/admin/Users";
+import ViewUser from "./pages/admin/ViewUser";
+
+import Products from "./pages/admin/Products";
 import AdminStoreDetails from "./pages/admin/AdminStoreDetails";
+import Stores from "./pages/admin/Stores";
 import AdminReviewProduct from "./pages/AdminReviewProduct";
 
 import SubscriptionPlans from "./pages/admin/SubscriptionPlans";
@@ -116,8 +132,6 @@ import SupportTickets from "./pages/admin/SupportTickets";
 import TicketSupport from "./pages/admin/TicketSupport";
 
 import ContactMessages from "./pages/admin/ContactMessages";
-
-import ViewUser from "./pages/admin/ViewUser";
 
 import SecurityCenter from "./pages/admin/SecurityCenter";
 
@@ -147,9 +161,14 @@ function DynamicFavicon() {
                     "[FAVICON] Loading marketplace settings..."
                 );
 
-                const response = await api.get(
-                    "/settings/public"
-                );
+                const response =
+                    await api.get(
+                        "/settings/public"
+                    );
+
+                if (cancelled) {
+                    return;
+                }
 
                 console.log(
                     "[FAVICON] Settings response:",
@@ -157,8 +176,8 @@ function DynamicFavicon() {
                 );
 
                 /*
-                 * Support multiple possible API
-                 * response structures.
+                 * Support multiple possible
+                 * backend response structures.
                  */
 
                 const settings =
@@ -169,9 +188,9 @@ function DynamicFavicon() {
                     {};
 
 
-                /*
-                 * Find favicon URL.
-                 */
+                /* ==========================================
+                   FIND FAVICON
+                ========================================== */
 
                 const favicon =
                     settings?.favicon ||
@@ -187,7 +206,10 @@ function DynamicFavicon() {
                  * No favicon returned.
                  */
 
-                if (!favicon) {
+                if (
+                    typeof favicon !== "string" ||
+                    !favicon.trim()
+                ) {
 
                     console.warn(
                         "[FAVICON] No favicon URL was returned."
@@ -197,52 +219,19 @@ function DynamicFavicon() {
                 }
 
 
-                /*
-                 * Component was unmounted.
-                 */
-
-                if (cancelled) {
-                    return;
-                }
+                const cleanFavicon =
+                    favicon.trim();
 
 
-                /*
-                 * Find existing favicon.
-                 */
+                /* ==========================================
+                   DETERMINE MIME TYPE
+                ========================================== */
 
-                let faviconLink =
-                    document.querySelector(
-                        'link[rel="icon"]'
-                    );
-
-
-                /*
-                 * Create favicon link
-                 * if it doesn't exist.
-                 */
-
-                if (!faviconLink) {
-
-                    faviconLink =
-                        document.createElement("link");
-
-                    faviconLink.rel = "icon";
-
-                    document.head.appendChild(
-                        faviconLink
-                    );
-
-                }
-
-
-                /*
-                 * Determine MIME type.
-                 */
-
-                let mimeType = "image/png";
+                let mimeType =
+                    "image/png";
 
                 const lowerUrl =
-                    String(favicon).toLowerCase();
+                    cleanFavicon.toLowerCase();
 
 
                 if (
@@ -280,59 +269,61 @@ function DynamicFavicon() {
 
                     mimeType =
                         "image/gif";
-
                 }
 
 
-                faviconLink.type = mimeType;
+                /* ==========================================
+                   REMOVE EXISTING ICONS
+                ========================================== */
+
+                const existingIcons =
+                    document.querySelectorAll(
+                        'link[rel="icon"], link[rel="shortcut icon"]'
+                    );
+
+                existingIcons.forEach(
+                    (icon) => {
+                        icon.remove();
+                    }
+                );
 
 
-                /*
-                 * Cache busting.
-                 */
+                /* ==========================================
+                   CREATE NEW FAVICON
+                ========================================== */
+
+                const faviconLink =
+                    document.createElement(
+                        "link"
+                    );
+
+                faviconLink.rel =
+                    "icon";
+
+                faviconLink.type =
+                    mimeType;
+
+
+                /* ==========================================
+                   CACHE BUSTING
+                ========================================== */
 
                 const separator =
-                    favicon.includes("?")
+                    cleanFavicon.includes("?")
                         ? "&"
                         : "?";
 
-
                 faviconLink.href =
-                    `${favicon}${separator}v=${Date.now()}`;
+                    `${cleanFavicon}${separator}v=${Date.now()}`;
 
 
-                /*
-                 * Remove shortcut icon.
-                 */
+                /* ==========================================
+                   ADD TO DOCUMENT
+                ========================================== */
 
-                const shortcutIcon =
-                    document.querySelector(
-                        'link[rel="shortcut icon"]'
-                    );
-
-
-                if (shortcutIcon) {
-                    shortcutIcon.remove();
-                }
-
-
-                /*
-                 * Remove duplicate favicon links.
-                 */
-
-                const allIcons =
-                    document.querySelectorAll(
-                        'link[rel="icon"]'
-                    );
-
-
-                allIcons.forEach((icon) => {
-
-                    if (icon !== faviconLink) {
-                        icon.remove();
-                    }
-
-                });
+                document.head.appendChild(
+                    faviconLink
+                );
 
 
                 console.log(
@@ -341,6 +332,10 @@ function DynamicFavicon() {
                 );
 
             } catch (error) {
+
+                if (cancelled) {
+                    return;
+                }
 
                 console.error(
                     "[FAVICON] Failed to load favicon:",
@@ -389,13 +384,6 @@ function App() {
 
             {/* ==========================================
                 SEO MANAGER
-
-                IMPORTANT:
-                Do NOT pass `settings={settings}`
-                because `settings` is not defined here.
-
-                SEOManager should load the public SEO
-                configuration itself.
             ========================================== */}
 
             <SEOManager />
@@ -423,17 +411,23 @@ function App() {
 
                     <Route
                         path="/"
-                        element={<Home />}
+                        element={
+                            <Home />
+                        }
                     />
 
                     <Route
                         path="/login"
-                        element={<Login />}
+                        element={
+                            <Login />
+                        }
                     />
 
                     <Route
                         path="/register"
-                        element={<Register />}
+                        element={
+                            <Register />
+                        }
                     />
 
 
@@ -443,22 +437,30 @@ function App() {
 
                     <Route
                         path="/forgot-password"
-                        element={<ForgotPassword />}
+                        element={
+                            <ForgotPassword />
+                        }
                     />
 
                     <Route
                         path="/verify-reset"
-                        element={<VerifyReset />}
+                        element={
+                            <VerifyReset />
+                        }
                     />
 
                     <Route
                         path="/reset-password"
-                        element={<ResetPassword />}
+                        element={
+                            <ResetPassword />
+                        }
                     />
 
                     <Route
                         path="/verify-login-otp"
-                        element={<VerifyLoginOTP />}
+                        element={
+                            <VerifyLoginOTP />
+                        }
                     />
 
 
@@ -468,7 +470,9 @@ function App() {
 
                     <Route
                         path="/store/:storeSlug"
-                        element={<StorePage />}
+                        element={
+                            <StorePage />
+                        }
                     />
 
 
@@ -478,22 +482,30 @@ function App() {
 
                     <Route
                         path="/dashboard"
-                        element={<SellerDashboard />}
+                        element={
+                            <SellerDashboard />
+                        }
                     />
 
                     <Route
                         path="/sell"
-                        element={<Sell />}
+                        element={
+                            <Sell />
+                        }
                     />
 
                     <Route
                         path="/seller/:id"
-                        element={<SellerProfile />}
+                        element={
+                            <SellerProfile />
+                        }
                     />
 
                     <Route
                         path="/seller/leads"
-                        element={<SellerLeads />}
+                        element={
+                            <SellerLeads />
+                        }
                     />
 
 
@@ -503,12 +515,16 @@ function App() {
 
                     <Route
                         path="/product/:id"
-                        element={<ProductDetails />}
+                        element={
+                            <ProductDetails />
+                        }
                     />
 
                     <Route
                         path="/edit-product/:id"
-                        element={<EditProduct />}
+                        element={
+                            <EditProduct />
+                        }
                     />
 
 
@@ -518,62 +534,102 @@ function App() {
 
                     <Route
                         path="/about"
-                        element={<About />}
+                        element={
+                            <About />
+                        }
                     />
 
                     <Route
                         path="/contact"
-                        element={<Contact />}
+                        element={
+                            <Contact />
+                        }
                     />
 
                     <Route
                         path="/privacy-policy"
-                        element={<PrivacyPolicy />}
+                        element={
+                            <PrivacyPolicy />
+                        }
                     />
 
                     <Route
                         path="/featured"
-                        element={<Featured />}
+                        element={
+                            <Featured />
+                        }
                     />
 
                     <Route
                         path="/trending"
-                        element={<Trending />}
+                        element={
+                            <Trending />
+                        }
                     />
 
                     <Route
                         path="/recommended"
-                        element={<Recommended />}
+                        element={
+                            <Recommended />
+                        }
                     />
 
 
                     {/* =================================================
-                        PROFILE
+                        USER PROFILE
                     ================================================= */}
 
                     <Route
                         path="/profile"
-                        element={<Profile />}
+                        element={
+                            <Profile />
+                        }
                     />
 
                     <Route
                         path="/wishlist"
-                        element={<Wishlist />}
+                        element={
+                            <Wishlist />
+                        }
                     />
 
 
                     {/* =================================================
-                        CHAT
+                        MESSAGING
                     ================================================= */}
+
+                    {/*
+                     * Canonical Messages page:
+                     *
+                     * /inbox
+                     *
+                     * Older /messages URLs are redirected
+                     * here so existing links/bookmarks continue
+                     * working.
+                     */}
+
+                    <Route
+                        path="/messages"
+                        element={
+                            <Navigate
+                                to="/inbox"
+                                replace
+                            />
+                        }
+                    />
 
                     <Route
                         path="/inbox"
-                        element={<Inbox />}
+                        element={
+                            <Inbox />
+                        }
                     />
 
                     <Route
                         path="/chat/:conversationId"
-                        element={<Chat />}
+                        element={
+                            <Chat />
+                        }
                     />
 
 
@@ -583,7 +639,9 @@ function App() {
 
                     <Route
                         path="/notifications"
-                        element={<Notifications />}
+                        element={
+                            <Notifications />
+                        }
                     />
 
 
@@ -593,17 +651,23 @@ function App() {
 
                     <Route
                         path="/support"
-                        element={<Support />}
+                        element={
+                            <Support />
+                        }
                     />
 
                     <Route
                         path="/my-tickets"
-                        element={<MyTickets />}
+                        element={
+                            <MyTickets />
+                        }
                     />
 
                     <Route
                         path="/my-tickets/:id"
-                        element={<TicketDetails />}
+                        element={
+                            <TicketDetails />
+                        }
                     />
 
 
@@ -613,12 +677,16 @@ function App() {
 
                     <Route
                         path="/promotions"
-                        element={<Promotions />}
+                        element={
+                            <Promotions />
+                        }
                     />
 
                     <Route
                         path="/promotion-success"
-                        element={<PromotionSuccess />}
+                        element={
+                            <PromotionSuccess />
+                        }
                     />
 
 
@@ -628,12 +696,16 @@ function App() {
 
                     <Route
                         path="/payment-success"
-                        element={<PaymentSuccess />}
+                        element={
+                            <PaymentSuccess />
+                        }
                     />
 
                     <Route
                         path="/payment-failed"
-                        element={<PaymentFailed />}
+                        element={
+                            <PaymentFailed />
+                        }
                     />
 
 
@@ -643,7 +715,9 @@ function App() {
 
                     <Route
                         path="/admin/contact-messages"
-                        element={<ContactMessages />}
+                        element={
+                            <ContactMessages />
+                        }
                     />
 
 
@@ -653,7 +727,9 @@ function App() {
 
                     <Route
                         path="/admin/security"
-                        element={<SecurityCenter />}
+                        element={
+                            <SecurityCenter />
+                        }
                     />
 
 
@@ -663,7 +739,9 @@ function App() {
 
                     <Route
                         path="/admin"
-                        element={<AdminLayout />}
+                        element={
+                            <AdminLayout />
+                        }
                     >
 
                         {/* ==========================================
@@ -687,7 +765,9 @@ function App() {
 
                         <Route
                             path="dashboard"
-                            element={<DashboardHome />}
+                            element={
+                                <DashboardHome />
+                            }
                         />
 
 
@@ -697,12 +777,16 @@ function App() {
 
                         <Route
                             path="users"
-                            element={<Users />}
+                            element={
+                                <Users />
+                            }
                         />
 
                         <Route
                             path="users/:id"
-                            element={<ViewUser />}
+                            element={
+                                <ViewUser />
+                            }
                         />
 
 
@@ -712,17 +796,23 @@ function App() {
 
                         <Route
                             path="roles"
-                            element={<RolesPage />}
+                            element={
+                                <RolesPage />
+                            }
                         />
 
                         <Route
                             path="permissions"
-                            element={<PermissionsPage />}
+                            element={
+                                <PermissionsPage />
+                            }
                         />
 
                         <Route
                             path="user-roles"
-                            element={<UserRoles />}
+                            element={
+                                <UserRoles />
+                            }
                         />
 
 
@@ -732,12 +822,16 @@ function App() {
 
                         <Route
                             path="audit-logs"
-                            element={<AuditLogs />}
+                            element={
+                                <AuditLogs />
+                            }
                         />
 
                         <Route
                             path="login-history"
-                            element={<LoginHistory />}
+                            element={
+                                <LoginHistory />
+                            }
                         />
 
 
@@ -747,12 +841,16 @@ function App() {
 
                         <Route
                             path="products"
-                            element={<Products />}
+                            element={
+                                <Products />
+                            }
                         />
 
                         <Route
                             path="product/:id"
-                            element={<AdminReviewProduct />}
+                            element={
+                                <AdminReviewProduct />
+                            }
                         />
 
 
@@ -762,12 +860,16 @@ function App() {
 
                         <Route
                             path="stores"
-                            element={<Stores />}
+                            element={
+                                <Stores />
+                            }
                         />
 
                         <Route
                             path="store/:id"
-                            element={<AdminStoreDetails />}
+                            element={
+                                <AdminStoreDetails />
+                            }
                         />
 
 
@@ -777,7 +879,9 @@ function App() {
 
                         <Route
                             path="subscriptions"
-                            element={<SubscriptionPlans />}
+                            element={
+                                <SubscriptionPlans />
+                            }
                         />
 
                         <Route
@@ -801,7 +905,9 @@ function App() {
 
                         <Route
                             path="homepage"
-                            element={<HomepageBuilder />}
+                            element={
+                                <HomepageBuilder />
+                            }
                         />
 
 
@@ -811,7 +917,9 @@ function App() {
 
                         <Route
                             path="advertisements"
-                            element={<Advertisements />}
+                            element={
+                                <Advertisements />
+                            }
                         />
 
 
@@ -821,12 +929,16 @@ function App() {
 
                         <Route
                             path="payments"
-                            element={<Payments />}
+                            element={
+                                <Payments />
+                            }
                         />
 
                         <Route
                             path="payments/:id"
-                            element={<PaymentDetails />}
+                            element={
+                                <PaymentDetails />
+                            }
                         />
 
 
@@ -836,7 +948,9 @@ function App() {
 
                         <Route
                             path="reports"
-                            element={<Reports />}
+                            element={
+                                <Reports />
+                            }
                         />
 
 
@@ -846,12 +960,16 @@ function App() {
 
                         <Route
                             path="support"
-                            element={<SupportTickets />}
+                            element={
+                                <SupportTickets />
+                            }
                         />
 
                         <Route
                             path="support/:id"
-                            element={<TicketSupport />}
+                            element={
+                                <TicketSupport />
+                            }
                         />
 
 
@@ -861,7 +979,9 @@ function App() {
 
                         <Route
                             path="notifications"
-                            element={<AdminNotifications />}
+                            element={
+                                <AdminNotifications />
+                            }
                         />
 
 
@@ -871,10 +991,27 @@ function App() {
 
                         <Route
                             path="settings"
-                            element={<Settings />}
+                            element={
+                                <Settings />
+                            }
                         />
 
                     </Route>
+
+
+                    {/* =================================================
+                        404 / UNKNOWN ROUTES
+                    ================================================= */}
+
+                    <Route
+                        path="*"
+                        element={
+                            <Navigate
+                                to="/"
+                                replace
+                            />
+                        }
+                    />
 
                 </Routes>
 
@@ -883,7 +1020,6 @@ function App() {
         </>
 
     );
-
 }
 
 
