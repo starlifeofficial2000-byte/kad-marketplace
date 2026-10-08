@@ -275,14 +275,66 @@ async function validateSubscription(userId) {
 
 
 /* ===========================================================
-   GENERATE SLUG
+   GENERATE BASE SLUG
 =========================================================== */
 
 function generateSlug(title) {
     return slugify(title, {
         lower: true,
-        strict: true
+        strict: true,
+        trim: true
     });
+}
+
+
+/* ===========================================================
+   GENERATE UNIQUE PRODUCT SLUG
+=========================================================== */
+
+async function generateUniqueProductSlug(
+    title,
+    transaction,
+    excludeProductId = null
+) {
+    const baseSlug = generateSlug(title);
+
+    if (!baseSlug) {
+        return null;
+    }
+
+    let uniqueSlug = baseSlug;
+    let counter = 2;
+
+    while (true) {
+
+        const where = {
+            slug: uniqueSlug
+        };
+
+        // Used when editing an existing product.
+        // The product should be allowed to keep its own slug.
+        if (excludeProductId) {
+            where.id = {
+                [Op.ne]: excludeProductId
+            };
+        }
+
+        const existingProduct =
+            await Product.findOne({
+                where,
+                attributes: ["id"],
+                transaction
+            });
+
+        if (!existingProduct) {
+            return uniqueSlug;
+        }
+
+        uniqueSlug =
+            `${baseSlug}-${counter}`;
+
+        counter++;
+    }
 }
 
 
@@ -1089,27 +1141,30 @@ exports.createProduct =
                 );
 
 
-            // -------------------------------------------------
-            // GENERATE PRODUCT SLUG
-            // -------------------------------------------------
+/* -------------------------------------------------
+   GENERATE UNIQUE PRODUCT SLUG
+------------------------------------------------- */
 
-            const slug =
-                generateSlug(title);
+const slug =
+    await generateUniqueProductSlug(
+        title,
+        transaction
+    );
 
 
-            if (!slug) {
+if (!slug) {
 
-                await rollbackTransaction(
-                    transaction,
-                    req.files
-                );
+    await rollbackTransaction(
+        transaction,
+        req.files
+    );
 
-                return res.status(400).json({
-                    success: false,
-                    message:
-                        "A valid product title is required."
-                });
-            }
+    return res.status(400).json({
+        success: false,
+        message:
+            "A valid product title is required."
+    });
+}
 
 
             // -------------------------------------------------
