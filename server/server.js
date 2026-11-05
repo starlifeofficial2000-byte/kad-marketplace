@@ -284,14 +284,10 @@ console.log(
 /* =========================================================
    ORIGIN CHECK
 ========================================================= */
-
-const isAllowedOrigin = (
-    origin
-) => {
+const isAllowedOrigin = (origin) => {
 
     /*
      * Requests without an Origin header include:
-     *
      * - server-to-server requests
      * - curl
      * - some mobile clients
@@ -301,11 +297,39 @@ const isAllowedOrigin = (
         return true;
     }
 
-    return uniqueAllowedOrigins.includes(
-        normalizeOrigin(origin)
-    );
-};
+    const normalizedOrigin = normalizeOrigin(origin);
 
+    // Accept explicitly configured production and development origins.
+    if (uniqueAllowedOrigins.includes(normalizedOrigin)) {
+        return true;
+    }
+
+    /*
+     * Allow Flutter Web and local development servers
+     * running on dynamically assigned localhost ports.
+     */
+
+    try {
+        const parsedOrigin = new URL(origin);
+
+        const isLocalDevelopment =
+            parsedOrigin.protocol === "http:" &&
+            (
+                parsedOrigin.hostname === "localhost" ||
+                parsedOrigin.hostname === "127.0.0.1"
+            ) &&
+            /^\d+$/.test(parsedOrigin.port);
+
+        if (isLocalDevelopment) {
+            return true;
+        }
+
+    } catch (error) {
+        return false;
+    }
+
+    return false;
+};
 
 /* =========================================================
    EXPRESS CORS
