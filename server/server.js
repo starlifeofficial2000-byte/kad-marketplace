@@ -127,6 +127,20 @@ app.set(
 const server =
     http.createServer(app);
 
+    
+/* =========================================================
+   SOCKET.IO INITIALIZATION
+========================================================= */
+
+const io = new Server(server, {
+    cors: {
+        origin: true,
+        credentials: true,
+        methods: ["GET", "POST"]
+    },
+    transports: ["websocket", "polling"]
+});
+
 /* =========================================================
    ENVIRONMENT
 ========================================================= */
@@ -1011,6 +1025,80 @@ if (
         }
     );
 }
+
+/* =========================================================
+   SOCKET.IO JWT AUTHENTICATION
+========================================================= */
+
+io.use((socket, next) => {
+
+    try {
+
+        const authToken =
+            socket.handshake.auth?.token;
+
+        const authorization =
+            socket.handshake.headers.authorization;
+
+        let token = authToken || authorization;
+
+        if (typeof token === "string" &&
+            token.startsWith("Bearer ")) {
+
+            token = token.substring(7);
+
+        }
+
+        if (!token) {
+
+            return next(
+                new Error("Authentication token required")
+            );
+
+        }
+
+        if (!JWT_SECRET) {
+
+            return next(
+                new Error("JWT_SECRET is not configured")
+            );
+
+        }
+
+        const decoded = jwt.verify(
+            token,
+            JWT_SECRET
+        );
+
+        const userId =
+            decoded.id || decoded.userId;
+
+        if (!userId || !Number.isFinite(Number(userId))) {
+
+            return next(
+                new Error("Invalid user identity in token")
+            );
+
+        }
+
+        socket.userId = Number(userId);
+
+        next();
+
+    } catch (error) {
+
+        console.error(
+            "Socket authentication failed:",
+            error.message
+        );
+
+        next(
+            new Error("Invalid or expired authentication token")
+        );
+
+    }
+
+});
 
 /* =========================================================
    SOCKET EVENTS + ONLINE PRESENCE
