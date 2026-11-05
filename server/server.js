@@ -16,7 +16,7 @@ const sequelize = require("./config/database");
    LOAD MODELS
 ========================================================= */
 
-require("./models");
+const { User } = require("./models");
 
 /* =========================================================
    ROUTES
@@ -1012,268 +1012,147 @@ if (
     );
 }
 
-
 /* =========================================================
-   SOCKET.IO
+   SOCKET EVENTS + ONLINE PRESENCE
 ========================================================= */
 
-const io =
-    new Server(
-        server,
+/*
+ * Track all active sockets for each user.
+ *
+ * Supports multiple devices and browser tabs.
+ *
+ * Map:
+ * userId => Set(socketId)
+ */
+
+const presenceSockets = new Map();
+
+
+/*
+ * Track pending offline timers.
+ *
+ * This prevents a temporary internet disconnection
+ * from immediately marking a user offline.
+ */
+
+const presenceTimers = new Map();
+
+
+/*
+ * Reconnection grace period.
+ */
+
+const PRESENCE_GRACE_PERIOD = 3000;
+
+
+/* =========================================================
+   CHECK WHETHER USER IS ONLINE
+========================================================= */
+
+const isUserOnline = (userId) => {
+
+    const sockets = presenceSockets.get(
+        Number(userId)
+    );
+
+    return Boolean(
+        sockets &&
+        sockets.size > 0
+    );
+
+};
+
+
+/* =========================================================
+   BROADCAST PRESENCE UPDATE
+========================================================= */
+
+const emitPresence = (
+    userId,
+    isOnline,
+    lastSeen = null
+) => {
+
+    io.emit(
+        "presence_update",
         {
+            userId: Number(userId),
 
-            path:
-                "/socket.io",
+            isOnline: Boolean(isOnline),
 
-
-            cors: {
-
-                origin: (
-                    origin,
-                    callback
-                ) => {
-
-                    if (
-                        isAllowedOrigin(
-                            origin
-                        )
-                    ) {
-
-                        return callback(
-                            null,
-                            true
-                        );
-                    }
-
-
-                    console.warn(
-                        "❌ SOCKET.IO CORS BLOCKED:",
-                        origin
-                    );
-
-
-                    return callback(
-                        new Error(
-                            `Socket.IO CORS blocked: ${origin}`
-                        )
-                    );
-                },
-
-
-                methods: [
-                    "GET",
-                    "POST"
-                ],
-
-
-                credentials:
-                    true
-            },
-
-
-            transports: [
-                "websocket",
-                "polling"
-            ],
-
-
-            allowEIO3:
-                false,
-
-
-            pingTimeout:
-                60000,
-
-
-            pingInterval:
-                25000,
-
-
-            connectTimeout:
-                45000
+            lastSeen: lastSeen
+                ? new Date(lastSeen).toISOString()
+                : null
         }
     );
 
-
-app.set(
-    "io",
-    io
-);
-
-
-console.log(
-    "🔌 Socket.IO initialized successfully."
-);
+};
 
 
 /* =========================================================
-   SOCKET.IO AUTHENTICATION
+   GET USER PRESENCE
 ========================================================= */
 
-io.use(
-    async (
-        socket,
-        next
-    ) => {
+const getUserPresence = async (userId) => {
 
-        try {
-
-            if (
-                !JWT_SECRET
-            ) {
-
-                console.error(
-                    "❌ JWT_SECRET is not configured."
-                );
-
-                return next(
-                    new Error(
-                        "Server authentication is not configured."
-                    )
-                );
-            }
-
-
-            /*
-             * Accept token from:
-             *
-             * socket.auth.token
-             *
-             * OR
-             *
-             * Authorization header.
-             */
-
-            const token =
-                socket.handshake
-                    ?.auth
-                    ?.token ||
-                socket.handshake
-                    ?.headers
-                    ?.authorization
-                    ?.replace(
-                        /^Bearer\s+/i,
-                        ""
-                    );
-
-
-            if (
-                !token
-            ) {
-
-                console.warn(
-                    "❌ Socket connection rejected: No authentication token."
-                );
-
-                return next(
-                    new Error(
-                        "Authentication required."
-                    )
-                );
-            }
-
-
-            /*
-             * Verify JWT.
-             */
-
-            const decoded =
-                jwt.verify(
-                    token,
-                    JWT_SECRET
-                );
-
-
-            /*
-             * Support both common
-             * JWT payload formats.
-             */
-
-            const userId =
-                decoded.id ||
-                decoded.userId;
-
-
-            if (
-                !userId
-            ) {
-
-                return next(
-                    new Error(
-                        "Invalid authentication token."
-                    )
-                );
-            }
-
-
-            const numericUserId =
-                Number(userId);
-
-
-            if (
-                !Number.isInteger(
-                    numericUserId
-                ) ||
-                numericUserId <= 0
-            ) {
-
-                return next(
-                    new Error(
-                        "Invalid user ID in authentication token."
-                    )
-                );
-            }
-
-
-            /*
-             * IMPORTANT:
-             *
-             * Never trust userId supplied by
-             * the client.
-             *
-             * The verified JWT is the source
-             * of truth.
-             */
-
-            socket.userId =
-                numericUserId;
-
-
-            console.log(
-                `🔐 Socket authenticated for user: ${socket.userId}`
-            );
-
-
-            return next();
-
-        } catch (error) {
-
-            console.error(
-                "❌ Socket authentication failed:",
-                error.message
-            );
-
-
-            return next(
-                new Error(
-                    "Invalid or expired authentication token."
-                )
-            );
+    const user = await User.findByPk(
+        userId,
+        {
+            attributes: [
+                "id",
+                "showOnline",
+                "lastSeen"
+            ]
         }
+    );
+
+    if (!user) {
+        return null;
     }
-);
+
+    /*
+     * Respect user's privacy settings.
+     */
+
+    if (user.showOnline === false) {
+
+        return {
+            userId: Number(userId),
+            isOnline: false,
+            lastSeen: null,
+            hidden: true
+        };
+
+    }
+
+    return {
+
+        userId: Number(userId),
+
+        isOnline: isUserOnline(userId),
+
+        lastSeen: user.lastSeen
+            ? new Date(user.lastSeen).toISOString()
+            : null,
+
+        hidden: false
+
+    };
+
+};
 
 
 /* =========================================================
-   SOCKET EVENTS
+   SOCKET CONNECTION
 ========================================================= */
 
 io.on(
     "connection",
-    (socket) => {
+    async (socket) => {
 
-        const userId =
-            socket.userId;
+        const userId = Number(
+            socket.userId
+        );
 
 
         console.log(
@@ -1281,17 +1160,13 @@ io.on(
         );
 
 
-        /* =================================================
+        /* ================================================
            PRIVATE USER ROOM
-        ================================================= */
+        ================================================ */
 
-        const userRoom =
-            `user:${userId}`;
+        const userRoom = `user:${userId}`;
 
-
-        socket.join(
-            userRoom
-        );
+        socket.join(userRoom);
 
 
         console.log(
@@ -1299,75 +1174,213 @@ io.on(
         );
 
 
-        /* =================================================
+        /* ================================================
+           REGISTER USER SOCKET
+        ================================================ */
+
+        let userSockets = presenceSockets.get(
+            userId
+        );
+
+        if (!userSockets) {
+
+            userSockets = new Set();
+
+            presenceSockets.set(
+                userId,
+                userSockets
+            );
+
+        }
+
+
+        const wasOffline =
+            userSockets.size === 0;
+
+
+        userSockets.add(
+            socket.id
+        );
+
+
+        /* ================================================
+           CANCEL PENDING OFFLINE TIMER
+        ================================================ */
+
+        const pendingTimer =
+            presenceTimers.get(userId);
+
+
+        if (pendingTimer) {
+
+            clearTimeout(
+                pendingTimer
+            );
+
+            presenceTimers.delete(
+                userId
+            );
+
+        }
+
+
+        /* ================================================
+           BROADCAST USER ONLINE
+        ================================================ */
+
+        try {
+
+            const user = await User.findByPk(
+                userId,
+                {
+                    attributes: [
+                        "id",
+                        "showOnline"
+                    ]
+                }
+            );
+
+
+            if (
+                user &&
+                user.showOnline !== false &&
+                wasOffline
+            ) {
+
+                emitPresence(
+                    userId,
+                    true,
+                    null
+                );
+
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Presence connection error:",
+                error.message
+            );
+
+        }
+
+
+        /* ================================================
+           REQUEST ANOTHER USER'S STATUS
+        ================================================ */
+
+        socket.on(
+            "get_user_status",
+            async (data) => {
+
+                try {
+
+                    const targetUserId = Number(
+                        data?.userId
+                    );
+
+
+                    if (
+                        !Number.isInteger(targetUserId) ||
+                        targetUserId <= 0
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    const status =
+                        await getUserPresence(
+                            targetUserId
+                        );
+
+
+                    socket.emit(
+                        "user_status",
+                        status || {
+                            userId: targetUserId,
+                            isOnline: false,
+                            lastSeen: null,
+                            hidden: true
+                        }
+                    );
+
+
+                } catch (error) {
+
+                    console.error(
+                        "Get user status error:",
+                        error.message
+                    );
+
+                }
+
+            }
+        );
+
+
+        /* ================================================
            JOIN CONVERSATION
-        ================================================= */
+        ================================================ */
 
         socket.on(
             "join_conversation",
             (conversationId) => {
 
-                if (
-                    !conversationId
-                ) {
+                if (!conversationId) {
                     return;
                 }
 
 
-                const room =
-                    String(
-                        conversationId
-                    );
-
-
-                socket.join(
-                    room
+                const room = String(
+                    conversationId
                 );
+
+
+                socket.join(room);
 
 
                 console.log(
                     `💬 User ${userId} joined conversation: ${room}`
                 );
+
             }
         );
 
 
-        /* =================================================
+        /* ================================================
            LEAVE CONVERSATION
-        ================================================= */
+        ================================================ */
 
         socket.on(
             "leave_conversation",
             (conversationId) => {
 
-                if (
-                    !conversationId
-                ) {
+                if (!conversationId) {
                     return;
                 }
 
 
-                const room =
-                    String(
-                        conversationId
-                    );
-
-
-                socket.leave(
-                    room
+                const room = String(
+                    conversationId
                 );
+
+
+                socket.leave(room);
 
 
                 console.log(
                     `🚪 User ${userId} left conversation: ${room}`
                 );
+
             }
         );
 
 
-        /* =================================================
+        /* ================================================
            TYPING
-        ================================================= */
+        ================================================ */
 
         socket.on(
             "typing",
@@ -1379,19 +1392,14 @@ io.on(
                 ) {
 
                     return;
+
                 }
 
 
-                const room =
-                    String(
-                        data.conversationId
-                    );
+                const room = String(
+                    data.conversationId
+                );
 
-
-                /*
-                 * Do not trust a client-supplied
-                 * userId.
-                 */
 
                 socket
                     .to(room)
@@ -1404,13 +1412,14 @@ io.on(
                             userId
                         }
                     );
+
             }
         );
 
 
-        /* =================================================
+        /* ================================================
            STOP TYPING
-        ================================================= */
+        ================================================ */
 
         socket.on(
             "stop_typing",
@@ -1422,13 +1431,13 @@ io.on(
                 ) {
 
                     return;
+
                 }
 
 
-                const room =
-                    String(
-                        data.conversationId
-                    );
+                const room = String(
+                    data.conversationId
+                );
 
 
                 socket
@@ -1442,13 +1451,14 @@ io.on(
                             userId
                         }
                     );
+
             }
         );
 
 
-        /* =================================================
+        /* ================================================
            DISCONNECT
-        ================================================= */
+        ================================================ */
 
         socket.on(
             "disconnect",
@@ -1458,13 +1468,161 @@ io.on(
                     `🔴 Socket Disconnected: ${socket.id} | User: ${userId}`,
                     reason
                 );
+
+
+                /*
+                 * Remove this socket from the user's
+                 * active socket collection.
+                 */
+
+                const sockets =
+                    presenceSockets.get(userId);
+
+
+                if (sockets) {
+
+                    sockets.delete(
+                        socket.id
+                    );
+
+                }
+
+
+                /*
+                 * If another device or tab is still
+                 * connected, keep the user online.
+                 */
+
+                if (
+                    sockets &&
+                    sockets.size > 0
+                ) {
+
+                    return;
+
+                }
+
+
+                /*
+                 * Remove empty socket collection.
+                 */
+
+                presenceSockets.delete(
+                    userId
+                );
+
+
+                /*
+                 * Delay offline status to allow
+                 * reconnection.
+                 */
+
+                const timer = setTimeout(
+                    async () => {
+
+                        try {
+
+                            /*
+                             * Check again in case the
+                             * user reconnected.
+                             */
+
+                            if (
+                                isUserOnline(userId)
+                            ) {
+
+                                return;
+
+                            }
+
+
+                            const lastSeen =
+                                new Date();
+
+
+                            /*
+                             * Save last-seen time.
+                             */
+
+                            await User.update(
+                                {
+                                    lastSeen
+                                },
+                                {
+                                    where: {
+                                        id: userId
+                                    }
+                                }
+                            );
+
+
+                            /*
+                             * Check user's privacy.
+                             */
+
+                            const user =
+                                await User.findByPk(
+                                    userId,
+                                    {
+                                        attributes: [
+                                            "id",
+                                            "showOnline"
+                                        ]
+                                    }
+                                );
+
+
+                            if (
+                                user &&
+                                user.showOnline !== false
+                            ) {
+
+                                emitPresence(
+                                    userId,
+                                    false,
+                                    lastSeen
+                                );
+
+                            }
+
+
+                            console.log(
+                                `🔴 User ${userId} is now offline. Last seen: ${lastSeen.toISOString()}`
+                            );
+
+
+                        } catch (error) {
+
+                            console.error(
+                                "Offline presence update error:",
+                                error.message
+                            );
+
+                        } finally {
+
+                            presenceTimers.delete(
+                                userId
+                            );
+
+                        }
+
+                    },
+                    PRESENCE_GRACE_PERIOD
+                );
+
+
+                presenceTimers.set(
+                    userId,
+                    timer
+                );
+
             }
         );
 
 
-        /* =================================================
+        /* ================================================
            SOCKET ERROR
-        ================================================= */
+        ================================================ */
 
         socket.on(
             "error",
@@ -1474,11 +1632,12 @@ io.on(
                     `❌ Socket Error [${socket.id}] User ${userId}:`,
                     error
                 );
+
             }
         );
+
     }
 );
-
 
 /* =========================================================
    HEALTH CHECK
