@@ -1,7 +1,6 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 
-
 const User = sequelize.define(
     "User",
     {
@@ -29,7 +28,6 @@ const User = sequelize.define(
             }
         },
 
-
         email: {
             type: DataTypes.STRING,
             allowNull: false,
@@ -39,12 +37,10 @@ const User = sequelize.define(
             }
         },
 
-
         phone: {
             type: DataTypes.STRING,
             allowNull: true
         },
-
 
         ghanaCard: {
             type: DataTypes.STRING,
@@ -55,24 +51,20 @@ const User = sequelize.define(
             }
         },
 
-
         region: {
             type: DataTypes.STRING,
             allowNull: false
         },
-
 
         city: {
             type: DataTypes.STRING,
             allowNull: false
         },
 
-
         address: {
             type: DataTypes.STRING,
             allowNull: true
         },
-
 
         profileImage: {
             type: DataTypes.STRING,
@@ -90,22 +82,14 @@ const User = sequelize.define(
             allowNull: false
         },
 
-
         role: {
-            type: DataTypes.ENUM(
-                "user",
-                "admin"
-            ),
+            type: DataTypes.ENUM("user", "admin"),
             allowNull: false,
             defaultValue: "user"
         },
 
-
         status: {
-            type: DataTypes.ENUM(
-                "active",
-                "blocked"
-            ),
+            type: DataTypes.ENUM("active", "blocked"),
             allowNull: false,
             defaultValue: "active"
         },
@@ -119,7 +103,6 @@ const User = sequelize.define(
             type: DataTypes.BOOLEAN,
             defaultValue: false
         },
-
 
         phoneVerified: {
             type: DataTypes.BOOLEAN,
@@ -136,7 +119,6 @@ const User = sequelize.define(
             defaultValue: 0
         },
 
-
         lockUntil: {
             type: DataTypes.DATE,
             allowNull: true
@@ -145,15 +127,12 @@ const User = sequelize.define(
 
         /* ==========================================
            LOGIN OTP
-           
-           Used for normal login verification if needed.
         ========================================== */
 
         loginOTP: {
             type: DataTypes.STRING,
             allowNull: true
         },
-
 
         loginOTPExpires: {
             type: DataTypes.DATE,
@@ -163,8 +142,6 @@ const User = sequelize.define(
 
         /* ==========================================
            TWO-FACTOR AUTHENTICATION
-
-           Mainly used for administrator accounts.
         ========================================== */
 
         twoFactorEnabled: {
@@ -173,12 +150,10 @@ const User = sequelize.define(
             defaultValue: false
         },
 
-
         twoFactorCode: {
             type: DataTypes.STRING,
             allowNull: true
         },
-
 
         twoFactorExpires: {
             type: DataTypes.DATE,
@@ -195,12 +170,10 @@ const User = sequelize.define(
             allowNull: true
         },
 
-
         resetOTPExpires: {
             type: DataTypes.DATE,
             allowNull: true
         },
-
 
         resetVerified: {
             type: DataTypes.BOOLEAN,
@@ -217,12 +190,10 @@ const User = sequelize.define(
             defaultValue: true
         },
 
-
         smsNotifications: {
             type: DataTypes.BOOLEAN,
             defaultValue: false
         },
-
 
         pushNotifications: {
             type: DataTypes.BOOLEAN,
@@ -239,10 +210,21 @@ const User = sequelize.define(
             defaultValue: true
         },
 
-
         showOnline: {
             type: DataTypes.BOOLEAN,
+            allowNull: false,
             defaultValue: true
+        },
+
+
+        /* ==========================================
+           ONLINE STATUS / LAST SEEN
+        ========================================== */
+
+        lastSeen: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            defaultValue: null
         },
 
 
@@ -258,20 +240,15 @@ const User = sequelize.define(
 
     },
 
-
     /* ==========================================
        MODEL OPTIONS
     ========================================== */
 
     {
-
         tableName: "Users",
-
         timestamps: true
-
     }
 
 );
-
 
 module.exports = User;
