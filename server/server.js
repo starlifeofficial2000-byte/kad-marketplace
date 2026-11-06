@@ -1,229 +1,333 @@
 require("dotenv").config();
 
 const express = require("express");
+
 const http = require("http");
+
 const path = require("path");
+
 const fs = require("fs");
+
 const cors = require("cors");
+
 const helmet = require("helmet");
+
 const jwt = require("jsonwebtoken");
+
 const { Server } = require("socket.io");
+
 const { Op } = require("sequelize");
 
 const sequelize = require("./config/database");
 
 /* =========================================================
+
    LOAD MODELS
+
 ========================================================= */
 
-const { User } = require("./models");
+require("./models");
 
 /* =========================================================
+
    ROUTES
+
 ========================================================= */
 
 const authRoutes = require("./routes/authRoutes");
+
 const productRoutes = require("./routes/productRoutes");
+
 const messageRoutes = require("./routes/messageRoutes");
+
 const adminRoutes = require("./routes/adminRoutes");
+
 const userRoutes = require("./routes/userRoutes");
+
 const reviewRoutes = require("./routes/reviewRoutes");
+
 const notificationRoutes = require("./routes/notificationRoutes");
+
 const reportRoutes = require("./routes/reportRoutes");
+
 const sellerRoutes = require("./routes/sellerRoutes");
+
 const storeRoutes = require("./routes/storeRoutes");
+
 const storeFollowRoutes = require("./routes/storeFollowRoutes");
+
 const subscriptionRoutes = require("./routes/subscriptionRoutes");
+
 const subscriptionPlanRoutes = require("./routes/subscriptionPlanRoutes");
+
 const paymentRoutes = require("./routes/paymentRoutes");
+
 const promotionRoutes = require("./routes/promotionRoutes");
+
 const analyticsRoutes = require("./routes/analyticsRoutes");
+
 const featuredProductRoutes = require("./routes/featuredProductRoutes");
+
 const categoryRoutes = require("./routes/categoryRoutes");
+
 const supportRoutes = require("./routes/supportRoutes");
+
 const searchRoutes = require("./routes/searchRoutes");
+
 const settingsRoutes = require("./routes/settingsRoutes");
+
 const marketplaceSettingsRoutes = require("./routes/marketplaceSettingsRoutes");
 
 const adminProductRoutes = require("./routes/adminProductRoutes");
+
 const adminStoreRoutes = require("./routes/adminStoreRoutes");
+
 const adminAdvertisementRoutes = require("./routes/adminAdvertisementRoutes");
+
 const adminPaymentRoutes = require("./routes/adminPaymentRoutes");
+
 const adminRevenueRoutes = require("./routes/adminRevenueRoutes");
+
 const advertisementRoutes = require("./routes/advertisementRoutes");
+
 const adminSubscriptionPlanRoutes = require("./routes/adminSubscriptionPlanRoutes");
+
 const adminNotificationRoutes = require("./routes/adminNotificationRoutes");
+
 const adminSettingsRoutes = require("./routes/adminSettingsRoutes");
+
 const adminSupportRoutes = require("./routes/adminSupportRoutes");
 
 const wishlistRoutes = require("./routes/wishlistRoutes");
+
 const leadRoutes = require("./routes/leadRoutes");
+
 const brandingRoutes = require("./routes/brandingRoutes");
 
 const homeBuilderRoutes = require("./routes/homeBuilderRoutes");
+
 const homeBuilderAdminRoutes = require("./routes/homeBuilderAdminRoutes");
 
 const contactRoutes = require("./routes/contactRoutes");
 
 const securityRoutes = require("./routes/securityRoutes");
+
 const roleRoutes = require("./routes/roleRoutes");
+
 const permissionRoutes = require("./routes/permissionRoutes");
 
 const backupRoutes = require("./routes/backupRoutes");
+
 const auditLogRoutes = require("./routes/auditLogRoutes");
 
 const userSettingsRoutes = require("./routes/userSettingsRoutes");
+
 const adminSecurityRoutes = require("./routes/adminSecurityRoutes");
 
 /* =========================================================
+
    OPTIONAL SITEMAP ROUTES
+
 ========================================================= */
 
 let sitemapRoutes = null;
 
 try {
+
     sitemapRoutes = require("./routes/sitemapRoutes");
 
     console.log(
+
         "✅ sitemapRoutes.js loaded."
+
     );
+
 } catch (error) {
+
     console.log(
+
         "ℹ️ sitemapRoutes.js not found. Using built-in sitemap route."
+
     );
+
 }
 
 /* =========================================================
+
    MIDDLEWARE
+
 ========================================================= */
 
 const maintenanceMode =
+
     require("./middleware/maintenanceMode");
 
 /* =========================================================
+
    SERVICES
+
 ========================================================= */
 
 const PromotionService =
+
     require("./services/promotionService");
 
 /* =========================================================
+
    BACKGROUND JOBS
+
 ========================================================= */
 
 require("./jobs/subscriptionCron");
 
 /* =========================================================
+
    EXPRESS
+
 ========================================================= */
 
 const app = express();
 
 app.set(
+
     "trust proxy",
+
     1
+
 );
 
 const server =
+
     http.createServer(app);
 
-    
 /* =========================================================
-   SOCKET.IO INITIALIZATION
-========================================================= */
 
-const io = new Server(server, {
-    cors: {
-        origin: true,
-        credentials: true,
-        methods: ["GET", "POST"]
-    },
-    transports: ["websocket", "polling"]
-});
-
-/* =========================================================
    ENVIRONMENT
+
 ========================================================= */
 
 const NODE_ENV =
+
     process.env.NODE_ENV ||
+
     "development";
 
 const PORT =
+
     Number(process.env.PORT) ||
+
     5000;
 
 const JWT_SECRET =
+
     process.env.JWT_SECRET;
 
 /*
+
  * Production website URL.
+
  *
+
  * IMPORTANT:
+
  * Environment variables must contain normal URLs,
+
  * not Markdown links.
+
  */
 
 const SITE_URL = (
+
     process.env.SITE_URL ||
+
     "https://kadmarket.com"
+
 )
+
     .trim()
+
     .replace(/\/+$/, "");
 
-
 /* =========================================================
+
    FRONTEND BUILD DIRECTORY
+
 ========================================================= */
 
 const clientDistPath =
+
     path.join(
+
         __dirname,
+
         "../client/dist"
+
     );
 
 console.log(
+
     "📁 Frontend directory:",
+
     clientDistPath
+
 );
 
-
 /* =========================================================
+
    SECURITY
+
 ========================================================= */
 
 app.use(
+
     helmet({
+
         crossOriginResourcePolicy: {
+
             policy: "cross-origin"
+
         }
+
     })
+
 );
 
-
 /* =========================================================
+
    CORS
+
 ========================================================= */
 
 const normalizeOrigin = (
+
     url
+
 ) => {
 
     if (!url) {
+
         return null;
+
     }
 
     return String(url)
+
         .trim()
+
         .replace(
-            /\/+$/,
+
+            //+$/,
+
             ""
+
         );
+
 };
 
-
 /*
+
  * Built-in allowed origins.
+
  */
 
 const baseAllowedOrigins = [
@@ -235,11 +339,13 @@ const baseAllowedOrigins = [
     "https://kadmarket.com",
 
     "https://www.kadmarket.com"
+
 ];
 
-
 /*
+
  * Environment-defined origins.
+
  */
 
 const environmentOrigins = [
@@ -247,211 +353,287 @@ const environmentOrigins = [
     process.env.FRONTEND_URL,
 
     ...(process.env.FRONTEND_URLS
+
         ? process.env.FRONTEND_URLS.split(",")
+
         : [])
+
 ];
 
-
 /*
+
  * Final allowed origins.
+
  */
 
 const allowedOrigins = [
+
     ...baseAllowedOrigins,
+
     ...environmentOrigins
+
 ]
+
     .map(normalizeOrigin)
+
     .filter(Boolean);
 
-
 /*
+
  * Remove duplicates.
+
  */
 
 const uniqueAllowedOrigins = [
+
     ...new Set(
+
         allowedOrigins
+
     )
+
 ];
 
-
 console.log(
+
     "🌐 Allowed CORS Origins:",
+
     uniqueAllowedOrigins
+
 );
 
-
 /* =========================================================
+
    ORIGIN CHECK
+
 ========================================================= */
-const isAllowedOrigin = (origin) => {
+
+const isAllowedOrigin = (
+
+    origin
+
+) => {
 
     /*
+
      * Requests without an Origin header include:
+
+     *
+
      * - server-to-server requests
+
      * - curl
+
      * - some mobile clients
+
      */
 
     if (!origin) {
+
+        return true;
+
+    }
+
+    if (uniqueAllowedOrigins.includes(normalizeOrigin(origin))) {
         return true;
     }
 
-    const normalizedOrigin = normalizeOrigin(origin);
-
-    // Accept explicitly configured production and development origins.
-    if (uniqueAllowedOrigins.includes(normalizedOrigin)) {
-        return true;
-    }
-
-    /*
-     * Allow Flutter Web and local development servers
-     * running on dynamically assigned localhost ports.
-     */
-
+    // Allow local development servers on dynamically assigned ports.
     try {
         const parsedOrigin = new URL(origin);
-
         const isLocalDevelopment =
             parsedOrigin.protocol === "http:" &&
-            (
-                parsedOrigin.hostname === "localhost" ||
-                parsedOrigin.hostname === "127.0.0.1"
-            ) &&
+            (parsedOrigin.hostname === "localhost" ||
+                parsedOrigin.hostname === "127.0.0.1") &&
             /^\d+$/.test(parsedOrigin.port);
 
-        if (isLocalDevelopment) {
-            return true;
-        }
-
+        if (isLocalDevelopment) return true;
     } catch (error) {
         return false;
     }
 
     return false;
+
 };
 
 /* =========================================================
+
    EXPRESS CORS
+
 ========================================================= */
 
 const corsOptions = {
 
     origin: (
+
         origin,
+
         callback
+
     ) => {
 
         if (
+
             isAllowedOrigin(origin)
+
         ) {
 
             return callback(
+
                 null,
+
                 true
+
             );
+
         }
 
-
         console.warn(
-            "❌ CORS BLOCKED:",
-            origin
-        );
 
+            "❌ CORS BLOCKED:",
+
+            origin
+
+        );
 
         return callback(
-            new Error(
-                `Not allowed by CORS: ${origin}`
-            )
-        );
-    },
 
+            new Error(
+
+                `Not allowed by CORS: ${origin}`
+
+            )
+
+        );
+
+    },
 
     credentials: true,
 
-
     methods: [
+
         "GET",
+
         "POST",
+
         "PUT",
+
         "PATCH",
+
         "DELETE",
+
         "OPTIONS"
+
     ],
 
-
     allowedHeaders: [
+
         "Content-Type",
+
         "Authorization",
+
         "X-Requested-With"
+
     ]
+
 };
 
-
 app.use(
+
     cors(corsOptions)
+
 );
 
-
 /* =========================================================
+
    BODY PARSERS
+
 ========================================================= */
 
 app.use(
-    express.json({
-        limit: "10mb"
-    })
-);
 
+    express.json({
+
+        limit: "10mb"
+
+    })
+
+);
 
 app.use(
+
     express.urlencoded({
+
         extended: true,
+
         limit: "10mb"
+
     })
+
 );
 
-
 /* =========================================================
+
    UPLOAD DIRECTORY
+
 ========================================================= */
 
 const uploadDirectory =
+
     path.join(
+
         __dirname,
+
         "uploads"
+
     );
 
-
 if (
+
     !fs.existsSync(
+
         uploadDirectory
+
     )
+
 ) {
 
     fs.mkdirSync(
+
         uploadDirectory,
+
         {
+
             recursive: true
+
         }
+
     );
+
 }
 
-
 app.use(
+
     "/uploads",
+
     express.static(
+
         uploadDirectory
+
     )
+
 );
 
-
 /* =========================================================
+
    ROBOTS.TXT
+
 ========================================================= */
 
 app.get(
+
     "/robots.txt",
+
     (req, res) => {
 
         const robots = [
@@ -524,2288 +706,2902 @@ app.get(
 
         ].join("\n");
 
-
         res.status(200);
 
-
         res.set({
+
             "Content-Type":
+
                 "text/plain; charset=utf-8",
 
             "Cache-Control":
+
                 "public, max-age=3600"
+
         });
 
-
         return res.send(
+
             robots
+
         );
+
     }
+
 );
 
-
 /* =========================================================
+
    XML ESCAPE
+
 ========================================================= */
 
 const escapeXml = (
+
     value
+
 ) => {
 
     return String(
+
         value ?? ""
+
     )
+
         .replace(
+
             /&/g,
+
             "&amp;"
+
         )
+
         .replace(
+
             /</g,
+
             "&lt;"
+
         )
+
         .replace(
+
             />/g,
+
             "&gt;"
+
         )
+
         .replace(
+
             /"/g,
+
             "&quot;"
+
         )
+
         .replace(
+
             /'/g,
+
             "&apos;"
+
         );
+
 };
 
-
 /* =========================================================
+
    SITEMAP GENERATOR
+
 ========================================================= */
 
 const generateSitemap =
+
     async () => {
 
         const {
-            Product,
-            User,
-            Store
-        } = require("./models");
 
+            Product,
+
+            User,
+
+            Store
+
+        } = require("./models");
 
         const urls = [];
 
-
         /* ================================================
+
            STATIC PAGES
+
         ================================================= */
 
         const staticPages = [
 
             {
+
                 path: "/",
+
                 changefreq: "daily",
+
                 priority: "1.0"
+
             },
 
             {
+
                 path: "/featured",
+
                 changefreq: "daily",
+
                 priority: "0.8"
+
             },
 
             {
+
                 path: "/trending",
+
                 changefreq: "daily",
+
                 priority: "0.8"
+
             },
 
             {
+
                 path: "/recommended",
+
                 changefreq: "daily",
+
                 priority: "0.8"
+
             },
 
             {
+
                 path: "/about",
+
                 changefreq: "monthly",
+
                 priority: "0.6"
+
             },
 
             {
+
                 path: "/contact",
+
                 changefreq: "monthly",
+
                 priority: "0.6"
+
             },
 
             {
+
                 path: "/privacy-policy",
+
                 changefreq: "yearly",
+
                 priority: "0.4"
+
             }
+
         ];
 
-
         staticPages.forEach(
+
             (page) => {
 
                 urls.push(`
+
     <url>
+
         <loc>${escapeXml(
+
             `${SITE_URL}${page.path}`
+
         )}</loc>
+
         <changefreq>${page.changefreq}</changefreq>
+
         <priority>${page.priority}</priority>
+
     </url>
+
 `);
+
             }
+
         );
 
-
         /* ================================================
+
            PRODUCTS
+
         ================================================= */
 
         const products =
+
             await Product.findAll({
 
                 where: {
 
                     status:
+
                         "Approved",
 
                     sellerStatus:
+
                         "Active",
 
                     deleted:
+
                         false
+
                 },
 
                 attributes: [
+
                     "id",
+
                     "updatedAt"
+
                 ],
 
                 order: [
+
                     [
+
                         "updatedAt",
+
                         "DESC"
+
                     ]
+
                 ]
+
             });
 
-
         products.forEach(
+
             (product) => {
 
                 const productUrl =
+
                     `${SITE_URL}/product/${encodeURIComponent(
+
                         product.id
+
                     )}`;
 
-
                 const lastmod =
+
                     product.updatedAt
+
                         ? new Date(
+
                             product.updatedAt
+
                         ).toISOString()
+
                         : new Date()
+
                             .toISOString();
 
-
                 urls.push(`
+
     <url>
+
         <loc>${escapeXml(
+
             productUrl
+
         )}</loc>
+
         <lastmod>${lastmod}</lastmod>
+
         <changefreq>daily</changefreq>
+
         <priority>0.9</priority>
+
     </url>
+
 `);
+
             }
+
         );
 
-
         /* ================================================
+
            SELLERS
+
         ================================================= */
 
         const sellers =
+
             await User.findAll({
 
                 attributes: [
+
                     "id",
+
                     "updatedAt"
+
                 ],
 
                 include: [
 
                     {
+
                         model:
+
                             Product,
 
                         as:
+
                             "products",
 
                         required:
+
                             true,
 
                         attributes:
+
                             [],
 
                         where: {
 
                             status:
+
                                 "Approved",
 
                             sellerStatus:
+
                                 "Active",
 
                             deleted:
+
                                 false
+
                         }
+
                     }
+
                 ],
 
                 group: [
+
                     "User.id",
+
                     "User.updatedAt"
+
                 ]
+
             });
 
-
         sellers.forEach(
+
             (seller) => {
 
                 const sellerUrl =
+
                     `${SITE_URL}/seller/${encodeURIComponent(
+
                         seller.id
+
                     )}`;
 
-
                 const lastmod =
+
                     seller.updatedAt
+
                         ? new Date(
+
                             seller.updatedAt
+
                         ).toISOString()
+
                         : new Date()
+
                             .toISOString();
 
-
                 urls.push(`
+
     <url>
+
         <loc>${escapeXml(
+
             sellerUrl
+
         )}</loc>
+
         <lastmod>${lastmod}</lastmod>
+
         <changefreq>weekly</changefreq>
+
         <priority>0.6</priority>
+
     </url>
+
 `);
+
             }
+
         );
 
-
         /* ================================================
+
            STORES
+
         ================================================= */
 
         const stores =
+
             await Store.findAll({
 
                 attributes: [
+
                     "id",
+
                     "storeSlug",
+
                     "updatedAt"
+
                 ],
 
                 include: [
 
                     {
+
                         model:
+
                             Product,
 
                         as:
+
                             "products",
 
                         required:
+
                             true,
 
                         attributes:
+
                             [],
 
                         where: {
 
                             status:
+
                                 "Approved",
 
                             sellerStatus:
+
                                 "Active",
 
                             deleted:
+
                                 false
+
                         }
+
                     }
+
                 ],
 
                 where: {
 
                     storeSlug: {
+
                         [Op.ne]:
+
                             null
+
                     }
+
                 },
 
                 group: [
+
                     "Store.id",
+
                     "Store.storeSlug",
+
                     "Store.updatedAt"
+
                 ]
+
             });
 
-
         stores.forEach(
+
             (store) => {
 
                 if (
+
                     !store.storeSlug
+
                 ) {
+
                     return;
+
                 }
 
-
                 const storeUrl =
+
                     `${SITE_URL}/store/${encodeURIComponent(
+
                         store.storeSlug
+
                     )}`;
 
-
                 const lastmod =
+
                     store.updatedAt
+
                         ? new Date(
+
                             store.updatedAt
+
                         ).toISOString()
+
                         : new Date()
+
                             .toISOString();
 
-
                 urls.push(`
+
     <url>
+
         <loc>${escapeXml(
+
             storeUrl
+
         )}</loc>
+
         <lastmod>${lastmod}</lastmod>
+
         <changefreq>daily</changefreq>
+
         <priority>0.8</priority>
+
     </url>
+
 `);
+
             }
+
         );
 
-
         /* ================================================
+
            FINAL SITEMAP
+
         ================================================= */
 
         return `<?xml version="1.0" encoding="UTF-8"?>
+
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
 ${urls.join("")}
+
 </urlset>`;
+
     };
 
-
 /* =========================================================
+
    PUBLIC SITEMAP
+
 ========================================================= */
 
 app.get(
+
     "/sitemap.xml",
+
     async (req, res) => {
 
         try {
 
             console.log(
+
                 "🗺️ Sitemap requested:",
+
                 req.originalUrl
+
             );
 
-
             const sitemap =
-                await generateSitemap();
 
+                await generateSitemap();
 
             res.status(200);
 
-
             res.set({
+
                 "Content-Type":
+
                     "application/xml; charset=utf-8",
 
                 "Cache-Control":
+
                     "public, max-age=3600"
+
             });
 
-
             return res.send(
+
                 sitemap
+
             );
 
         } catch (error) {
 
             console.error(
+
                 "❌ SITEMAP GENERATION ERROR:",
+
                 error
+
             );
 
-
             return res
+
                 .status(500)
+
                 .type("text/plain")
+
                 .send(
+
                     "Unable to generate sitemap."
+
                 );
+
         }
+
     }
+
 );
 
-
 /* =========================================================
+
    OPTIONAL SITEMAP ROUTES
+
 ========================================================= */
 
 if (sitemapRoutes) {
 
     app.use(
+
         "/",
+
         sitemapRoutes
+
     );
+
 }
 
-
 /* =========================================================
+
    DEBUG UPLOADS
+
 ========================================================= */
 
 if (
+
     NODE_ENV !==
+
     "production"
+
 ) {
 
     app.get(
+
         "/api/debug/uploads",
+
         (req, res) => {
 
             try {
 
                 const exists =
+
                     fs.existsSync(
+
                         uploadDirectory
+
                     );
 
-
                 const files =
+
                     exists
+
                         ? fs.readdirSync(
+
                             uploadDirectory
+
                         )
+
                         : [];
 
-
                 return res
+
                     .status(200)
+
                     .json({
 
                         success:
+
                             true,
 
                         uploadDir:
+
                             uploadDirectory,
 
                         exists,
 
                         fileCount:
+
                             files.length,
 
                         files:
+
                             files.slice(
+
                                 0,
+
                                 100
+
                             )
+
                     });
 
             } catch (error) {
 
                 return res
+
                     .status(500)
+
                     .json({
 
                         success:
+
                             false,
 
                         message:
+
                             error.message
+
                     });
+
             }
+
         }
+
     );
+
 }
 
 /* =========================================================
-   SOCKET.IO JWT AUTHENTICATION
+
+   SOCKET.IO
+
 ========================================================= */
 
-io.use((socket, next) => {
+const io =
 
-    try {
+    new Server(
 
-        const authToken =
-            socket.handshake.auth?.token;
+        server,
 
-        const authorization =
-            socket.handshake.headers.authorization;
-
-        let token = authToken || authorization;
-
-        if (typeof token === "string" &&
-            token.startsWith("Bearer ")) {
-
-            token = token.substring(7);
-
-        }
-
-        if (!token) {
-
-            return next(
-                new Error("Authentication token required")
-            );
-
-        }
-
-        if (!JWT_SECRET) {
-
-            return next(
-                new Error("JWT_SECRET is not configured")
-            );
-
-        }
-
-        const decoded = jwt.verify(
-            token,
-            JWT_SECRET
-        );
-
-        const userId =
-            decoded.id || decoded.userId;
-
-        if (!userId || !Number.isFinite(Number(userId))) {
-
-            return next(
-                new Error("Invalid user identity in token")
-            );
-
-        }
-
-        socket.userId = Number(userId);
-
-        next();
-
-    } catch (error) {
-
-        console.error(
-            "Socket authentication failed:",
-            error.message
-        );
-
-        next(
-            new Error("Invalid or expired authentication token")
-        );
-
-    }
-
-});
-
-/* =========================================================
-   SOCKET EVENTS + ONLINE PRESENCE
-========================================================= */
-
-/*
- * Track all active sockets for each user.
- *
- * Supports multiple devices and browser tabs.
- *
- * Map:
- * userId => Set(socketId)
- */
-
-const presenceSockets = new Map();
-
-
-/*
- * Track pending offline timers.
- *
- * This prevents a temporary internet disconnection
- * from immediately marking a user offline.
- */
-
-const presenceTimers = new Map();
-
-
-/*
- * Reconnection grace period.
- */
-
-const PRESENCE_GRACE_PERIOD = 3000;
-
-
-/* =========================================================
-   CHECK WHETHER USER IS ONLINE
-========================================================= */
-
-const isUserOnline = (userId) => {
-
-    const sockets = presenceSockets.get(
-        Number(userId)
-    );
-
-    return Boolean(
-        sockets &&
-        sockets.size > 0
-    );
-
-};
-
-
-/* =========================================================
-   BROADCAST PRESENCE UPDATE
-========================================================= */
-
-const emitPresence = (
-    userId,
-    isOnline,
-    lastSeen = null
-) => {
-
-    io.emit(
-        "presence_update",
         {
-            userId: Number(userId),
 
-            isOnline: Boolean(isOnline),
+            path:
 
-            lastSeen: lastSeen
-                ? new Date(lastSeen).toISOString()
-                : null
-        }
-    );
+                "/socket.io",
 
-};
+            cors: {
 
+                origin: (
 
-/* =========================================================
-   GET USER PRESENCE
-========================================================= */
+                    origin,
 
-const getUserPresence = async (userId) => {
+                    callback
 
-    const user = await User.findByPk(
-        userId,
-        {
-            attributes: [
-                "id",
-                "showOnline",
-                "lastSeen"
-            ]
-        }
-    );
-
-    if (!user) {
-        return null;
-    }
-
-    /*
-     * Respect user's privacy settings.
-     */
-
-    if (user.showOnline === false) {
-
-        return {
-            userId: Number(userId),
-            isOnline: false,
-            lastSeen: null,
-            hidden: true
-        };
-
-    }
-
-    return {
-
-        userId: Number(userId),
-
-        isOnline: isUserOnline(userId),
-
-        lastSeen: user.lastSeen
-            ? new Date(user.lastSeen).toISOString()
-            : null,
-
-        hidden: false
-
-    };
-
-};
-
-
-/* =========================================================
-   SOCKET CONNECTION
-========================================================= */
-
-io.on(
-    "connection",
-    async (socket) => {
-
-        const userId = Number(
-            socket.userId
-        );
-
-
-        console.log(
-            `🟢 Socket Connected: ${socket.id} | User: ${userId}`
-        );
-
-
-        /* ================================================
-           PRIVATE USER ROOM
-        ================================================ */
-
-        const userRoom = `user:${userId}`;
-
-        socket.join(userRoom);
-
-
-        console.log(
-            `👤 User ${userId} joined private room: ${userRoom}`
-        );
-
-
-        /* ================================================
-           REGISTER USER SOCKET
-        ================================================ */
-
-        let userSockets = presenceSockets.get(
-            userId
-        );
-
-        if (!userSockets) {
-
-            userSockets = new Set();
-
-            presenceSockets.set(
-                userId,
-                userSockets
-            );
-
-        }
-
-
-        const wasOffline =
-            userSockets.size === 0;
-
-
-        userSockets.add(
-            socket.id
-        );
-
-
-        /* ================================================
-           CANCEL PENDING OFFLINE TIMER
-        ================================================ */
-
-        const pendingTimer =
-            presenceTimers.get(userId);
-
-
-        if (pendingTimer) {
-
-            clearTimeout(
-                pendingTimer
-            );
-
-            presenceTimers.delete(
-                userId
-            );
-
-        }
-
-
-        /* ================================================
-           BROADCAST USER ONLINE
-        ================================================ */
-
-        try {
-
-            const user = await User.findByPk(
-                userId,
-                {
-                    attributes: [
-                        "id",
-                        "showOnline"
-                    ]
-                }
-            );
-
-
-            if (
-                user &&
-                user.showOnline !== false &&
-                wasOffline
-            ) {
-
-                emitPresence(
-                    userId,
-                    true,
-                    null
-                );
-
-            }
-
-        } catch (error) {
-
-            console.error(
-                "Presence connection error:",
-                error.message
-            );
-
-        }
-
-
-        /* ================================================
-           REQUEST ANOTHER USER'S STATUS
-        ================================================ */
-
-        socket.on(
-            "get_user_status",
-            async (data) => {
-
-                try {
-
-                    const targetUserId = Number(
-                        data?.userId
-                    );
-
+                ) => {
 
                     if (
-                        !Number.isInteger(targetUserId) ||
-                        targetUserId <= 0
+
+                        isAllowedOrigin(
+
+                            origin
+
+                        )
+
                     ) {
 
-                        return;
+                        return callback(
+
+                            null,
+
+                            true
+
+                        );
 
                     }
 
+                    console.warn(
 
-                    const status =
-                        await getUserPresence(
-                            targetUserId
-                        );
+                        "❌ SOCKET.IO CORS BLOCKED:",
 
+                        origin
 
-                    socket.emit(
-                        "user_status",
-                        status || {
-                            userId: targetUserId,
-                            isOnline: false,
-                            lastSeen: null,
-                            hidden: true
-                        }
                     );
 
+                    return callback(
 
-                } catch (error) {
+                        new Error(
 
-                    console.error(
-                        "Get user status error:",
-                        error.message
+                            `Socket.IO CORS blocked: ${origin}`
+
+                        )
+
                     );
 
-                }
+                },
 
-            }
-        );
+                methods: [
 
+                    "GET",
 
-        /* ================================================
-           JOIN CONVERSATION
-        ================================================ */
+                    "POST"
 
-        socket.on(
-            "join_conversation",
-            (conversationId) => {
+                ],
 
-                if (!conversationId) {
-                    return;
-                }
+                credentials:
 
+                    true
 
-                const room = String(
-                    conversationId
-                );
+            },
 
+            transports: [
 
-                socket.join(room);
+                "websocket",
 
+                "polling"
 
-                console.log(
-                    `💬 User ${userId} joined conversation: ${room}`
-                );
+            ],
 
-            }
-        );
+            allowEIO3:
 
+                false,
 
-        /* ================================================
-           LEAVE CONVERSATION
-        ================================================ */
+            pingTimeout:
 
-        socket.on(
-            "leave_conversation",
-            (conversationId) => {
+                60000,
 
-                if (!conversationId) {
-                    return;
-                }
+            pingInterval:
 
+                25000,
 
-                const room = String(
-                    conversationId
-                );
+            connectTimeout:
 
+                45000
 
-                socket.leave(room);
+        }
 
+    );
 
-                console.log(
-                    `🚪 User ${userId} left conversation: ${room}`
-                );
+app.set(
 
-            }
-        );
+    "io",
 
+    io
 
-        /* ================================================
-           TYPING
-        ================================================ */
+);
 
-        socket.on(
-            "typing",
-            (data) => {
+console.log(
 
-                if (
-                    !data ||
-                    !data.conversationId
-                ) {
+    "🔌 Socket.IO initialized successfully."
 
-                    return;
-
-                }
-
-
-                const room = String(
-                    data.conversationId
-                );
-
-
-                socket
-                    .to(room)
-                    .emit(
-                        "typing",
-                        {
-                            conversationId:
-                                data.conversationId,
-
-                            userId
-                        }
-                    );
-
-            }
-        );
-
-
-        /* ================================================
-           STOP TYPING
-        ================================================ */
-
-        socket.on(
-            "stop_typing",
-            (data) => {
-
-                if (
-                    !data ||
-                    !data.conversationId
-                ) {
-
-                    return;
-
-                }
-
-
-                const room = String(
-                    data.conversationId
-                );
-
-
-                socket
-                    .to(room)
-                    .emit(
-                        "stop_typing",
-                        {
-                            conversationId:
-                                data.conversationId,
-
-                            userId
-                        }
-                    );
-
-            }
-        );
-
-
-        /* ================================================
-           DISCONNECT
-        ================================================ */
-
-        socket.on(
-            "disconnect",
-            (reason) => {
-
-                console.log(
-                    `🔴 Socket Disconnected: ${socket.id} | User: ${userId}`,
-                    reason
-                );
-
-
-                /*
-                 * Remove this socket from the user's
-                 * active socket collection.
-                 */
-
-                const sockets =
-                    presenceSockets.get(userId);
-
-
-                if (sockets) {
-
-                    sockets.delete(
-                        socket.id
-                    );
-
-                }
-
-
-                /*
-                 * If another device or tab is still
-                 * connected, keep the user online.
-                 */
-
-                if (
-                    sockets &&
-                    sockets.size > 0
-                ) {
-
-                    return;
-
-                }
-
-
-                /*
-                 * Remove empty socket collection.
-                 */
-
-                presenceSockets.delete(
-                    userId
-                );
-
-
-                /*
-                 * Delay offline status to allow
-                 * reconnection.
-                 */
-
-                const timer = setTimeout(
-                    async () => {
-
-                        try {
-
-                            /*
-                             * Check again in case the
-                             * user reconnected.
-                             */
-
-                            if (
-                                isUserOnline(userId)
-                            ) {
-
-                                return;
-
-                            }
-
-
-                            const lastSeen =
-                                new Date();
-
-
-                            /*
-                             * Save last-seen time.
-                             */
-
-                            await User.update(
-                                {
-                                    lastSeen
-                                },
-                                {
-                                    where: {
-                                        id: userId
-                                    }
-                                }
-                            );
-
-
-                            /*
-                             * Check user's privacy.
-                             */
-
-                            const user =
-                                await User.findByPk(
-                                    userId,
-                                    {
-                                        attributes: [
-                                            "id",
-                                            "showOnline"
-                                        ]
-                                    }
-                                );
-
-
-                            if (
-                                user &&
-                                user.showOnline !== false
-                            ) {
-
-                                emitPresence(
-                                    userId,
-                                    false,
-                                    lastSeen
-                                );
-
-                            }
-
-
-                            console.log(
-                                `🔴 User ${userId} is now offline. Last seen: ${lastSeen.toISOString()}`
-                            );
-
-
-                        } catch (error) {
-
-                            console.error(
-                                "Offline presence update error:",
-                                error.message
-                            );
-
-                        } finally {
-
-                            presenceTimers.delete(
-                                userId
-                            );
-
-                        }
-
-                    },
-                    PRESENCE_GRACE_PERIOD
-                );
-
-
-                presenceTimers.set(
-                    userId,
-                    timer
-                );
-
-            }
-        );
-
-
-        /* ================================================
-           SOCKET ERROR
-        ================================================ */
-
-        socket.on(
-            "error",
-            (error) => {
-
-                console.error(
-                    `❌ Socket Error [${socket.id}] User ${userId}:`,
-                    error
-                );
-
-            }
-        );
-
-    }
 );
 
 /* =========================================================
-   HEALTH CHECK
+
+   SOCKET.IO AUTHENTICATION
+
 ========================================================= */
 
-app.get(
-    "/api/health",
-    async (req, res) => {
+io.use(
+
+    async (
+
+        socket,
+
+        next
+
+    ) => {
 
         try {
 
-            await sequelize.authenticate();
+            if (
 
+                !JWT_SECRET
 
-            return res
-                .status(200)
-                .json({
+            ) {
 
-                    success:
-                        true,
+                console.error(
 
-                    status:
-                        "healthy",
+                    "❌ JWT_SECRET is not configured."
 
-                    environment:
-                        NODE_ENV,
+                );
 
-                    database:
-                        "connected",
+                return next(
 
-                    socket:
-                        "enabled",
+                    new Error(
 
-                    timestamp:
-                        new Date()
-                            .toISOString()
-                });
+                        "Server authentication is not configured."
+
+                    )
+
+                );
+
+            }
+
+            /*
+
+             * Accept token from:
+
+             *
+
+             * socket.auth.token
+
+             *
+
+             * OR
+
+             *
+
+             * Authorization header.
+
+             */
+
+            const token =
+
+                socket.handshake
+
+                    ?.auth
+
+                    ?.token ||
+
+                socket.handshake
+
+                    ?.headers
+
+                    ?.authorization
+
+                    ?.replace(
+
+                        /^Bearer\s+/i,
+
+                        ""
+
+                    );
+
+            if (
+
+                !token
+
+            ) {
+
+                console.warn(
+
+                    "❌ Socket connection rejected: No authentication token."
+
+                );
+
+                return next(
+
+                    new Error(
+
+                        "Authentication required."
+
+                    )
+
+                );
+
+            }
+
+            /*
+
+             * Verify JWT.
+
+             */
+
+            const decoded =
+
+                jwt.verify(
+
+                    token,
+
+                    JWT_SECRET
+
+                );
+
+            /*
+
+             * Support both common
+
+             * JWT payload formats.
+
+             */
+
+            const userId =
+
+                decoded.id ||
+
+                decoded.userId;
+
+            if (
+
+                !userId
+
+            ) {
+
+                return next(
+
+                    new Error(
+
+                        "Invalid authentication token."
+
+                    )
+
+                );
+
+            }
+
+            const numericUserId =
+
+                Number(userId);
+
+            if (
+
+                !Number.isInteger(
+
+                    numericUserId
+
+                ) ||
+
+                numericUserId <= 0
+
+            ) {
+
+                return next(
+
+                    new Error(
+
+                        "Invalid user ID in authentication token."
+
+                    )
+
+                );
+
+            }
+
+            /*
+
+             * IMPORTANT:
+
+             *
+
+             * Never trust userId supplied by
+
+             * the client.
+
+             *
+
+             * The verified JWT is the source
+
+             * of truth.
+
+             */
+
+            socket.userId =
+
+                numericUserId;
+
+            console.log(
+
+                `🔐 Socket authenticated for user: ${socket.userId}`
+
+            );
+
+            return next();
 
         } catch (error) {
 
             console.error(
-                "Health check database error:",
+
+                "❌ Socket authentication failed:",
+
                 error.message
+
             );
 
+            return next(
 
-            return res
-                .status(503)
-                .json({
+                new Error(
 
-                    success:
-                        false,
+                    "Invalid or expired authentication token."
 
-                    status:
-                        "unhealthy",
+                )
 
-                    database:
-                        "disconnected",
+            );
 
-                    message:
-                        error.message
-                });
         }
+
     }
+
 );
 
+/* =========================================================
+
+   SOCKET EVENTS
+
+========================================================= */
+
+io.on(
+
+    "connection",
+
+    (socket) => {
+
+        const userId =
+
+            socket.userId;
+
+        console.log(
+
+            `🟢 Socket Connected: ${socket.id} | User: ${userId}`
+
+        );
+
+        /* =================================================
+
+           PRIVATE USER ROOM
+
+        ================================================= */
+
+        const userRoom =
+
+            `user:${userId}`;
+
+        socket.join(
+
+            userRoom
+
+        );
+
+        console.log(
+
+            `👤 User ${userId} joined private room: ${userRoom}`
+
+        );
+
+        /* =================================================
+
+           JOIN CONVERSATION
+
+        ================================================= */
+
+        socket.on(
+
+            "join_conversation",
+
+            (conversationId) => {
+
+                if (
+
+                    !conversationId
+
+                ) {
+
+                    return;
+
+                }
+
+                const room =
+
+                    String(
+
+                        conversationId
+
+                    );
+
+                socket.join(
+
+                    room
+
+                );
+
+                console.log(
+
+                    `💬 User ${userId} joined conversation: ${room}`
+
+                );
+
+            }
+
+        );
+
+        /* =================================================
+
+           LEAVE CONVERSATION
+
+        ================================================= */
+
+        socket.on(
+
+            "leave_conversation",
+
+            (conversationId) => {
+
+                if (
+
+                    !conversationId
+
+                ) {
+
+                    return;
+
+                }
+
+                const room =
+
+                    String(
+
+                        conversationId
+
+                    );
+
+                socket.leave(
+
+                    room
+
+                );
+
+                console.log(
+
+                    `🚪 User ${userId} left conversation: ${room}`
+
+                );
+
+            }
+
+        );
+
+        /* =================================================
+
+           TYPING
+
+        ================================================= */
+
+        socket.on(
+
+            "typing",
+
+            (data) => {
+
+                if (
+
+                    !data ||
+
+                    !data.conversationId
+
+                ) {
+
+                    return;
+
+                }
+
+                const room =
+
+                    String(
+
+                        data.conversationId
+
+                    );
+
+                /*
+
+                 * Do not trust a client-supplied
+
+                 * userId.
+
+                 */
+
+                socket
+
+                    .to(room)
+
+                    .emit(
+
+                        "typing",
+
+                        {
+
+                            conversationId:
+
+                                data.conversationId,
+
+                            userId
+
+                        }
+
+                    );
+
+            }
+
+        );
+
+        /* =================================================
+
+           STOP TYPING
+
+        ================================================= */
+
+        socket.on(
+
+            "stop_typing",
+
+            (data) => {
+
+                if (
+
+                    !data ||
+
+                    !data.conversationId
+
+                ) {
+
+                    return;
+
+                }
+
+                const room =
+
+                    String(
+
+                        data.conversationId
+
+                    );
+
+                socket
+
+                    .to(room)
+
+                    .emit(
+
+                        "stop_typing",
+
+                        {
+
+                            conversationId:
+
+                                data.conversationId,
+
+                            userId
+
+                        }
+
+                    );
+
+            }
+
+        );
+
+        /* =================================================
+
+           DISCONNECT
+
+        ================================================= */
+
+        socket.on(
+
+            "disconnect",
+
+            (reason) => {
+
+                console.log(
+
+                    `🔴 Socket Disconnected: ${socket.id} | User: ${userId}`,
+
+                    reason
+
+                );
+
+            }
+
+        );
+
+        /* =================================================
+
+           SOCKET ERROR
+
+        ================================================= */
+
+        socket.on(
+
+            "error",
+
+            (error) => {
+
+                console.error(
+
+                    `❌ Socket Error [${socket.id}] User ${userId}:`,
+
+                    error
+
+                );
+
+            }
+
+        );
+
+    }
+
+);
 
 /* =========================================================
+   ONLINE / OFFLINE STATUS
+========================================================= */
+
+const getSystemStatus = async () => {
+    let database = "offline";
+
+    try {
+        await sequelize.authenticate();
+        database = "online";
+    } catch (error) {
+        console.error("Status database check failed:", error.message);
+    }
+
+    const online = database === "online";
+
+    return {
+        success: online,
+        status: online ? "online" : "degraded",
+        server: "online",
+        database,
+        socket: io ? "enabled" : "disabled",
+        environment: NODE_ENV,
+        uptimeSeconds: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString()
+    };
+};
+
+app.get("/api/health", async (req, res) => {
+    const status = await getSystemStatus();
+    return res.status(status.success ? 200 : 503).json(status);
+});
+
+/*
+ * Lightweight endpoint for web/mobile clients to poll.
+ * A client that cannot reach this endpoint should display OFFLINE.
+ */
+app.get("/api/status", async (req, res) => {
+    const status = await getSystemStatus();
+    return res.status(status.success ? 200 : 503).json(status);
+});
+
+/* =========================================================
+
    API HOME
+
 ========================================================= */
 
 app.get(
+
     "/api",
+
     (req, res) => {
 
         return res
+
             .status(200)
+
             .json({
 
                 success:
+
                     true,
 
                 message:
+
                     "🚀 KAD Marketplace API Running",
 
                 environment:
+
                     NODE_ENV,
 
                 api:
+
                     `${SITE_URL}/api`,
 
                 sitemap:
+
                     `${SITE_URL}/sitemap.xml`,
 
                 robots:
+
                     `${SITE_URL}/robots.txt`,
 
                 socket:
+
                     "/socket.io"
+
             });
+
     }
+
 );
 
-
 /* =========================================================
+
    PUBLIC AUTH
+
 ========================================================= */
 
 app.use(
+
     "/api/auth",
+
     authRoutes
+
 );
 
-
 /* =========================================================
+
    PUBLIC SETTINGS
+
 ========================================================= */
 
 app.use(
+
     "/api/settings",
+
     settingsRoutes
+
 );
 
-
 /* =========================================================
+
    USER SETTINGS
+
 ========================================================= */
 
 app.use(
+
     "/api/user/settings",
+
     userSettingsRoutes
+
 );
 
-
 /* =========================================================
+
    BRANDING
+
 ========================================================= */
 
 app.use(
+
     "/api/admin/settings/branding",
+
     brandingRoutes
+
 );
 
-
 /* =========================================================
+
    MAINTENANCE MODE
+
 ========================================================= */
 
 app.use(
+
     maintenanceMode
+
 );
 
-
 /* =========================================================
+
    PRODUCTS
+
 ========================================================= */
 
 app.use(
+
     "/api/products",
+
     productRoutes
+
 );
 
-
 /* =========================================================
+
    STORE
+
 ========================================================= */
 
 app.use(
+
     "/api/store",
+
     storeFollowRoutes
+
 );
 
 app.use(
+
     "/api/store",
+
     storeRoutes
+
 );
 
-
 /* =========================================================
+
    SELLER
+
 ========================================================= */
 
 app.use(
+
     "/api/seller",
+
     sellerRoutes
+
 );
 
-
 /* =========================================================
+
    SUBSCRIPTIONS
+
 ========================================================= */
 
 app.use(
+
     "/api/subscription",
+
     subscriptionRoutes
+
 );
 
 app.use(
+
     "/api/subscription-plans",
+
     subscriptionPlanRoutes
+
 );
 
-
 /* =========================================================
+
    PAYMENTS
+
 ========================================================= */
 
 app.use(
+
     "/api/payments",
+
     paymentRoutes
+
 );
 
-
 /* =========================================================
+
    PROMOTIONS
+
 ========================================================= */
 
 app.use(
+
     "/api/promotions",
+
     promotionRoutes
+
 );
 
-
 /* =========================================================
+
    MESSAGES
+
 ========================================================= */
 
 app.use(
+
     "/api/messages",
+
     messageRoutes
+
 );
 
-
 /* =========================================================
+
    USERS
+
 ========================================================= */
 
 app.use(
+
     "/api/users",
+
     userRoutes
+
 );
 
-
 /* =========================================================
+
    WISHLIST
+
 ========================================================= */
 
 app.use(
+
     "/api/wishlist",
+
     wishlistRoutes
+
 );
 
-
 /* =========================================================
+
    REVIEWS
+
 ========================================================= */
 
 app.use(
+
     "/api/reviews",
+
     reviewRoutes
+
 );
 
-
 /* =========================================================
+
    NOTIFICATIONS
+
 ========================================================= */
 
 app.use(
+
     "/api/notifications",
+
     notificationRoutes
+
 );
 
-
 /* =========================================================
+
    REPORTS
+
 ========================================================= */
 
 app.use(
+
     "/api/reports",
+
     reportRoutes
+
 );
 
-
 /* =========================================================
+
    ANALYTICS
+
 ========================================================= */
 
 app.use(
+
     "/api/analytics",
+
     analyticsRoutes
+
 );
 
-
 /* =========================================================
+
    SEARCH
+
 ========================================================= */
 
 app.use(
+
     "/api/search",
+
     searchRoutes
+
 );
 
-
 /* =========================================================
+
    SUPPORT
+
 ========================================================= */
 
 app.use(
+
     "/api/support",
+
     supportRoutes
+
 );
 
-
 /* =========================================================
+
    CONTACT
+
 ========================================================= */
 
 app.use(
+
     "/api/contact",
+
     contactRoutes
+
 );
 
-
 /* =========================================================
+
    LEADS
+
 ========================================================= */
 
 app.use(
+
     "/api/leads",
+
     leadRoutes
+
 );
 
-
 /* =========================================================
+
    ADVERTISEMENTS
+
 ========================================================= */
 
 app.use(
+
     "/api/advertisements",
+
     advertisementRoutes
+
 );
 
-
 /* =========================================================
+
    SECURITY
+
 ========================================================= */
 
 app.use(
+
     "/api/security",
+
     securityRoutes
+
 );
 
-
 /* =========================================================
+
    ROLES
+
 ========================================================= */
 
 app.use(
+
     "/api/roles",
+
     roleRoutes
+
 );
 
-
 /* =========================================================
+
    PERMISSIONS
+
 ========================================================= */
 
 app.use(
+
     "/api/permissions",
+
     permissionRoutes
+
 );
 
-
 /* =========================================================
+
    BACKUPS
+
 ========================================================= */
 
 app.use(
+
     "/api/backups",
+
     backupRoutes
+
 );
 
-
 /* =========================================================
+
    PUBLIC HOME BUILDER
+
 ========================================================= */
 
 app.use(
+
     "/api/home-builder",
+
     homeBuilderRoutes
+
 );
 
-
 /* =========================================================
+
    ADMIN SECURITY
+
 ========================================================= */
 
 app.use(
+
     "/api/admin",
+
     adminSecurityRoutes
+
 );
 
-
 /* =========================================================
+
    MAIN ADMIN
+
 ========================================================= */
 
 app.use(
+
     "/api/admin",
+
     adminRoutes
+
 );
 
-
 /* =========================================================
+
    ADMIN PRODUCTS
+
 ========================================================= */
 
 app.use(
+
     "/api/admin",
+
     adminProductRoutes
+
 );
 
-
 /* =========================================================
+
    ADMIN STORES
+
 ========================================================= */
 
 app.use(
+
     "/api/admin",
+
     adminStoreRoutes
+
 );
 
-
 /* =========================================================
+
    ADMIN ADVERTISEMENTS
+
 ========================================================= */
 
 app.use(
+
     "/api/admin",
+
     adminAdvertisementRoutes
+
 );
 
-
 /* =========================================================
+
    ADMIN PAYMENTS
+
 ========================================================= */
 
 app.use(
+
     "/api/admin",
+
     adminPaymentRoutes
+
 );
 
-
 /* =========================================================
+
    ADMIN REVENUE
+
 ========================================================= */
 
 app.use(
+
     "/api/admin",
+
     adminRevenueRoutes
+
 );
 
-
 /* =========================================================
+
    ADMIN SUBSCRIPTION PLANS
+
 ========================================================= */
 
 app.use(
+
     "/api/admin",
+
     adminSubscriptionPlanRoutes
+
 );
 
-
 /* =========================================================
+
    ADMIN NOTIFICATIONS
+
 ========================================================= */
 
 app.use(
+
     "/api/admin/notifications",
+
     adminNotificationRoutes
+
 );
 
-
 /* =========================================================
+
    ADMIN SETTINGS
+
 ========================================================= */
 
 app.use(
+
     "/api/admin/settings",
+
     adminSettingsRoutes
+
 );
 
-
 /* =========================================================
+
    MARKETPLACE SETTINGS
+
 ========================================================= */
 
 app.use(
+
     "/api/admin/settings",
+
     marketplaceSettingsRoutes
+
 );
 
-
 /* =========================================================
+
    ADMIN SUPPORT
+
 ========================================================= */
 
 app.use(
+
     "/api/admin/support",
+
     adminSupportRoutes
+
 );
 
-
 /* =========================================================
+
    ADMIN CATEGORIES
+
 ========================================================= */
 
 app.use(
+
     "/api/admin/categories",
+
     categoryRoutes
+
 );
 
-
 /* =========================================================
+
    ADMIN FEATURED PRODUCTS
+
 ========================================================= */
 
 app.use(
+
     "/api/admin/featured-products",
+
     featuredProductRoutes
+
 );
 
-
 /* =========================================================
+
    ADMIN HOME BUILDER
+
 ========================================================= */
 
 app.use(
+
     "/api/admin/home-builder",
+
     homeBuilderAdminRoutes
+
 );
 
-
 /* =========================================================
+
    ADMIN AUDIT LOGS
+
 ========================================================= */
 
 app.use(
+
     "/api/admin/audit-logs",
+
     auditLogRoutes
+
 );
 
-
 /* =========================================================
+
    PRODUCTION FRONTEND
+
 ========================================================= */
 
 if (
+
     NODE_ENV ===
+
     "production"
+
 ) {
 
     /*
+
      * Serve React/Vite production files.
+
      */
 
     app.use(
+
         express.static(
+
             clientDistPath,
+
             {
+
                 index: false
+
             }
+
         )
+
     );
 
-
     /*
+
      * React SPA fallback.
+
      */
 
     app.use(
+
         (
+
             req,
+
             res,
+
             next
+
         ) => {
 
             if (
+
                 req.method !== "GET" &&
+
                 req.method !== "HEAD"
+
             ) {
 
                 return next();
+
             }
 
-
             /*
+
              * Never send index.html for
+
              * backend/static endpoints.
+
              */
 
             if (
+
                 req.path.startsWith(
+
                     "/api"
+
                 ) ||
 
                 req.path.startsWith(
+
                     "/uploads"
+
                 ) ||
 
                 req.path.startsWith(
+
                     "/socket.io"
+
                 ) ||
 
                 req.path ===
+
                     "/sitemap.xml" ||
 
                 req.path ===
+
                     "/robots.txt"
+
             ) {
 
                 return next();
+
             }
 
-
             /*
+
              * Only browser HTML requests
+
              * should receive index.html.
+
              */
 
             const acceptHeader =
+
                 req.headers.accept ||
+
                 "";
 
-
             if (
+
                 !acceptHeader.includes(
+
                     "text/html"
+
                 )
+
             ) {
 
                 return next();
+
             }
 
-
             const indexPath =
+
                 path.join(
+
                     clientDistPath,
+
                     "index.html"
+
                 );
 
-
             if (
+
                 !fs.existsSync(
+
                     indexPath
+
                 )
+
             ) {
 
                 console.error(
+
                     "❌ Frontend build not found:",
+
                     indexPath
+
                 );
 
-
                 return res
+
                     .status(500)
+
                     .send(
+
                         "Frontend build not found."
+
                     );
+
             }
 
-
             return res.sendFile(
+
                 indexPath
+
             );
+
         }
+
     );
+
 }
 
-
 /* =========================================================
+
    404 HANDLER
+
 ========================================================= */
 
 app.use(
+
     (
+
         req,
+
         res
+
     ) => {
 
         return res
+
             .status(404)
+
             .json({
 
                 success:
+
                     false,
 
                 message:
+
                     `Route not found: ${req.method} ${req.originalUrl}`
+
             });
+
     }
+
 );
 
-
 /* =========================================================
+
    GLOBAL ERROR HANDLER
+
 ========================================================= */
 
 app.use(
+
     (
+
         error,
+
         req,
+
         res,
+
         next
+
     ) => {
 
         console.error(
+
             "SERVER ERROR:",
+
             error
+
         );
 
-
         /*
+
          * CORS
+
          */
 
         if (
+
             error.message &&
+
             (
+
                 error.message.includes(
+
                     "CORS"
+
                 ) ||
 
                 error.message.includes(
+
                     "Not allowed by CORS"
+
                 )
+
             )
+
         ) {
 
             return res
+
                 .status(403)
+
                 .json({
 
                     success:
+
                         false,
 
                     message:
+
                         error.message
+
                 });
+
         }
 
-
         /*
+
          * Multer
+
          */
 
         if (
+
             error.name ===
+
             "MulterError"
+
         ) {
 
             return res
+
                 .status(400)
+
                 .json({
 
                     success:
+
                         false,
 
                     message:
+
                         error.message ||
+
                         "File upload error."
+
                 });
+
         }
 
-
         /*
+
          * JWT
+
          */
 
         if (
+
             error.name ===
+
             "JsonWebTokenError"
+
         ) {
 
             return res
+
                 .status(401)
+
                 .json({
 
                     success:
+
                         false,
 
                     message:
-                        "Invalid authentication token."
-                });
-        }
 
+                        "Invalid authentication token."
+
+                });
+
+        }
 
         if (
+
             error.name ===
+
             "TokenExpiredError"
+
         ) {
 
             return res
+
                 .status(401)
+
                 .json({
 
                     success:
+
                         false,
 
                     message:
+
                         "Authentication token expired."
+
                 });
+
         }
 
-
         /*
+
          * Generic server error
+
          */
 
         return res
+
             .status(
+
                 error.status ||
+
                 500
+
             )
+
             .json({
 
                 success:
+
                     false,
 
                 message:
+
                     NODE_ENV ===
+
                     "production"
 
                         ? "Internal server error."
 
                         : (
+
                             error.message ||
+
                             "Internal server error."
+
                         )
+
             });
+
     }
+
 );
 
-
 /* =========================================================
+
    PROMOTION EXPIRY CHECKER
+
 ========================================================= */
 
 let promotionExpiryInterval =
+
     null;
 
-
 const startPromotionExpiryChecker =
+
     () => {
 
         if (
+
             promotionExpiryInterval
+
         ) {
 
             console.warn(
+
                 "⚠️ Promotion expiry checker is already running."
+
             );
 
             return;
+
         }
 
-
         console.log(
+
             "🚀 Promotion expiry checker started."
+
         );
 
-
         const checkExpiredPromotions =
+
             async () => {
 
                 try {
 
                     await PromotionService
+
                         .removeExpiredPromotions();
 
-
                     console.log(
+
                         "Promotion expiry check completed."
+
                     );
 
                 } catch (error) {
 
                     console.error(
+
                         "Promotion expiry check failed:",
+
                         error.message
+
                     );
+
                 }
+
             };
 
-
         /*
+
          * Run immediately.
+
          */
 
         checkExpiredPromotions();
 
-
         /*
+
          * Then every minute.
+
          */
 
         promotionExpiryInterval =
+
             setInterval(
+
                 checkExpiredPromotions,
+
                 60 * 1000
+
             );
+
     };
 
-
 /* =========================================================
+
    DATABASE + SERVER STARTUP
+
 ========================================================= */
 
 const startServer =
+
     async () => {
 
         try {
 
             /*
+
              * Validate critical environment
+
              * variables before starting.
+
              */
 
             if (
+
                 !JWT_SECRET
+
             ) {
 
                 throw new Error(
+
                     "JWT_SECRET is missing from environment variables."
+
                 );
+
             }
 
-
             /* ==============================================
+
                DATABASE
+
             ============================================== */
 
             await sequelize.authenticate();
 
-
             console.log(
+
                 "✅ MySQL Connected Successfully"
+
             );
 
-
             /* ==============================================
+
                DATABASE SYNC
+
             ============================================== */
 
             await sequelize.sync();
 
-
             console.log(
+
                 "✅ Database Synced Successfully"
+
             );
 
-
             /* ==============================================
+
                ROLES + PERMISSIONS
+
             ============================================== */
 
             const seedRolesAndPermissions =
-                require(
-                    "./seeders/rolePermissionSeeder"
-                );
 
+                require(
+
+                    "./seeders/rolePermissionSeeder"
+
+                );
 
             await seedRolesAndPermissions();
 
-
             console.log(
+
                 "✅ Roles and permissions checked."
+
             );
 
-
             /* ==============================================
+
                BACKGROUND SERVICES
+
             ============================================== */
 
             startPromotionExpiryChecker();
 
-
             /* ==============================================
+
                SERVER
+
             ============================================== */
 
             server.listen(
+
                 PORT,
+
                 "0.0.0.0",
+
                 () => {
 
                     console.log("");
 
                     console.log(
+
                         "=========================================="
+
                     );
 
                     console.log(
+
                         "🚀 KAD MARKETPLACE SERVER STARTED"
+
                     );
 
                     console.log(
+
                         "=========================================="
+
                     );
 
                     console.log(
+
                         `🌍 Port: ${PORT}`
+
                     );
 
                     console.log(
+
                         `📦 Environment: ${NODE_ENV}`
+
                     );
 
                     console.log(
+
                         `🌐 Site URL: ${SITE_URL}`
+
                     );
 
                     console.log(
+
                         `🗺️ Sitemap: ${SITE_URL}/sitemap.xml`
+
                     );
 
                     console.log(
+
                         `🤖 Robots: ${SITE_URL}/robots.txt`
+
                     );
 
                     console.log(
+
                         `⚙️ Public Settings: ${SITE_URL}/api/settings/public`
+
                     );
 
                     console.log(
+
                         `❤️ Health: ${SITE_URL}/api/health`
+
                     );
 
                     console.log(
+
                         `🌐 Allowed Origins: ${uniqueAllowedOrigins.join(", ")}`
+
                     );
 
                     console.log(
+
                         "🔌 Socket.IO: /socket.io"
+
                     );
 
                     console.log(
+
                         `📁 Frontend: ${clientDistPath}`
+
                     );
 
                     console.log(
+
                         "=========================================="
+
                     );
 
                     console.log("");
+
                 }
+
             );
 
         } catch (error) {
@@ -2813,189 +3609,261 @@ const startServer =
             console.error("");
 
             console.error(
+
                 "❌ SERVER STARTUP FAILED"
+
             );
 
             console.error(
+
                 error
+
             );
 
             console.error("");
 
             process.exit(1);
+
         }
+
     };
 
-
 /* =========================================================
+
    GRACEFUL SHUTDOWN
+
 ========================================================= */
 
 const shutdown =
+
     async (signal) => {
 
         console.log(
-            `\n${signal} received. Shutting down...`
-        );
 
+            `\n${signal} received. Shutting down...`
+
+        );
 
         try {
 
             /*
+
              * Stop promotion checker.
+
              */
 
             if (
+
                 promotionExpiryInterval
+
             ) {
 
                 clearInterval(
-                    promotionExpiryInterval
-                );
 
+                    promotionExpiryInterval
+
+                );
 
                 promotionExpiryInterval =
+
                     null;
 
-
                 console.log(
+
                     "Promotion expiry checker stopped."
+
                 );
+
             }
 
-
             /*
+
              * Close Socket.IO.
+
              */
 
             await new Promise(
+
                 (
+
                     resolve
+
                 ) => {
 
                     io.close(
+
                         () => {
 
                             console.log(
+
                                 "Socket.IO server closed."
+
                             );
 
                             resolve();
+
                         }
+
                     );
+
                 }
+
             );
 
-
             /*
+
              * Close HTTP server.
+
              */
 
             await new Promise(
+
                 (
+
                     resolve
+
                 ) => {
 
                     server.close(
+
                         () => {
 
                             console.log(
+
                                 "HTTP server closed."
+
                             );
 
                             resolve();
+
                         }
+
                     );
+
                 }
+
             );
 
-
             /*
+
              * Close database.
+
              */
 
             await sequelize.close();
 
-
             console.log(
-                "Database connection closed."
-            );
 
+                "Database connection closed."
+
+            );
 
             process.exit(0);
 
         } catch (error) {
 
             console.error(
+
                 "Shutdown error:",
+
                 error
+
             );
 
-
             process.exit(1);
+
         }
+
     };
 
-
 /* =========================================================
+
    PROCESS SIGNALS
+
 ========================================================= */
 
 process.on(
-    "SIGTERM",
-    () => shutdown(
-        "SIGTERM"
-    )
-);
 
+    "SIGTERM",
+
+    () => shutdown(
+
+        "SIGTERM"
+
+    )
+
+);
 
 process.on(
-    "SIGINT",
-    () => shutdown(
-        "SIGINT"
-    )
-);
 
+    "SIGINT",
+
+    () => shutdown(
+
+        "SIGINT"
+
+    )
+
+);
 
 /* =========================================================
+
    UNHANDLED PROMISE
+
 ========================================================= */
 
 process.on(
+
     "unhandledRejection",
+
     (reason) => {
 
         console.error(
+
             "❌ UNHANDLED PROMISE REJECTION:",
+
             reason
+
         );
+
     }
+
 );
 
-
 /* =========================================================
+
    UNCAUGHT EXCEPTION
+
 ========================================================= */
 
 process.on(
+
     "uncaughtException",
+
     (error) => {
 
         console.error(
-            "❌ UNCAUGHT EXCEPTION:",
-            error
-        );
 
+            "❌ UNCAUGHT EXCEPTION:",
+
+            error
+
+        );
 
         shutdown(
+
             "UNCAUGHT_EXCEPTION"
+
         );
+
     }
+
 );
 
-
 /* =========================================================
+
    START APPLICATION
+
 ========================================================= */
 
 startServer();
