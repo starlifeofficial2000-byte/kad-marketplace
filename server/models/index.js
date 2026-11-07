@@ -6,6 +6,7 @@
 const User = require("./User");
 const Product = require("./Product");
 const Store = require("./Store");
+const Category = require("./Category");
 
 /* SUBSCRIPTIONS */
 const Subscription = require("./Subscription");
@@ -123,8 +124,6 @@ Product.belongsTo(User, {
 
 /* =====================================================
    STORE ↔ PRODUCT
-
-   Products belong to store owner through userId.
 ===================================================== */
 
 Store.hasMany(Product, {
@@ -519,6 +518,7 @@ module.exports = {
     User,
     Product,
     Store,
+    Category,
 
     /* SUBSCRIPTIONS */
     Subscription,
