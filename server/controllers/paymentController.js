@@ -72,6 +72,7 @@ exports.initializePayment = async (req, res) => {
 
 
         const { planId } = req.body;
+        const paymentSource = req.body?.platform === "mobile" ? "mobile" : "web";
 
 
         /* ----------------------------------------
@@ -158,7 +159,9 @@ exports.initializePayment = async (req, res) => {
 
             paymentMethod: "Paystack",
 
-            status: "Pending"
+            status: "Pending",
+            // Existing notes column records the source without a schema migration.
+            notes: `source=${paymentSource}`
 
         });
 
@@ -202,7 +205,8 @@ exports.initializePayment = async (req, res) => {
 
                     planName: plan.name,
 
-                    paymentType: "subscription"
+                    paymentType: "subscription",
+                    platform: paymentSource
 
                 }
 
@@ -339,6 +343,9 @@ exports.verifyPaymentCallback = async (req, res) => {
         }
 
         req.user = { id: user.id, email: user.email, name: user.name };
+        req.paymentSource = String(payment.notes || "").includes("source=mobile")
+            ? "mobile"
+            : "web";
         return exports.verifyPayment(req, res);
     } catch (error) {
         console.error("PUBLIC PAYMENT CALLBACK ERROR:", error);
@@ -947,6 +954,9 @@ Your subscription is being activated for ${Number(plan.duration || 30)} days.
 
             message:
                 "Subscription activated successfully.",
+
+            paymentSource: req.paymentSource || "web",
+            returnToApp: req.paymentSource === "mobile",
 
             payment: {
 
