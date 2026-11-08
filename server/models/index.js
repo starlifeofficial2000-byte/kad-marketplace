@@ -6,7 +6,6 @@
 const User = require("./User");
 const Product = require("./Product");
 const Store = require("./Store");
-const Category = require("./Category");
 
 /* SUBSCRIPTIONS */
 const Subscription = require("./Subscription");
@@ -34,6 +33,7 @@ const Advertisement = require("./Advertisement");
 const SearchHistory = require("./SearchHistory");
 const Support = require("./Support");
 const SupportTicket = require("./SupportTicket");
+const SupportTicketMessage = require("./SupportTicketMessage");
 const Lead = require("./Lead");
 const StoreFollow = require("./StoreFollow");
 
@@ -124,6 +124,8 @@ Product.belongsTo(User, {
 
 /* =====================================================
    STORE ↔ PRODUCT
+
+   Products belong to store owner through userId.
 ===================================================== */
 
 Store.hasMany(Product, {
@@ -477,6 +479,9 @@ SupportTicket.belongsTo(User, {
     as: "user"
 });
 
+SupportTicket.hasMany(SupportTicketMessage, { foreignKey: "ticketId", as: "messages", onDelete: "CASCADE" });
+SupportTicketMessage.belongsTo(SupportTicket, { foreignKey: "ticketId", as: "ticket" });
+
 
 /* =====================================================
    USER ↔ SEARCH HISTORY
@@ -518,7 +523,6 @@ module.exports = {
     User,
     Product,
     Store,
-    Category,
 
     /* SUBSCRIPTIONS */
     Subscription,
@@ -546,6 +550,7 @@ module.exports = {
     SearchHistory,
     Support,
     SupportTicket,
+    SupportTicketMessage,
     Lead,
     StoreFollow,
 

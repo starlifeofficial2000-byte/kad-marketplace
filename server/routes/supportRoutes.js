@@ -47,6 +47,9 @@ router.get(
    "/:id" can match other route names.
 ========================================== */
 
+router.get("/:id/messages", auth, controller.getTicketMessages);
+router.post("/:id/messages", auth, controller.sendTicketMessage);
+
 router.get(
     "/:id",
     auth,

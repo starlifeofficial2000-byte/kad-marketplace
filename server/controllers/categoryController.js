@@ -1,32 +1,32 @@
 const slugify=require("slugify");
 
 const Category=require("../models/Category");
+const Product=require("../models/Product");
 
 exports.getCategories=async(req,res)=>{
 
 const categories=await Category.findAll({
-
-include:[
-
-{
-
-model:Category,
-
-as:"parent"
-
-}
-
-],
-
-order:[
-
-["displayOrder","ASC"]
-
-]
-
+include:[{ model:Category, as:"parent" }],
+order:[["displayOrder","ASC"]]
 });
 
-res.json(categories);
+// Product.category stores the parent category name and Product.subcategory
+// stores the selected child category name. Count approved listings only.
+const rows = await Promise.all(categories.map(async (category) => {
+    const name = String(category.name || "");
+    const productCount = await Product.count({
+        where: {
+            status: "Approved",
+            [require("sequelize").Op.or]: [
+                { category: name },
+                { subcategory: name }
+            ]
+        }
+    });
+    return { ...category.toJSON(), productCount };
+}));
+
+res.json(rows);
 
 };
 

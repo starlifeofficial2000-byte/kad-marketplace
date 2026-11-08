@@ -1,5 +1,6 @@
 const SupportTicket = require("../models/SupportTicket");
 const Notification = require("../models/Notification");
+const SupportTicketMessage = require("../models/SupportTicketMessage");
 
 /* ==========================================
    CREATE SUPPORT TICKET
@@ -33,6 +34,13 @@ exports.createTicket = async (req, res) => {
 
             message
 
+        });
+
+        await SupportTicketMessage.create({
+            ticketId: ticket.id,
+            senderId: req.user.id,
+            senderType: "user",
+            message: message
         });
 
         await Notification.create({
@@ -163,4 +171,43 @@ exports.getTicket = async (req, res) => {
 
     }
 
+};
+
+/* ==========================================
+   GET TICKET CONVERSATION (OWNER ONLY)
+========================================== */
+exports.getTicketMessages = async (req, res) => {
+    try {
+        const ticket = await SupportTicket.findOne({ where: { id: req.params.id, userId: req.user.id } });
+        if (!ticket) return res.status(404).json({ success: false, message: "Ticket not found." });
+        let messages = await SupportTicketMessage.findAll({ where: { ticketId: ticket.id }, order: [["createdAt", "ASC"]] });
+        // Backward compatibility for tickets created before conversation messages existed.
+        if (!messages.length) {
+            messages = [{ id: `legacy-${ticket.id}`, ticketId: ticket.id, senderId: ticket.userId, senderType: "user", message: ticket.message, createdAt: ticket.createdAt }];
+            if (ticket.adminReply) messages.push({ id: `legacy-admin-${ticket.id}`, ticketId: ticket.id, senderId: 0, senderType: "admin", message: ticket.adminReply, createdAt: ticket.updatedAt });
+        }
+        res.json({ success: true, messages });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+/* ==========================================
+   USER REPLY TO OWN TICKET
+========================================== */
+exports.sendTicketMessage = async (req, res) => {
+    try {
+        const message = String(req.body.message || "").trim();
+        if (!message) return res.status(400).json({ success: false, message: "Message is required." });
+        if (message.length > 5000) return res.status(400).json({ success: false, message: "Message is too long." });
+        const ticket = await SupportTicket.findOne({ where: { id: req.params.id, userId: req.user.id } });
+        if (!ticket) return res.status(404).json({ success: false, message: "Ticket not found." });
+        if (ticket.status === "Closed") return res.status(400).json({ success: false, message: "This ticket is closed." });
+        const row = await SupportTicketMessage.create({ ticketId: ticket.id, senderId: req.user.id, senderType: "user", message });
+        ticket.status = "Open";
+        await ticket.save();
+        res.status(201).json({ success: true, message: "Reply sent.", data: row });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
 };

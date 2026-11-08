@@ -19,14 +19,6 @@ console.log("deletePayment:", typeof paymentController.deletePayment);
    USER
 ========================================== */
 
-// Public Paystack browser callback. Payment ownership is resolved
-// from the stored reference; payment status is verified server-side.
-router.get(
-    "/callback/verify/:reference",
-    paymentController.verifyPaymentCallback
-);
-
-
 router.post(
 
     "/initialize",
@@ -45,6 +37,12 @@ router.get(
 
     paymentController.verifyPayment
 
+);
+
+// Public Paystack redirect endpoint; payment verification remains authenticated.
+router.get(
+    "/mobile-callback",
+    paymentController.mobilePaymentCallback
 );
 
 router.post(

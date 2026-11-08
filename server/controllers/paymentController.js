@@ -1,5 +1,4 @@
 const Payment = require("../models/Payment");
-const User = require("../models/User");
 const Subscription = require("../models/Subscription");
 const SubscriptionPlan = require("../models/SubscriptionPlan");
 const {
@@ -72,7 +71,6 @@ exports.initializePayment = async (req, res) => {
 
 
         const { planId } = req.body;
-        const paymentSource = req.body?.platform === "mobile" ? "mobile" : "web";
 
 
         /* ----------------------------------------
@@ -159,9 +157,7 @@ exports.initializePayment = async (req, res) => {
 
             paymentMethod: "Paystack",
 
-            status: "Pending",
-            // Existing notes column records the source without a schema migration.
-            notes: `source=${paymentSource}`
+            status: "Pending"
 
         });
 
@@ -195,7 +191,9 @@ exports.initializePayment = async (req, res) => {
 
                 reference,
 
-                callback_url: PAYSTACK_CALLBACK,
+                callback_url: String(req.body?.platform || "").toLowerCase() === "mobile"
+                    ? `${(process.env.API_PUBLIC_URL || "https://api.kadmarket.com").replace(/\/$/, "")}/api/payments/mobile-callback`
+                    : PAYSTACK_CALLBACK,
 
                 metadata: {
 
@@ -205,8 +203,7 @@ exports.initializePayment = async (req, res) => {
 
                     planName: plan.name,
 
-                    paymentType: "subscription",
-                    platform: paymentSource
+                    paymentType: "subscription"
 
                 }
 
@@ -309,53 +306,6 @@ exports.initializePayment = async (req, res) => {
 /* ============================================================
    VERIFY PAYMENT
 ============================================================ */
-
-/**
- * Public Paystack callback. The transaction reference locates the
- * stored payment; customer identity and expected amount come from
- * database records, and the transaction is independently verified
- * with Paystack by the existing verifyPayment handler.
- */
-exports.verifyPaymentCallback = async (req, res) => {
-    try {
-        const reference = String(req.params.reference || "").trim();
-        if (!reference) {
-            return res.status(400).json({
-                success: false,
-                message: "Payment reference is required."
-            });
-        }
-
-        const payment = await Payment.findOne({ where: { reference } });
-        if (!payment) {
-            return res.status(404).json({
-                success: false,
-                message: "Payment record not found."
-            });
-        }
-
-        const user = await User.findByPk(payment.userId);
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "The customer associated with this payment was not found."
-            });
-        }
-
-        req.user = { id: user.id, email: user.email, name: user.name };
-        req.paymentSource = String(payment.notes || "").includes("source=mobile")
-            ? "mobile"
-            : "web";
-        return exports.verifyPayment(req, res);
-    } catch (error) {
-        console.error("PUBLIC PAYMENT CALLBACK ERROR:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Unable to verify this payment right now. Please retry."
-        });
-    }
-};
-
 
 exports.verifyPayment = async (req, res) => {
 
@@ -955,9 +905,6 @@ Your subscription is being activated for ${Number(plan.duration || 30)} days.
             message:
                 "Subscription activated successfully.",
 
-            paymentSource: req.paymentSource || "web",
-            returnToApp: req.paymentSource === "mobile",
-
             payment: {
 
                 id:
@@ -1390,4 +1337,20 @@ exports.deletePayment = async (req, res) => {
 
     }
 
+};
+
+/* ============================================================
+   MOBILE PAYMENT RETURN
+   Paystack returns to this HTTPS endpoint, which opens the app.
+   The app then verifies the reference against Paystack via the
+   authenticated /verify/:reference endpoint.
+============================================================ */
+
+exports.mobilePaymentCallback = async (req, res) => {
+    const reference = String(req.query.reference || req.query.trxref || "").trim();
+    if (!reference) {
+        return res.status(400).send("Payment reference is missing. You can return to KAD Marketplace and verify the payment.");
+    }
+    const appUrl = `kadmarket://payment-return?reference=${encodeURIComponent(reference)}`;
+    return res.redirect(302, appUrl);
 };

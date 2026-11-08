@@ -1,6 +1,7 @@
 const SupportTicket = require("../models/SupportTicket");
 const User = require("../models/User");
 const Notification = require("../models/Notification");
+const SupportTicketMessage = require("../models/SupportTicketMessage");
 
 /* ==========================================
    GET ALL SUPPORT TICKETS
@@ -165,6 +166,12 @@ exports.replyTicket = async (req, res) => {
         }
 
         ticket.adminReply = req.body.reply;
+        await SupportTicketMessage.create({
+            ticketId: ticket.id,
+            senderId: req.user.id,
+            senderType: "admin",
+            message: String(req.body.reply || "").trim()
+        });
 
         ticket.status = "Answered";
 
@@ -310,4 +317,25 @@ exports.deleteTicket = async (req, res) => {
 
     }
 
+};
+
+/* ==========================================
+   ADMIN REPLY IN TICKET CONVERSATION
+========================================== */
+exports.sendTicketMessage = async (req, res) => {
+    try {
+        const message = String(req.body.message || "").trim();
+        if (!message) return res.status(400).json({ success: false, message: "Message is required." });
+        if (message.length > 5000) return res.status(400).json({ success: false, message: "Message is too long." });
+        const ticket = await SupportTicket.findByPk(req.params.id);
+        if (!ticket) return res.status(404).json({ success: false, message: "Support ticket not found." });
+        const row = await SupportTicketMessage.create({ ticketId: ticket.id, senderId: req.user.id, senderType: "admin", message });
+        ticket.adminReply = message;
+        ticket.status = "Answered";
+        await ticket.save();
+        await Notification.create({ userId: ticket.userId, title: "Support replied", message: `There is a new reply to "${ticket.subject}".`, type: "System", isRead: false });
+        res.status(201).json({ success: true, message: "Reply sent.", data: row });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
 };

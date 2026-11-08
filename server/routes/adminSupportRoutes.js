@@ -29,6 +29,8 @@ router.get(
    REPLY TO SUPPORT TICKET
 ========================================== */
 
+router.post("/:id/messages", auth, admin, controller.sendTicketMessage);
+
 router.put(
 
     "/:id/reply",
