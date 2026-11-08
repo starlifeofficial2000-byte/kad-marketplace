@@ -972,3 +972,19 @@ exports.getLeadAnalytics = async (req, res) => {
     }
 
 };
+
+/* ==========================================
+   SELLER PRODUCT PERFORMANCE BREAKDOWN
+========================================== */
+exports.getSellerProductAnalytics = async (req, res) => {
+    try {
+        const products = await Product.findAll({ where: { userId: req.user.id, deleted: false }, attributes: ['id', 'title', 'images', 'views', 'shares', 'chatCount', 'status'], order: [['views', 'DESC']] });
+        const ids = products.map(p => p.id);
+        const wishlistCounts = ids.length ? await Wishlist.findAll({ attributes: ['productId', [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'count']], where: { productId: { [Op.in]: ids } }, group: ['productId'], raw: true }) : [];
+        const counts = new Map(wishlistCounts.map(row => [String(row.productId), Number(row.count || 0)]));
+        return res.json({ success: true, products: products.map(p => { const row = p.toJSON(); return { ...row, wishlist: counts.get(String(row.id)) || 0 }; }) });
+    } catch (error) {
+        console.error('SELLER PRODUCT ANALYTICS ERROR:', error);
+        return res.status(500).json({ success: false, message: 'Unable to load product performance.', error: error.message });
+    }
+};

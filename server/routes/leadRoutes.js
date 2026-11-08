@@ -46,6 +46,12 @@ router.get(
 ========================================== */
 
 router.get(
+    "/seller/products-analytics",
+    auth,
+    leadController.getSellerProductAnalytics
+);
+
+router.get(
 
     "/seller",
 
