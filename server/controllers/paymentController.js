@@ -1,4 +1,5 @@
 const Payment = require("../models/Payment");
+const User = require("../models/User");
 const Subscription = require("../models/Subscription");
 const SubscriptionPlan = require("../models/SubscriptionPlan");
 const {
@@ -304,6 +305,50 @@ exports.initializePayment = async (req, res) => {
 /* ============================================================
    VERIFY PAYMENT
 ============================================================ */
+
+/**
+ * Public Paystack callback. The transaction reference locates the
+ * stored payment; customer identity and expected amount come from
+ * database records, and the transaction is independently verified
+ * with Paystack by the existing verifyPayment handler.
+ */
+exports.verifyPaymentCallback = async (req, res) => {
+    try {
+        const reference = String(req.params.reference || "").trim();
+        if (!reference) {
+            return res.status(400).json({
+                success: false,
+                message: "Payment reference is required."
+            });
+        }
+
+        const payment = await Payment.findOne({ where: { reference } });
+        if (!payment) {
+            return res.status(404).json({
+                success: false,
+                message: "Payment record not found."
+            });
+        }
+
+        const user = await User.findByPk(payment.userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "The customer associated with this payment was not found."
+            });
+        }
+
+        req.user = { id: user.id, email: user.email, name: user.name };
+        return exports.verifyPayment(req, res);
+    } catch (error) {
+        console.error("PUBLIC PAYMENT CALLBACK ERROR:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Unable to verify this payment right now. Please retry."
+        });
+    }
+};
+
 
 exports.verifyPayment = async (req, res) => {
 
