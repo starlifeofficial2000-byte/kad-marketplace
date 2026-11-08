@@ -151,6 +151,17 @@ router.post(
 
 
 /* ==========================================
+   SELLER AVAILABILITY STATUS
+========================================== */
+
+router.patch(
+    "/:id/seller-status",
+    auth,
+    productController.changeProductStatus
+);
+
+
+/* ==========================================
    UPDATE PRODUCT
 ========================================== */
 
