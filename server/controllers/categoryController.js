@@ -17,6 +17,7 @@ const rows = await Promise.all(categories.map(async (category) => {
     const productCount = await Product.count({
         where: {
             status: "Approved",
+            deleted: false,
             [require("sequelize").Op.or]: [
                 { category: name },
                 { subcategory: name }

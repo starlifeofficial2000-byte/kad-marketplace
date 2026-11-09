@@ -40,16 +40,16 @@ router.get(
 
 );
 
-
-/* ==========================================
-   GET SELLER LEADS
-========================================== */
-
 router.get(
     "/seller/products-analytics",
     auth,
     leadController.getSellerProductAnalytics
 );
+
+
+/* ==========================================
+   GET SELLER LEADS
+========================================== */
 
 router.get(
 
