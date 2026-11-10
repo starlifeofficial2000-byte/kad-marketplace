@@ -621,6 +621,12 @@ function formatProduct(product) {
             );
     }
 
+    // Keep the store available in both supported payload locations.
+    // Flutter accepts product.store and seller.store.
+    if (item.seller && item.store && !item.seller.store) {
+        item.seller.store = item.store;
+    }
+
     return item;
 }
 
@@ -1723,7 +1729,50 @@ exports.getProductById = async (req, res) => {
                 status: "Approved",
                 sellerStatus: "Active",
                 deleted: false
-            }
+            },
+
+            // Product details must return the same seller/store data
+            // that the product listing endpoint exposes.
+            include: [
+                {
+                    model: User,
+                    as: "seller",
+                    attributes: [
+                        "id",
+                        "name",
+                        "email",
+                        "phone",
+                        "profileImage"
+                    ]
+                },
+                {
+                    model: Store,
+                    as: "store",
+                    required: false,
+                    attributes: [
+                        "id",
+                        "storeName",
+                        "storeSlug",
+                        "description",
+                        "logo",
+                        "banner",
+                        "phone",
+                        "whatsapp",
+                        "email",
+                        "website",
+                        "facebook",
+                        "instagram",
+                        "tiktok",
+                        "x",
+                        "address",
+                        "city",
+                        "region",
+                        "businessHours",
+                        "verified",
+                        "status"
+                    ]
+                }
+            ]
 
         });
 
