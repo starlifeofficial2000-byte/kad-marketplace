@@ -1,6 +1,23 @@
 const Store = require("../models/Store");
 const User = require("../models/User");
 const Product = require("../models/Product");
+const { getR2PublicUrl } = require("../config/r2");
+
+const publicStoreImage = (value, folder) => {
+    if (!value) return null;
+    const clean = String(value).trim();
+    if (/^https?:\/\//i.test(clean)) return clean;
+    const key = clean.replace(/^\/+/, "");
+    if (key.startsWith("uploads/")) return getR2PublicUrl(key) || `/${key}`;
+    return getR2PublicUrl(`uploads/${folder}/${key}`) || `/uploads/${folder}/${key}`;
+};
+
+const formatStore = (store) => {
+    const data = store && typeof store.toJSON === "function" ? store.toJSON() : { ...store };
+    data.logoUrl = publicStoreImage(data.logo, "stores");
+    data.bannerUrl = publicStoreImage(data.banner, "stores");
+    return data;
+};
 
 /* ==========================================
    GET ALL STORES
@@ -56,11 +73,8 @@ exports.getStores = async (req, res) => {
             });
 
             results.push({
-
-                ...store.toJSON(),
-
+                ...formatStore(store),
                 productCount
-
             });
 
         }
@@ -313,11 +327,8 @@ exports.activateStore = async (req, res) => {
         });
 
         res.json({
-
-            ...store.toJSON(),
-
+            ...formatStore(store),
             products
-
         });
 
     }

@@ -99,7 +99,7 @@ exports.createAdvertisement = async (req, res) => {
 
             status: req.body.status || "Pending",
 
-            image: req.file.filename,
+            image: req.file.r2Key || req.file.location || req.file.filename,
 
             dailyBudget: req.body.dailyBudget || 0,
 
@@ -243,7 +243,7 @@ exports.updateAdvertisement = async (req, res) => {
 
         if (req.file) {
 
-            updateData.image = req.file.filename;
+            updateData.image = req.file.r2Key || req.file.location || req.file.filename;
 
         }
 

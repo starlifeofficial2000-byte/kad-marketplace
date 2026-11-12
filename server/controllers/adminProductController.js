@@ -1,5 +1,6 @@
 const Product = require("../models/Product");
 const User = require("../models/User");
+const { getR2PublicUrl } = require("../config/r2");
 
 
 /* ==========================================
@@ -28,12 +29,26 @@ const formatProduct = (product) => {
     }
 
 
+    const imageUrls = images.map((image) => {
+        if (!image) return null;
+        const value = typeof image === "string"
+            ? image
+            : image.url || image.imageUrl || image.path || image.src;
+        if (!value) return null;
+        const clean = String(value).trim();
+        if (/^https?:\/\//i.test(clean)) return clean;
+        const key = clean.replace(/^\/+/, "");
+        if (key.startsWith("uploads/")) {
+            return getR2PublicUrl(key) || `/${key}`;
+        }
+        return getR2PublicUrl(`uploads/products/${key}`) || `/uploads/products/${key}`;
+    }).filter(Boolean);
+
     return {
-
         ...data,
-
-        images
-
+        images,
+        imageUrls,
+        primaryImageUrl: imageUrls[0] || null
     };
 
 };

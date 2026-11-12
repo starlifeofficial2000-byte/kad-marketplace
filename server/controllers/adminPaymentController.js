@@ -1,5 +1,16 @@
 const Payment = require("../models/Payment");
 const User = require("../models/User");
+const SubscriptionPlan = require("../models/SubscriptionPlan");
+const { getR2PublicUrl } = require("../config/r2");
+
+const formatPayment = (payment) => {
+    const data = payment && typeof payment.toJSON === "function" ? payment.toJSON() : { ...payment };
+    if (data.user && data.user.profileImage) {
+        const image = String(data.user.profileImage).trim();
+        data.user.profileImageUrl = /^https?:\/\//i.test(image) ? image : (image.startsWith("uploads/") ? (getR2PublicUrl(image) || `/${image}`) : (image === "default.png" ? null : (getR2PublicUrl(`uploads/profiles/${image}`) || `/uploads/${image}`)));
+    }
+    return data;
+};
 
 /* ==========================================
    GET ALL PAYMENTS
@@ -27,7 +38,8 @@ exports.getPayments = async (req, res) => {
 
             "email",
 
-            "phone"
+            "phone",
+            "profileImage"
 
         ]
 
@@ -43,7 +55,7 @@ exports.getPayments = async (req, res) => {
 
         });
 
-        res.json(payments);
+        res.json(payments.map(formatPayment));
 
     }
 
@@ -75,11 +87,13 @@ exports.getPayment = async (req,res)=>{
                 include:[
 
                     {
-
-                        model:User,
-
-                        as:"user"
-
+                        model: User,
+                        as: "user"
+                    },
+                    {
+                        model: SubscriptionPlan,
+                        as: "subscriptionPlan",
+                        required: false
                     }
 
                 ]
@@ -100,7 +114,7 @@ exports.getPayment = async (req,res)=>{
 
         }
 
-        res.json(payment);
+        res.json(formatPayment(payment));
 
     }
 

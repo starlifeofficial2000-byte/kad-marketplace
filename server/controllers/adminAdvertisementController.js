@@ -1,5 +1,6 @@
 const Advertisement = require("../models/Advertisement");
 const User = require("../models/User");
+const { getR2PublicUrl } = require("../config/r2");
 
 /* ==========================================
    GET ALL ADVERTISEMENTS
@@ -39,7 +40,17 @@ include: [
 
         });
 
-        res.json(advertisements);
+        const formatted = advertisements.map((item) => {
+            const data = item.toJSON();
+            const image = String(data.image || "").trim();
+            data.imageUrl = /^https?:\/\//i.test(image)
+                ? image
+                : (image.startsWith("uploads/")
+                    ? (getR2PublicUrl(image) || `/${image}`)
+                    : (getR2PublicUrl(`uploads/${image}`) || `/uploads/${image}`));
+            return data;
+        });
+        res.json(formatted);
 
     }
 
