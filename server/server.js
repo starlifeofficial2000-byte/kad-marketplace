@@ -69,6 +69,7 @@ const analyticsRoutes = require("./routes/analyticsRoutes");
 const featuredProductRoutes = require("./routes/featuredProductRoutes");
 
 const categoryRoutes = require("./routes/categoryRoutes");
+const publicCategoryRoutes = require("./routes/publicCategoryRoutes");
 
 const supportRoutes = require("./routes/supportRoutes");
 
@@ -2823,6 +2824,15 @@ app.use(
     adminSupportRoutes
 
 );
+
+/* =========================================================
+
+   PUBLIC CATEGORY READ API
+
+   Category listing is public; writes remain protected below.
+
+========================================================= */
+app.use("/api/categories", publicCategoryRoutes);
 
 /* =========================================================
 

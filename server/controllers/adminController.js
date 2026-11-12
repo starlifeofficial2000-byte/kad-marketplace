@@ -184,179 +184,48 @@ exports.getStats = async (req, res) => {
 ========================================================= */
 
 exports.dashboard = async (req, res) => {
+    // Keep the dashboard available even when an optional metric uses a
+    // schema field that is absent in an older production database.
+    const safeCount = async (Model, options = {}) => {
+        try { return await Model.count(options); }
+        catch (error) { console.error("ADMIN DASHBOARD COUNT WARNING:", error.message); return 0; }
+    };
+    const safeSum = async (Model, field, options = {}) => {
+        try { return Number((await Model.sum(field, options)) || 0); }
+        catch (error) { console.error("ADMIN DASHBOARD SUM WARNING:", error.message); return 0; }
+    };
 
     try {
-
-        const [
-
-            users,
-
-            products,
-
-            stores,
-
-            subscriptions,
-
-            advertisements,
-
-            pendingProducts,
-
-            pendingStores,
-
-            promotionRevenue,
-
-            subscriptionRevenue
-
-        ] = await Promise.all([
-
-
-            User.count(),
-
-
-            Product.count(),
-
-
-            Store.count(),
-
-
-            Subscription.count({
-
-                where: {
-
-                    status: "Active"
-
-                }
-
-            }),
-
-
-            Advertisement.count({
-
-                where: {
-
-                    status: "Running"
-
-                }
-
-            }),
-
-
-            Product.count({
-
-                where: {
-
-                    status: "Pending"
-
-                }
-
-            }),
-
-
-            Store.count({
-
-                where: {
-
-                    status: "Pending"
-
-                }
-
-            }),
-
-
-            PromotionPayment.sum(
-
-                "amount",
-
-                {
-
-                    where: {
-
-                        status: "Successful"
-
-                    }
-
-                }
-
-            ),
-
-
-            Subscription.sum(
-
-                "amount"
-
-            )
-
-        ]);
-
-
-        const revenue =
-
-            Number(
-                promotionRevenue || 0
-            )
-
-            +
-
-            Number(
-                subscriptionRevenue || 0
-            );
-
+        const [users, products, stores, subscriptions, advertisements,
+            pendingProducts, pendingStores, promotionRevenue, subscriptionRevenue] =
+            await Promise.all([
+                safeCount(User),
+                safeCount(Product, { where: { deleted: false } }).then(async value => value || safeCount(Product)),
+                safeCount(Store),
+                safeCount(Subscription, { where: { status: ["Active", "ACTIVE", "active"] } }),
+                safeCount(Advertisement, { where: { status: ["Running", "RUNNING", "Active", "ACTIVE"] } }),
+                safeCount(Product, { where: { status: ["Pending", "PENDING", "pending"] } }),
+                safeCount(Store, { where: { status: ["Pending", "PENDING", "pending"] } }),
+                safeSum(PromotionPayment, "amount", { where: { status: ["Successful", "SUCCESSFUL", "PAID", "COMPLETED"] } }),
+                safeSum(Subscription, "amount")
+            ]);
 
         return res.status(200).json({
-
             success: true,
-
             data: {
-
-                users,
-
-                products,
-
-                stores,
-
-                subscriptions,
-
-                advertisements,
-
-                pendingProducts,
-
-                pendingStores,
-
-                revenue
-
+                users, products, stores, subscriptions, advertisements,
+                pendingProducts, pendingStores,
+                revenue: promotionRevenue + subscriptionRevenue
             }
-
         });
-
-    }
-
-    catch (error) {
-
-        console.error(
-
-            "ADMIN DASHBOARD ERROR:",
-
-            error
-
-        );
-
-
+    } catch (error) {
+        console.error("ADMIN DASHBOARD ERROR:", error);
         return res.status(500).json({
-
             success: false,
-
-            message:
-
-                "Failed to load dashboard.",
-
-            error:
-
-                error.message
-
+            message: "Failed to load dashboard statistics.",
+            error: process.env.NODE_ENV === "production" ? undefined : error.message
         });
-
     }
-
 };
 
 
