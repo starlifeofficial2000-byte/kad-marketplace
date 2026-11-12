@@ -103,6 +103,12 @@ exports.getTicket = async (req, res) => {
 
                         ]
 
+                    },
+                    {
+                        model: SupportTicketMessage,
+                        as: "messages",
+                        separate: true,
+                        order: [["createdAt", "ASC"]]
                     }
 
                 ]

@@ -3,6 +3,10 @@ const express=require("express");
 const router=express.Router();
 
 const upload=require("../middleware/upload");
+const auth=require("../middleware/auth");
+const admin=require("../middleware/admin");
+
+router.use(auth,admin);
 
 const controller=require("../controllers/categoryController");
 
