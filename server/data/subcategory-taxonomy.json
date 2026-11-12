@@ -1,0 +1,233 @@
+{
+  "mobile phones": [
+    "Apple",
+    "Samsung",
+    "Tecno",
+    "Infinix",
+    "Xiaomi",
+    "Redmi",
+    "Huawei",
+    "Oppo",
+    "Vivo",
+    "Nokia",
+    "Google Pixel",
+    "OnePlus",
+    "Itel",
+    "Other"
+  ],
+  "phones": [
+    "Apple",
+    "Samsung",
+    "Tecno",
+    "Infinix",
+    "Xiaomi",
+    "Redmi",
+    "Huawei",
+    "Oppo",
+    "Vivo",
+    "Nokia",
+    "Google Pixel",
+    "OnePlus",
+    "Itel",
+    "Other"
+  ],
+  "laptops": [
+    "HP",
+    "Dell",
+    "Lenovo",
+    "Apple MacBook",
+    "Acer",
+    "Asus",
+    "Microsoft Surface",
+    "MSI",
+    "Samsung",
+    "Toshiba",
+    "Other"
+  ],
+  "computers": [
+    "HP",
+    "Dell",
+    "Lenovo",
+    "Apple",
+    "Acer",
+    "Asus",
+    "Microsoft",
+    "MSI",
+    "Samsung",
+    "Toshiba",
+    "Other"
+  ],
+  "tv": [
+    "Samsung",
+    "LG",
+    "Hisense",
+    "TCL",
+    "Sony",
+    "Toshiba",
+    "Skyworth",
+    "Nasco",
+    "Bruhm",
+    "Philips",
+    "Other"
+  ],
+  "televisions": [
+    "Samsung",
+    "LG",
+    "Hisense",
+    "TCL",
+    "Sony",
+    "Toshiba",
+    "Skyworth",
+    "Nasco",
+    "Bruhm",
+    "Philips",
+    "Other"
+  ],
+  "music equipment": [
+    "Yamaha",
+    "JBL",
+    "Pioneer DJ",
+    "Pioneer",
+    "Sony",
+    "Behringer",
+    "Shure",
+    "Bose",
+    "Mackie",
+    "Rode",
+    "Audio-Technica",
+    "Sennheiser",
+    "Other"
+  ],
+  "food stuff": [
+    "Nestlé",
+    "Unilever",
+    "Olam",
+    "Cargill",
+    "Fan Milk",
+    "Kasapreko",
+    "Promasidor",
+    "Other"
+  ],
+  "food": [
+    "Nestlé",
+    "Unilever",
+    "Olam",
+    "Cargill",
+    "Fan Milk",
+    "Kasapreko",
+    "Promasidor",
+    "Other"
+  ],
+  "clothes": [
+    "Nike",
+    "Adidas",
+    "Puma",
+    "Reebok",
+    "New Balance",
+    "Converse",
+    "Vans",
+    "Zara",
+    "H&M",
+    "Gucci",
+    "Louis Vuitton",
+    "Other"
+  ],
+  "fashion": [
+    "Nike",
+    "Adidas",
+    "Puma",
+    "Reebok",
+    "New Balance",
+    "Converse",
+    "Vans",
+    "Zara",
+    "H&M",
+    "Gucci",
+    "Louis Vuitton",
+    "Other"
+  ],
+  "cars": [
+    "Toyota",
+    "Honda",
+    "Hyundai",
+    "Kia",
+    "Nissan",
+    "Mercedes-Benz",
+    "BMW",
+    "Volkswagen",
+    "Ford",
+    "Mitsubishi",
+    "Mazda",
+    "Lexus",
+    "Land Rover",
+    "Other"
+  ],
+  "motorcycles": [
+    "Honda",
+    "Yamaha",
+    "Suzuki",
+    "TVS",
+    "Bajaj",
+    "Hero",
+    "KTM",
+    "Kawasaki",
+    "Piaggio",
+    "Other"
+  ],
+  "land & property": [
+    "Other"
+  ],
+  "property": [
+    "Other"
+  ],
+  "electronics": [
+    "Samsung",
+    "LG",
+    "Sony",
+    "Panasonic",
+    "Philips",
+    "Hisense",
+    "TCL",
+    "Apple",
+    "Anker",
+    "Xiaomi",
+    "Canon",
+    "Nikon",
+    "GoPro",
+    "Other"
+  ],
+  "furniture": [
+    "IKEA",
+    "Ashley Furniture",
+    "JYSK",
+    "Kuka",
+    "Other"
+  ],
+  "agriculture": [
+    "John Deere",
+    "Massey Ferguson",
+    "New Holland",
+    "Kubota",
+    "Mahindra",
+    "AGCO",
+    "Other"
+  ],
+  "construction": [
+    "Bosch",
+    "DeWalt",
+    "Makita",
+    "Hilti",
+    "Stanley",
+    "Total Tools",
+    "Ingco",
+    "Caterpillar",
+    "Komatsu",
+    "Other"
+  ],
+  "services": [
+    "Other"
+  ],
+  "employment opportunities": [
+    "Other"
+  ]
+}
