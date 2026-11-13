@@ -26,9 +26,9 @@ function RolesPage() {
 
         try {
 
-            const response = await axios.get(
+            const response = await api.get(
 
-                "/api/roles",
+                "/roles",
 
                 {
 
@@ -66,9 +66,9 @@ function RolesPage() {
 
         try {
 
-            await axios.post(
+            await api.post(
 
-                "/api/roles",
+                "/roles",
 
                 {
 
@@ -121,9 +121,9 @@ function RolesPage() {
 
         try {
 
-            await axios.delete(
+            await api.delete(
 
-                `/api/roles/${id}`,
+                `/roles/${id}`,
 
                 {
 

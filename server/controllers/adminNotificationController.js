@@ -26,7 +26,7 @@ exports.sendNotification = async (req, res) => {
     if (title.length > 160 || message.length > 5000) return res.status(400).json({ success: false, message: "Title or message is too long." });
 
     let users = [];
-    if (recipient === "Single" || recipient === "User") {
+    if (recipient === "Single" || recipient === "User" || recipient === "Specific User") {
       const id = Number(req.body.userId);
       if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ success: false, message: "Select a valid user." });
       const user = await User.findByPk(id, { attributes: ["id"] });

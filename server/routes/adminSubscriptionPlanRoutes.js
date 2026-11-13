@@ -7,6 +7,9 @@ const admin = require("../middleware/admin");
 
 const controller = require("../controllers/adminSubscriptionPlanController");
 
+router.get("/subscriptions",auth,admin,controller.getSubscriptions);
+router.put("/subscriptions/:id",auth,admin,controller.updateSubscription);
+
 /* ==========================================
    GET ALL PLANS
 ========================================== */

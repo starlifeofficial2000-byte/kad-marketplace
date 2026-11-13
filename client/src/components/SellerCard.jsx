@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../config/axios";
 import "./SellerCard.css";
+import SERVER_URL from "../config/server";
 
-const SERVER_URL =
-    import.meta.env.VITE_SERVER_URL || "";
+
 
 const R2_PUBLIC_URL =
     import.meta.env.VITE_R2_PUBLIC_URL || "";

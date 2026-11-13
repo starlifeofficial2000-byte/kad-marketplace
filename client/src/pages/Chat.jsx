@@ -24,6 +24,7 @@ import {
 } from "react-icons/fa";
 
 import "./Chat.css";
+import SERVER_URL from "../config/server";
 
 
 /* =========================================================
@@ -46,6 +47,7 @@ const normalizeUrl = (value) => {
 const API_SERVER = normalizeUrl(
     import.meta.env.VITE_API_SERVER ||
     import.meta.env.VITE_SERVER_URL ||
+    SERVER_URL ||
     (
         IS_PRODUCTION
             ? window.location.origin

@@ -1,25 +1,2 @@
-import { useTheme } from "../context/ThemeContext";
-
-function ThemeToggle() {
-
-    const { darkMode, toggleTheme } = useTheme();
-
-    return (
-
-        <button
-
-            className="theme-btn"
-
-            onClick={toggleTheme}
-
-        >
-
-            {darkMode ? "☀ Light Mode" : "🌙 Dark Mode"}
-
-        </button>
-
-    );
-
-}
-
-export default ThemeToggle;
+import { useEffect, useState } from "react";
+export default function ThemeToggle(){const [darkMode,setDarkMode]=useState(()=>{try{return localStorage.getItem("kad-theme")==="dark"}catch{return false}});useEffect(()=>{document.documentElement.classList.toggle("dark",darkMode);try{localStorage.setItem("kad-theme",darkMode?"dark":"light")}catch{}},[darkMode]);return <button type="button" className="theme-btn" onClick={()=>setDarkMode(v=>!v)} aria-pressed={darkMode}>{darkMode?"☀ Light Mode":"🌙 Dark Mode"}</button>}

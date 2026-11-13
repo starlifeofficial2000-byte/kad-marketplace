@@ -1,62 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import axios from "axios";
+import api from "../../config/axios";
+import SERVER_URL from "../../config/server";
 import "./MyStore.css";
 
-/* ============================================================
-   KAD MARKETPLACE — MY STORE
-   ============================================================ */
-
-const API_BASE_URL =
-    import.meta.env.VITE_API_URL ||
-    "https://kad-marketplace-production.up.railway.app";
-
-const API_URL = API_BASE_URL.replace(/\/+$/, "");
-
-/* ============================================================
-   AXIOS INSTANCE
-   ============================================================ */
-
-const api = axios.create({
-    baseURL: API_URL,
-    withCredentials: true,
-    headers: {
-        Accept: "application/json",
-    },
-});
-
-/* ============================================================
-   AUTH TOKEN HELPER
-   ============================================================ */
-
-const getToken = () => {
-    return (
-        localStorage.getItem("token") ||
-        localStorage.getItem("accessToken") ||
-        localStorage.getItem("authToken") ||
-        ""
-    );
-};
-
-/* ============================================================
-   AUTH HEADERS
-   ============================================================ */
-
-const getAuthConfig = () => {
-    const token = getToken();
-
-    if (!token) {
-        return {
-            withCredentials: true,
-        };
-    }
-
-    return {
-        withCredentials: true,
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    };
-};
+const API_URL = SERVER_URL;
 
 /* ============================================================
    API RESPONSE HELPER
@@ -291,10 +238,7 @@ function MyStore() {
             setLoading(true);
             setError("");
 
-            const response = await api.get(
-                "/api/store/my-store",
-                getAuthConfig()
-            );
+            const response = await api.get("/store/my-store");
 
             console.log(
                 "MY STORE RESPONSE:",
@@ -510,23 +454,15 @@ function MyStore() {
                     type: logoFile.type,
                     size: logoFile.size,
                     endpoint:
-                        "/api/store/upload-logo",
+                        "/store/upload-logo",
                 }
             );
 
             const response =
                 await api.post(
-                    "/api/store/upload-logo",
+                    "/store/upload-logo",
                     formData,
-                    {
-                        ...getAuthConfig(),
-
-                        headers: {
-    ...(getAuthConfig().headers || {}),
-},
-
-                        timeout: 120000,
-                    }
+                    { timeout: 120000 }
                 );
 
             console.log(
@@ -643,23 +579,15 @@ function MyStore() {
                     type: bannerFile.type,
                     size: bannerFile.size,
                     endpoint:
-                        "/api/store/upload-banner",
+                        "/store/upload-banner",
                 }
             );
 
             const response =
                 await api.post(
-                    "/api/store/upload-banner",
+                    "/store/upload-banner",
                     formData,
-                    {
-                        ...getAuthConfig(),
-
-                      headers: {
-    ...(getAuthConfig().headers || {}),
-},
-
-                        timeout: 120000,
-                    }
+                    { timeout: 120000 }
                 );
 
             console.log(
@@ -799,9 +727,8 @@ function MyStore() {
 
             const response =
                 await api.put(
-                    "/api/store/my-store",
-                    payload,
-                    getAuthConfig()
+                    "/store/my-store",
+                    payload
                 );
 
             console.log(

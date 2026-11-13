@@ -4,7 +4,6 @@ import "./Support.css";
 
 function Support() {
 
-    const token = localStorage.getItem("token");
 
     const [form, setForm] = useState({
 
@@ -36,9 +35,7 @@ function Support() {
 
         try {
 
-            const response = await api.get(
-    "/settings"
-);
+            await api.post("/support", form);
 
             alert("Support ticket submitted successfully.");
 

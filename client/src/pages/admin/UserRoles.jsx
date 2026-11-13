@@ -20,40 +20,23 @@ loadRoles();
 
 const loadUsers=async()=>{
 
-const response = await api.get(
-    "/settings"
-);
-setUsers(res.data.users);
+const response = await api.get("/admin/users");
+setUsers(response.data?.users || []);
 
 };
 
 const loadRoles=async()=>{
 
-const res=await axios.get(
-
-"/api/roles",
-
-{
-
-headers:{
-
-Authorization:`Bearer ${token}`
-
-}
-
-}
-
-);
-
-setRoles(res.data.roles);
+const response = await api.get("/roles");
+setRoles(response.data?.roles || response.data || []);
 
 };
 
 const changeRole=async(userId,roleId)=>{
 
-await axios.put(
+await api.put(
 
-`/api/roles/users/${userId}`,
+`/admin/users/${userId}/role`,
 
 {
 
@@ -117,7 +100,7 @@ users.map(user=>(
 
 {
 
-user.roles.length
+(user.roles || []).length
 
 ?
 
@@ -149,7 +132,7 @@ e.target.value
 
 defaultValue={
 
-user.roles.length
+(user.roles || []).length
 
 ?
 

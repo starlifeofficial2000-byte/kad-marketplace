@@ -90,74 +90,6 @@ function Payments() {
 
 
     /* ==========================================
-       REFUND PAYMENT
-    ========================================== */
-
-    const refundPayment = async (payment) => {
-        const confirmed = window.confirm(
-            `Are you sure you want to refund GH₵ ${payment.amount}?`
-        );
-
-        if (!confirmed) return;
-
-        try {
-            await api.put(
-                `/admin/payments/${payment.id}/refund`
-            );
-
-            alert("Payment refunded successfully.");
-
-            loadPaymentsData();
-
-        } catch (error) {
-            console.error(
-                "REFUND ERROR:",
-                error.response?.data || error.message
-            );
-
-            alert(
-                error.response?.data?.message ||
-                "Unable to refund payment."
-            );
-        }
-    };
-
-
-    /* ==========================================
-       DELETE PAYMENT
-    ========================================== */
-
-    const deletePayment = async (payment) => {
-        const confirmed = window.confirm(
-            "Delete this payment record permanently?"
-        );
-
-        if (!confirmed) return;
-
-        try {
-            await api.delete(
-                `/admin/payments/${payment.id}`
-            );
-
-            alert("Payment deleted successfully.");
-
-            loadPaymentsData();
-
-        } catch (error) {
-            console.error(
-                "DELETE PAYMENT ERROR:",
-                error.response?.data || error.message
-            );
-
-            alert(
-                error.response?.data?.message ||
-                "Unable to delete payment."
-            );
-        }
-    };
-
-
-    /* ==========================================
        TABLE COLUMNS
     ========================================== */
 
@@ -408,32 +340,7 @@ function Payments() {
                             </button>
 
 
-                            {
-                                payment.status?.toLowerCase() === "paid" && (
 
-                                    <button
-                                        className="refund-btn"
-
-                                        onClick={() =>
-                                            refundPayment(payment)
-                                        }
-                                    >
-                                        Refund
-                                    </button>
-
-                                )
-                            }
-
-
-                            <button
-                                className="delete-btn"
-
-                                onClick={() =>
-                                    deletePayment(payment)
-                                }
-                            >
-                                Delete
-                            </button>
 
                         </div>
 

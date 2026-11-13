@@ -25,7 +25,7 @@ function TrendingProducts() {
 
             setLoading(true);
 
-            const res = await api.get("/products/trending");
+            const res = await api.get("/products/recommended");
 
             console.log(
                 "TRENDING / RECOMMENDED RESPONSE:",

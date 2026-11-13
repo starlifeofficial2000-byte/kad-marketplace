@@ -62,7 +62,7 @@ function PermissionMatrix({
 
             const response = await api.get(
 
-                "/roles/permissions"
+                "/roles/permissions/all"
 
             );
 

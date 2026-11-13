@@ -37,7 +37,7 @@ function Trending() {
 
             const response = await api.get(
 
-                "/products/express"
+                "/products/trending"
 
             );
 

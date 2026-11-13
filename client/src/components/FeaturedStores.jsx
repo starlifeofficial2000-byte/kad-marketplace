@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../../config/axios";
+import api from "../config/axios";
 import "./FeaturedStores.css";
 
 function FeaturedStores() {

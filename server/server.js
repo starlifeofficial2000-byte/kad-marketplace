@@ -311,18 +311,7 @@ const normalizeOrigin = (
 
     }
 
-    return String(url)
-
-        .trim()
-
-        .replace(
-
-            //+$/,
-
-            ""
-
-        );
-
+    return String(url).trim().replace(/\/+$/, "");
 };
 
 /*

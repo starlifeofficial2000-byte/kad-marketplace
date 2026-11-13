@@ -18,11 +18,8 @@ function UsersPage() {
 
         try {
 
-         const response = await api.get(
-    "/settings"
-);
-
-            setUsers(response.data);
+            const response = await api.get("/admin/users");
+            setUsers(response.data?.users || []);
 
         }
 
@@ -40,9 +37,9 @@ function UsersPage() {
 
         try {
 
-            await axios.put(
+            await api.put(
 
-                `/api/admin/users/suspend/${id}`,
+                `/admin/users/${id}/block`,
 
                 {},
 
@@ -76,9 +73,9 @@ function UsersPage() {
 
         try {
 
-            await axios.delete(
+            await api.delete(
 
-                `/api/admin/users/${id}`,
+                `/admin/users/${id}`,
 
                 {
 
@@ -106,9 +103,9 @@ function UsersPage() {
 
     const filteredUsers = users.filter(user =>
 
-        user.name.toLowerCase().includes(search.toLowerCase()) ||
+        String(user.name || "").toLowerCase().includes(search.toLowerCase()) ||
 
-        user.email.toLowerCase().includes(search.toLowerCase())
+        String(user.email || "").toLowerCase().includes(search.toLowerCase())
 
     );
 

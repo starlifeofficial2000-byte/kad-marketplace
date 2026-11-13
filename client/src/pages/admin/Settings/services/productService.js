@@ -1,4 +1,4 @@
-import api from "../config/axios";
+import api from "../../../../config/axios";
 
 
 /* =========================================
@@ -89,7 +89,7 @@ export const deleteProduct = (id) => {
 export const getMyProducts = () => {
 
     return api.get(
-        "/products/my-products"
+        "/products/seller/my-products"
     );
 
 };

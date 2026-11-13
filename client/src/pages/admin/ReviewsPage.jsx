@@ -3,8 +3,6 @@ import api from "../../config/axios";
 
 function ReviewsPage() {
 
-    const token = localStorage.getItem("token");
-
     const [reviews, setReviews] = useState([]);
     const [search, setSearch] = useState("");
 
@@ -18,10 +16,8 @@ function ReviewsPage() {
 
         try {
 
-         const response = await api.get(
-    "/settings"
-);
-            setReviews(response.data);
+            const response = await api.get("/reviews/admin");
+            setReviews(response.data?.reviews || []);
 
         }
 
@@ -39,21 +35,7 @@ function ReviewsPage() {
 
         try{
 
-            await axios.delete(
-
-                `/api/admin/reviews/${id}`,
-
-                {
-
-                    headers:{
-
-                        Authorization:`Bearer ${token}`
-
-                    }
-
-                }
-
-            );
+            await api.delete(`/reviews/${id}`);
 
             loadReviews();
 
@@ -71,7 +53,7 @@ function ReviewsPage() {
 
         return (
 
-            review.review.toLowerCase().includes(search.toLowerCase())
+            String(review.review || review.comment || "").toLowerCase().includes(search.toLowerCase())
 
         );
 

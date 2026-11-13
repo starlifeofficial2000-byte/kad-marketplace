@@ -1,5 +1,2 @@
-const API_URL =
-    import.meta.env.VITE_API_URL ||
-    "/api";
-
-export default API_URL;
+import SERVER_URL from "./server";
+export default `${SERVER_URL}/api`;

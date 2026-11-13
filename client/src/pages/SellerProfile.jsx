@@ -5,10 +5,10 @@ import api from "../config/axios";
 import ReviewList from "../components/ReviewList";
 import SEO from "../components/SEO";
 import "./SellerProfile.css";
+import SERVER_URL from "../config/server";
 
 
-const SERVER_URL =
-    import.meta.env.VITE_SERVER_URL || "";
+
 
 const R2_PUBLIC_URL =
     import.meta.env.VITE_R2_PUBLIC_URL || "";

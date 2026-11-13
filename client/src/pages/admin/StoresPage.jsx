@@ -63,7 +63,7 @@ function StoresPage() {
 
         try {
             await api.put(
-                `/admin/stores/verify/${id}`
+                `/admin/stores/${id}/verify`
             );
 
             alert("Store verified successfully.");
@@ -92,7 +92,7 @@ function StoresPage() {
 
         try {
             await api.put(
-                `/admin/stores/suspend/${id}`
+                `/admin/stores/${id}/suspend`
             );
 
             alert("Store suspended successfully.");
@@ -121,7 +121,7 @@ function StoresPage() {
 
         try {
             await api.put(
-                `/admin/stores/activate/${id}`
+                `/admin/stores/${id}/activate`
             );
 
             alert("Store activated successfully.");

@@ -30,6 +30,7 @@ import {
 } from "react-icons/fa";
 
 import "./Notifications.css";
+import SERVER_URL from "../config/server";
 
 
 /* =========================================================
@@ -58,6 +59,7 @@ const API_SERVER =
     normalizeUrl(
         import.meta.env.VITE_API_SERVER ||
         import.meta.env.VITE_SERVER_URL ||
+        SERVER_URL ||
         (
             IS_PRODUCTION
                 ? window.location.origin

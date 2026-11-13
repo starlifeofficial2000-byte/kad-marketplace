@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 
 import api from "../config/axios";
+import SERVER_URL from "../config/server";
 
 import {
     FaSearch,
@@ -22,12 +23,7 @@ import "./Inbox.css";
    SERVER CONFIGURATION
 ========================================================= */
 
-const API_SERVER = (
-    import.meta.env.VITE_API_URL ||
-    "https://api.kadmarket.com"
-).replace(/\/+$/, "");
-
-const SOCKET_URL = API_SERVER;
+const SOCKET_URL = SERVER_URL || window.location.origin;
 
 const SOCKET_PATH = "/socket.io";
 

@@ -4,7 +4,6 @@ import "./ReportsPage.css";
 
 function ReportsPage() {
 
-    const token = localStorage.getItem("token");
 
     const [reports, setReports] = useState([]);
 
@@ -18,10 +17,8 @@ function ReportsPage() {
 
         try {
 
-            const response = await api.get(
-    "/settings"
-);
-            setReports(response.data);
+            const response = await api.get("/reports/admin");
+            setReports(response.data?.reports || []);
 
         }
 
@@ -37,23 +34,7 @@ function ReportsPage() {
 
         try{
 
-            await axios.put(
-
-                `/api/admin/reports/${id}`,
-
-                {},
-
-                {
-
-                    headers:{
-
-                        Authorization:`Bearer ${token}`
-
-                    }
-
-                }
-
-            );
+            await api.put(`/reports/admin/${id}`, { status: "Resolved" });
 
             loadReports();
 
@@ -73,21 +54,7 @@ function ReportsPage() {
 
         try{
 
-            await axios.delete(
-
-                `/api/admin/reports/${id}`,
-
-                {
-
-                    headers:{
-
-                        Authorization:`Bearer ${token}`
-
-                    }
-
-                }
-
-            );
+            await api.delete(`/reports/admin/${id}`);
 
             loadReports();
 
@@ -121,7 +88,7 @@ function ReportsPage() {
 
         src={
 
-            report.Product.images.length
+            (report.Product?.images || []).length
 
             ?
 
@@ -133,17 +100,17 @@ function ReportsPage() {
 
         }
 
-        alt={report.Product.title}
+        alt={report.Product?.title || "Product unavailable"}
 
     />
 
     <div className="report-info">
 
-        <h2>{report.Product.title}</h2>
+        <h2>{report.Product?.title || "Product unavailable"}</h2>
 
         <h3>
 
-            GH₵ {report.Product.price}
+            GH₵ {report.Product?.price ?? "—"}
 
         </h3>
 
@@ -151,7 +118,7 @@ function ReportsPage() {
 
             <strong>Reported By:</strong>
 
-            {report.User.name}
+            {report.User?.name || "Unknown user"}
 
         </p>
 
@@ -159,7 +126,7 @@ function ReportsPage() {
 
             <strong>Phone:</strong>
 
-            {report.User.phone}
+            {report.User?.phone || "—"}
 
         </p>
 
@@ -183,7 +150,7 @@ function ReportsPage() {
 
             <strong>Location:</strong>
 
-            {report.Product.location}
+            {report.Product?.location || "—"}
 
         </p>
 

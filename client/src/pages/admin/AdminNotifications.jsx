@@ -47,9 +47,7 @@ function AdminNotifications() {
             setLoadingUsers(true);
 
 
-            const response = await api.get(
-                "/settings"
-            );
+            const response = await api.get("/admin/notifications/users");
 
 
             const usersData =

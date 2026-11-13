@@ -7,7 +7,7 @@ function DynamicFavicon() {
 
         const loadFavicon = async () => {
             try {
-                const response = await api.get("/settings");
+                const response = await api.get("/settings/public");
 
                 console.log(
                     "[FAVICON] SETTINGS RESPONSE:",

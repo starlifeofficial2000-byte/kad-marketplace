@@ -37,7 +37,7 @@ function Recommended() {
 
             const response = await api.get(
 
-                "/products/trending"
+                "/products/recommended"
 
             );
 

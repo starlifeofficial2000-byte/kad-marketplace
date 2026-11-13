@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import api from "../config/axios";
 import "./Promotions.css";
+import SERVER_URL from "../config/server";
 
-const SERVER_URL =
-    import.meta.env.VITE_SERVER_URL ||
-    "";
+
 
 function Promotions() {
 

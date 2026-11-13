@@ -290,9 +290,9 @@ function MarketplaceSettings() {
 
 
             const response =
-                await axios.put(
+                await api.put(
 
-                    "/api/settings",
+                    "/settings",
 
                     settingsData,
 

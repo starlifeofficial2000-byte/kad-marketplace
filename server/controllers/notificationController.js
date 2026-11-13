@@ -159,3 +159,4 @@ exports.markAsRead = async (req, res) => {
     }
 
 };
+exports.deleteNotification = async (req,res)=>{try{const row=await Notification.findOne({where:{id:req.params.id,userId:req.user.id}});if(!row)return res.status(404).json({success:false,message:"Notification not found."});await row.destroy();return res.json({success:true,message:"Notification deleted."});}catch(error){console.error("DELETE NOTIFICATION ERROR:",error);return res.status(500).json({success:false,message:"Unable to delete notification."});}};

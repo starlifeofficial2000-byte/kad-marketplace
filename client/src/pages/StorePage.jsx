@@ -3,8 +3,9 @@ import { useParams, Link } from "react-router-dom";
 import api from "../config/axios";
 import "./StorePage.css";
 import SEO from "../components/SEO";
+import SERVER_URL from "../config/server";
 
-const SERVER_URL = "";
+
 
 function StorePage() {
 

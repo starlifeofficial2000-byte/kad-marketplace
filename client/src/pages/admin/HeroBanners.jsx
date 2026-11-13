@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import api from "../../config/axios";
 import "./HeroBanners.css";
+import SERVER_URL from "../../config/server";
 
-const SERVER_URL =
-    import.meta.env.VITE_SERVER_URL ||
-    "https://kad-marketplace-production.up.railway.app";
+
 
 const INITIAL_FORM_DATA = {
     title: "",

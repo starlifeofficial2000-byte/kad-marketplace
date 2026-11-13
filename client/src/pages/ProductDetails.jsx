@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import api from "../config/axios";
+import SERVER_URL from "../config/server";
 
 import ReviewForm from "../components/ReviewForm";
 import ReviewList from "../components/ReviewList";
@@ -32,9 +33,7 @@ function ProductDetails() {
        BACKEND URL
     ===================================================== */
 
-    const backendUrl = (
-        import.meta.env.VITE_API_URL || "/api"
-    ).replace(/\/api\/?$/, "");
+    const backendUrl = SERVER_URL;
 
     /* =====================================================
        IMAGE URL

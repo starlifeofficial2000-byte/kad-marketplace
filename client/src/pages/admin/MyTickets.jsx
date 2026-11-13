@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import api from "../../config/axios";
 import { useNavigate } from "react-router-dom";
-import "./MyTickets.css";
+
 
 function MyTickets() {
 
-    const token = localStorage.getItem("token");
 
     const navigate = useNavigate();
 
@@ -21,11 +20,9 @@ function MyTickets() {
 
         try {
 
-           const response = await api.get(
-    "/settings"
-);
-
-            setTickets(res.data);
+            const response = await api.get("/support/my-tickets");
+            const payload = response.data;
+            setTickets(Array.isArray(payload) ? payload : (payload?.tickets || payload?.data || []));
 
         }
 
@@ -99,9 +96,9 @@ function MyTickets() {
 
                             <td>
 
-                                <span className={`priority ${ticket.priority.toLowerCase()}`}>
+                                <span className={`priority ${(ticket.priority || "normal").toLowerCase()}`}>
 
-                                    {ticket.priority}
+                                    {ticket.priority || "Normal"}
 
                                 </span>
 
@@ -109,9 +106,9 @@ function MyTickets() {
 
                             <td>
 
-                                <span className={`status ${ticket.status.toLowerCase()}`}>
+                                <span className={`status ${(ticket.status || "open").toLowerCase()}`}>
 
-                                    {ticket.status}
+                                    {ticket.status || "Open"}
 
                                 </span>
 

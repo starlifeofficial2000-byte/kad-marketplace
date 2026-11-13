@@ -8,7 +8,6 @@ function PaymentDetails() {
 
     const { id } = useParams();
 
-    const token = localStorage.getItem("token");
 
     const [payment, setPayment] = useState(null);
 
@@ -21,10 +20,8 @@ function PaymentDetails() {
     const loadPayment = async () => {
 
         try {
-const response = await api.get(
-    "/settings"
-);
-            setPayment(res.data);
+const response = await api.get(`/admin/payments/${id}`);
+            setPayment(response.data);
 
         }
 

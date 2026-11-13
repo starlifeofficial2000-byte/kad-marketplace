@@ -100,6 +100,9 @@ router.put(
 );
 
 
+router.put("/products/:id/feature",auth,admin,(req,res,next)=>{req.params.flag="featured";next();},controller.setProductPromotionFlag);
+router.put("/products/:id/express",auth,admin,(req,res,next)=>{req.params.flag="express";next();},controller.setProductPromotionFlag);
+
 /* ==========================================
    DELETE PRODUCT
 ========================================== */

@@ -29,7 +29,7 @@ function TrendingProducts() {
         try {
 
             const res = await api.get(
-                "/products/express"
+                "/products/trending"
             );
 
 

@@ -1,4 +1,4 @@
-import api from "../config/axios";
+import api from "../../../../config/axios";
 
 
 /* =========================================
@@ -23,7 +23,7 @@ export const markNotificationAsRead = (
 ) => {
 
     return api.put(
-        `/notifications/${id}/read`
+        `/notifications/read/${id}`
     );
 
 };

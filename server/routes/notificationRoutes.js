@@ -12,6 +12,8 @@ router.get(
     notificationController.getNotifications
 );
 
+router.delete("/:id", auth, notificationController.deleteNotification);
+
 router.put(
     "/read/:id",
     auth,

@@ -593,3 +593,4 @@ exports.deleteProduct = async (req, res) => {
     }
 
 };
+exports.setProductPromotionFlag=async(req,res)=>{try{const flag=req.params.flag;if(!["featured","express"].includes(flag))return res.status(400).json({success:false,message:"Unsupported promotion flag."});const product=await Product.findByPk(req.params.id);if(!product||product.deleted)return res.status(404).json({success:false,message:"Product not found."});product[flag]=req.body.enabled===undefined?!Boolean(product[flag]):Boolean(req.body.enabled);await product.save();return res.json({success:true,product,message:`${flag} status updated.`});}catch(error){console.error("ADMIN PRODUCT PROMOTION UPDATE ERROR:",error);return res.status(500).json({success:false,message:"Unable to update product promotion."});}};

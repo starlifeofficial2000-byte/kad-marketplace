@@ -26,13 +26,10 @@ import {
 } from "react-icons/fa";
 
 import "./ViewUser.css";
+import SERVER_URL from "../../config/server";
 
 
-const API_BASE_URL =
-    import.meta.env.VITE_API_URL || "/api";
 
-const SERVER_URL =
-    API_BASE_URL.replace("/api", "");
 
 
 /* ==========================================

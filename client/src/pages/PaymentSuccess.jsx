@@ -126,7 +126,7 @@ function PaymentSuccess() {
                     `/promotions/verify/${encodedReference}`;
             } else {
                 verificationEndpoint =
-                    `/payments/callback/verify/${encodedReference}`;
+                    `/payments/verify/${encodedReference}`;
             }
 
             console.log(

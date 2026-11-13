@@ -3,9 +3,12 @@ const express = require("express");
 const router = express.Router();
 
 const auth = require("../middleware/auth");
+const admin = require("../middleware/admin");
 
 const controller = require("../controllers/reviewController");
 
+
+router.get("/admin", auth, admin, controller.getAllReviews);
 
 /* =========================================================
    CREATE REVIEW

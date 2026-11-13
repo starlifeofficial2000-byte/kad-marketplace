@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import api from "../../config/axios";
+import api from "../config/axios";
 
 import ProductCard from "../components/ProductCard";
 
@@ -8,7 +8,7 @@ import "./PublicStore.css";
 
 function PublicStore() {
 
-    const { id } = useParams();
+    const { id, storeSlug } = useParams();
 
     const [loading, setLoading] = useState(true);
 
@@ -37,9 +37,8 @@ function PublicStore() {
 
             setError("");
 
-            const response = await api.get(
-                `/store/public/${id}`
-            );
+            const slug = storeSlug || id;
+            const response = await api.get(`/store/${encodeURIComponent(slug)}`);
 
             console.log(
                 "PUBLIC STORE RESPONSE:",

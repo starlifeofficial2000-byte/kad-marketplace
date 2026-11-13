@@ -435,3 +435,4 @@ exports.deleteReview = async (req, res) => {
         });
     }
 };
+exports.getAllReviews = async (req,res)=>{try{const rows=await Review.findAll({include:[{model:User,as:"buyer",attributes:["id","name","email"]},{model:Product,as:"product",attributes:["id","title","name","userId"]}],order:[["createdAt","DESC"]]});return res.json({success:true,reviews:rows.map(row=>{const item=row.toJSON();return {...item,buyerName:item.buyer?.name||"Unknown buyer",sellerName:item.product?.userId?`Seller #${item.product.userId}`:"Unknown seller",productTitle:item.product?.title||item.product?.name||"Deleted product",review:item.comment||""};})});}catch(error){console.error("ADMIN GET REVIEWS ERROR:",error);return res.status(500).json({success:false,message:"Unable to load reviews."});}};
