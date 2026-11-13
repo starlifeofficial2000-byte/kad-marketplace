@@ -5,204 +5,204 @@ import { useNavigate } from "react-router-dom";
 import "./SupportTickets.css";
 
 function SupportTickets() {
-
     const navigate = useNavigate();
 
     const [tickets, setTickets] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
     useEffect(() => {
-
         loadTickets();
-
     }, []);
 
     const loadTickets = async () => {
-
         try {
+            setLoading(true);
+            setError("");
 
-            const response = await api.get(
-                "/admin/support"
-            );
+            const response = await api.get("/admin/support");
 
-            console.log(
-                "SUPPORT TICKETS:",
-                response.data
-            );
+            console.log("SUPPORT TICKETS:", response.data);
 
-            setTickets(response.data);
+            // Extract the tickets array from the API response.
+            const data = response.data;
 
-        }
+            const ticketList = Array.isArray(data)
+                ? data
+                : Array.isArray(data?.tickets)
+                    ? data.tickets
+                    : [];
 
-        catch (error) {
+            setTickets(ticketList);
 
+        } catch (error) {
             console.error(
                 "LOAD TICKETS ERROR:",
                 error.response?.data || error.message
             );
 
-        }
+            setTickets([]);
 
-        finally {
+            setError(
+                error.response?.data?.message ||
+                "Unable to load support tickets. Please try again."
+            );
 
+        } finally {
             setLoading(false);
+        }
+    };
 
+    const formatDate = (date) => {
+        if (!date) return "N/A";
+
+        const parsedDate = new Date(date);
+
+        if (Number.isNaN(parsedDate.getTime())) {
+            return "N/A";
         }
 
+        return parsedDate.toLocaleDateString();
     };
 
     if (loading) {
-
-        return <h2>Loading support tickets...</h2>;
-
+        return (
+            <div className="support-page">
+                <h2>Loading support tickets...</h2>
+            </div>
+        );
     }
 
     return (
-
         <div className="support-page">
 
-            <h1>Support Tickets</h1>
+            <div className="support-header">
+                <div>
+                    <h1>Support Tickets</h1>
+                    <p>Manage customer support requests.</p>
+                </div>
 
-            <table className="support-table">
+                <button
+                    type="button"
+                    className="view-btn"
+                    onClick={loadTickets}
+                >
+                    Refresh
+                </button>
+            </div>
 
-                <thead>
+            {error && (
+                <div className="support-error">
+                    {error}
+                </div>
+            )}
 
-                    <tr>
+            <div className="support-summary">
+                <h3>
+                    Total Tickets: {tickets.length}
+                </h3>
+            </div>
 
-                        <th>ID</th>
+            <div className="support-table-container">
 
-                        <th>User</th>
+                <table className="support-table">
 
-                        <th>Subject</th>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>Subject</th>
+                            <th>Category</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
 
-                        <th>Category</th>
+                    <tbody>
 
-                        <th>Priority</th>
-
-                        <th>Status</th>
-
-                        <th>Date</th>
-
-                        <th>Action</th>
-
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    {
-
-                        tickets.length === 0 ?
-
-                        (
-
+                        {tickets.length === 0 ? (
                             <tr>
-
                                 <td colSpan="8">
-
                                     No support tickets found.
-
                                 </td>
-
                             </tr>
+                        ) : (
+                            tickets.map((ticket, index) => (
 
-                        )
-
-                        :
-
-                        (
-
-                            tickets.map(ticket => (
-
-                                <tr key={ticket.id}>
-
-                                    <td>#{ticket.id}</td>
+                                <tr key={ticket.id || index}>
 
                                     <td>
-
-                                        {ticket.user?.name || "Unknown User"}
-
+                                        #{ticket.id || "N/A"}
                                     </td>
 
-                                    <td>{ticket.subject}</td>
-
-                                    <td>{ticket.category}</td>
+                                    <td>
+                                        {ticket.user?.name ||
+                                            ticket.user?.username ||
+                                            ticket.user?.email ||
+                                            "Unknown User"}
+                                    </td>
 
                                     <td>
+                                        {ticket.subject || "No subject"}
+                                    </td>
 
+                                    <td>
+                                        {ticket.category || "Other"}
+                                    </td>
+
+                                    <td>
                                         <span
                                             className={`priority ${
-                                                (ticket.priority || "")
-                                                    .toLowerCase()
+                                                (ticket.priority || "medium").toLowerCase()
                                             }`}
                                         >
-
-                                            {ticket.priority}
-
+                                            {ticket.priority || "Medium"}
                                         </span>
-
                                     </td>
 
                                     <td>
-
                                         <span
                                             className={`status ${
-                                                (ticket.status || "")
-                                                    .toLowerCase()
+                                                (ticket.status || "open").toLowerCase()
                                             }`}
                                         >
-
-                                            {ticket.status}
-
+                                            {ticket.status || "Open"}
                                         </span>
-
                                     </td>
 
                                     <td>
-
-                                        {new Date(
-                                            ticket.createdAt
-                                        ).toLocaleDateString()}
-
+                                        {formatDate(ticket.createdAt)}
                                     </td>
 
                                     <td>
-
                                         <button
-
+                                            type="button"
                                             className="view-btn"
-
                                             onClick={() =>
                                                 navigate(
                                                     `/admin/support/${ticket.id}`
                                                 )
                                             }
-
                                         >
-
                                             View
-
                                         </button>
-
                                     </td>
 
                                 </tr>
 
                             ))
+                        )}
 
-                        )
+                    </tbody>
 
-                    }
+                </table>
 
-                </tbody>
-
-            </table>
+            </div>
 
         </div>
-
     );
-
 }
 
 export default SupportTickets;
