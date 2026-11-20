@@ -323,11 +323,12 @@ function ProductCard({ product }) {
                 {/* =================================
                     VIEWS
                 ================================= */}
-
+{ /*
                 <div className="product-stats">
                     👁 {product.views || 0} views
                 </div>
 
+               */ }
                 {/* =================================
                     ACTION BUTTONS
                 ================================= */}
