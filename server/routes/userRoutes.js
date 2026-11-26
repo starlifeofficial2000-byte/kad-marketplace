@@ -5,6 +5,7 @@ const router = express.Router();
 const auth = require("../middleware/auth");
 const permission = require("../middleware/permission");
 const upload = require("../middleware/uploadProfile");
+const accountController = require("../controllers/accountController");
 
 const {
 
@@ -52,6 +53,15 @@ router.put(
 
     updateProfile
 
+);
+
+/* ==========================================
+   DELETE MY OWN ACCOUNT
+========================================== */
+router.delete(
+    "/me",
+    auth,
+    accountController.deleteMyAccount
 );
 
 /* ==========================================

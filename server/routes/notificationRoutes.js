@@ -6,6 +6,18 @@ const notificationController = require("../controllers/notificationController");
 
 const auth = require("../middleware/auth");
 
+router.post(
+    "/device-token",
+    auth,
+    notificationController.registerDeviceToken
+);
+
+router.delete(
+    "/device-token",
+    auth,
+    notificationController.unregisterDeviceToken
+);
+
 router.get(
     "/",
     auth,

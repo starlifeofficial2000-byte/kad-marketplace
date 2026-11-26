@@ -465,11 +465,11 @@ exports.createMyStore = async (req, res) => {
         const address = String(req.body.address || user.address || "").trim();
         const description = String(req.body.description || "").trim();
 
-        if (!storeName || !businessCategory || !phone || !region || !city) {
+        if (!String(user.name || "").trim() || !String(user.ghanaCard || "").trim() || !address || !storeName || !businessCategory || !phone || !region || !city) {
             return res.status(400).json({
                 success: false,
                 code: "SELLER_PROFILE_INCOMPLETE",
-                message: "Complete your store name, business category, phone, region and city to create your seller store."
+                message: "Complete your full name, phone, Ghana Card, address, region and city in your profile, then provide your store name and business category."
             });
         }
 
@@ -1617,20 +1617,21 @@ exports.getPublicStore = async (
             await Store.findOne({
 
                 where: {
-                    storeSlug
+                    storeSlug,
+                    status: "Active"
                 }
 
             });
 
 
-        if (!store) {
+        if (!store || store.status !== "Active") {
 
             return res.status(404).json({
 
                 success: false,
 
                 message:
-                    "Store not found."
+                    "Active store not found."
             });
         }
 
@@ -1645,6 +1646,9 @@ exports.getPublicStore = async (
 
                     status:
                         "Approved",
+
+                    sellerStatus:
+                        "Active",
 
                     deleted:
                         false
@@ -2062,14 +2066,14 @@ exports.getStoreProducts = async (
             );
 
 
-        if (!store) {
+        if (!store || store.status !== "Active") {
 
             return res.status(404).json({
 
                 success: false,
 
                 message:
-                    "Store not found."
+                    "Active store not found."
             });
         }
 
@@ -2084,6 +2088,9 @@ exports.getStoreProducts = async (
 
                     status:
                         "Approved",
+
+                    sellerStatus:
+                        "Active",
 
                     deleted:
                         false

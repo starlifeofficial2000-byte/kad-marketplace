@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 
 const auth = require("../middleware/auth");
+const sellerProfileComplete = require("../middleware/sellerProfileComplete");
 
 const upload = require("../middleware/storeUpload");
 
@@ -42,6 +43,7 @@ router.get(
 router.post(
     "/my-store",
     auth,
+    sellerProfileComplete,
     storeController.createMyStore
 );
 

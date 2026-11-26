@@ -1717,14 +1717,32 @@ exports.getProductById = async (req, res) => {
         }
 
         const product = await Product.findOne({
-
             where: {
                 id: Number(id),
                 status: "Approved",
                 sellerStatus: "Active",
                 deleted: false
-            }
-
+            },
+            include: [
+                {
+                    model: User,
+                    as: "seller",
+                    attributes: ["id", "name", "email", "profileImage"],
+                    required: false
+                },
+                {
+                    model: Store,
+                    as: "store",
+                    attributes: [
+                        "id", "storeName", "storeSlug", "logo", "banner",
+                        "verified", "status", "phone", "whatsapp", "email",
+                        "website", "facebook", "instagram", "tiktok", "x",
+                        "address", "city", "region", "businessHours"
+                    ],
+                    where: { status: "Active" },
+                    required: false
+                }
+            ]
         });
 
         if (!product) {

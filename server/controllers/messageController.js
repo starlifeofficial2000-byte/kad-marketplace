@@ -4,6 +4,7 @@ const Conversation = require("../models/Conversation");
 const Message = require("../models/Message");
 const Product = require("../models/Product");
 const User = require("../models/User");
+const { sendPushToUser } = require("../services/pushNotificationService");
 
 const {
     getR2PublicUrl,
@@ -230,6 +231,24 @@ const emitMessageNotification = ({
         "new_message_notification",
         notification
     );
+
+    const pushBody = notification.message ||
+        (notification.type === "image" ? "Sent you a photo." :
+         notification.type === "audio" ? "Sent you a voice message." :
+         "You have a new message.");
+
+    sendPushToUser(recipientId, {
+        title: "New message on KAD Marketplace",
+        body: pushBody,
+        data: {
+            type: "message",
+            conversationId: conversation.id,
+            messageId: message.id,
+            senderId
+        }
+    }).catch((error) => {
+        console.warn("[FCM] Message push notification failed:", error.message);
+    });
 
     console.log(
         `🔔 Message notification sent to user ${recipientId}`
@@ -1685,33 +1704,37 @@ exports.markDelivered = async (
            MARK OTHER USER'S SENT MESSAGES DELIVERED
         ================================================= */
 
-        await Message.update(
-
-            {
-                status:
-                    "delivered"
+        const pendingMessages = await Message.findAll({
+            where: {
+                conversationId,
+                senderId: { [Op.ne]: userId },
+                status: "sent"
             },
+            attributes: ["id", "senderId"]
+        });
 
+        await Message.update(
+            { status: "delivered" },
             {
                 where: {
-
                     conversationId,
-
-                    senderId: {
-                        [Op.ne]:
-                            userId
-                    },
-
-                    status:
-                        "sent"
+                    senderId: { [Op.ne]: userId },
+                    status: "sent"
                 }
             }
         );
 
+        const io = req.app.get("io");
+        if (io && pendingMessages.length) {
+            io.to(String(conversationId)).emit("message_status_update", {
+                conversationId: Number(conversationId),
+                messageIds: pendingMessages.map((item) => item.id),
+                status: "delivered",
+                readerId: userId
+            });
+        }
 
-        return res.json({
-            success: true
-        });
+        return res.json({ success: true, deliveredCount: pendingMessages.length });
 
     } catch (error) {
 
@@ -1785,6 +1808,15 @@ exports.markRead = async (
            MARK ONLY RECEIVED MESSAGES AS READ
         ================================================= */
 
+        const unreadMessages = await Message.findAll({
+            where: {
+                conversationId,
+                senderId: { [Op.ne]: userId },
+                status: { [Op.ne]: "read" }
+            },
+            attributes: ["id", "senderId"]
+        });
+
         const [
             updatedCount
         ] =
@@ -1837,6 +1869,14 @@ exports.markRead = async (
 
 
         if (io) {
+            if (unreadMessages.length) {
+                io.to(String(conversationId)).emit("message_status_update", {
+                    conversationId: Number(conversationId),
+                    messageIds: unreadMessages.map((item) => item.id),
+                    status: "read",
+                    readerId: userId
+                });
+            }
 
             io.to(
                 `user:${userId}`

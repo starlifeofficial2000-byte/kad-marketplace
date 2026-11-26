@@ -28,6 +28,7 @@ const ProductView = require("./ProductView");
 const ProductStatistic = require("./ProductStatistic");
 const Review = require("./Review");
 const Notification = require("./Notification");
+const DeviceToken = require("./DeviceToken");
 const Report = require("./Report");
 const Advertisement = require("./Advertisement");
 const SearchHistory = require("./SearchHistory");
@@ -545,6 +546,7 @@ module.exports = {
     ProductStatistic,
     Review,
     Notification,
+    DeviceToken,
     Report,
     Advertisement,
     SearchHistory,

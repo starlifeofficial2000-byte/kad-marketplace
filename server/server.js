@@ -27,6 +27,7 @@ const sequelize = require("./config/database");
 ========================================================= */
 
 require("./models");
+const User = require("./models/User");
 
 /* =========================================================
 
@@ -1844,6 +1845,9 @@ io.use(
 
 ========================================================= */
 
+// Track authenticated sockets per user so multi-device presence is accurate.
+const onlineSocketIdsByUser = new Map();
+
 io.on(
 
     "connection",
@@ -1881,6 +1885,61 @@ io.on(
             `👤 User ${userId} joined private room: ${userRoom}`
 
         );
+
+        // Presence is based on verified socket identity, never client-supplied userId.
+        let userSockets = onlineSocketIdsByUser.get(Number(userId));
+        const userWasOffline = !userSockets || userSockets.size === 0;
+        if (!userSockets) {
+            userSockets = new Set();
+            onlineSocketIdsByUser.set(Number(userId), userSockets);
+        }
+        userSockets.add(socket.id);
+
+        if (userWasOffline) {
+            User.findByPk(userId, { attributes: ["id", "showOnline"] })
+                .then((presenceUser) => {
+                    const hidden = presenceUser ? presenceUser.showOnline === false : false;
+                    io.emit("presence_update", {
+                        userId: Number(userId),
+                        isOnline: !hidden,
+                        hidden,
+                        lastSeen: null
+                    });
+                })
+                .catch((presenceError) => {
+                    console.warn("[PRESENCE] Could not publish initial status:", presenceError.message);
+                });
+        }
+
+        socket.on("get_user_status", async (data) => {
+            const targetUserId = Number(data && data.userId);
+            if (!Number.isInteger(targetUserId) || targetUserId <= 0) return;
+
+            try {
+                const target = await User.findByPk(targetUserId, {
+                    attributes: ["id", "lastSeen", "showOnline"]
+                });
+                if (!target) {
+                    socket.emit("user_status", {
+                        userId: targetUserId,
+                        isOnline: false,
+                        hidden: false,
+                        lastSeen: null
+                    });
+                    return;
+                }
+
+                const hidden = target.showOnline === false;
+                socket.emit("user_status", {
+                    userId: targetUserId,
+                    isOnline: !hidden && onlineSocketIdsByUser.has(targetUserId),
+                    hidden,
+                    lastSeen: hidden ? null : target.lastSeen
+                });
+            } catch (presenceError) {
+                console.warn("[PRESENCE] Status lookup failed:", presenceError.message);
+            }
+        });
 
         /* =================================================
 
@@ -2100,23 +2159,38 @@ io.on(
 
         ================================================= */
 
-        socket.on(
+        socket.on("disconnect", async (reason) => {
+            const socketsForUser = onlineSocketIdsByUser.get(Number(userId));
+            if (socketsForUser) {
+                socketsForUser.delete(socket.id);
+                if (socketsForUser.size === 0) {
+                    onlineSocketIdsByUser.delete(Number(userId));
+                    const lastSeen = new Date();
+                    let hidden = false;
+                    try {
+                        const user = await User.findByPk(userId, {
+                            attributes: ["id", "showOnline"]
+                        });
+                        hidden = user ? user.showOnline === false : false;
+                        if (user) await user.update({ lastSeen });
+                    } catch (presenceError) {
+                        console.warn("[PRESENCE] Could not update lastSeen:", presenceError.message);
+                    }
 
-            "disconnect",
-
-            (reason) => {
-
-                console.log(
-
-                    `🔴 Socket Disconnected: ${socket.id} | User: ${userId}`,
-
-                    reason
-
-                );
-
+                    io.emit("presence_update", {
+                        userId: Number(userId),
+                        isOnline: false,
+                        hidden,
+                        lastSeen: hidden ? null : lastSeen.toISOString()
+                    });
+                }
             }
 
-        );
+            console.log(
+                `🔴 Socket Disconnected: ${socket.id} | User: ${userId}`,
+                reason
+            );
+        });
 
         /* =================================================
 

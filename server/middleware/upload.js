@@ -56,15 +56,16 @@ async function applyKadWatermark(buffer) {
     const image = sharp(normalizedBuffer, { failOn: "none" });
     const metadata = await image.metadata();
     const width = Math.max(1, metadata.width || 1200);
-    const bandHeight = Math.max(42, Math.min(92, Math.round(width * 0.065)));
-    const fontSize = Math.max(18, Math.min(42, Math.round(width * 0.032)));
+    const bandHeight = Math.max(52, Math.min(120, Math.round(width * 0.09)));
+    const fontSize = Math.max(20, Math.min(46, Math.round(width * 0.038)));
+    const textY = Math.round(bandHeight * 0.68);
 
     const watermarkSvg = Buffer.from(
-        `<svg width="${width}" height="${bandHeight}" xmlns="http://www.w3.org/2000/svg">` +
-        `<rect width="100%" height="100%" fill="#07152b" fill-opacity="0.42"/>` +
-        `<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" ` +
-        `font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="700" ` +
-        `letter-spacing="2" fill="#ffffff" fill-opacity="0.88">KAD MARKETPLACE</text></svg>`
+        `<svg width="${width}" height="${bandHeight}" viewBox="0 0 ${width} ${bandHeight}" xmlns="http://www.w3.org/2000/svg">` +
+        `<rect x="0" y="0" width="${width}" height="${bandHeight}" fill="#07152b" fill-opacity="0.62"/>` +
+        `<text x="${Math.round(width * 0.5)}" y="${textY}" text-anchor="middle" ` +
+        `font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="800" ` +
+        `letter-spacing="2" fill="#ffffff" stroke="#07152b" stroke-width="1" paint-order="stroke">KAD MARKETPLACE</text></svg>`
     );
 
     return image
