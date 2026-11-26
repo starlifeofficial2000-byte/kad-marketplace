@@ -8,7 +8,7 @@ import api from "../../../../config/axios";
 export const getProducts = (params = {}) => {
 
     return api.get(
-        "/products",
+        "/admin/products",
         { params }
     );
 
@@ -22,7 +22,7 @@ export const getProducts = (params = {}) => {
 export const getProductById = (id) => {
 
     return api.get(
-        `/products/${id}`
+        `/admin/products/${id}`
     );
 
 };
@@ -74,11 +74,7 @@ export const updateProduct = (
 ========================================= */
 
 export const deleteProduct = (id) => {
-
-    return api.delete(
-        `/products/${id}`
-    );
-
+    return api.delete(`/admin/products/${id}`);
 };
 
 

@@ -1,3 +1,5 @@
+/* KAD Marketplace official palette */
+:root { --kad-navy: #10233f; --kad-gold: #d9a441; --kad-gold-light: #f5d58a; --kad-ink: #1f2937; --kad-surface: #ffffff; --kad-soft: #f7f8fa; }
 .counter {
   font-size: 16px;
   padding: 5px 10px;

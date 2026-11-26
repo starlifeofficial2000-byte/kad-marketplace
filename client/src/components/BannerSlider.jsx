@@ -114,6 +114,9 @@ function BannerSlider() {
      * LOADING STATE
      * ============================================================
      */
+    // Do not show a blank hero frame or an empty banner placeholder.
+    if (loading || banners.length === 0) return null;
+
     if (loading) {
         return (
             <section className="banner-slider">

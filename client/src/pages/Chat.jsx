@@ -1191,7 +1191,7 @@ function Chat() {
                 try {
 
                     await api.put(
-                        `/messages/${id}/read`
+                        `/messages/${conversationId}/read`
                     );
 
                 } catch (readError) {

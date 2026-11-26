@@ -3,6 +3,7 @@ import api from "../../config/axios";
 import { Link } from "react-router-dom";
 import "./TrendingProducts.css";
 import SEO from "../SEO";
+import { normalizeHomePromotionProducts } from "../../utils/homePromotionProducts";
 
 function TrendingProducts() {
     const [products, setProducts] = useState([]);
@@ -25,7 +26,7 @@ function TrendingProducts() {
 
             setLoading(true);
 
-            const res = await api.get("/products/recommended");
+            const res = await api.get("/home-builder/recommended");
 
             console.log(
                 "TRENDING / RECOMMENDED RESPONSE:",
@@ -38,19 +39,7 @@ function TrendingProducts() {
                 backend response formats
             */
 
-            if (res.data?.products) {
-
-                setProducts(res.data.products);
-
-            } else if (Array.isArray(res.data)) {
-
-                setProducts(res.data);
-
-            } else {
-
-                setProducts([]);
-
-            }
+            setProducts(normalizeHomePromotionProducts(res.data));
 
         } catch (error) {
 
@@ -169,6 +158,9 @@ function TrendingProducts() {
 
     };
 
+
+    // Hide the entire homepage collection when there are no promoted products.
+    if (loading || products.length === 0) return null;
 
     return (
 

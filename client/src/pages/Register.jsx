@@ -1,588 +1,112 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../config/axios";
-
 import "./Register.css";
 
-
 function Register() {
-
     const navigate = useNavigate();
-
-
-    const [formData, setFormData] = useState({
-
-        name: "",
-        email: "",
-        phone: "",
-        ghanaCard: "",
-        region: "",
-        city: "",
-        address: "",
-        password: "",
-        confirmPassword: "",
-        role: "user"
-
-    });
-
-
+    const [formData, setFormData] = useState({ username: "", email: "", password: "" });
     const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
-
-    /* =========================================
-       HANDLE INPUT CHANGE
-    ========================================= */
-
-    const handleChange = (e) => {
-
-        const { name, value } = e.target;
-
-        setFormData((previous) => ({
-
-            ...previous,
-
-            [name]: value
-
-        }));
-
+    const handleChange = (event) => {
+        const { name, value } = event.target;
+        setFormData((previous) => ({ ...previous, [name]: value }));
+        setErrorMessage("");
     };
 
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        const username = formData.username.trim();
+        const email = formData.email.trim().toLowerCase();
+        const password = formData.password;
 
-    /* =========================================
-       HANDLE REGISTRATION
-    ========================================= */
-
-    const handleSubmit = async (e) => {
-
-        e.preventDefault();
-
-
-        /* ===============================
-           FULL NAME VALIDATION
-        =============================== */
-
-        const nameRegex = /^[A-Za-z\s'-]{3,}$/;
-
-        if (!nameRegex.test(formData.name.trim())) {
-
-            alert(
-                "Please enter a valid full name."
-            );
-
+        if (username.length < 3 || username.length > 60) {
+            setErrorMessage("Enter a username between 3 and 60 characters.");
             return;
-
         }
-
-
-        /* ===============================
-           EMAIL VALIDATION
-        =============================== */
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-        if (!emailRegex.test(formData.email.trim())) {
-
-            alert(
-                "Please enter a valid email address."
-            );
-
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            setErrorMessage("Enter a valid email address.");
             return;
-
         }
-
-
-        /* ===============================
-           GHANA PHONE VALIDATION
-        =============================== */
-
-        const phoneRegex =
-            /^(?:\+233|233|0)(20|23|24|25|26|27|28|50|53|54|55|56|57|59)\d{7}$/;
-
-        const cleanPhone = formData.phone
-            .replace(/\s/g, "")
-            .trim();
-
-
-        if (!phoneRegex.test(cleanPhone)) {
-
-            alert(
-                "Please enter a valid Ghanaian phone number.\n\nExample: 0241234567 or +233241234567"
-            );
-
+        if (password.length < 8) {
+            setErrorMessage("Password must be at least 8 characters long.");
             return;
-
         }
-
-
-        /* ===============================
-           GHANA CARD VALIDATION
-        =============================== */
-
-        const ghanaCardRegex =
-            /^GHA-\d{9}-\d$/i;
-
-
-        if (
-
-            !ghanaCardRegex.test(
-                formData.ghanaCard.trim()
-            )
-
-        ) {
-
-            alert(
-                "Invalid Ghana Card number.\n\nExample: GHA-123456789-1"
-            );
-
-            return;
-
-        }
-
-
-        /* ===============================
-           PASSWORD MATCH
-        =============================== */
-
-        if (
-
-            formData.password !==
-            formData.confirmPassword
-
-        ) {
-
-            alert(
-                "Passwords do not match."
-            );
-
-            return;
-
-        }
-
-
-        /* ===============================
-           PASSWORD STRENGTH
-        =============================== */
-
-        const passwordRegex =
-            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
-
-
-        if (
-
-            !passwordRegex.test(
-                formData.password
-            )
-
-        ) {
-
-            alert(
-
-                "Password must contain:\n\n" +
-
-                "• At least 8 characters\n" +
-
-                "• One uppercase letter\n" +
-
-                "• One lowercase letter\n" +
-
-                "• One number\n" +
-
-                "• One special character"
-
-            );
-
-            return;
-
-        }
-
-
-        /* ===============================
-           SEND REGISTRATION REQUEST
-        =============================== */
 
         try {
-
             setLoading(true);
-
-
-            const response = await api.post(
-
-                "/auth/register",
-
-                {
-
-                    ...formData,
-
-                    name: formData.name.trim(),
-
-                    email: formData.email
-                        .trim()
-                        .toLowerCase(),
-
-                    phone: cleanPhone,
-
-                    ghanaCard: formData.ghanaCard
-                        .trim()
-                        .toUpperCase()
-
-                }
-
-            );
-
-
-            alert(
-
-                response.data?.message ||
-
-                "Account created successfully."
-
-            );
-
-
-            navigate("/login");
-
-        }
-
-        catch (error) {
-
-            console.error(
-
-                "REGISTRATION ERROR:",
-
-                error.response?.data ||
-                error.message
-
-            );
-
-
-            alert(
-
+            const response = await api.post("/auth/register", {
+                // The existing mobile backend accepts username as an alias for name.
+                username,
+                name: username,
+                email,
+                password,
+            });
+            navigate("/login", {
+                state: { registrationSuccess: response.data?.message || "Account created. Please log in." },
+            });
+        } catch (error) {
+            setErrorMessage(
                 error.response?.data?.message ||
-
-                "Registration failed. Please try again."
-
+                "Registration failed. Please check your details and try again."
             );
-
-        }
-
-        finally {
-
+        } finally {
             setLoading(false);
-
         }
-
     };
 
-
     return (
-
         <div className="register-page">
-
             <div className="register-card">
-
-
-                <h1>
-
-                    Create Account
-
-                </h1>
-
-
-                <p>
-
-                    Create your KAD Marketplace account.
-
-                </p>
-
-
+                <h1>Create Account</h1>
+                <p>Start using KAD Marketplace with your username, email and password. Complete your profile only when you want to sell or create a store.</p>
+                {errorMessage && <div className="register-error" role="alert">{errorMessage}</div>}
                 <form onSubmit={handleSubmit}>
-
-
-                    {/* FULL NAME */}
-
+                    <label htmlFor="register-username">Username</label>
                     <input
-
+                        id="register-username"
                         type="text"
-
-                        name="name"
-
-                        placeholder="Full Name (e.g. AYITEY PROSPER)"
-
-                        value={formData.name}
-
+                        name="username"
+                        placeholder="Your username or display name"
+                        value={formData.username}
                         onChange={handleChange}
-
+                        minLength={3}
+                        maxLength={60}
+                        autoComplete="username"
                         required
-
                     />
-
-
-                    {/* EMAIL */}
-
+                    <label htmlFor="register-email">Email address</label>
                     <input
-
+                        id="register-email"
                         type="email"
-
                         name="email"
-
-                        placeholder="Email Address (e.g. KOFINKRABEA@gmail.com)"
-
+                        placeholder="you@example.com"
                         value={formData.email}
-
                         onChange={handleChange}
-
+                        autoComplete="email"
                         required
-
                     />
-
-
-                    {/* PHONE */}
-
+                    <label htmlFor="register-password">Password</label>
                     <input
-
-                        type="text"
-
-                        name="phone"
-
-                        placeholder="Phone Number (e.g. 0241....67)"
-
-                        value={formData.phone}
-
-                        onChange={handleChange}
-
-                        required
-
-                    />
-
-
-                    {/* GHANA CARD */}
-
-                    <input
-
-                        type="text"
-
-                        name="ghanaCard"
-
-                        placeholder="Ghana Card (e.g. GHA-123456789-1)"
-
-                        value={formData.ghanaCard}
-
-                        onChange={handleChange}
-
-                        required
-
-                    />
-
-
-                    {/* REGION */}
-
-                    <select
-
-                        name="region"
-
-                        value={formData.region}
-
-                        onChange={handleChange}
-
-                        required
-
-                    >
-
-                        <option value="">
-                            Select Region
-                        </option>
-
-                        <option value="Greater Accra">
-                            Greater Accra
-                        </option>
-
-                        <option value="Ashanti">
-                            Ashanti
-                        </option>
-
-                        <option value="Eastern">
-                            Eastern
-                        </option>
-
-                        <option value="Central">
-                            Central
-                        </option>
-
-                        <option value="Western">
-                            Western
-                        </option>
-
-                        <option value="Western North">
-                            Western North
-                        </option>
-
-                        <option value="Ahafo">
-                            Ahafo
-                        </option>
-
-                        <option value="Bono">
-                            Bono
-                        </option>
-
-                        <option value="Bono East">
-                            Bono East
-                        </option>
-
-                        <option value="Volta">
-                            Volta
-                        </option>
-
-                        <option value="Oti">
-                            Oti
-                        </option>
-
-                        <option value="Northern">
-                            Northern
-                        </option>
-
-                        <option value="North East">
-                            North East
-                        </option>
-
-                        <option value="Savannah">
-                            Savannah
-                        </option>
-
-                        <option value="Upper East">
-                            Upper East
-                        </option>
-
-                        <option value="Upper West">
-                            Upper West
-                        </option>
-
-                    </select>
-
-
-                    {/* CITY */}
-
-                    <input
-
-                        type="text"
-
-                        name="city"
-
-                        placeholder="City / Town (e.g. Koforidua)"
-
-                        value={formData.city}
-
-                        onChange={handleChange}
-
-                        required
-
-                    />
-
-
-                    {/* ADDRESS */}
-
-                    <textarea
-
-                        name="address"
-
-                        rows="3"
-
-                        placeholder="Residential Address"
-
-                        value={formData.address}
-
-                        onChange={handleChange}
-
-                        required
-
-                    />
-
-
-                    {/* PASSWORD */}
-
-                    <input
-
+                        id="register-password"
                         type="password"
-
                         name="password"
-
-                        placeholder="Password (Minimum 8 characters)"
-
+                        placeholder="At least 8 characters"
                         value={formData.password}
-
                         onChange={handleChange}
-
+                        minLength={8}
+                        autoComplete="new-password"
                         required
-
                     />
-
-
-                    {/* CONFIRM PASSWORD */}
-
-                    <input
-
-                        type="password"
-
-                        name="confirmPassword"
-
-                        placeholder="Confirm Password"
-
-                        value={formData.confirmPassword}
-
-                        onChange={handleChange}
-
-                        required
-
-                    />
-
-
-                    {/* SUBMIT */}
-
-                    <button
-
-                        type="submit"
-
-                        disabled={loading}
-
-                    >
-
-                        {
-
-                            loading
-
-                                ? "Creating Account..."
-
-                                : "Create Account"
-
-                        }
-
+                    <button type="submit" disabled={loading}>
+                        {loading ? "Creating account…" : "Create Account"}
                     </button>
-
-
                 </form>
-
-
-                <p className="login-link">
-
-                    Already have an account?
-
-                    {" "}
-
-                    <Link to="/login">
-
-                        Login
-
-                    </Link>
-
-                </p>
-
-
+                <p className="login-link">Already have an account? <Link to="/login">Login</Link></p>
             </div>
-
         </div>
-
     );
-
 }
-
 
 export default Register;

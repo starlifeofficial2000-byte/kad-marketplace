@@ -40,7 +40,7 @@ export const uploadProfileImage = (
 
     return api.post(
 
-        "/users/profile/image",
+        "/users/profile",
 
         formData,
 
@@ -60,15 +60,8 @@ export const uploadProfileImage = (
    CHANGE PASSWORD
 ========================================= */
 
-export const changePassword = (
-    data
-) => {
-
-    return api.put(
-        "/users/change-password",
-        data
-    );
-
+export const changePassword = () => {
+    return Promise.reject(new Error("The supplied backend does not expose an authenticated change-password route. Use the existing OTP password-reset flow."));
 };
 
 
@@ -79,7 +72,7 @@ export const changePassword = (
 export const deleteAccount = () => {
 
     return api.delete(
-        "/users/account"
+        "/users/me"
     );
 
 };

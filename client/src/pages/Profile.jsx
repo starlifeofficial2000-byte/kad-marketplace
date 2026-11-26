@@ -4,6 +4,7 @@ import "./Profile.css";
 
 function Profile() {
     const [loading, setLoading] = useState(false);
+    const [deletingAccount, setDeletingAccount] = useState(false);
     const [profileLoading, setProfileLoading] = useState(true);
 
     const [preview, setPreview] = useState("");
@@ -715,6 +716,24 @@ function Profile() {
        PAGE
     ========================================================= */
 
+    const handleDeleteAccount = async () => {
+        const confirmed = window.confirm("Delete your KAD Marketplace account permanently? This action cannot be undone.");
+        if (!confirmed) return;
+        const secondConfirm = window.prompt('Type DELETE to confirm account deletion.');
+        if (secondConfirm !== "DELETE") return;
+        try {
+            setDeletingAccount(true);
+            await api.delete("/users/me");
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            window.location.assign("/");
+        } catch (error) {
+            alert(error.response?.data?.message || "Unable to delete your account. Please try again.");
+        } finally {
+            setDeletingAccount(false);
+        }
+    };
+
     return (
         <div className="profile-page">
 
@@ -942,6 +961,14 @@ function Profile() {
                         ? "Saving..."
                         : "Save Changes"}
                 </button>
+
+            <div className="profile-danger-zone" role="region" aria-label="Delete account">
+                <h2>Delete account</h2>
+                <p>Deleting your account is permanent. Your account and associated personal profile will be removed according to marketplace policy.</p>
+                <button type="button" className="profile-delete-account" onClick={handleDeleteAccount} disabled={deletingAccount || loading}>
+                    {deletingAccount ? "Deleting account…" : "Delete my account"}
+                </button>
+            </div>
 
             </form>
 

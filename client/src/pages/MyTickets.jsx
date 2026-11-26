@@ -1,15 +1,14 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import api from "../config/axios";
 import { useNavigate } from "react-router-dom";
-import "./MyTickets.css";
+
 
 function MyTickets() {
+
 
     const navigate = useNavigate();
 
     const [tickets, setTickets] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
 
     useEffect(() => {
 
@@ -17,255 +16,135 @@ function MyTickets() {
 
     }, []);
 
-
     const loadTickets = async () => {
 
         try {
 
-            setLoading(true);
-            setError("");
-
-            const response = await api.get(
-                "/support/my-tickets"
-            );
-
-            console.log(
-                "MY TICKETS RESPONSE:",
-                response.data
-            );
-
-            setTickets(
-                response.data.tickets ||
-                response.data ||
-                []
-            );
+            const response = await api.get("/support/my-tickets");
+            const payload = response.data;
+            setTickets(Array.isArray(payload) ? payload : (payload?.tickets || payload?.data || []));
 
         }
 
-        catch (error) {
+        catch(error){
 
-            console.error(
-                "LOAD TICKETS ERROR:",
-                error.response?.data || error.message
-            );
-
-            setError(
-
-                error.response?.data?.message ||
-
-                "Unable to load support tickets."
-
-            );
-
-        }
-
-        finally {
-
-            setLoading(false);
+            console.log(error);
 
         }
 
     };
 
-
-    if (loading) {
-
-        return (
-
-            <div className="tickets-page">
-
-                <div className="tickets-loading">
-
-                    Loading support tickets...
-
-                </div>
-
-            </div>
-
-        );
-
-    }
-
-
-    return (
+    return(
 
         <div className="tickets-page">
 
-            <div className="tickets-header">
+            <h1>
 
-                <div>
+                My Support Tickets
 
-                    <h1>
-                        My Support Tickets
-                    </h1>
+            </h1>
 
-                    <p>
-                        Track and manage your support requests.
-                    </p>
+            <table className="tickets-table">
 
-                </div>
+                <thead>
 
-                <button
-                    className="refresh-btn"
-                    onClick={loadTickets}
-                >
-                    ↻ Refresh
-                </button>
+                    <tr>
 
-            </div>
+                        <th>ID</th>
 
+                        <th>Subject</th>
 
-            {error && (
+                        <th>Category</th>
 
-                <div className="tickets-error">
+                        <th>Priority</th>
 
-                    {error}
+                        <th>Status</th>
 
-                </div>
+                        <th>Date</th>
 
-            )}
+                        <th>Action</th>
 
+                    </tr>
 
-            {tickets.length === 0 ? (
+                </thead>
 
-                <div className="empty-tickets">
+                <tbody>
 
-                    <h2>
-                        No Support Tickets Yet
-                    </h2>
+                {
 
-                    <p>
-                        You haven't submitted any support requests.
-                    </p>
+                    tickets.map(ticket=>(
 
-                </div>
+                        <tr key={ticket.id}>
 
-            ) : (
+                            <td>
 
-                <div className="table-wrapper">
+                                #{ticket.id}
 
-                    <table className="tickets-table">
+                            </td>
 
-                        <thead>
+                            <td>
 
-                            <tr>
+                                {ticket.subject}
 
-                                <th>ID</th>
-                                <th>Subject</th>
-                                <th>Category</th>
-                                <th>Priority</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                                <th>Action</th>
+                            </td>
 
-                            </tr>
+                            <td>
 
-                        </thead>
+                                {ticket.category}
 
+                            </td>
 
-                        <tbody>
+                            <td>
 
-                            {tickets.map((ticket) => (
+                                <span className={`priority ${(ticket.priority || "normal").toLowerCase()}`}>
 
-                                <tr key={ticket.id}>
+                                    {ticket.priority || "Normal"}
 
-                                    <td>
+                                </span>
 
-                                        #{ticket.id}
+                            </td>
 
-                                    </td>
+                            <td>
 
+                                <span className={`status ${(ticket.status || "open").toLowerCase()}`}>
 
-                                    <td className="ticket-subject">
+                                    {ticket.status || "Open"}
 
-                                        {ticket.subject}
+                                </span>
 
-                                    </td>
+                            </td>
 
+                            <td>
 
-                                    <td>
+                                {new Date(ticket.createdAt).toLocaleDateString()}
 
-                                        {ticket.category}
+                            </td>
 
-                                    </td>
+                            <td>
 
+                                <button
 
-                                    <td>
+                                    className="view-btn"
 
-                                        <span
-                                            className={`priority ${ticket.priority?.toLowerCase()}`}
-                                        >
+                                    onClick={()=>navigate(`/my-tickets/${ticket.id}`)}
 
-                                            {ticket.priority}
+                                >
 
-                                        </span>
+                                    View
 
-                                    </td>
+                                </button>
 
+                            </td>
 
-                                    <td>
+                        </tr>
 
-                                        <span
-                                            className={`status ${ticket.status?.toLowerCase()}`}
-                                        >
+                    ))
 
-                                            {ticket.status}
+                }
 
-                                        </span>
+                </tbody>
 
-                                    </td>
-
-
-                                    <td>
-
-                                        {ticket.createdAt
-
-                                            ? new Date(
-                                                ticket.createdAt
-                                            ).toLocaleDateString()
-
-                                            : "N/A"
-
-                                        }
-
-                                    </td>
-
-
-                                    <td>
-
-                                        <button
-
-                                            className="view-btn"
-
-                                            onClick={() =>
-
-                                                navigate(
-
-                                                    `/my-tickets/${ticket.id}`
-
-                                                )
-
-                                            }
-
-                                        >
-
-                                            View
-
-                                        </button>
-
-                                    </td>
-
-                                </tr>
-
-                            ))}
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            )}
+            </table>
 
         </div>
 

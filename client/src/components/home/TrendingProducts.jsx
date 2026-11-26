@@ -3,6 +3,7 @@ import api from "../../config/axios";
 import { Link } from "react-router-dom";
 import "./TrendingProducts.css";
 import SEO from "../SEO";
+import { normalizeHomePromotionProducts } from "../../utils/homePromotionProducts";
 
 function TrendingProducts() {
 
@@ -29,13 +30,11 @@ function TrendingProducts() {
         try {
 
             const res = await api.get(
-                "/products/trending"
+                "/home-builder/trending"
             );
 
 
-            setProducts(
-                res.data.products || []
-            );
+            setProducts(normalizeHomePromotionProducts(res.data));
 
         }
 
@@ -179,6 +178,9 @@ function TrendingProducts() {
 
     };
 
+
+    // Hide the entire homepage collection when there are no promoted products.
+    if (loading || products.length === 0) return null;
 
     return (
 

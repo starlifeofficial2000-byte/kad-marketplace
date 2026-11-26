@@ -1,38 +1,33 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import api from "../config/axios";
 import "./Support.css";
 
 function Support() {
 
+
     const [form, setForm] = useState({
+
         subject: "",
+
         category: "Technical",
+
         priority: "Medium",
+
         message: ""
+
     });
-
-    const [loading, setLoading] = useState(false);
-
-
-    /* ==========================================
-       HANDLE INPUT CHANGE
-    ========================================== */
 
     const handleChange = (e) => {
 
-        const { name, value } = e.target;
-
         setForm({
+
             ...form,
-            [name]: value
+
+            [e.target.name]: e.target.value
+
         });
 
     };
-
-
-    /* ==========================================
-       SUBMIT SUPPORT TICKET
-    ========================================== */
 
     const submitTicket = async (e) => {
 
@@ -40,49 +35,33 @@ function Support() {
 
         try {
 
-            setLoading(true);
+            await api.post("/support", form);
 
-            const response = await api.post(
-                "/support",
-                form
-            );
-
-            alert(
-                response.data?.message ||
-                "Support ticket submitted successfully."
-            );
+            alert("Support ticket submitted successfully.");
 
             setForm({
+
                 subject: "",
+
                 category: "Technical",
+
                 priority: "Medium",
+
                 message: ""
+
             });
 
         }
 
         catch (error) {
 
-            console.error(
-                "SUPPORT TICKET ERROR:",
-                error.response?.data || error.message
-            );
+            console.log(error);
 
-            alert(
-                error.response?.data?.message ||
-                "Something went wrong while submitting your support ticket."
-            );
-
-        }
-
-        finally {
-
-            setLoading(false);
+            alert(error.response?.data?.message || "Failed to submit ticket.");
 
         }
 
     };
-
 
     return (
 
@@ -92,109 +71,91 @@ function Support() {
 
                 <h1>Contact Support</h1>
 
-                <p>
-                    Submit your issue and our support team will respond as soon as possible.
-                </p>
-
+                <p>Need help? Submit a support ticket below.</p>
 
                 <form onSubmit={submitTicket}>
 
-
                     <input
+
                         type="text"
+
                         name="subject"
+
                         placeholder="Subject"
+
                         value={form.subject}
+
                         onChange={handleChange}
+
                         required
+
                     />
 
-
                     <select
+
                         name="category"
+
                         value={form.category}
+
                         onChange={handleChange}
+
                     >
 
-                        <option value="Technical">
-                            Technical
-                        </option>
+                        <option>Technical</option>
 
-                        <option value="Payment">
-                            Payment
-                        </option>
+                        <option>Payment</option>
 
-                        <option value="Product">
-                            Product
-                        </option>
+                        <option>Product</option>
 
-                        <option value="Store">
-                            Store
-                        </option>
+                        <option>Store</option>
 
-                        <option value="Account">
-                            Account
-                        </option>
+                        <option>Account</option>
 
-                        <option value="Report">
-                            Report
-                        </option>
+                        <option>Report</option>
 
-                        <option value="Suggestion">
-                            Suggestion
-                        </option>
+                        <option>Suggestion</option>
 
-                        <option value="Other">
-                            Other
-                        </option>
+                        <option>Other</option>
 
                     </select>
-
 
                     <select
+
                         name="priority"
+
                         value={form.priority}
+
                         onChange={handleChange}
+
                     >
 
-                        <option value="Low">
-                            Low
-                        </option>
+                        <option>Low</option>
 
-                        <option value="Medium">
-                            Medium
-                        </option>
+                        <option>Medium</option>
 
-                        <option value="High">
-                            High
-                        </option>
+                        <option>High</option>
 
                     </select>
-
 
                     <textarea
+
                         name="message"
-                        placeholder="Describe your problem..."
+
+                        placeholder="Describe your issue..."
+
                         value={form.message}
+
                         onChange={handleChange}
-                        rows="8"
+
                         required
+
                     />
 
+                    <button type="submit">
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                    >
-
-                        {
-                            loading
-                                ? "Submitting..."
-                                : "Submit Ticket"
-                        }
+                        Submit Ticket
 
                     </button>
-
 
                 </form>
 

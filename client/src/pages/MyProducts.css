@@ -467,3 +467,6 @@ grid-template-columns:1fr;
         grid-template-columns: 1fr;
     }
 }
+
+.seller-availability-control { display: flex; flex-direction: column; gap: .35rem; color: #10233f; font-size: .85rem; font-weight: 700; }
+.seller-availability-control select { max-width: 180px; border: 1px solid #d9a441; border-radius: 8px; padding: .55rem .65rem; background: #fff; color: #10233f; font: inherit; }

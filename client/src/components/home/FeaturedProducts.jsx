@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import getImageUrl from "../../utils/imageUrl";
 import "./FeaturedProducts.css";
 import SEO from "../SEO";
+import { normalizeHomePromotionProducts } from "../../utils/homePromotionProducts";
 
 function FeaturedProducts() {
     const [products, setProducts] = useState([]);
@@ -20,119 +21,16 @@ function FeaturedProducts() {
     const loadProducts = useCallback(async () => {
         try {
             setLoading(true);
-
-            const response = await api.get(
-                "/home-builder/featured"
-            );
-
-            console.log(
-                "FEATURED PRODUCTS RESPONSE:",
-                response.data
-            );
-
-            const promotions = Array.isArray(
-                response.data?.products
-            )
-                ? response.data.products
-                : [];
-
-            /*
-             * Convert promotion objects into
-             * normal product objects.
-             */
-
-            const productsData = [];
-
-            const seenProductIds = new Set();
-
-            promotions.forEach((promotion) => {
-                if (
-                    !promotion ||
-                    !promotion.product
-                ) {
-                    return;
-                }
-
-                const product = promotion.product;
-
-                const productId =
-                    product.id ||
-                    product._id;
-
-                if (!productId) {
-                    return;
-                }
-
-                const normalizedId =
-                    String(productId);
-
-                /*
-                 * Prevent duplicate products.
-                 */
-
-                if (
-                    seenProductIds.has(
-                        normalizedId
-                    )
-                ) {
-                    return;
-                }
-
-                seenProductIds.add(
-                    normalizedId
-                );
-
-                productsData.push({
-                    ...product,
-
-                    promotionId:
-                        promotion.id,
-
-                    promotionType:
-                        promotion.promotionType,
-
-                    homepageOrder:
-                        promotion.homepageOrder,
-
-                    showOnHomepage:
-                        promotion.showOnHomepage
-                });
+            const response = await api.get("/home-builder/featured");
+            const rows = Array.isArray(response.data?.products) ? response.data.products : [];
+            const productsData = normalizeHomePromotionProducts(response.data).map((product) => {
+                const promotion = rows.find((row) => String(row?.product?.id ?? row?.product?._id ?? row?.id ?? row?._id) === String(product.id ?? product._id)) || {};
+                return { ...product, promotionId: promotion.id, promotionType: promotion.promotionType, homepageOrder: promotion.homepageOrder, showOnHomepage: promotion.showOnHomepage };
             });
-
-            /*
-             * Sort according to homepage order.
-             */
-
-            productsData.sort(
-                (a, b) => {
-                    const orderA =
-                        Number(
-                            a.homepageOrder
-                        ) || 0;
-
-                    const orderB =
-                        Number(
-                            b.homepageOrder
-                        ) || 0;
-
-                    return orderA - orderB;
-                }
-            );
-
-            console.log(
-                "FINAL FEATURED PRODUCTS:",
-                productsData
-            );
-
+            productsData.sort((left, right) => (Number(left.homepageOrder) || 0) - (Number(right.homepageOrder) || 0));
             setProducts(productsData);
         } catch (error) {
-            console.error(
-                "LOAD FEATURED PRODUCTS ERROR:",
-                error.response?.data ||
-                    error.message ||
-                    error
-            );
-
+            console.error("LOAD FEATURED PRODUCTS ERROR:", error.response?.data || error.message || error);
             setProducts([]);
         } finally {
             setLoading(false);
@@ -314,6 +212,9 @@ function FeaturedProducts() {
      * LOADING
      * =====================================================
      */
+
+    // Empty promotion collections must not render a homepage section or placeholder.
+    if (loading || products.length === 0) return null;
 
     if (loading) {
         return (

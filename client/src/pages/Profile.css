@@ -572,3 +572,9 @@
     }
 
 }
+/* Account deletion: clearly separated destructive action, branded with KAD gold/navy. */
+.profile-danger-zone { margin-top: 2rem; padding: 1.25rem; border: 1px solid #d9a441; border-radius: 14px; background: #fffaf0; }
+.profile-danger-zone h2 { margin: 0 0 .5rem; color: #10233f; }
+.profile-danger-zone p { color: #4b5563; line-height: 1.55; }
+.profile-delete-account { border: 0; border-radius: 9px; padding: .8rem 1.1rem; background: #10233f; color: #f2bd4a; font-weight: 700; cursor: pointer; }
+.profile-delete-account:disabled { opacity: .6; cursor: not-allowed; }

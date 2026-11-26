@@ -10,7 +10,7 @@ export const getStores = (
 ) => {
 
     return api.get(
-        "/stores",
+        "/admin/stores",
         { params }
     );
 
@@ -26,7 +26,7 @@ export const getStoreById = (
 ) => {
 
     return api.get(
-        `/stores/${id}`
+        `/admin/stores/${id}`
     );
 
 };
@@ -42,7 +42,7 @@ export const createStore = (
 
     return api.post(
 
-        "/stores",
+        "/store/my-store",
 
         formData,
 
@@ -68,7 +68,7 @@ export const updateStore = (
 ) => {
 
     return api.put(
-        `/stores/${id}`,
+        "/store/my-store",
         data
     );
 
@@ -84,7 +84,7 @@ export const deleteStore = (
 ) => {
 
     return api.delete(
-        `/stores/${id}`
+        `/admin/stores/${id}`
     );
 
 };
@@ -97,7 +97,7 @@ export const deleteStore = (
 export const getMyStore = () => {
 
     return api.get(
-        "/stores/my-store"
+        "/store/my-store"
     );
 
 };

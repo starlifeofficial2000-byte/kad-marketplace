@@ -32,200 +32,7 @@ import "./ProductForm.css";
 |--------------------------------------------------------------------------
 */
 
-const CATEGORY_DATA = {
-
-    "Mobile Phones": [
-        "Android Phones",
-        "iPhones",
-        "Samsung Phones",
-        "Tecno Phones",
-        "Infinix Phones",
-        "Itel Phones",
-        "Google Pixel",
-        "Nokia Phones",
-        "Other Phones"
-    ],
-
-    "Laptops": [
-        "HP Laptops",
-        "Dell Laptops",
-        "Lenovo Laptops",
-        "Apple MacBook",
-        "Acer Laptops",
-        "Asus Laptops",
-        "Microsoft Surface",
-        "Other Laptops"
-    ],
-
-    "TV": [
-        "Smart TV",
-        "LED TV",
-        "OLED TV",
-        "QLED TV",
-        "Android TV",
-        "Other TV"
-    ],
-
-    "Radio": [
-        "Home Radio",
-        "Car Radio",
-        "Bluetooth Speakers",
-        "Sound Systems",
-        "Other Radio"
-    ],
-
-    "Music Equipment": [
-        "DJ Equipment",
-        "Mixers",
-        "Microphones",
-        "Amplifiers",
-        "Speakers",
-        "Musical Instruments",
-        "Studio Equipment",
-        "Other Music Equipment"
-    ],
-
-    "Food Stuff": [
-        "Grains",
-        "Fruits",
-        "Vegetables",
-        "Meat",
-        "Fish",
-        "Cooking Ingredients",
-        "Drinks",
-        "Other Food Stuff"
-    ],
-
-    "Clothes": [
-        "Men's Clothing",
-        "Women's Clothing",
-        "Children's Clothing",
-        "Shoes",
-        "Bags",
-        "Traditional Wear",
-        "Other Clothes"
-    ],
-
-    "Accessories": [
-        "Phone Accessories",
-        "Laptop Accessories",
-        "Watch",
-        "Jewelry",
-        "Bags",
-        "Fashion Accessories",
-        "Other Accessories"
-    ],
-
-    "Cars": [
-        "Toyota",
-        "Honda",
-        "Hyundai",
-        "Kia",
-        "Mercedes-Benz",
-        "BMW",
-        "Nissan",
-        "Ford",
-        "Other Cars"
-    ],
-
-    "Motorcycles": [
-        "Motorbike",
-        "Scooter",
-        "Tricycle",
-        "Delivery Motorcycle",
-        "Spare Parts",
-        "Other Motorcycles"
-    ],
-
-    "Land & Property": [
-        "Land for Sale",
-        "Residential Land",
-        "Commercial Land",
-        "Farm Land",
-        "Building Land",
-        "Houses for Sale",
-        "Houses for Rent",
-        "Apartments",
-        "Rooms",
-        "Commercial Property",
-        "Shops",
-        "Offices",
-        "Warehouses",
-        "Other Property"
-    ],
-
-    "Electronics": [
-        "Home Electronics",
-        "Computer Electronics",
-        "Audio Electronics",
-        "Cameras",
-        "Gaming Electronics",
-        "Electrical Appliances",
-        "Other Electronics"
-    ],
-
-    "Furniture": [
-        "Beds",
-        "Sofas",
-        "Tables",
-        "Chairs",
-        "Wardrobes",
-        "Office Furniture",
-        "Kitchen Furniture",
-        "Other Furniture"
-    ],
-
-    "Agriculture": [
-        "Farm Equipment",
-        "Farming Tools",
-        "Seeds",
-        "Fertilizers",
-        "Livestock",
-        "Poultry",
-        "Animal Feed",
-        "Farm Produce",
-        "Other Agriculture"
-    ],
-
-    "Construction": [
-        "Building Materials",
-        "Cement",
-        "Iron Rods",
-        "Blocks",
-        "Roofing Materials",
-        "Plumbing Materials",
-        "Electrical Materials",
-        "Construction Equipment",
-        "Tools",
-        "Other Construction"
-    ],
-
-    "Services": [
-        "Cleaning Services",
-        "Repair Services",
-        "Transport Services",
-        "Photography",
-        "Web Development",
-        "Graphic Design",
-        "Tutoring",
-        "Event Services",
-        "Security Services",
-        "Other Services"
-    ],
-
-    "Employment Opportunities": [
-        "Full-Time Jobs",
-        "Part-Time Jobs",
-        "Remote Jobs",
-        "Internships",
-        "Apprenticeships",
-        "Freelance Jobs",
-        "Temporary Jobs",
-        "Other Employment"
-    ]
-
-};
-
+const CATEGORY_DATA = {}; // Kept as a compatibility constant; live category data is fetched from the backend.
 
 /*
 |--------------------------------------------------------------------------
@@ -256,6 +63,10 @@ function ProductForm() {
 
     const [form, setForm] = useState(INITIAL_FORM);
 
+    const [categoryRows, setCategoryRows] = useState([]);
+
+    const [categoriesLoading, setCategoriesLoading] = useState(true);
+
     const [images, setImages] = useState([]);
 
     const [previews, setPreviews] = useState([]);
@@ -266,6 +77,21 @@ function ProductForm() {
 
     const [success, setSuccess] = useState("");
 
+
+    useEffect(() => {
+        let active = true;
+        api.get("/categories")
+            .then((response) => {
+                const rows = Array.isArray(response.data) ? response.data : (Array.isArray(response.data?.categories) ? response.data.categories : []);
+                if (active) setCategoryRows(rows.filter((row) => row && row.status !== "inactive" && row.status !== "Inactive"));
+            })
+            .catch((error) => {
+                console.error("LOAD DATABASE CATEGORIES ERROR:", error.response?.data || error.message);
+                if (active) setCategoryRows([]);
+            })
+            .finally(() => { if (active) setCategoriesLoading(false); });
+        return () => { active = false; };
+    }, []);
 
     /*
     |--------------------------------------------------------------------------
@@ -294,17 +120,14 @@ function ProductForm() {
     |--------------------------------------------------------------------------
     */
 
+    const parentCategory = useMemo(() => categoryRows.find((row) => !row.parentId && String(row.name).toLowerCase() === String(form.category).toLowerCase()), [categoryRows, form.category]);
+
+    const parentCategories = useMemo(() => categoryRows.filter((row) => !row.parentId), [categoryRows]);
+
     const subcategories = useMemo(() => {
-
-        if (!form.category) {
-
-            return [];
-
-        }
-
-        return CATEGORY_DATA[form.category] || [];
-
-    }, [form.category]);
+        if (!parentCategory) return [];
+        return categoryRows.filter((row) => String(row.parentId) === String(parentCategory.id));
+    }, [categoryRows, parentCategory]);
 
 
     /*
@@ -1117,26 +940,17 @@ function ProductForm() {
                             name="category"
                             value={form.category}
                             onChange={handleCategoryChange}
-                            disabled={loading}
+                            disabled={loading || categoriesLoading || parentCategories.length === 0}
                             required
                         >
 
                             <option value="">
-                                Select Category
+                                {categoriesLoading ? "Loading categories…" : "Select Category"}
                             </option>
 
 
-                            {Object.keys(
-                                CATEGORY_DATA
-                            ).map((category) => (
-
-                                <option
-                                    key={category}
-                                    value={category}
-                                >
-                                    {category}
-                                </option>
-
+                            {parentCategories.map((category) => (
+                                <option key={category.id} value={category.name}>{category.name}</option>
                             ))}
 
                         </select>
@@ -1173,18 +987,9 @@ function ProductForm() {
                             </option>
 
 
-                            {subcategories.map(
-                                (subcategory) => (
-
-                                    <option
-                                        key={subcategory}
-                                        value={subcategory}
-                                    >
-                                        {subcategory}
-                                    </option>
-
-                                )
-                            )}
+                            {subcategories.map((subcategory) => (
+                                <option key={subcategory.id} value={subcategory.name}>{subcategory.name}</option>
+                            ))}
 
                         </select>
 

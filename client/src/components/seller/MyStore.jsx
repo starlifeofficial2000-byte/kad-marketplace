@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { promptToCompleteSellerProfile } from "../../utils/profileCompletion";
 import api from "../../config/axios";
 import SERVER_URL from "../../config/server";
 import "./MyStore.css";
@@ -172,6 +174,7 @@ const normalizeStore = (data = {}) => {
    ============================================================ */
 
 function MyStore() {
+    const navigate = useNavigate();
     /* ========================================================
        STATE
     ======================================================== */
@@ -671,6 +674,19 @@ function MyStore() {
 
     const handleSubmit = async (event) => {
         event.preventDefault();
+
+        // Require profile completion only for first-time store creation.
+        if (!store.id) {
+            let currentUser = null;
+            try {
+                currentUser = JSON.parse(localStorage.getItem("user") || "null");
+            } catch {
+                currentUser = null;
+            }
+            if (!promptToCompleteSellerProfile(currentUser, navigate, "create a store")) {
+                return;
+            }
+        }
 
         try {
             setSaving(true);

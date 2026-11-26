@@ -67,6 +67,17 @@ function MyProducts() {
     };
 
 
+    const updateSellerStatus = async (id, status) => {
+        try {
+            const response = await api.patch(`/products/${id}/seller-status`, { status });
+            const updated = response.data?.product;
+            setProducts((current) => current.map((item) => String(item.id) === String(id) ? { ...item, ...(updated || {}), sellerStatus: updated?.sellerStatus || status } : item));
+        } catch (error) {
+            alert(error.response?.data?.message || "Unable to update product availability.");
+            loadProducts();
+        }
+    };
+
     /* =========================================
        DELETE PRODUCT
     ========================================= */
@@ -740,6 +751,15 @@ function MyProducts() {
                                         ========================= */}
 
                                         <div className="seller-actions">
+                                            <label className="seller-availability-control">
+                                                <span>Availability</span>
+                                                <select aria-label={`Availability for ${product.title || "product"}`} value={product.sellerStatus || "Active"} onChange={(event) => updateSellerStatus(product.id, event.target.value)} disabled={["Pending", "Rejected"].includes(product.status)}>
+                                                    <option value="Active">Active</option>
+                                                    <option value="Inactive">Inactive</option>
+                                                    <option value="Sold">Sold out</option>
+                                                    <option value="Out of Stock">Out of stock</option>
+                                                </select>
+                                            </label>
 
                                             <button
                                                 onClick={() =>

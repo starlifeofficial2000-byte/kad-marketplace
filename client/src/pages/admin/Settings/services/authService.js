@@ -47,11 +47,9 @@ export const getCurrentUser = () => {
 ========================================= */
 
 export const logoutUser = () => {
-
-    return api.post(
-        "/auth/logout"
-    );
-
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    return Promise.resolve({ data: { success: true, message: "Signed out locally." } });
 };
 
 
@@ -59,13 +57,8 @@ export const logoutUser = () => {
    VERIFY EMAIL
 ========================================= */
 
-export const verifyEmail = (data) => {
-
-    return api.post(
-        "/auth/verify-email",
-        data
-    );
-
+export const verifyEmail = () => {
+    return Promise.reject(new Error("The supplied backend does not expose an email-verification endpoint."));
 };
 
 

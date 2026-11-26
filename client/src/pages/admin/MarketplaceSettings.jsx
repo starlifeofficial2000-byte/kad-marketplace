@@ -1,829 +1,137 @@
-import { useEffect, useState } from "react";
-import api from "../../config/axios";
-import "./MarketplaceSettings.css";
+function MarketplaceSettings({
+    settings,
+    handleChange
+}) {
 
+    /* =====================================================
+       SAFE VALUES
+    ===================================================== */
 
-function MarketplaceSettings() {
+    const maxProductImages =
+        settings?.max_product_images || "5";
 
-    const token =
-        localStorage.getItem("token");
+    const requireProductApproval =
+        settings?.require_product_approval === "true" ||
+        settings?.require_product_approval === true;
 
+    const allowRegistration =
+        settings?.allow_registration !== "false" &&
+        settings?.allow_registration !== false;
 
-    /* =========================================
-       DEFAULT SETTINGS
 
-       Database keys are used directly here.
-    ========================================= */
+    /* =====================================================
+       NUMBER HANDLER
+    ===================================================== */
 
-    const [settings, setSettings] = useState({
+    const updateNumber = (key, value) => {
 
-        marketplace_name: "",
-
-        marketplace_description: "",
-
-        support_email: "",
-
-        support_phone: "",
-
-        business_address: "",
-
-        primary_color: "#0A66C2",
-
-        secondary_color: "#198754",
-
-        maintenance_mode: false,
-
-        registration_enabled: true,
-
-        require_store_verification: true,
-
-        require_product_approval: true,
-
-        currency: "GHS"
-
-    });
-
-
-    const [loading, setLoading] =
-        useState(true);
-
-
-    const [saving, setSaving] =
-        useState(false);
-
-
-    /* =========================================
-       LOAD SETTINGS
-    ========================================= */
-
-    useEffect(() => {
-
-        loadSettings();
-
-    }, []);
-
-
-    const loadSettings = async () => {
-
-        try {
-
-            setLoading(true);
-
-
-          const response = await api.get(
-    "/settings"
-);
-
-
-            if (
-
-                response.data.success &&
-
-                Array.isArray(
-                    response.data.settings
-                )
-
-            ) {
-
-                const settingsObject = {
-
-                    marketplace_name: "",
-
-                    marketplace_description: "",
-
-                    support_email: "",
-
-                    support_phone: "",
-
-                    business_address: "",
-
-                    primary_color: "#0A66C2",
-
-                    secondary_color: "#198754",
-
-                    maintenance_mode: false,
-
-                    registration_enabled: true,
-
-                    require_store_verification: true,
-
-                    require_product_approval: true,
-
-                    currency: "GHS"
-
-                };
-
-
-                response.data.settings.forEach(
-
-                    (item) => {
-
-                        let value =
-                            item.settingValue;
-
-
-                        /*
-                           Convert boolean strings
-                           from the database.
-                        */
-
-                        if (
-
-                            value === "true"
-
-                        ) {
-
-                            value = true;
-
-                        }
-
-                        else if (
-
-                            value === "false"
-
-                        ) {
-
-                            value = false;
-
-                        }
-
-
-                        settingsObject[
-                            item.settingKey
-                        ] = value;
-
-                    }
-
-                );
-
-
-                console.log(
-
-                    "FORMATTED SETTINGS:",
-
-                    settingsObject
-
-                );
-
-
-                setSettings(
-                    settingsObject
-                );
-
-            }
-
+        if (value === "") {
+            handleChange(key, "");
+            return;
         }
 
-        catch (error) {
+        const number = Number(value);
 
-            console.error(
-
-                "LOAD MARKETPLACE SETTINGS ERROR:",
-
-                error
-
-            );
-
-
-            alert(
-
-                error.response?.data?.message ||
-
-                "Failed to load marketplace settings."
-
-            );
-
+        if (Number.isNaN(number)) {
+            return;
         }
 
-        finally {
-
-            setLoading(false);
-
-        }
-
+        handleChange(
+            key,
+            String(number)
+        );
     };
 
 
-    /* =========================================
-       HANDLE INPUT CHANGE
-    ========================================= */
+    /* =====================================================
+       BOOLEAN HANDLER
+    ===================================================== */
 
-    const handleChange = (e) => {
+    const updateBoolean = (key, value) => {
 
-        const {
-
-            name,
-
-            value,
-
-            type,
-
-            checked
-
-        } = e.target;
-
-
-        setSettings(
-
-            (previous) => ({
-
-                ...previous,
-
-                [name]:
-
-                    type === "checkbox"
-
-                        ? checked
-
-                        : value
-
-            })
-
+        handleChange(
+            key,
+            value ? "true" : "false"
         );
 
     };
 
 
-    /* =========================================
-       SAVE SETTINGS
-    ========================================= */
-
-    const saveSettings = async () => {
-
-        try {
-
-            setSaving(true);
-
-
-            /*
-               Convert the settings object
-               into the format expected by
-               the backend.
-            */
-
-            const settingsData =
-
-                Object.entries(settings).map(
-
-                    ([key, value]) => ({
-
-                        settingKey: key,
-
-                        settingValue:
-                            String(value),
-
-                        category:
-                            "Marketplace"
-
-                    })
-
-                );
-
-
-            console.log(
-
-                "SAVING SETTINGS:",
-
-                settingsData
-
-            );
-
-
-            const response =
-                await api.put(
-
-                    "/settings",
-
-                    settingsData,
-
-                    {
-
-                        headers: {
-
-                            Authorization:
-                                `Bearer ${token}`
-
-                        }
-
-                    }
-
-                );
-
-
-            if (response.data.success) {
-
-                alert(
-
-                    "Marketplace settings updated successfully."
-
-                );
-
-
-                /*
-                   Reload settings from database.
-
-                   This ensures the frontend
-                   always matches the backend.
-                */
-
-                await loadSettings();
-
-            }
-
-        }
-
-        catch (error) {
-
-            console.error(
-
-                "SAVE MARKETPLACE SETTINGS ERROR:",
-
-                error
-
-            );
-
-
-            alert(
-
-                error.response?.data?.message ||
-
-                "Failed to save marketplace settings."
-
-            );
-
-        }
-
-        finally {
-
-            setSaving(false);
-
-        }
-
-    };
-
-
-    /* =========================================
-       LOADING
-    ========================================= */
-
-    if (loading) {
-
-        return (
-
-            <div className="marketplace-settings">
-
-                <h2>
-
-                    Loading Marketplace Settings...
-
-                </h2>
-
-            </div>
-
-        );
-
-    }
-
-
-    /* =========================================
-       PAGE
-    ========================================= */
+    /* =====================================================
+       COMPONENT
+    ===================================================== */
 
     return (
 
-        <div className="marketplace-settings">
+        <div className="settings-section marketplace-settings">
 
+            {/* =================================================
+                HEADER
+            ================================================= */}
 
-            <div className="settings-page-header">
+            <div className="section-header">
 
-                <div>
+                <div className="section-header-content">
 
-                    <h1>
+                    <div className="section-icon">
+                        🛒
+                    </div>
 
-                        Marketplace Settings
+                    <div>
 
-                    </h1>
+                        <h2>
+                            Marketplace Settings
+                        </h2>
 
+                        <p>
+                            Configure the core rules that control
+                            product listings and user registration.
+                        </p>
 
-                    <p>
-
-                        Configure how your marketplace operates.
-
-                    </p>
+                    </div>
 
                 </div>
 
             </div>
 
 
-            <div className="settings-grid">
-
-
-                {/* =====================================
-                   MARKETPLACE NAME
-                ===================================== */}
-
-                <div className="form-group">
-
-                    <label>
-
-                        Marketplace Name
-
-                    </label>
-
-
-                    <input
-
-                        type="text"
-
-                        name="marketplace_name"
-
-                        placeholder="Marketplace Name"
-
-                        value={
-                            settings.marketplace_name || ""
-                        }
-
-                        onChange={handleChange}
-
-                    />
-
-                </div>
-
-
-                {/* =====================================
-                   DESCRIPTION
-                ===================================== */}
-
-                <div className="form-group full-width">
-
-                    <label>
-
-                        Marketplace Description
-
-                    </label>
-
-
-                    <textarea
-
-                        name="marketplace_description"
-
-                        placeholder="Describe your marketplace"
-
-                        value={
-                            settings.marketplace_description || ""
-                        }
-
-                        onChange={handleChange}
-
-                    />
-
-                </div>
-
-
-                {/* =====================================
-                   SUPPORT EMAIL
-                ===================================== */}
-
-                <div className="form-group">
-
-                    <label>
-
-                        Support Email
-
-                    </label>
-
-
-                    <input
-
-                        type="email"
-
-                        name="support_email"
-
-                        placeholder="support@example.com"
-
-                        value={
-                            settings.support_email || ""
-                        }
-
-                        onChange={handleChange}
-
-                    />
-
-                </div>
-
-
-                {/* =====================================
-                   SUPPORT PHONE
-                ===================================== */}
-
-                <div className="form-group">
-
-                    <label>
-
-                        Support Phone
-
-                    </label>
-
-
-                    <input
-
-                        type="text"
-
-                        name="support_phone"
-
-                        placeholder="+233 XXX XXX XXX"
-
-                        value={
-                            settings.support_phone || ""
-                        }
-
-                        onChange={handleChange}
-
-                    />
-
-                </div>
-
-
-                {/* =====================================
-                   ADDRESS
-                ===================================== */}
-
-                <div className="form-group full-width">
-
-                    <label>
-
-                        Business Address
-
-                    </label>
-
-
-                    <input
-
-                        type="text"
-
-                        name="business_address"
-
-                        placeholder="Business Address"
-
-                        value={
-                            settings.business_address || ""
-                        }
-
-                        onChange={handleChange}
-
-                    />
-
-                </div>
-
-
-                {/* =====================================
-                   CURRENCY
-                ===================================== */}
-
-                <div className="form-group">
-
-                    <label>
-
-                        Default Currency
-
-                    </label>
-
-
-                    <select
-
-                        name="currency"
-
-                        value={
-                            settings.currency || "GHS"
-                        }
-
-                        onChange={handleChange}
-
-                    >
-
-                        <option value="GHS">
-
-                            Ghana Cedi (GHS)
-
-                        </option>
-
-                        <option value="USD">
-
-                            US Dollar (USD)
-
-                        </option>
-
-                        <option value="EUR">
-
-                            Euro (EUR)
-
-                        </option>
-
-                        <option value="GBP">
-
-                            British Pound (GBP)
-
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                {/* =====================================
-                   PRIMARY COLOR
-                ===================================== */}
-
-                <div className="form-group">
-
-                    <label>
-
-                        Primary Color
-
-                    </label>
-
-
-                    <input
-
-                        type="color"
-
-                        name="primary_color"
-
-                        value={
-                            settings.primary_color || "#0A66C2"
-                        }
-
-                        onChange={handleChange}
-
-                    />
-
-                </div>
-
-
-                {/* =====================================
-                   SECONDARY COLOR
-                ===================================== */}
-
-                <div className="form-group">
-
-                    <label>
-
-                        Secondary Color
-
-                    </label>
-
-
-                    <input
-
-                        type="color"
-
-                        name="secondary_color"
-
-                        value={
-                            settings.secondary_color || "#198754"
-                        }
-
-                        onChange={handleChange}
-
-                    />
-
-                </div>
-
-
-            </div>
-
-
-            {/* =========================================
-               SYSTEM SETTINGS
-            ========================================= */}
+            {/* =================================================
+                PRODUCT SETTINGS
+            ================================================= */}
 
             <div className="settings-card">
 
-
-                <h2>
-
-                    Marketplace Controls
-
-                </h2>
+                <h3>
+                    Product Settings
+                </h3>
 
 
-                {/* MAINTENANCE */}
+                {/* MAXIMUM PRODUCT IMAGES */}
 
-                <div className="toggle-setting">
+                <div className="form-group">
 
-                    <div>
-
-                        <strong>
-
-                            Maintenance Mode
-
-                        </strong>
-
-
-                        <p>
-
-                            Temporarily disable access for
-                            normal marketplace users while
-                            administrators continue working.
-
-                        </p>
-
-                    </div>
-
+                    <label htmlFor="max_product_images">
+                        Maximum Product Images
+                    </label>
 
                     <input
-
-                        type="checkbox"
-
-                        name="maintenance_mode"
-
-                        checked={
-                            settings.maintenance_mode === true
+                        id="max_product_images"
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={maxProductImages}
+                        onChange={(e) =>
+                            updateNumber(
+                                "max_product_images",
+                                e.target.value
+                            )
                         }
-
-                        onChange={handleChange}
-
                     />
 
-                </div>
-
-
-                {/* REGISTRATION */}
-
-                <div className="toggle-setting">
-
-                    <div>
-
-                        <strong>
-
-                            Allow New Registrations
-
-                        </strong>
-
-
-                        <p>
-
-                            Allow new users to create accounts.
-
-                        </p>
-
-                    </div>
-
-
-                    <input
-
-                        type="checkbox"
-
-                        name="registration_enabled"
-
-                        checked={
-                            settings.registration_enabled === true
-                        }
-
-                        onChange={handleChange}
-
-                    />
-
-                </div>
-
-
-                {/* STORE APPROVAL */}
-
-                <div className="toggle-setting">
-
-                    <div>
-
-                        <strong>
-
-                            Require Store Verification
-
-                        </strong>
-
-
-                        <p>
-
-                            Stores must be verified before
-                            they can operate.
-
-                        </p>
-
-                    </div>
-
-
-                    <input
-
-                        type="checkbox"
-
-                        name="require_store_verification"
-
-                        checked={
-                            settings.require_store_verification === true
-                        }
-
-                        onChange={handleChange}
-
-                    />
+                    <small>
+                        Maximum number of images a seller can
+                        upload for one product.
+                    </small>
 
                 </div>
 
@@ -835,78 +143,137 @@ function MarketplaceSettings() {
                     <div>
 
                         <strong>
-
                             Require Product Approval
-
                         </strong>
 
-
                         <p>
-
-                            Products must be approved before
-                            becoming publicly visible.
-
+                            Products must be reviewed and approved
+                            by an administrator before they become
+                            publicly visible.
                         </p>
 
                     </div>
 
+                    <label className="switch">
 
-                    <input
+                        <input
+                            type="checkbox"
+                            checked={requireProductApproval}
+                            onChange={(e) =>
+                                updateBoolean(
+                                    "require_product_approval",
+                                    e.target.checked
+                                )
+                            }
+                        />
 
-                        type="checkbox"
+                        <span className="slider"></span>
 
-                        name="require_product_approval"
-
-                        checked={
-                            settings.require_product_approval === true
-                        }
-
-                        onChange={handleChange}
-
-                    />
+                    </label>
 
                 </div>
 
+            </div>
+
+
+            {/* =================================================
+                REGISTRATION SETTINGS
+            ================================================= */}
+
+            <div className="settings-card">
+
+                <h3>
+                    Registration Settings
+                </h3>
+
+                <div className="toggle-setting">
+
+                    <div>
+
+                        <strong>
+                            Allow New Registration
+                        </strong>
+
+                        <p>
+                            Allow new users to create accounts
+                            on KAD Marketplace.
+                        </p>
+
+                    </div>
+
+                    <label className="switch">
+
+                        <input
+                            type="checkbox"
+                            checked={allowRegistration}
+                            onChange={(e) =>
+                                updateBoolean(
+                                    "allow_registration",
+                                    e.target.checked
+                                )
+                            }
+                        />
+
+                        <span className="slider"></span>
+
+                    </label>
+
+                </div>
 
             </div>
 
 
-            {/* =========================================
-               SAVE BUTTON
-            ========================================= */}
+            {/* =================================================
+                CURRENT CONFIGURATION
+            ================================================= */}
 
-            <div className="settings-actions">
+            <div className="settings-info-card">
 
-                <button
+                <div className="settings-info-icon">
+                    ⚙️
+                </div>
 
-                    className="save-btn"
+                <div>
 
-                    onClick={saveSettings}
+                    <strong>
+                        Current Marketplace Configuration
+                    </strong>
 
-                    disabled={saving}
+                    <p>
 
-                >
+                        Sellers can upload up to{" "}
 
-                    {
+                        <strong>
+                            {maxProductImages}
+                        </strong>{" "}
 
-                        saving
+                        images per product.
 
-                            ? "Saving Settings..."
+                        Product approval is{" "}
 
-                            : "Save Marketplace Settings"
+                        <strong>
+                            {requireProductApproval
+                                ? "required"
+                                : "not required"}
+                        </strong>.
 
-                    }
+                        New user registration is{" "}
 
-                </button>
+                        <strong>
+                            {allowRegistration
+                                ? "enabled"
+                                : "disabled"}
+                        </strong>.
+
+                    </p>
+
+                </div>
 
             </div>
-
 
         </div>
 
     );
-
 }
-
 
 export default MarketplaceSettings;

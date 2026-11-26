@@ -21,7 +21,7 @@ export const getAdminStats = () => {
 export const getPendingProducts = () => {
 
     return api.get(
-        "/admin/pending"
+        "/admin/products/pending"
     );
 
 };
@@ -36,7 +36,7 @@ export const approveProduct = (
 ) => {
 
     return api.put(
-        `/admin/approve/${id}`
+        `/admin/products/${id}/approve`
     );
 
 };
@@ -52,7 +52,7 @@ export const rejectProduct = (
 ) => {
 
     return api.put(
-        `/admin/reject/${id}`,
+        `/admin/products/${id}/reject`,
         data
     );
 
