@@ -1,6 +1,6 @@
 // controllers/storeController.js
 
-const { Store, Product, StoreFollower, StoreReview } = require("../models");
+const { Store, Product, StoreFollower, StoreReview, User } = require("../models");
 
 const {
     getR2PublicUrl,
@@ -445,6 +445,68 @@ const deleteUploadedFileAfterFailure = async (
 
 
 /* ============================================================
+   CREATE MY STORE
+============================================================ */
+
+exports.createMyStore = async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ success: false, message: "Authentication required." });
+        }
+
+        const user = await User.findByPk(req.user.id);
+        if (!user) return res.status(401).json({ success: false, message: "User account not found." });
+
+        const storeName = String(req.body.storeName || "").trim();
+        const phone = String(req.body.phone || user.phone || "").trim();
+        const region = String(req.body.region || user.region || "").trim();
+        const city = String(req.body.city || user.city || "").trim();
+        const businessCategory = String(req.body.businessCategory || "").trim();
+        const address = String(req.body.address || user.address || "").trim();
+        const description = String(req.body.description || "").trim();
+
+        if (!storeName || !businessCategory || !phone || !region || !city) {
+            return res.status(400).json({
+                success: false,
+                code: "SELLER_PROFILE_INCOMPLETE",
+                message: "Complete your store name, business category, phone, region and city to create your seller store."
+            });
+        }
+
+        const existing = await Store.findOne({ where: { userId: user.id } });
+        if (existing) return res.status(409).json({ success: false, message: "You already have a store.", store: formatStore(existing) });
+
+        const baseSlug = storeName.toLowerCase()
+            .normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || `seller-${user.id}`;
+        let storeSlug = baseSlug;
+        let suffix = 2;
+        while (await Store.findOne({ where: { storeSlug } })) storeSlug = `${baseSlug}-${suffix++}`;
+
+        await user.update({ phone, region, city, address: address || null });
+        const store = await Store.create({
+            userId: user.id,
+            storeName,
+            storeSlug,
+            description: description || null,
+            phone,
+            email: user.email,
+            address: address || null,
+            region,
+            city,
+            businessCategory,
+            status: "Pending"
+        });
+
+        return res.status(201).json({ success: true, message: "Your store has been created and submitted for review.", store: formatStore(store) });
+    } catch (error) {
+        console.error("CREATE MY STORE ERROR:", error);
+        return res.status(500).json({ success: false, message: "Failed to create your store." });
+    }
+};
+
+
+/* ============================================================
    GET MY STORE
 ============================================================ */
 
@@ -482,13 +544,10 @@ exports.getMyStore = async (
 
 
         if (!store) {
-
-            return res.status(404).json({
-
-                success: false,
-
-                message:
-                    "Store not found."
+            return res.status(200).json({
+                success: true,
+                store: null,
+                message: "You have not created a store yet."
             });
         }
 

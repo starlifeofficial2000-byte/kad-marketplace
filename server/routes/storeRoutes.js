@@ -39,6 +39,12 @@ router.get(
     storeController.getMyStore
 );
 
+router.post(
+    "/my-store",
+    auth,
+    storeController.createMyStore
+);
+
 
 router.put(
     "/my-store",

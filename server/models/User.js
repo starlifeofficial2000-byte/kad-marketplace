@@ -44,21 +44,18 @@ const User = sequelize.define(
 
         ghanaCard: {
             type: DataTypes.STRING,
-            allowNull: false,
-            unique: true,
-            validate: {
-                notEmpty: true
-            }
+            allowNull: true,
+            unique: true
         },
 
         region: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: true
         },
 
         city: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: true
         },
 
         address: {

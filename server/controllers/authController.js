@@ -436,6 +436,7 @@ exports.register = async (req, res) => {
 
         const {
             name,
+            username,
             email,
             phone,
             ghanaCard,
@@ -444,6 +445,7 @@ exports.register = async (req, res) => {
             address,
             password
         } = req.body;
+        const registrationName = String(name || username || '').trim();
 
 
         /* ==========================================
@@ -567,11 +569,8 @@ if (!registrationEnabled) {
         ========================================== */
 
         if (
-            !name ||
+            !registrationName ||
             !email ||
-            !ghanaCard ||
-            !region ||
-            !city ||
             !password
         ) {
 
@@ -613,7 +612,7 @@ if (!registrationEnabled) {
         ========================================== */
 
         const normalizedName =
-            String(name).trim();
+            registrationName;
 
 
         const normalizedEmail =
@@ -629,17 +628,15 @@ if (!registrationEnabled) {
 
 
         const normalizedGhanaCard =
-            String(ghanaCard)
-                .trim()
-                .toUpperCase();
+            ghanaCard ? String(ghanaCard).trim().toUpperCase() : null;
 
 
         const normalizedRegion =
-            String(region).trim();
+            region ? String(region).trim() : null;
 
 
         const normalizedCity =
-            String(city).trim();
+            city ? String(city).trim() : null;
 
 
         const normalizedAddress =
@@ -683,17 +680,9 @@ if (!registrationEnabled) {
            CHECK GHANA CARD
         ========================================== */
 
-        const existingGhanaCard =
-            await User.findOne({
-
-                where: {
-
-                    ghanaCard:
-                        normalizedGhanaCard
-
-                }
-
-            });
+        const existingGhanaCard = normalizedGhanaCard
+            ? await User.findOne({ where: { ghanaCard: normalizedGhanaCard } })
+            : null;
 
 
         if (existingGhanaCard) {
@@ -756,7 +745,7 @@ if (!registrationEnabled) {
                     "user",
 
                 status:
-                    "Active"
+                    "active"
 
             });
 
